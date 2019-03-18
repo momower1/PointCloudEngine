@@ -3,6 +3,9 @@
 
 #pragma once
 #include "PointCloudEngine.h"
+#include "tinyply.h"
+
+using namespace tinyply;
 
 class Scene
 {

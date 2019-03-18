@@ -50,6 +50,9 @@
     <ClInclude Include="PointCloudEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tinyply.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">
@@ -74,6 +77,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PointCloudEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyply.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

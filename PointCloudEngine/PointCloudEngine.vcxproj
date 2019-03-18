@@ -230,6 +230,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="tinyply.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -243,6 +244,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="DataStructures.h" />
+    <ClInclude Include="tinyply.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
