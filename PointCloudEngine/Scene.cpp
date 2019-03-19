@@ -14,7 +14,7 @@ void Scene::Initialize()
     debugTextRenderer->color = Color(0, 0, 0, 1);
 
     // Transforms
-    camera.position = Vector3(0.0f, 2.0f, -5.0f);
+    camera.position = Vector3(0.0f, 2.5f, -3.0f);
     pointCloud->transform->scale = 20 * Vector3::One;
 
     // Text Transforms
