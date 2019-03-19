@@ -63,6 +63,7 @@ extern HRESULT hr;
 extern HWND hwnd;
 extern Camera camera;
 extern Shader* textShader;
+extern Shader* pointCloudShader;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11DepthStencilState* depthStencilState;

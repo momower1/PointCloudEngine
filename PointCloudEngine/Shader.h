@@ -15,6 +15,7 @@ public:
     void Release ();
 
     static D3D11_INPUT_ELEMENT_DESC textLayout[];
+    static D3D11_INPUT_ELEMENT_DESC pointCloudLayout[];
 
     bool VS, PS, GS;
 

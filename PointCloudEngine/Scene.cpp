@@ -10,10 +10,11 @@ void Scene::Initialize()
 
     debugText = Hierarchy::Create(L"Debug Text");
     TextRenderer *debugTextRenderer = debugText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Times New Roman"), true));
-    debugTextRenderer->text = L"Welcome!\nThis is 3D text in PointCloudEngine!\nTODO!";
+    debugTextRenderer->text = L"This is 3D text in PointCloudEngine!";
 
     // Transforms
     camera.position = Vector3(0.0f, 2.0f, -5.0f);
+    pointCloud->transform->scale = 20 * Vector3::One;
 
     // Text Transforms
     debugText->transform->position = Vector3(0, 3, 3);
