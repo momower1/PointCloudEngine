@@ -31,6 +31,8 @@ public:
     static bool GetMouseButtonUp(MouseButton::MouseButton button);
     static bool GetMouseButtonDown(MouseButton::MouseButton button);
 
+    static void SetMouseSensitivity(float mouseSensitivity);
+
     static Vector2 mouseDelta;
     static Vector2 mousePosition;
 
@@ -43,6 +45,7 @@ private:
     static Mouse::State mouseState;
     static Mouse::ButtonStateTracker mouseButtonStateTracker;
 
+    static float mouseSensitivity;
     static Vector2 rawMouseMovement;
 };
 

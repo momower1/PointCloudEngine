@@ -17,7 +17,7 @@ private:
     SceneObject *fpsText;
     SceneObject *debugText;
 
-    float cameraPitch, cameraYaw;
+    float cameraPitch, cameraYaw, cameraSpeed;
     Vector2 input;
 };
 

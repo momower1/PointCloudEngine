@@ -334,6 +334,7 @@ bool InitializeScene()
     TextRenderer::CreateSpriteFont(L"Times New Roman", L"Assets/Times New Roman.spritefont");
 
 	scene.Initialize();
+    timer.ResetElapsedTime();
 
 	return true;
 }

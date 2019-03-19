@@ -10,17 +10,20 @@ void Scene::Initialize()
 
     debugText = Hierarchy::Create(L"Debug Text");
     TextRenderer *debugTextRenderer = debugText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Times New Roman"), true));
-    debugTextRenderer->text = L"This is 3D text in PointCloudEngine!";
+    debugTextRenderer->text = L"Standford Dragon";
+    debugTextRenderer->color = Color(0, 0, 0, 1);
 
     // Transforms
     camera.position = Vector3(0.0f, 2.0f, -5.0f);
     pointCloud->transform->scale = 20 * Vector3::One;
 
     // Text Transforms
-    debugText->transform->position = Vector3(0, 3, 3);
+    debugText->transform->position = Vector3(-0.5f, 4.5f, 0);
     debugText->transform->scale = Vector3::One;
     fpsText->transform->position = Vector3(-1, 1, 0.5f);
     fpsText->transform->scale = 0.3f * Vector3::One;
+
+    Input::SetMouseSensitivity(0.5f);
 }
 
 void Scene::Update(Timer &timer)
@@ -31,8 +34,17 @@ void Scene::Update(Timer &timer)
     cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
     camera.CalculateRightUpForward(cameraPitch, cameraYaw);
 
-    // Move camera with arrow keys
-    float cameraSpeed = Input::GetKey(Keyboard::LeftShift) ? 30 : 10;
+    // Speed up camera when pressing shift
+    if (Input::GetKey(Keyboard::LeftShift))
+    {
+        cameraSpeed += 20 * dt;
+    }
+    else
+    {
+        cameraSpeed = 3;
+    }
+
+    // Move camera with WASD keys
     camera.position += Input::GetKey(Keyboard::W) * cameraSpeed * dt * camera.forward;
     camera.position -= Input::GetKey(Keyboard::S) * cameraSpeed * dt * camera.forward;
     camera.position -= Input::GetKey(Keyboard::A) * cameraSpeed * dt * camera.right;

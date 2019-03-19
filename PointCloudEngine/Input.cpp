@@ -11,6 +11,7 @@ Mouse Input::mouse;
 Mouse::State Input::mouseState;
 Mouse::ButtonStateTracker Input::mouseButtonStateTracker;
 
+float Input::mouseSensitivity = 1.0f;
 Vector2 Input::rawMouseMovement;
 
 void Input::Initialize(HWND hwnd)
@@ -74,7 +75,7 @@ void Input::Update()
     // For system wide mouse position set the mouse mode to absolute and get it from the mouse state (drawback: mouse can move out of the window)
     mousePosition.x = max(0, min(mousePosition.x + rawMouseMovement.x, resolutionX));
     mousePosition.y = max(0, min(mousePosition.y + rawMouseMovement.y, resolutionY));
-    mouseDelta = rawMouseMovement;
+    mouseDelta = mouseSensitivity * rawMouseMovement;
 
     // Reset delta value
     rawMouseMovement = Vector2(0, 0);
@@ -192,4 +193,9 @@ bool Input::GetMouseButtonDown(MouseButton::MouseButton button)
     }
 
     return false;
+}
+
+void Input::SetMouseSensitivity(float mouseSensitivity)
+{
+    Input::mouseSensitivity = mouseSensitivity;
 }

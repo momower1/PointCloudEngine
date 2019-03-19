@@ -120,8 +120,10 @@ void PointCloudRenderer::Draw(SceneObject * sceneObject)
     tmp.View = camera.view.Transpose();
     tmp.Projection = camera.projection.Transpose();
 
-    d3d11DevCon->UpdateSubresource(constantBufferMatrices, 0, NULL, &tmp, 0, 0);		// Update effect file buffer
-    d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBufferMatrices);		            // Set shader buffer to our created buffer
+    // Update effect file buffer, set shader buffer to our created buffer
+    d3d11DevCon->UpdateSubresource(constantBufferMatrices, 0, NULL, &tmp, 0, 0);
+    d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBufferMatrices);
+    d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBufferMatrices);
 
     d3d11DevCon->Draw(vertices.size(), 0);
 }
