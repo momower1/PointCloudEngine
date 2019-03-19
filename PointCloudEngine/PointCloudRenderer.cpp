@@ -2,7 +2,7 @@
 
 std::vector<PointCloudRenderer*> PointCloudRenderer::sharedPointCloudRenderers;
 
-PointCloudRenderer * PointCloudRenderer::CreateShared(std::wstring plyfile)
+PointCloudRenderer* PointCloudRenderer::CreateShared(std::wstring plyfile)
 {
     PointCloudRenderer *pointCloudRenderer = new PointCloudRenderer(plyfile);
     pointCloudRenderer->shared = true;
@@ -56,9 +56,12 @@ PointCloudRenderer::PointCloudRenderer(std::wstring plyfile)
         std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
         std::memcpy(&vertices[i].red, rawColors->buffer.get() + i * strideColors, strideColors);
     }
+
+    // Set the default radius
+    pointCloudConstantBufferData.radius = 0.02f;
 }
 
-void PointCloudRenderer::Initialize(SceneObject * sceneObject)
+void PointCloudRenderer::Initialize(SceneObject *sceneObject)
 {
     // Create a vertex buffer description
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -82,20 +85,30 @@ void PointCloudRenderer::Initialize(SceneObject * sceneObject)
     D3D11_BUFFER_DESC cbDescWVP;
     ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
     cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
-    cbDescWVP.ByteWidth = sizeof(ConstantBufferMatrices);
+    cbDescWVP.ByteWidth = sizeof(PointCloudConstantBuffer);
     cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbDescWVP.CPUAccessFlags = 0;
     cbDescWVP.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBufferMatrices);
+    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &pointCloudConstantBuffer);
     ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
 }
 
-void PointCloudRenderer::Update(SceneObject * sceneObject)
+void PointCloudRenderer::Update(SceneObject *sceneObject)
 {
+    if (Input::GetKey(Keyboard::Up))
+    {
+        pointCloudConstantBufferData.radius += dt * 0.01f;
+    }
+    else if (Input::GetKey(Keyboard::Down))
+    {
+        pointCloudConstantBufferData.radius -= dt * 0.01f;
+    }
+
+    pointCloudConstantBufferData.radius = max(0.0002f, pointCloudConstantBufferData.radius);
 }
 
-void PointCloudRenderer::Draw(SceneObject * sceneObject)
+void PointCloudRenderer::Draw(SceneObject *sceneObject)
 {
     // Set the shaders
     d3d11DevCon->VSSetShader(pointCloudShader->vertexShader, 0, 0);
@@ -114,16 +127,15 @@ void PointCloudRenderer::Draw(SceneObject * sceneObject)
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
     // Set shader constant buffer variables
-    ConstantBufferMatrices tmp;
-    tmp.World = sceneObject->transform->worldMatrix.Transpose();
-    tmp.WorldInverseTranspose = tmp.World.Invert().Transpose();
-    tmp.View = camera.view.Transpose();
-    tmp.Projection = camera.projection.Transpose();
+    pointCloudConstantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+    pointCloudConstantBufferData.WorldInverseTranspose = pointCloudConstantBufferData.World.Invert().Transpose();
+    pointCloudConstantBufferData.View = camera.view.Transpose();
+    pointCloudConstantBufferData.Projection = camera.projection.Transpose();
 
     // Update effect file buffer, set shader buffer to our created buffer
-    d3d11DevCon->UpdateSubresource(constantBufferMatrices, 0, NULL, &tmp, 0, 0);
-    d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBufferMatrices);
-    d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBufferMatrices);
+    d3d11DevCon->UpdateSubresource(pointCloudConstantBuffer, 0, NULL, &pointCloudConstantBufferData, 0, 0);
+    d3d11DevCon->VSSetConstantBuffers(0, 1, &pointCloudConstantBuffer);
+    d3d11DevCon->GSSetConstantBuffers(0, 1, &pointCloudConstantBuffer);
 
     d3d11DevCon->Draw(vertices.size(), 0);
 }
@@ -131,5 +143,5 @@ void PointCloudRenderer::Draw(SceneObject * sceneObject)
 void PointCloudRenderer::Release()
 {
     SafeRelease(vertexBuffer);
-    SafeRelease(constantBufferMatrices);
+    SafeRelease(pointCloudConstantBuffer);
 }

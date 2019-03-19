@@ -35,6 +35,7 @@ public:
 
     static Vector2 mouseDelta;
     static Vector2 mousePosition;
+    static float mouseScrollWheel;
 
 private:
     static Keyboard keyboard;

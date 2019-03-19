@@ -11,6 +11,7 @@ Mouse Input::mouse;
 Mouse::State Input::mouseState;
 Mouse::ButtonStateTracker Input::mouseButtonStateTracker;
 
+float Input::mouseScrollWheel;
 float Input::mouseSensitivity = 1.0f;
 Vector2 Input::rawMouseMovement;
 
@@ -71,6 +72,9 @@ void Input::Update()
 
     keyboardStateTracker.Update(keyboardState);
     mouseButtonStateTracker.Update(mouseState);
+
+    // Save mouse scroll data
+    mouseScrollWheel = mouseState.scrollWheelValue;
 
     // For system wide mouse position set the mouse mode to absolute and get it from the mouse state (drawback: mouse can move out of the window)
     mousePosition.x = max(0, min(mousePosition.x + rawMouseMovement.x, resolutionX));

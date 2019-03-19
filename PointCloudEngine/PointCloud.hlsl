@@ -1,5 +1,8 @@
-cbuffer ConstantBufferMatrices : register(b0)
+cbuffer PointCloudConstantBuffer : register(b0)
 {
+    float radius;
+//  12 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
     float4x4 World;
 //------------------------------------------------------------------------------ (64 byte boundary)
     float4x4 View;
@@ -8,7 +11,7 @@ cbuffer ConstantBufferMatrices : register(b0)
 //------------------------------------------------------------------------------ (64 byte boundary)
     float4x4 WorldInverseTranspose;
 //------------------------------------------------------------------------------ (64 byte boundary)
-};  // Total: 256 bytes with constant buffer packing rules
+};  // Total: 272 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {
@@ -60,9 +63,8 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float3 cameraPosition = float3(View[0][3], View[1][3], View[2][3]);
 
     // Billboard should face in the same direction as the normal
-    const float size = 0.005f;
-    float3 up = size * normalize(cross(input[0].normal, cameraRight));
-    float3 right = size * normalize(cross(input[0].normal, up));
+    float3 up = radius * normalize(cross(input[0].normal, cameraRight));
+    float3 right = radius * normalize(cross(input[0].normal, up));
 
     float4x4 VP = mul(View, Projection);
 

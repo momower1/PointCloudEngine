@@ -29,21 +29,23 @@ private:
         byte red, green, blue, alpha;
     };
 
-    std::vector<Vertex> vertices;
-
-    // Same constant buffer as in effect file
-    struct ConstantBufferMatrices
+    // Same constant buffer as in effect file, keep packing rules in mind
+    struct PointCloudConstantBuffer
     {
+        float radius;
+        float padding[3];
         Matrix World;
         Matrix View;
         Matrix Projection;
         Matrix WorldInverseTranspose;
     };
 
-    // Vertex and index buffer
-    ID3D11Buffer* vertexBuffer;		                // Holds vertex data
+    std::vector<Vertex> vertices;
+    PointCloudConstantBuffer pointCloudConstantBufferData;
 
-    ID3D11Buffer* constantBufferMatrices;		    // Stores data and sends it to the actual buffer in the effect file
+    // Vertex buffer
+    ID3D11Buffer* vertexBuffer;		                // Holds vertex data
+    ID3D11Buffer* pointCloudConstantBuffer;		    // Stores data and sends it to the actual buffer in the effect file
 };
 
 #endif
