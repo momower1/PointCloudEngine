@@ -17,7 +17,6 @@ public:
     void Update(SceneObject *sceneObject);
     void Draw (SceneObject *sceneObject);
     void Release();
-    Component* Duplicate();
 
     bool worldSpace = false;
     std::wstring text = L"Text";

@@ -2,6 +2,9 @@
 
 void Scene::Initialize()
 {
+    pointCloud = Hierarchy::Create(L"PointCloud");
+    pointCloud->AddComponent(PointCloudRenderer::CreateShared(L"Assets/stanford_dragon_xyz_rgba_normals.ply"));
+
     fpsText = Hierarchy::Create(L"Text");
     fpsText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
@@ -17,41 +20,6 @@ void Scene::Initialize()
     debugText->transform->scale = Vector3::One;
     fpsText->transform->position = Vector3(-1, 1, 0.5f);
     fpsText->transform->scale = 0.3f * Vector3::One;
-
-    cameraDistance = 1;
-
-    // Load ply file
-    std::ifstream ss(L"Assets/stanford_dragon_xyz_rgba_normals.ply", std::ios::binary);
-
-    PlyFile file;
-    file.parse_header(ss);
-
-    // Tinyply untyped byte buffers for properties
-    std::shared_ptr<PlyData> rawPositions, rawNormals, rawColors;
-
-    // Hardcoded properties and elements
-    rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
-    rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
-    rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" });
-
-    // Read the file
-    file.read(ss);
-
-    // Cast the buffers
-    const size_t sizePositions = rawPositions->buffer.size_bytes();
-    std::vector<Vector3> positions (rawPositions->count);
-    std::memcpy(positions.data(), rawPositions->buffer.get(), sizePositions);
-
-    const size_t sizeNormals = rawNormals->buffer.size_bytes();
-    std::vector<Vector3> normals(rawNormals->count);
-    std::memcpy(normals.data(), rawNormals->buffer.get(), sizeNormals);
-
-    // TODO: change representation into maybe an int32 that stores rgba
-    const size_t sizeColors = rawColors->buffer.size_bytes();
-    std::vector<BYTE> colors(rawColors->count * 4);
-    std::memcpy(colors.data(), rawColors->buffer.get(), sizeColors);
-
-    // ...
 }
 
 void Scene::Update(Timer &timer)
@@ -89,4 +57,5 @@ void Scene::Draw()
 void Scene::Release()
 {
     Hierarchy::ReleaseAllSceneObjects();
+    PointCloudRenderer::ReleaseAllSharedPointCloudRenderers();
 }

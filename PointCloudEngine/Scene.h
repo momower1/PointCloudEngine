@@ -3,9 +3,6 @@
 
 #pragma once
 #include "PointCloudEngine.h"
-#include "tinyply.h"
-
-using namespace tinyply;
 
 class Scene
 {
@@ -16,10 +13,11 @@ public:
     void Release();
 
 private:
+    SceneObject *pointCloud;
     SceneObject *fpsText;
     SceneObject *debugText;
 
-    float cameraPitch, cameraYaw, cameraDistance;
+    float cameraPitch, cameraYaw;
     Vector2 input;
 };
 

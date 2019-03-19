@@ -150,17 +150,3 @@ void TextRenderer::Release()
     shaderResourceView->Release();
     SafeRelease(vertexBuffer);
 }
-
-Component* TextRenderer::Duplicate()
-{
-    if (shared)
-    {
-        return this;
-    }
-
-    TextRenderer *duplicate = new TextRenderer(spriteFont, worldSpace);
-    duplicate->text = text;
-    duplicate->color = color;
-
-    return duplicate;
-}

@@ -52,6 +52,7 @@ class Transform;
 #include "Hierarchy.h"
 #include "DataStructures.h"
 #include "TextRenderer.h"
+#include "PointCloudRenderer.h"
 #include "Scene.h"
 
 // Global variables, accessable in other files

@@ -59,32 +59,6 @@ SceneObject* SceneObject::FindChildByName(std::wstring childName)
     return NULL;
 }
 
-SceneObject* SceneObject::Duplicate()
-{
-    SceneObject *duplicate = Hierarchy::Create(name, transform->GetParent());
-    duplicate->transform->position = transform->position;
-    duplicate->transform->rotation = transform->rotation;
-    duplicate->transform->scale = transform->scale;
-
-    // Duplicate all components of this object
-    for (auto it = components.begin(); it != components.end(); it++)
-    {
-        Component *duplicateComponent = (*it)->Duplicate();
-        duplicate->AddComponent(duplicateComponent);
-    }
-
-    std::vector<Transform*> const *children = transform->GetChildren();
-    int size = children->size();
-
-    // Duplicate all children
-    for (int i = 0; i < size; i++)
-    {
-        (*children)[i]->sceneObject->Duplicate()->transform->SetParent(duplicate->transform);
-    }
-
-    return duplicate;
-}
-
 void SceneObject::Update()
 {
     for (auto it = components.begin(); it != components.end(); it++)

@@ -14,7 +14,6 @@ public:
     virtual void Update (SceneObject *sceneObject) = 0;
     virtual void Draw (SceneObject *sceneObject) = 0;
     virtual void Release () = 0;
-    virtual Component* Duplicate () = 0;
 
     // If this component is shared it should not be deleted if the game object is deleted
     bool shared = false;

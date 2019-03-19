@@ -10,7 +10,6 @@ public:
     SceneObject(std::wstring name, Transform *parent, std::initializer_list<Component*> components = {});
     ~SceneObject();
     SceneObject* FindChildByName(std::wstring childName);
-    SceneObject* Duplicate();
     void Update();
     void Draw();
     void Release();
