@@ -4,21 +4,23 @@
 #pragma once
 #include "PointCloudEngine.h"
 
-class Scene
+namespace PointCloudEngine
 {
-public:
-    void Initialize();
-    void Update(Timer &timer);
-    void Draw();
-    void Release();
+    class Scene
+    {
+    public:
+        void Initialize();
+        void Update(Timer &timer);
+        void Draw();
+        void Release();
 
-private:
-    SceneObject *pointCloud;
-    SceneObject *fpsText;
-    SceneObject *debugText;
+    private:
+        SceneObject *pointCloud;
+        SceneObject *fpsText;
+        SceneObject *debugText;
 
-    float cameraPitch, cameraYaw, cameraSpeed;
-    Vector2 input;
-};
-
+        float cameraPitch, cameraYaw, cameraSpeed;
+        Vector2 input;
+    };
+}
 #endif

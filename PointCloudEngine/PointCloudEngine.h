@@ -42,9 +42,14 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 // Forward declarations
-class SceneObject;
-class Shader;
-class Transform;
+namespace PointCloudEngine
+{
+    class SceneObject;
+    class Shader;
+    class Transform;
+}
+
+using namespace PointCloudEngine;
 
 #include "Transform.h"
 #include "Input.h"
@@ -98,5 +103,4 @@ template<typename T> void SafeDelete(T*& pointer)
         pointer = NULL;
     }
 }
-
 #endif

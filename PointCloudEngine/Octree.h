@@ -4,31 +4,34 @@
 #pragma once
 #include "PointCloudEngine.h"
 
-struct OctreeVertex
+namespace PointCloudEngine
 {
-    // Bounding volume
-    Vector3 min;
-    Vector3 max;
+    struct OctreeVertex
+    {
+        // Bounding volume
+        Vector3 min;
+        Vector3 max;
 
-    // Properties, TODO: add different normals and colors based on view direction
-    Color color;
-};
+        // Properties, TODO: add different normals and colors based on view direction
+        Color color;
+    };
 
-struct OctreeNode
-{
-    OctreeNode* parent;
-    OctreeNode* children[8];
+    struct OctreeNode
+    {
+        OctreeNode* parent;
+        OctreeNode* children[8];
 
-    OctreeVertex vertex;
-};
+        OctreeVertex vertex;
+    };
 
-class Octree
-{
-public:
-    Octree (std::vector<PointCloudVertex> vertices);
+    class Octree
+    {
+    public:
+        Octree (std::vector<PointCloudVertex> vertices);
 
-private:
-    OctreeNode *root;
-};
+    private:
+        OctreeNode *root;
+    };
+}
 
 #endif
