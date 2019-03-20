@@ -14,6 +14,7 @@ Timer timer;
 Scene scene;
 Shader* textShader;
 Shader* pointCloudShader;
+Shader* pointCloudLODShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -328,6 +329,7 @@ bool InitializeScene()
     // Compile the shared shaders
     textShader = Shader::Create(L"Text.hlsl", true, true, true, Shader::textLayout, 3);
     pointCloudShader = Shader::Create(L"PointCloud.hlsl", true, true, true, Shader::pointCloudLayout, 3);
+    pointCloudLODShader = Shader::Create(L"PointCloudLOD.hlsl", true, true, true, Shader::pointCloudLODLayout, 3);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");

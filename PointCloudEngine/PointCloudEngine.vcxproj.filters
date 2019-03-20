@@ -56,6 +56,9 @@
     <ClInclude Include="PointCloudRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PointCloudLODRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">
@@ -88,12 +91,18 @@
     <ClCompile Include="PointCloudRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PointCloudLODRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Text.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="PointCloud.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="PointCloudLOD.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

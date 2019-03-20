@@ -212,6 +212,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <FxCompile Include="PointCloud.hlsl" />
+    <FxCompile Include="PointCloudLOD.hlsl" />
     <FxCompile Include="Text.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
@@ -226,6 +227,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
   <ItemGroup>
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="PointCloudEngine.cpp" />
+    <ClCompile Include="PointCloudLODRenderer.cpp" />
     <ClCompile Include="PointCloudRenderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Hierarchy.cpp" />
@@ -238,6 +240,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
   <ItemGroup>
     <ClInclude Include="Input.h" />
     <ClInclude Include="Hierarchy.h" />
+    <ClInclude Include="PointCloudLODRenderer.h" />
     <ClInclude Include="PointCloudRenderer.h" />
     <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Component.h" />

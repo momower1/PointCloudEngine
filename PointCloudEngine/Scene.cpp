@@ -3,7 +3,7 @@
 void Scene::Initialize()
 {
     pointCloud = Hierarchy::Create(L"PointCloud");
-    pointCloud->AddComponent(PointCloudRenderer::CreateShared(L"Assets/stanford_dragon_xyz_rgba_normals.ply"));
+    pointCloud->AddComponent(PointCloudLODRenderer::CreateShared(L"Assets/stanford_dragon_xyz_rgba_normals.ply"));
 
     fpsText = Hierarchy::Create(L"Text");
     fpsText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
