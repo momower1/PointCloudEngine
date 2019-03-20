@@ -10,6 +10,17 @@ PointCloudEngine::Octree::~Octree()
     DeleteNode(root);
 }
 
+std::vector<Octree::BoundingCube> PointCloudEngine::Octree::GetAllBoundingCubes()
+{
+    std::vector<BoundingCube> boundingCubes;
+
+    boundingCubes.push_back(root->boundingCube);
+
+    // TODO: Actually traverse the whole octree and only add bounding boxes at certain conditions
+
+    return boundingCubes;
+}
+
 Octree::Node* PointCloudEngine::Octree::CreateNode(std::vector<PointCloudVertex> vertices)
 {
     size_t size = vertices.size();
@@ -29,33 +40,41 @@ Octree::Node* PointCloudEngine::Octree::CreateNode(std::vector<PointCloudVertex>
     double averageAlpha = 0;
     double factor = 255.0f * size;
 
-    // Initialize min/max bounds
-    node->vertex.min = node->vertex.max = vertices.front().position;
+    // Initialize min/max for the cube bounds
+    Vector3 minPosition = vertices.front().position;
+    Vector3 maxPosition = minPosition;
+
+    // TODO: Normal
 
     for (auto it = vertices.begin(); it != vertices.end(); it++)
     {
         PointCloudVertex v = *it;
 
-        node->vertex.min = Vector3::Min(node->vertex.min, v.position);
-        node->vertex.max = Vector3::Max(node->vertex.max, v.position);
+        minPosition = Vector3::Min(minPosition, v.position);
+        maxPosition = Vector3::Max(maxPosition, v.position);
 
-        averageRed = min(1, averageRed + v.red / factor);
-        averageGreen = min(1, averageGreen + v.green / factor);
-        averageBlue = min(1, averageBlue + v.blue / factor);
-        averageAlpha = min(1, averageAlpha + v.alpha / factor);
+        averageRed += v.red / factor;
+        averageGreen += v.green / factor;
+        averageBlue += v.blue / factor;
+        averageAlpha += v.alpha / factor;
     }
 
+    // Save the bounding cube properties
+    node->boundingCube.position = minPosition + 0.5f * (maxPosition - minPosition);
+    node->boundingCube.size = max(max(maxPosition.x - minPosition.x, maxPosition.y - minPosition.y), maxPosition.z - minPosition.z);
+
     // Save average color
-    node->vertex.red = averageRed * 255.0f;
-    node->vertex.green = averageGreen * 255.0f;
-    node->vertex.blue = averageBlue * 255.0f;
-    node->vertex.alpha = averageAlpha * 255.0f;
+    node->boundingCube.red = round(averageRed * 255);
+    node->boundingCube.green = round(averageGreen * 255);
+    node->boundingCube.blue = round(averageBlue * 255);
+    node->boundingCube.alpha = round(averageAlpha * 255);
 
     return node;
 }
 
-void PointCloudEngine::Octree::SplitNode(Node * node, std::vector<PointCloudVertex> vertices)
+void PointCloudEngine::Octree::SplitNode(Node* node, std::vector<PointCloudVertex> vertices)
 {
+    // TODO
 }
 
 void PointCloudEngine::Octree::DeleteNode(Node *node)

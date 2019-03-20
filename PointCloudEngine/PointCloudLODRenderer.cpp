@@ -25,10 +25,7 @@ void PointCloudLODRenderer::ReleaseAllSharedPointCloudLODRenderers()
 
 PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
 {
-    vertices = LoadPlyFile(plyfile);
-
-    // Set the default radius
-    pointCloudLODConstantBufferData.radius = 0.02f;
+    std::vector<PointCloudVertex> vertices = LoadPlyFile(plyfile);
 
     // Create the octree
     octree = new Octree(vertices);
@@ -41,24 +38,6 @@ PointCloudEngine::PointCloudLODRenderer::~PointCloudLODRenderer()
 
 void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)
 {
-    // Create a vertex buffer description
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof(PointCloudVertex) * vertices.size();
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vertexBufferDesc.CPUAccessFlags = 0;
-    vertexBufferDesc.MiscFlags = 0;
-
-    // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
-    D3D11_SUBRESOURCE_DATA vertexBufferData;
-    ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-    vertexBufferData.pSysMem = &vertices[0];
-
-    // Create the buffer
-    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-    ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
-
     // Create the constant buffer for WVP
     D3D11_BUFFER_DESC cbDescWVP;
     ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
@@ -74,31 +53,46 @@ void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)
 
 void PointCloudLODRenderer::Update(SceneObject *sceneObject)
 {
-    if (Input::GetKey(Keyboard::Up))
-    {
-        pointCloudLODConstantBufferData.radius += dt * 0.01f;
-    }
-    else if (Input::GetKey(Keyboard::Down))
-    {
-        pointCloudLODConstantBufferData.radius -= dt * 0.01f;
-    }
-
-    pointCloudLODConstantBufferData.radius = max(0.0002f, pointCloudLODConstantBufferData.radius);
+    // TODO: Handle input
 }
 
 void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 {
+    // Replace vertex buffer
+    SafeRelease(vertexBuffer);
+
+    // Create new buffer from the current octree traversal
+    std::vector<Octree::BoundingCube> boundingCubes = octree->GetAllBoundingCubes();
+
+    // Create a vertex buffer description
+    D3D11_BUFFER_DESC vertexBufferDesc;
+    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.ByteWidth = sizeof(Octree::BoundingCube) * boundingCubes.size();
+    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexBufferDesc.CPUAccessFlags = 0;
+    vertexBufferDesc.MiscFlags = 0;
+
+    // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
+    D3D11_SUBRESOURCE_DATA vertexBufferData;
+    ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+    vertexBufferData.pSysMem = &boundingCubes[0];
+
+    // Create the buffer
+    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
+    ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+
     // Set the shaders
     d3d11DevCon->VSSetShader(pointCloudLODShader->vertexShader, 0, 0);
     d3d11DevCon->GSSetShader(pointCloudLODShader->geometryShader, 0, 0);
     d3d11DevCon->PSSetShader(pointCloudLODShader->pixelShader, 0, 0);
 
     // Set the Input (Vertex) Layout
-    d3d11DevCon->IASetInputLayout(pointCloudShader->inputLayout);
+    d3d11DevCon->IASetInputLayout(pointCloudLODShader->inputLayout);
 
     // Bind the vertex buffer and index buffer to the input assembler (IA)
     UINT offset = 0;
-    UINT stride = sizeof(PointCloudVertex);
+    UINT stride = sizeof(Octree::BoundingCube);
     d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
     // Set primitive topology
@@ -115,7 +109,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
     d3d11DevCon->VSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
     d3d11DevCon->GSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
 
-    d3d11DevCon->Draw(vertices.size(), 0);
+    d3d11DevCon->Draw(boundingCubes.size(), 0);
 }
 
 void PointCloudLODRenderer::Release()

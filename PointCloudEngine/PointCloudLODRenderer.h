@@ -25,8 +25,6 @@ namespace PointCloudEngine
         // Same constant buffer as in effect file, keep packing rules in mind
         struct PointCloudLODConstantBuffer
         {
-            float radius;
-            float padding[3];
             Matrix World;
             Matrix View;
             Matrix Projection;
@@ -34,7 +32,6 @@ namespace PointCloudEngine
         };
 
         Octree *octree = NULL;
-        std::vector<PointCloudVertex> vertices;
         PointCloudLODConstantBuffer pointCloudLODConstantBufferData;
 
         // Vertex buffer
