@@ -29,6 +29,14 @@ PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
 
     // Set the default radius
     pointCloudLODConstantBufferData.radius = 0.02f;
+
+    // Create the octree
+    octree = new Octree(vertices);
+}
+
+PointCloudEngine::PointCloudLODRenderer::~PointCloudLODRenderer()
+{
+    SafeDelete(octree);
 }
 
 void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)

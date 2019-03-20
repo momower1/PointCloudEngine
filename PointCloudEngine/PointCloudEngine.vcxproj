@@ -226,6 +226,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Octree.cpp" />
     <ClCompile Include="PointCloudEngine.cpp" />
     <ClCompile Include="PointCloudLODRenderer.cpp" />
     <ClCompile Include="PointCloudRenderer.cpp" />

@@ -13,6 +13,7 @@ namespace PointCloudEngine
         static void ReleaseAllSharedPointCloudLODRenderers();
 
         PointCloudLODRenderer(std::wstring plyfile);
+        ~PointCloudLODRenderer();
         void Initialize(SceneObject *sceneObject);
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);
@@ -32,6 +33,7 @@ namespace PointCloudEngine
             Matrix WorldInverseTranspose;
         };
 
+        Octree *octree = NULL;
         std::vector<PointCloudVertex> vertices;
         PointCloudLODConstantBuffer pointCloudLODConstantBufferData;
 

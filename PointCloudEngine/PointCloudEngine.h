@@ -14,6 +14,7 @@
 #include <comdef.h>
 #include <iomanip>
 #include <algorithm>
+#include <limits>
 #include <map>
 
 // Tinyply
@@ -47,6 +48,7 @@ namespace PointCloudEngine
     class SceneObject;
     class Shader;
     class Transform;
+    class Octree;
 }
 
 using namespace PointCloudEngine;
@@ -59,6 +61,7 @@ using namespace PointCloudEngine;
 #include "SceneObject.h"
 #include "Hierarchy.h"
 #include "DataStructures.h"
+#include "Octree.h"
 #include "TextRenderer.h"
 #include "PointCloudRenderer.h"
 #include "PointCloudLODRenderer.h"
