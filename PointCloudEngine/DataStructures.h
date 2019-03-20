@@ -32,4 +32,11 @@ private:
     Matrix rotation = Matrix::Identity;
 };
 
+struct PointCloudVertex
+{
+    Vector3 position;
+    Vector3 normal;
+    byte red, green, blue, alpha;
+};
+
 #endif

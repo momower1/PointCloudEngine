@@ -16,6 +16,9 @@
 #include <algorithm>
 #include <map>
 
+// Tinyply
+#include "tinyply.h"
+
 // DirectX Toolkit
 #include "CommonStates.h"
 #include "DDSTextureLoader.h"
@@ -73,6 +76,7 @@ extern ID3D11DepthStencilState* depthStencilState;
 // Global function declarations
 extern void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr = E_FAIL);
 extern void SafeRelease(ID3D11Resource *resource);
+extern std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile);
 
 // Function declarations
 Vector3 GetPerpendicularVector(Vector3 &v);

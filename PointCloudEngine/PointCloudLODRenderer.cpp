@@ -25,37 +25,7 @@ void PointCloudLODRenderer::ReleaseAllSharedPointCloudLODRenderers()
 
 PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
 {
-    // Load ply file
-    std::ifstream ss(plyfile, std::ios::binary);
-
-    PlyFile file;
-    file.parse_header(ss);
-
-    // Tinyply untyped byte buffers for properties
-    std::shared_ptr<PlyData> rawPositions, rawNormals, rawColors;
-
-    // Hardcoded properties and elements
-    rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
-    rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
-    rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" });
-
-    // Read the file
-    file.read(ss);
-
-    // Create vertices
-    size_t count = rawPositions->count;
-    size_t stridePositions = rawPositions->buffer.size_bytes() / count;
-    size_t strideNormals = rawNormals->buffer.size_bytes() / count;
-    size_t strideColors = rawColors->buffer.size_bytes() / count;
-    vertices = std::vector<Vertex>(count);
-
-    // Fill each vertex with its data
-    for (int i = 0; i < count; i++)
-    {
-        std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
-        std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
-        std::memcpy(&vertices[i].red, rawColors->buffer.get() + i * strideColors, strideColors);
-    }
+    vertices = LoadPlyFile(plyfile);
 
     // Set the default radius
     pointCloudLODConstantBufferData.radius = 0.02f;
@@ -67,7 +37,7 @@ void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)
     D3D11_BUFFER_DESC vertexBufferDesc;
     ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
     vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
+    vertexBufferDesc.ByteWidth = sizeof(PointCloudVertex) * vertices.size();
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = 0;
     vertexBufferDesc.MiscFlags = 0;
@@ -120,7 +90,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 
     // Bind the vertex buffer and index buffer to the input assembler (IA)
     UINT offset = 0;
-    UINT stride = sizeof(Vertex);
+    UINT stride = sizeof(PointCloudVertex);
     d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
     // Set primitive topology

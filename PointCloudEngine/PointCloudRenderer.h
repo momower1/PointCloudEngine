@@ -3,9 +3,6 @@
 
 #pragma once
 #include "PointCloudEngine.h"
-#include "tinyply.h"
-
-using namespace tinyply;
 
 class PointCloudRenderer : public Component
 {
@@ -22,13 +19,6 @@ public:
 private:
     static std::vector<PointCloudRenderer*> sharedPointCloudRenderers;
 
-    struct Vertex
-    {
-        Vector3 position;
-        Vector3 normal;
-        byte red, green, blue, alpha;
-    };
-
     // Same constant buffer as in effect file, keep packing rules in mind
     struct PointCloudConstantBuffer
     {
@@ -40,7 +30,7 @@ private:
         Matrix WorldInverseTranspose;
     };
 
-    std::vector<Vertex> vertices;
+    std::vector<PointCloudVertex> vertices;
     PointCloudConstantBuffer pointCloudConstantBufferData;
 
     // Vertex buffer

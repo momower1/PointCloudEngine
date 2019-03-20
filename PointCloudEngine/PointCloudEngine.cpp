@@ -52,6 +52,43 @@ void SafeRelease(ID3D11Resource *resource)
     }
 }
 
+std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile)
+{
+    // Load ply file
+    std::ifstream ss(plyfile, std::ios::binary);
+
+    tinyply::PlyFile file;
+    file.parse_header(ss);
+
+    // Tinyply untyped byte buffers for properties
+    std::shared_ptr<tinyply::PlyData> rawPositions, rawNormals, rawColors;
+
+    // Hardcoded properties and elements
+    rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
+    rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
+    rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" });
+
+    // Read the file
+    file.read(ss);
+
+    // Create vertices
+    size_t count = rawPositions->count;
+    size_t stridePositions = rawPositions->buffer.size_bytes() / count;
+    size_t strideNormals = rawNormals->buffer.size_bytes() / count;
+    size_t strideColors = rawColors->buffer.size_bytes() / count;
+    std::vector<PointCloudVertex> vertices(count);
+
+    // Fill each vertex with its data
+    for (int i = 0; i < count; i++)
+    {
+        std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
+        std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
+        std::memcpy(&vertices[i].red, rawColors->buffer.get() + i * strideColors, strideColors);
+    }
+
+    return vertices;
+}
+
 Vector3 GetPerpendicularVector (Vector3 &v)
 {
     if (v.x != 0)

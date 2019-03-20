@@ -240,6 +240,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
   <ItemGroup>
     <ClInclude Include="Input.h" />
     <ClInclude Include="Hierarchy.h" />
+    <ClInclude Include="Octree.h" />
     <ClInclude Include="PointCloudLODRenderer.h" />
     <ClInclude Include="PointCloudRenderer.h" />
     <ClInclude Include="SceneObject.h" />
