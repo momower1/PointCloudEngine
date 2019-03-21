@@ -48,6 +48,7 @@ namespace PointCloudEngine
     class SceneObject;
     class Shader;
     class Transform;
+    class TextRenderer;
     class Octree;
 }
 

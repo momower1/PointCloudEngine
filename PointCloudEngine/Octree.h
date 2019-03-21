@@ -20,25 +20,15 @@ namespace PointCloudEngine
             byte red, green, blue, alpha;
         };
 
-        struct Node
-        {
-            Node* parent = NULL;
-            Node* children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-
-            BoundingCube boundingCube;
-        };
-
         Octree (std::vector<PointCloudVertex> vertices);
         ~Octree();
 
-        std::vector<BoundingCube> GetAllBoundingCubes();
+        std::vector<BoundingCube> GetBoundingCubesAtLevel(int level);
 
     private:
-        Node *root = NULL;
-
-        Node* CreateNode(std::vector<PointCloudVertex> vertices);
-        void SplitNode(Node *node, std::vector<PointCloudVertex> vertices);
-        void DeleteNode(Node *node);
+        Octree *parent = NULL;
+        Octree *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+        BoundingCube boundingCube;
     };
 }
 

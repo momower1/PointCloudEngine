@@ -31,7 +31,10 @@ namespace PointCloudEngine
             Matrix WorldInverseTranspose;
         };
 
+        int level = 0;
         Octree *octree = NULL;
+        TextRenderer *text = NULL;
+        
         PointCloudLODConstantBuffer pointCloudLODConstantBufferData;
 
         // Vertex buffer
