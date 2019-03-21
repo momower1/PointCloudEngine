@@ -19,8 +19,9 @@ namespace PointCloudEngine
         SceneObject *fpsText;
         SceneObject *debugText;
 
-        float cameraPitch, cameraYaw, cameraSpeed;
         Vector2 input;
+        bool rotate = false;
+        float cameraPitch, cameraYaw, cameraSpeed;
     };
 }
 #endif

@@ -28,6 +28,17 @@ void Scene::Initialize()
 
 void Scene::Update(Timer &timer)
 {
+    if (Input::GetKeyDown(Keyboard::Space))
+    {
+        rotate = !rotate;
+    }
+
+    // Rotate the point cloud
+    if (rotate)
+    {
+        pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
+    }
+
     // Rotate camera with mouse
     cameraYaw += dt * Input::mouseDelta.x;
     cameraPitch += dt * Input::mouseDelta.y;
