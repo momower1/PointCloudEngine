@@ -101,6 +101,7 @@ void PointCloudRenderer::Draw(SceneObject *sceneObject)
     pointCloudConstantBufferData.WorldInverseTranspose = pointCloudConstantBufferData.World.Invert().Transpose();
     pointCloudConstantBufferData.View = camera.view.Transpose();
     pointCloudConstantBufferData.Projection = camera.projection.Transpose();
+    pointCloudConstantBufferData.cameraPosition = camera.position;
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(pointCloudConstantBuffer, 0, NULL, &pointCloudConstantBufferData, 0, 0);

@@ -62,7 +62,8 @@ void Scene::Update(Timer &timer)
     camera.position += Input::GetKey(Keyboard::D) * cameraSpeed * dt * camera.right;
 
     // FPS counter
-    fpsText->GetComponent<TextRenderer>()->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
+    TextRenderer *fpsTextRenderer = fpsText->GetComponent<TextRenderer>();
+    fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
 
     // Exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))

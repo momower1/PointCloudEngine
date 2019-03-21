@@ -24,12 +24,12 @@ namespace PointCloudEngine
         // Same constant buffer as in effect file, keep packing rules in mind
         struct PointCloudConstantBuffer
         {
-            float radius;
-            float padding[3];
             Matrix World;
             Matrix View;
             Matrix Projection;
             Matrix WorldInverseTranspose;
+            Vector3 cameraPosition;
+            float radius;
         };
 
         std::vector<PointCloudVertex> vertices;
