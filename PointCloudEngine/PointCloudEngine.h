@@ -88,7 +88,6 @@ extern void SafeRelease(ID3D11Resource *resource);
 extern std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile);
 
 // Function declarations
-Vector3 GetPerpendicularVector(Vector3 &v);
 bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);
 int Messageloop();
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

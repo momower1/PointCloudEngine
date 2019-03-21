@@ -33,7 +33,6 @@ PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
     // Text for showing properties
     SceneObject *pointCloudLODText = Hierarchy::Create(L"PointCloudLODText");
     text = pointCloudLODText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
-    text->text = L"Standford Dragon";
 
     pointCloudLODText->transform->position = Vector3(-1, -0.95, 0);
     pointCloudLODText->transform->scale = 0.3f * Vector3::One;

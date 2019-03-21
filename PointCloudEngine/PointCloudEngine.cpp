@@ -89,20 +89,6 @@ std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile)
     return vertices;
 }
 
-Vector3 GetPerpendicularVector (Vector3 &v)
-{
-    if (v.x != 0)
-        return Vector3(-(v.y + v.z) / v.x, 1, 1);
-
-    if (v.y != 0)
-        return Vector3(1, -(v.x + v.z) / v.y, 1);
-
-    if (v.z != 0)
-        return Vector3(1, 1, -(v.x + v.y) / v.z);
-
-    return Vector3::Zero;
-}
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	if (!InitializeWindow(hInstance, nShowCmd, resolutionX, resolutionY, true))
