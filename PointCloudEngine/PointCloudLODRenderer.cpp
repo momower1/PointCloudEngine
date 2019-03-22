@@ -74,7 +74,7 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
     octreeVertices = octree->GetOctreeVerticesAtLevel(level);
 
     // Set the text
-    text->text = L"Octree Level: " + std::to_wstring(level) + L", Bounding Cubes: " + std::to_wstring(octreeVertices.size());
+    text->text = L"Octree Level: " + std::to_wstring(level) + L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize);
 }
 
 void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
