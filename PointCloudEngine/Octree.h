@@ -9,26 +9,17 @@ namespace PointCloudEngine
     class Octree
     {
     public:
-        struct BoundingCube
-        {
-            // Bounding volume cube, size is the minimal distance from the center position to each face of the cube
-            Vector3 position;
-            Vector3 normal;
-            float size;
-
-            // Properties, TODO: add different normals and colors based on view direction
-            byte red, green, blue, alpha;
-        };
-
         Octree (std::vector<PointCloudVertex> vertices);
         ~Octree();
 
-        std::vector<BoundingCube> GetBoundingCubesAtLevel(int level);
+        std::vector<OctreeVertex> GetOctreeVerticesAtLevel(int level);
 
     private:
+        const float octreeVertexMinSize = FLT_EPSILON;
+
         Octree *parent = NULL;
         Octree *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-        BoundingCube boundingCube;
+        OctreeVertex octreeVertex;
     };
 }
 

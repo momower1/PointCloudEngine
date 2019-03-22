@@ -61,27 +61,25 @@ void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)
 void PointCloudLODRenderer::Update(SceneObject *sceneObject)
 {
     // Handle input
-    if (Input::GetKeyDown(Keyboard::Left))
+    if (Input::GetKeyDown(Keyboard::Left) && level > 0)
     {
         level--;
     }
-    else if (Input::GetKeyDown(Keyboard::Right))
+    else if (Input::GetKeyDown(Keyboard::Right) && octreeVertices.size() > 0)
     {
         level++;
     }
 
-    level = max(0, level);
+    // Create new buffer from the current octree traversal
+    octreeVertices = octree->GetOctreeVerticesAtLevel(level);
+
+    // Set the text
+    text->text = L"Octree Level: " + std::to_wstring(level) + L", Bounding Cubes: " + std::to_wstring(octreeVertices.size());
 }
 
 void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 {
-    // Create new buffer from the current octree traversal
-    std::vector<Octree::BoundingCube> boundingCubes = octree->GetBoundingCubesAtLevel(level);
-
-    // Set the text
-    text->text = L"Octree Level: " + std::to_wstring(level) + L", Bounding Cubes: " + std::to_wstring(boundingCubes.size());
-
-    if (boundingCubes.size() > 0)
+    if (octreeVertices.size() > 0)
     {
         // Replace vertex buffer
         SafeRelease(vertexBuffer);
@@ -90,7 +88,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
         D3D11_BUFFER_DESC vertexBufferDesc;
         ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
         vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        vertexBufferDesc.ByteWidth = sizeof(Octree::BoundingCube) * boundingCubes.size();
+        vertexBufferDesc.ByteWidth = sizeof(OctreeVertex) * octreeVertices.size();
         vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         vertexBufferDesc.CPUAccessFlags = 0;
         vertexBufferDesc.MiscFlags = 0;
@@ -98,7 +96,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
         // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
         D3D11_SUBRESOURCE_DATA vertexBufferData;
         ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-        vertexBufferData.pSysMem = &boundingCubes[0];
+        vertexBufferData.pSysMem = &octreeVertices[0];
 
         // Create the buffer
         hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
@@ -114,7 +112,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 
         // Bind the vertex buffer and index buffer to the input assembler (IA)
         UINT offset = 0;
-        UINT stride = sizeof(Octree::BoundingCube);
+        UINT stride = sizeof(OctreeVertex);
         d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
         // Set primitive topology
@@ -131,7 +129,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
         d3d11DevCon->VSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
         d3d11DevCon->GSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
 
-        d3d11DevCon->Draw(boundingCubes.size(), 0);
+        d3d11DevCon->Draw(octreeVertices.size(), 0);
     }
 }
 

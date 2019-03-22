@@ -36,64 +36,72 @@ PointCloudEngine::Octree::Octree(std::vector<PointCloudVertex> vertices)
     }
 
     // Save the bounding cube properties
-    boundingCube.position = minPosition + 0.5f * (maxPosition - minPosition);
-    boundingCube.size = max(max(maxPosition.x - minPosition.x, maxPosition.y - minPosition.y), maxPosition.z - minPosition.z);
+    octreeVertex.position = minPosition + 0.5f * (maxPosition - minPosition);
+    octreeVertex.size = max(max(maxPosition.x - minPosition.x, maxPosition.y - minPosition.y), maxPosition.z - minPosition.z);
 
     // Save average color
-    boundingCube.red = round(averageRed * 255);
-    boundingCube.green = round(averageGreen * 255);
-    boundingCube.blue = round(averageBlue * 255);
-    boundingCube.alpha = round(averageAlpha * 255);
+    octreeVertex.red = round(averageRed * 255);
+    octreeVertex.green = round(averageGreen * 255);
+    octreeVertex.blue = round(averageBlue * 255);
+    octreeVertex.alpha = round(averageAlpha * 255);
 
-    // TODO: Split and create children
+    // Split and create children
     std::vector<PointCloudVertex> childVertices[8];
 
+    // TODO: Optimize by using smarter if-else without &&
     for (auto it = vertices.begin(); it != vertices.end(); it++)
     {
         PointCloudVertex v = *it;
 
-        if (v.position.x > boundingCube.position.x && v.position.y > boundingCube.position.y && v.position.z > boundingCube.position.z)
+        if (v.position.x > octreeVertex.position.x && v.position.y > octreeVertex.position.y && v.position.z > octreeVertex.position.z)
         {
             childVertices[0].push_back(v);
         }
-        else if (v.position.x <= boundingCube.position.x && v.position.y > boundingCube.position.y && v.position.z > boundingCube.position.z)
+        else if (v.position.x <= octreeVertex.position.x && v.position.y > octreeVertex.position.y && v.position.z > octreeVertex.position.z)
         {
             childVertices[1].push_back(v);
         }
-        else if (v.position.x > boundingCube.position.x && v.position.y <= boundingCube.position.y && v.position.z > boundingCube.position.z)
+        else if (v.position.x > octreeVertex.position.x && v.position.y <= octreeVertex.position.y && v.position.z > octreeVertex.position.z)
         {
             childVertices[2].push_back(v);
         }
-        else if (v.position.x > boundingCube.position.x && v.position.y > boundingCube.position.y && v.position.z <= boundingCube.position.z)
+        else if (v.position.x > octreeVertex.position.x && v.position.y > octreeVertex.position.y && v.position.z <= octreeVertex.position.z)
         {
             childVertices[3].push_back(v);
         }
-        else if (v.position.x <= boundingCube.position.x && v.position.y <= boundingCube.position.y && v.position.z > boundingCube.position.z)
+        else if (v.position.x <= octreeVertex.position.x && v.position.y <= octreeVertex.position.y && v.position.z > octreeVertex.position.z)
         {
             childVertices[4].push_back(v);
         }
-        else if (v.position.x > boundingCube.position.x && v.position.y <= boundingCube.position.y && v.position.z <= boundingCube.position.z)
+        else if (v.position.x > octreeVertex.position.x && v.position.y <= octreeVertex.position.y && v.position.z <= octreeVertex.position.z)
         {
             childVertices[5].push_back(v);
         }
-        else if (v.position.x <= boundingCube.position.x && v.position.y > boundingCube.position.y && v.position.z <= boundingCube.position.z)
+        else if (v.position.x <= octreeVertex.position.x && v.position.y > octreeVertex.position.y && v.position.z <= octreeVertex.position.z)
         {
             childVertices[6].push_back(v);
         }
-        else if (v.position.x <= boundingCube.position.x && v.position.y <= boundingCube.position.y && v.position.z <= boundingCube.position.z)
+        else if (v.position.x <= octreeVertex.position.x && v.position.y <= octreeVertex.position.y && v.position.z <= octreeVertex.position.z)
         {
             childVertices[7].push_back(v);
         }
     }
 
-    for (int i = 0; i < 8; i++)
+    // Don't subdivide further if the size is below the minimum size
+    if (octreeVertex.size > octreeVertexMinSize)
     {
-        // TODO: This ending condition has to be different because there should be leaf nodes with the actual vertices
-        if (childVertices[i].size() > 1)
+        for (int i = 0; i < 8; i++)
         {
-            children[i] = new Octree(childVertices[i]);
-            children[i]->parent = this;
+            if (childVertices[i].size() > 0)
+            {
+                children[i] = new Octree(childVertices[i]);
+                children[i]->parent = this;
+            }
         }
+    }
+    else
+    {
+        octreeVertex.size = octreeVertexMinSize;
     }
 }
 
@@ -106,26 +114,26 @@ PointCloudEngine::Octree::~Octree()
     }
 }
 
-std::vector<Octree::BoundingCube> PointCloudEngine::Octree::GetBoundingCubesAtLevel(int level)
+std::vector<OctreeVertex> PointCloudEngine::Octree::GetOctreeVerticesAtLevel(int level)
 {
-    std::vector<BoundingCube> boundingCubes;
+    std::vector<OctreeVertex> octreeVertices;
 
     if (level == 0)
     {
-        boundingCubes.push_back(boundingCube);
+        octreeVertices.push_back(octreeVertex);
     }
     else if (level > 0)
     {
-        // Traverse the whole octree and add child bounding cubes
+        // Traverse the whole octree and add child vertices
         for (int i = 0; i < 8; i++)
         {
             if (children[i] != NULL)
             {
-                std::vector<BoundingCube> childBoundingCubes = children[i]->GetBoundingCubesAtLevel(level - 1);
-                boundingCubes.insert(boundingCubes.end(), childBoundingCubes.begin(), childBoundingCubes.end());
+                std::vector<OctreeVertex> childOctreeVertices = children[i]->GetOctreeVerticesAtLevel(level - 1);
+                octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }
     }
 
-    return boundingCubes;
+    return octreeVertices;
 }

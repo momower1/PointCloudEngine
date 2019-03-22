@@ -40,6 +40,17 @@ namespace PointCloudEngine
         Vector3 normal;
         byte red, green, blue, alpha;
     };
+
+    struct OctreeVertex
+    {
+        // Bounding volume cube, size is the minimal distance from the center position to each face of the cube
+        Vector3 position;
+        Vector3 normal;
+        float size;
+
+        // Properties, TODO: add different normals and colors based on view direction
+        byte red, green, blue, alpha;
+    };
 }
 
 #endif
