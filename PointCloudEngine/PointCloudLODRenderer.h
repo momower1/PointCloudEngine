@@ -39,6 +39,7 @@ namespace PointCloudEngine
         PointCloudLODConstantBuffer pointCloudLODConstantBufferData;
 
         // Vertex buffer
+        UINT vertexBufferSize = 0;
         ID3D11Buffer* vertexBuffer;		                    // Holds vertex data
         ID3D11Buffer* pointCloudLODConstantBuffer;		    // Stores data and sends it to the actual buffer in the effect file
     };

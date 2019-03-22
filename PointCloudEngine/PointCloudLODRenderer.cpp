@@ -79,28 +79,51 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
 
 void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 {
-    if (octreeVertices.size() > 0)
+    int octreeVerticesSize = octreeVertices.size();
+
+    if (octreeVerticesSize > 0)
     {
-        // Replace vertex buffer
-        SafeRelease(vertexBuffer);
+        // The vertex buffer should be recreated once the octree vertex count is larger than the current buffer
+        // It might be good to recreate it as well when the octree vertex count is much smaller to save gpu memory
+        if (octreeVerticesSize > vertexBufferSize)
+        {
+            // Release vertex buffer
+            SafeRelease(vertexBuffer);
 
-        // Create a vertex buffer description
-        D3D11_BUFFER_DESC vertexBufferDesc;
-        ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-        vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        vertexBufferDesc.ByteWidth = sizeof(OctreeVertex) * octreeVertices.size();
-        vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        vertexBufferDesc.CPUAccessFlags = 0;
-        vertexBufferDesc.MiscFlags = 0;
+            // Create a vertex buffer description with dynamic write access
+            D3D11_BUFFER_DESC vertexBufferDesc;
+            ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+            vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+            vertexBufferDesc.ByteWidth = sizeof(OctreeVertex) * octreeVerticesSize;
+            vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+            vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
-        D3D11_SUBRESOURCE_DATA vertexBufferData;
-        ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-        vertexBufferData.pSysMem = &octreeVertices[0];
+            // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
+            D3D11_SUBRESOURCE_DATA vertexBufferData;
+            ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+            vertexBufferData.pSysMem = &octreeVertices[0];
 
-        // Create the buffer
-        hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-        ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+            // Create the buffer
+            hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
+            ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+
+            vertexBufferSize = octreeVerticesSize;
+        }
+        else
+        {
+            // Just update the dynamic buffer
+            D3D11_MAPPED_SUBRESOURCE mappedVertexBuffer;
+            ZeroMemory(&mappedVertexBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+            // Disable GPU access to the vertex buffer data
+            d3d11DevCon->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedVertexBuffer);
+
+            // Update vertex buffer data
+            memcpy(mappedVertexBuffer.pData, &octreeVertices[0], octreeVerticesSize * sizeof(OctreeVertex));
+
+            // Reenable GPU access
+            d3d11DevCon->Unmap(vertexBuffer, 0);
+        }
 
         // Set the shaders
         d3d11DevCon->VSSetShader(pointCloudLODShader->vertexShader, 0, 0);
@@ -129,7 +152,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
         d3d11DevCon->VSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
         d3d11DevCon->GSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
 
-        d3d11DevCon->Draw(octreeVertices.size(), 0);
+        d3d11DevCon->Draw(octreeVerticesSize, 0);
     }
 }
 
