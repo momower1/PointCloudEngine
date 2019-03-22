@@ -92,6 +92,14 @@ void Scene::Update(Timer &timer)
         if (GetOpenFileNameW(&openFileName))
         {
             configFile->plyfile = std::wstring(filename);
+
+            if (pointCloudLODRenderer != NULL)
+            {
+                pointCloud->RemoveComponent(pointCloudLODRenderer);
+            }
+
+            pointCloudLODRenderer = new PointCloudLODRenderer(configFile->plyfile);
+            pointCloud->AddComponent(pointCloudLODRenderer);
         }
 
         Input::SetMode(Mouse::MODE_RELATIVE);

@@ -1,6 +1,6 @@
 #include "ConfigFile.h"
 
-#define CONFIGFILENAME L".pointcloudengine"
+#define CONFIGFILENAME L"Assets/.pointcloudengine"
 
 /*
     The file just consists of two lines with:
