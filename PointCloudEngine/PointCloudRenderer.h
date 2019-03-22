@@ -9,9 +9,6 @@ namespace PointCloudEngine
     class PointCloudRenderer : public Component
     {
     public:
-        static PointCloudRenderer* CreateShared(std::wstring plyfile);
-        static void ReleaseAllSharedPointCloudRenderers();
-
         PointCloudRenderer(std::wstring plyfile);
         void Initialize(SceneObject *sceneObject);
         void Update(SceneObject *sceneObject);
@@ -19,8 +16,6 @@ namespace PointCloudEngine
         void Release();
 
     private:
-        static std::vector<PointCloudRenderer*> sharedPointCloudRenderers;
-
         // Same constant buffer as in effect file, keep packing rules in mind
         struct PointCloudConstantBuffer
         {

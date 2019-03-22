@@ -33,11 +33,12 @@ namespace PointCloudEngine
         static bool GetMouseButtonUp(MouseButton::MouseButton button);
         static bool GetMouseButtonDown(MouseButton::MouseButton button);
 
-        static void SetMouseSensitivity(float mouseSensitivity);
+        static void SetSensitivity(float mouseSensitivity, float scrollSensitivity);
+        static void SetMode(Mouse::Mode mode);
 
         static Vector2 mouseDelta;
         static Vector2 mousePosition;
-        static float mouseScrollWheel;
+        static float mouseScrollDelta;
 
     private:
         static Keyboard keyboard;
@@ -49,6 +50,7 @@ namespace PointCloudEngine
         static Mouse::ButtonStateTracker mouseButtonStateTracker;
 
         static float mouseSensitivity;
+        static float scrollSensitivity;
         static Vector2 rawMouseMovement;
     };
 }

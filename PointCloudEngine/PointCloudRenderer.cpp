@@ -1,28 +1,5 @@
 #include "PointCloudRenderer.h"
 
-std::vector<PointCloudRenderer*> PointCloudRenderer::sharedPointCloudRenderers;
-
-PointCloudRenderer* PointCloudRenderer::CreateShared(std::wstring plyfile)
-{
-    PointCloudRenderer *pointCloudRenderer = new PointCloudRenderer(plyfile);
-    pointCloudRenderer->shared = true;
-
-    sharedPointCloudRenderers.push_back(pointCloudRenderer);
-    return pointCloudRenderer;
-}
-
-void PointCloudRenderer::ReleaseAllSharedPointCloudRenderers()
-{
-    for (auto it = sharedPointCloudRenderers.begin(); it != sharedPointCloudRenderers.end(); it++)
-    {
-        PointCloudRenderer *pointCloudRenderer = *it;
-        pointCloudRenderer->Release();
-        delete pointCloudRenderer;
-    }
-
-    sharedPointCloudRenderers.clear();
-}
-
 PointCloudRenderer::PointCloudRenderer(std::wstring plyfile)
 {
     vertices = LoadPlyFile(plyfile);

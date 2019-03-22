@@ -7,6 +7,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#include <commdlg.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -49,6 +50,9 @@ namespace PointCloudEngine
     class Shader;
     class Transform;
     class TextRenderer;
+    class PointCloudRenderer;
+    class PointCloudLODRenderer;
+    class ConfigFile;
     class Octree;
 }
 
@@ -62,6 +66,7 @@ using namespace PointCloudEngine;
 #include "SceneObject.h"
 #include "Hierarchy.h"
 #include "DataStructures.h"
+#include "ConfigFile.h"
 #include "Octree.h"
 #include "TextRenderer.h"
 #include "PointCloudRenderer.h"

@@ -12,6 +12,7 @@ namespace PointCloudEngine
         SceneObject(std::wstring name, Transform *parent, std::initializer_list<Component*> components = {});
         ~SceneObject();
         SceneObject* FindChildByName(std::wstring childName);
+        void RemoveComponent(Component *componentToRemove);
         void Update();
         void Draw();
         void Release();

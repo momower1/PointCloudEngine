@@ -1,28 +1,5 @@
 #include "PointCloudLODRenderer.h"
 
-std::vector<PointCloudLODRenderer*> PointCloudLODRenderer::sharedPointCloudLODRenderers;
-
-PointCloudLODRenderer* PointCloudLODRenderer::CreateShared(std::wstring plyfile)
-{
-    PointCloudLODRenderer *pointCloudLODRenderer = new PointCloudLODRenderer(plyfile);
-    pointCloudLODRenderer->shared = true;
-
-    sharedPointCloudLODRenderers.push_back(pointCloudLODRenderer);
-    return pointCloudLODRenderer;
-}
-
-void PointCloudLODRenderer::ReleaseAllSharedPointCloudLODRenderers()
-{
-    for (auto it = sharedPointCloudLODRenderers.begin(); it != sharedPointCloudLODRenderers.end(); it++)
-    {
-        PointCloudLODRenderer *pointCloudLODRenderer = *it;
-        pointCloudLODRenderer->Release();
-        delete pointCloudLODRenderer;
-    }
-
-    sharedPointCloudLODRenderers.clear();
-}
-
 PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
 {
     std::vector<PointCloudVertex> vertices = LoadPlyFile(plyfile);

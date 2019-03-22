@@ -2,28 +2,30 @@
 
 void Scene::Initialize()
 {
-    pointCloud = Hierarchy::Create(L"PointCloud");
-    pointCloud->AddComponent(PointCloudLODRenderer::CreateShared(L"Assets/stanford_dragon_xyz_rgba_normals.ply"));
+    configFile = new ConfigFile();
 
-    fpsText = Hierarchy::Create(L"Text");
-    fpsText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
-
-    debugText = Hierarchy::Create(L"Debug Text");
-    TextRenderer *debugTextRenderer = debugText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Times New Roman"), true));
-    debugTextRenderer->text = L"Standford Dragon";
-    debugTextRenderer->color = Color(0, 0, 0, 1);
+    // Create text renderer to display properties
+    textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+    text = Hierarchy::Create(L"Text");
+    text->AddComponent(textRenderer);
 
     // Transforms
+    text->transform->position = Vector3(-1, 1, 0.5f);
+    text->transform->scale = 0.3f * Vector3::One;
     camera.position = Vector3(0.0f, 2.5f, -3.0f);
-    pointCloud->transform->scale = 20 * Vector3::One;
 
-    // Text Transforms
-    debugText->transform->position = Vector3(-0.5f, 4.5f, 0);
-    debugText->transform->scale = Vector3::One;
-    fpsText->transform->position = Vector3(-1, 1, 0.5f);
-    fpsText->transform->scale = 0.3f * Vector3::One;
+    Input::SetSensitivity(0.5f, 1.0f);
 
-    Input::SetMouseSensitivity(0.5f);
+    // Create and load the point cloud
+    pointCloud = Hierarchy::Create(L"PointCloud");
+
+    std::wifstream plyfile (configFile->plyfile);
+
+    if (plyfile.is_open())
+    {
+        pointCloudLODRenderer = new PointCloudLODRenderer(configFile->plyfile);
+        pointCloud->AddComponent(pointCloudLODRenderer);
+    }
 }
 
 void Scene::Update(Timer &timer)
@@ -38,6 +40,10 @@ void Scene::Update(Timer &timer)
     {
         pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
     }
+
+    // Scale the point cloud by the value saved in the config file
+    configFile->scale += Input::mouseScrollDelta;
+    pointCloud->transform->scale = configFile->scale * Vector3::One;
 
     // Rotate camera with mouse
     cameraYaw += dt * Input::mouseDelta.x;
@@ -62,10 +68,36 @@ void Scene::Update(Timer &timer)
     camera.position += Input::GetKey(Keyboard::D) * cameraSpeed * dt * camera.right;
 
     // FPS counter
-    TextRenderer *fpsTextRenderer = fpsText->GetComponent<TextRenderer>();
-    fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
+    textRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps\n";
+    textRenderer->text.append((pointCloudLODRenderer != NULL) ? configFile->plyfile : L"Press [O] to open a .ply file!");
 
-    // Exit on ESC
+    // Open file dialog to load another file
+    if (Input::GetKeyDown(Keyboard::O))
+    {
+        wchar_t filename[MAX_PATH];
+        OPENFILENAMEW openFileName;
+        ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
+        openFileName.lStructSize = sizeof(OPENFILENAMEW);
+        openFileName.hwndOwner = hwnd;
+        openFileName.lpstrFilter = L"Ply Files\0*.ply\0\0";
+        openFileName.lpstrFile = filename;
+        openFileName.lpstrFile[0] = L'\0';
+        openFileName.nMaxFile = MAX_PATH;
+        openFileName.lpstrTitle = L"Select a file to open!";
+        openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+        openFileName.nFilterIndex = 1;
+
+        Input::SetMode(Mouse::MODE_ABSOLUTE);
+
+        if (GetOpenFileNameW(&openFileName))
+        {
+            configFile->plyfile = std::wstring(filename);
+        }
+
+        Input::SetMode(Mouse::MODE_RELATIVE);
+    }
+
+    // Save config file and exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))
     {
         DestroyWindow(hwnd);
@@ -81,6 +113,7 @@ void Scene::Draw()
 
 void Scene::Release()
 {
+    SafeDelete(configFile);
+
     Hierarchy::ReleaseAllSceneObjects();
-    PointCloudRenderer::ReleaseAllSharedPointCloudRenderers();
 }

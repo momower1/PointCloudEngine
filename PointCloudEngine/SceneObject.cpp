@@ -59,6 +59,13 @@ SceneObject* SceneObject::FindChildByName(std::wstring childName)
     return NULL;
 }
 
+void PointCloudEngine::SceneObject::RemoveComponent(Component *componentToRemove)
+{
+    components.erase(std::remove(components.begin(), components.end(), componentToRemove), components.end());
+    componentToRemove->Release();
+    SafeDelete(componentToRemove);
+}
+
 void SceneObject::Update()
 {
     for (auto it = components.begin(); it != components.end(); it++)

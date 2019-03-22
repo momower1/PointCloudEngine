@@ -15,13 +15,17 @@ namespace PointCloudEngine
         void Release();
 
     private:
-        SceneObject *pointCloud;
-        SceneObject *fpsText;
-        SceneObject *debugText;
+        SceneObject *text = NULL;
+        SceneObject *pointCloud = NULL;
+        TextRenderer *textRenderer = NULL;
+        PointCloudLODRenderer *pointCloudLODRenderer = NULL;
+        ConfigFile *configFile = NULL;
 
         Vector2 input;
         bool rotate = false;
-        float cameraPitch, cameraYaw, cameraSpeed;
+        float cameraPitch = 0;
+        float cameraYaw = 0;
+        float cameraSpeed = 0;
     };
 }
 #endif

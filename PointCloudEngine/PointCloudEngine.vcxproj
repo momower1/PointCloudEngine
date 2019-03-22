@@ -97,7 +97,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -127,7 +127,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -161,7 +161,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -195,7 +195,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -225,6 +225,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ConfigFile.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Octree.cpp" />
     <ClCompile Include="PointCloudEngine.cpp" />
@@ -239,6 +240,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConfigFile.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Hierarchy.h" />
     <ClInclude Include="Octree.h" />
