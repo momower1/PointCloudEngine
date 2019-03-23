@@ -80,7 +80,7 @@ std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile)
     size_t strideNormals = rawNormals->buffer.size_bytes() / count;
     size_t strideColors = rawColors->buffer.size_bytes() / count;
 
-    // TODO: std::vector has a size limit which is reached when loading large files, try to use an array instead
+    // When this trows an std::bad_alloc exception, the memory requirement is large -> build with x64
     std::vector<PointCloudVertex> vertices(count);
 
     // Fill each vertex with its data
