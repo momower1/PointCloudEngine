@@ -26,7 +26,7 @@ namespace PointCloudEngine
             Matrix WorldInverseTranspose;
         };
 
-        int level = 0;
+        int level = -1;
         Octree *octree = NULL;
         TextRenderer *text = NULL;
         std::vector<OctreeVertex> octreeVertices;

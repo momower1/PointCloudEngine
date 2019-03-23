@@ -38,17 +38,27 @@ void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)
 void PointCloudLODRenderer::Update(SceneObject *sceneObject)
 {
     // Handle input
-    if (Input::GetKeyDown(Keyboard::Left) && level > 0)
+    if (Input::GetKeyDown(Keyboard::Left) && (level > -1))
     {
         level--;
     }
-    else if (Input::GetKeyDown(Keyboard::Right) && octreeVertices.size() > 0)
+    else if (Input::GetKeyDown(Keyboard::Right) && ((octreeVertices.size() > 0) || (level < 0)))
     {
         level++;
     }
 
     // Create new buffer from the current octree traversal
-    octreeVertices = octree->GetOctreeVerticesAtLevel(level);
+    if (level < 0)
+    {
+        Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
+        Vector3 localCameraPosition = Vector4::Transform(Vector4(camera.position.x, camera.position.y, camera.position.z, 1), worldInverse);
+
+        octreeVertices = octree->GetOctreeVertices(localCameraPosition, 0.01f);
+    }
+    else
+    {
+        octreeVertices = octree->GetOctreeVerticesAtLevel(level);
+    }
 
     // Set the text
     text->text = L"Octree Level: " + std::to_wstring(level) + L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize);

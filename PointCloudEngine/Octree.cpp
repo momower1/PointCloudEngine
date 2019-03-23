@@ -114,6 +114,37 @@ PointCloudEngine::Octree::~Octree()
     }
 }
 
+std::vector<OctreeVertex> PointCloudEngine::Octree::GetOctreeVertices(Vector3 localCameraPosition, float size)
+{
+    // TODO: View frustum culling, Visibility culling (normals)
+    // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
+    std::vector<OctreeVertex> octreeVertices;
+    const float fov = 90;
+    float distanceToCamera = Vector3::Distance(localCameraPosition, octreeVertex.position);
+
+    // Scale the size by the fov and camera distance
+    float worldSize = size * (2.0f * tan(fov / 2.0f)) * distanceToCamera;
+
+    if ((octreeVertex.size < worldSize) || IsLeafNode())
+    {
+        octreeVertices.push_back(octreeVertex);
+    }
+    else
+    {
+        // Traverse the whole octree and add child vertices
+        for (int i = 0; i < 8; i++)
+        {
+            if (children[i] != NULL)
+            {
+                std::vector<OctreeVertex> childOctreeVertices = children[i]->GetOctreeVertices(localCameraPosition, size);
+                octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
+            }
+        }
+    }
+
+    return octreeVertices;
+}
+
 std::vector<OctreeVertex> PointCloudEngine::Octree::GetOctreeVerticesAtLevel(int level)
 {
     std::vector<OctreeVertex> octreeVertices;
@@ -136,4 +167,17 @@ std::vector<OctreeVertex> PointCloudEngine::Octree::GetOctreeVerticesAtLevel(int
     }
 
     return octreeVertices;
+}
+
+bool PointCloudEngine::Octree::IsLeafNode()
+{
+    for (int i = 0; i < 8; i++)
+    {
+        if (children[i] != NULL)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
