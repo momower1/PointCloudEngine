@@ -7,6 +7,7 @@ HRESULT hr;
 Camera camera;
 HWND hwnd = NULL;
 LPCTSTR WndClassName = L"PointCloudEngine";
+float fovAngleY = 0.4f * XM_PI;
 int resolutionX = 1280;
 int resolutionY = 720;
 int msaaCount = 1;
@@ -397,7 +398,7 @@ void DrawScene()
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     // Camera view and projection matrix
-    camera.CalculateViewProjection(0.4f * XM_PI, (float)resolutionX / (float)resolutionY, 0.1f, 1000.0f);
+    camera.CalculateViewProjection(fovAngleY, (float)resolutionX / (float)resolutionY, 0.1f, 1000.0f);
 
     // Bind viewport to rasterization stage
     d3d11DevCon->RSSetViewports(1, &viewport);

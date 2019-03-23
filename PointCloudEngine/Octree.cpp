@@ -119,11 +119,10 @@ std::vector<OctreeVertex> PointCloudEngine::Octree::GetOctreeVertices(Vector3 lo
     // TODO: View frustum culling, Visibility culling (normals)
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
     std::vector<OctreeVertex> octreeVertices;
-    const float fov = 90;
     float distanceToCamera = Vector3::Distance(localCameraPosition, octreeVertex.position);
 
     // Scale the size by the fov and camera distance
-    float worldSize = size * (2.0f * tan(fov / 2.0f)) * distanceToCamera;
+    float worldSize = size * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
     if ((octreeVertex.size < worldSize) || IsLeafNode())
     {

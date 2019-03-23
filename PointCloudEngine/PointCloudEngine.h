@@ -77,6 +77,7 @@ using namespace PointCloudEngine;
 extern std::wstring executablePath;
 extern std::wstring executableDirectory;
 extern double dt;
+extern float fovAngleY;
 extern int resolutionX;
 extern int resolutionY;
 extern HRESULT hr;
