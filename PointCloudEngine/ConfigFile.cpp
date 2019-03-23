@@ -1,6 +1,6 @@
 #include "ConfigFile.h"
 
-#define CONFIGFILENAME L"Assets/.pointcloudengine"
+#define CONFIGFILENAME L"/.pointcloudengine"
 
 /*
     The file just consists of two lines with:
@@ -11,7 +11,7 @@
 PointCloudEngine::ConfigFile::ConfigFile()
 {
     // Check if the config file exists that stores the last plyfile path
-    std::wifstream configFile(CONFIGFILENAME);
+    std::wifstream configFile(executableDirectory + CONFIGFILENAME);
 
     if (configFile.is_open())
     {
@@ -26,7 +26,7 @@ PointCloudEngine::ConfigFile::ConfigFile()
 PointCloudEngine::ConfigFile::~ConfigFile()
 {
     // Save values to file
-    std::wofstream configFile(CONFIGFILENAME);
+    std::wofstream configFile(executableDirectory + CONFIGFILENAME);
     configFile << plyfile << std::endl << scale;
     configFile.flush();
     configFile.close();

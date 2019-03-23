@@ -1,6 +1,8 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#define RENDERER PointCloudLODRenderer
+
 #pragma once
 #include "PointCloudEngine.h"
 
@@ -18,7 +20,7 @@ namespace PointCloudEngine
         SceneObject *text = NULL;
         SceneObject *pointCloud = NULL;
         TextRenderer *textRenderer = NULL;
-        PointCloudLODRenderer *pointCloudLODRenderer = NULL;
+        RENDERER *pointCloudRenderer = NULL;
         ConfigFile *configFile = NULL;
 
         Vector2 input;

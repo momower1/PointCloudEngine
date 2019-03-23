@@ -5,7 +5,7 @@ PointCloudRenderer::PointCloudRenderer(std::wstring plyfile)
     vertices = LoadPlyFile(plyfile);
 
     // Set the default radius
-    pointCloudConstantBufferData.radius = 0.02f;
+    pointCloudConstantBufferData.radius = 0.01f;
 }
 
 void PointCloudRenderer::Initialize(SceneObject *sceneObject)

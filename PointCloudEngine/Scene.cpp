@@ -14,7 +14,7 @@ void Scene::Initialize()
     text->transform->scale = 0.3f * Vector3::One;
     camera.position = Vector3(0.0f, 2.5f, -3.0f);
 
-    Input::SetSensitivity(0.5f, 1.0f);
+    Input::SetSensitivity(0.5f, 0.5f);
 
     // Create and load the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
@@ -23,8 +23,9 @@ void Scene::Initialize()
 
     if (plyfile.is_open())
     {
-        pointCloudLODRenderer = new PointCloudLODRenderer(configFile->plyfile);
-        pointCloud->AddComponent(pointCloudLODRenderer);
+        SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
+        pointCloudRenderer = new RENDERER(configFile->plyfile);
+        pointCloud->AddComponent(pointCloudRenderer);
     }
 }
 
@@ -69,7 +70,6 @@ void Scene::Update(Timer &timer)
 
     // FPS counter
     textRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps\n";
-    textRenderer->text.append((pointCloudLODRenderer != NULL) ? configFile->plyfile : L"Press [O] to open a .ply file!");
 
     // Open file dialog to load another file
     if (Input::GetKeyDown(Keyboard::O))
@@ -92,14 +92,15 @@ void Scene::Update(Timer &timer)
         if (GetOpenFileNameW(&openFileName))
         {
             configFile->plyfile = std::wstring(filename);
+            SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
 
-            if (pointCloudLODRenderer != NULL)
+            if (pointCloudRenderer != NULL)
             {
-                pointCloud->RemoveComponent(pointCloudLODRenderer);
+                pointCloud->RemoveComponent(pointCloudRenderer);
             }
 
-            pointCloudLODRenderer = new PointCloudLODRenderer(configFile->plyfile);
-            pointCloud->AddComponent(pointCloudLODRenderer);
+            pointCloudRenderer = new RENDERER(configFile->plyfile);
+            pointCloud->AddComponent(pointCloudRenderer);
         }
 
         Input::SetMode(Mouse::MODE_RELATIVE);

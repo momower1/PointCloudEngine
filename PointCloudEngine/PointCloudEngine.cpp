@@ -1,6 +1,8 @@
 #include "PointCloudEngine.h"
 
-// For the window creation
+// Variables for window creation and global access
+std::wstring executablePath;
+std::wstring executableDirectory;
 HRESULT hr;
 Camera camera;
 HWND hwnd = NULL;
@@ -91,6 +93,12 @@ std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+    // Save the executable directory path
+    wchar_t buffer [MAX_PATH];
+    GetModuleFileNameW(NULL, buffer, MAX_PATH);
+    executablePath = std::wstring(buffer);
+    executableDirectory = executablePath.substr(0, executablePath.find_last_of(L"\\/"));
+
 	if (!InitializeWindow(hInstance, nShowCmd, resolutionX, resolutionY, true))
 	{
         ErrorMessage(L"Window Initialization failed.", L"WinMain", __FILEW__, __LINE__);

@@ -74,6 +74,8 @@ using namespace PointCloudEngine;
 #include "Scene.h"
 
 // Global variables, accessable in other files
+extern std::wstring executablePath;
+extern std::wstring executableDirectory;
 extern double dt;
 extern int resolutionX;
 extern int resolutionY;
