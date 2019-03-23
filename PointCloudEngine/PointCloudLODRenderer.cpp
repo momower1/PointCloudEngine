@@ -8,11 +8,11 @@ PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
     octree = new Octree(vertices);
 
     // Text for showing properties
-    SceneObject *pointCloudLODText = Hierarchy::Create(L"PointCloudLODText");
-    text = pointCloudLODText->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
+    text = Hierarchy::Create(L"PointCloudLODText");
+    textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    pointCloudLODText->transform->position = Vector3(-1, -0.95, 0);
-    pointCloudLODText->transform->scale = 0.3f * Vector3::One;
+    text->transform->position = Vector3(-1, -0.95, 0);
+    text->transform->scale = 0.3f * Vector3::One;
 }
 
 PointCloudEngine::PointCloudLODRenderer::~PointCloudLODRenderer()
@@ -61,7 +61,7 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
     }
 
     // Set the text
-    text->text = L"Octree Level: " + std::to_wstring(level) + L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize);
+    textRenderer->text = L"Octree Level: " + std::to_wstring(level) + L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize);
 }
 
 void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
@@ -145,6 +145,8 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 
 void PointCloudLODRenderer::Release()
 {
+    Hierarchy::ReleaseSceneObject(text);
+
     SafeRelease(vertexBuffer);
     SafeRelease(pointCloudLODConstantBuffer);
 }

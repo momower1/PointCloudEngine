@@ -28,7 +28,8 @@ namespace PointCloudEngine
 
         int level = -1;
         Octree *octree = NULL;
-        TextRenderer *text = NULL;
+        SceneObject *text = NULL;
+        TextRenderer *textRenderer = NULL;
         std::vector<OctreeVertex> octreeVertices;
         
         PointCloudLODConstantBuffer pointCloudLODConstantBufferData;

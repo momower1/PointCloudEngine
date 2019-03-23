@@ -11,6 +11,7 @@ namespace PointCloudEngine
     public:
         // Static functions to keep tack of all scene objects and use automatic memory management
         static SceneObject* Create(std::wstring name, Transform *parent = NULL, std::initializer_list<Component*> components = {});
+        static void ReleaseSceneObject(SceneObject *sceneObjectToRemove);
         static void UpdateAllSceneObjects();
         static void DrawAllSceneObjects();
         static void ReleaseAllSceneObjects();

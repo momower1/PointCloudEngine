@@ -10,6 +10,17 @@ SceneObject* Hierarchy::Create(std::wstring name, Transform *parent, std::initia
     return tmp;
 }
 
+void PointCloudEngine::Hierarchy::ReleaseSceneObject(SceneObject *sceneObjectToRemove)
+{
+    // Remove from root transforms
+    rootTransforms.erase(std::remove(rootTransforms.begin(), rootTransforms.end(), sceneObjectToRemove->transform), rootTransforms.end());
+
+    // Remove from scene objects
+    sceneObjects.erase(std::remove(sceneObjects.begin(), sceneObjects.end(), sceneObjectToRemove), sceneObjects.end());
+    sceneObjectToRemove->Release();
+    SafeDelete(sceneObjectToRemove);
+}
+
 void Hierarchy::UpdateAllSceneObjects()
 {
     for (auto it = sceneObjects.begin(); it != sceneObjects.end(); it++)
