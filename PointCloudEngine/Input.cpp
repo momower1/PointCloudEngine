@@ -91,8 +91,6 @@ void Input::Update()
     mousePosition.y = max(0, min(mousePosition.y + rawMouseMovement.y, resolutionY));
     mouseDelta = mouseSensitivity * rawMouseMovement;
 
-    mouseDelta = mouseSensitivity * Vector2(mouseState.x, mouseState.y);
-
     // Reset delta value
     rawMouseMovement = Vector2(0, 0);
 }
