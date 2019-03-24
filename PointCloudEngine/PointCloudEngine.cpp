@@ -393,7 +393,7 @@ void DrawScene()
     d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);	// 1 since there is only 1 view
 
 	// Clear out backbuffer to the updated color
-	float backgroundColor[4] = { 0.75f, 0.75f, 1.0f, 1.0f };
+	float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
 	
 	// Refresh the depth/stencil view

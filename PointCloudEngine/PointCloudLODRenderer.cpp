@@ -47,13 +47,24 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
         level++;
     }
 
+    if (Input::GetKey(Keyboard::Up))
+    {
+        radius += dt * 0.01f;
+    }
+    else if (Input::GetKey(Keyboard::Down))
+    {
+        radius -= dt * 0.01f;
+    }
+
+    radius = max(1.0f / resolutionY, radius);
+
     // Create new buffer from the current octree traversal
     if (level < 0)
     {
         Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
         Vector3 localCameraPosition = Vector4::Transform(Vector4(camera.position.x, camera.position.y, camera.position.z, 1), worldInverse);
 
-        octreeVertices = octree->GetOctreeVertices(localCameraPosition, 0.01f);
+        octreeVertices = octree->GetOctreeVertices(localCameraPosition, radius);
     }
     else
     {

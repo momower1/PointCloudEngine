@@ -27,6 +27,7 @@ namespace PointCloudEngine
         };
 
         int level = -1;
+        float radius = 0.02f;
         Octree *octree = NULL;
         SceneObject *text = NULL;
         TextRenderer *textRenderer = NULL;
