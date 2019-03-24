@@ -14,7 +14,7 @@ void Scene::Initialize()
     text->transform->scale = 0.3f * Vector3::One;
     camera.position = Vector3(0.0f, 2.5f, -3.0f);
 
-    Input::SetSensitivity(0.5f, 0.5f);
+    Input::SetSensitivity(1.0f, 0.5f);
 
     // Create and load the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");

@@ -21,7 +21,6 @@ void Input::Initialize(HWND hwnd)
 {
     // Basic mouse input and absolute position
     mouse.SetWindow(hwnd);
-    //mouse.SetVisible(false);
     mouse.SetMode(Mouse::MODE_RELATIVE);
     mouseButtonStateTracker.Reset();
 
@@ -53,10 +52,16 @@ void Input::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
     if (msg == WM_INPUT)
     {
-        UINT dwSize = 40;
-        BYTE data[40];
+        UINT dwSize;
 
+        // Determine the size of the input data
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+
+        BYTE *data = new BYTE[dwSize];
+
+        // Get the actual input data
         GetRawInputData((HRAWINPUT)lParam, RID_INPUT, data, &dwSize, sizeof(RAWINPUTHEADER));
+
         RAWINPUT* raw = (RAWINPUT*)data;
 
         if (raw->header.dwType == RIM_TYPEMOUSE)
@@ -64,6 +69,8 @@ void Input::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam)
             rawMouseMovement.x += raw->data.mouse.lLastX;
             rawMouseMovement.y += raw->data.mouse.lLastY;
         }
+
+        delete[] data;
     }
 }
 
@@ -83,6 +90,8 @@ void Input::Update()
     mousePosition.x = max(0, min(mousePosition.x + rawMouseMovement.x, resolutionX));
     mousePosition.y = max(0, min(mousePosition.y + rawMouseMovement.y, resolutionY));
     mouseDelta = mouseSensitivity * rawMouseMovement;
+
+    mouseDelta = mouseSensitivity * Vector2(mouseState.x, mouseState.y);
 
     // Reset delta value
     rawMouseMovement = Vector2(0, 0);
@@ -210,5 +219,6 @@ void Input::SetSensitivity(float mouseSensitivity, float scrollSensitivity)
 
 void Input::SetMode(Mouse::Mode mode)
 {
+    // Relative mode will also make the mouse invisible, absolute mode will make it visible
     Input::mouse.SetMode(mode);
 }
