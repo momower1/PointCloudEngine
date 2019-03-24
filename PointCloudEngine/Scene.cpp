@@ -68,8 +68,8 @@ void Scene::Update(Timer &timer)
     camera.position -= Input::GetKey(Keyboard::A) * cameraSpeed * dt * camera.right;
     camera.position += Input::GetKey(Keyboard::D) * cameraSpeed * dt * camera.right;
 
-    // FPS counter
-    textRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps\n";
+    // FPS counter and controls
+    textRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps\nPress [O] to open a .ply file";
 
     // Open file dialog to load another file
     if (Input::GetKeyDown(Keyboard::O))
