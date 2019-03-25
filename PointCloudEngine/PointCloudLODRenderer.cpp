@@ -5,7 +5,7 @@ PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
     std::vector<PointCloudVertex> vertices = LoadPlyFile(plyfile);
 
     // Create the octree
-    octree = new Octree(vertices, Vector3::Zero);
+    octree = Octree::Create(vertices);
 
     // Text for showing properties
     text = Hierarchy::Create(L"PointCloudLODText");
