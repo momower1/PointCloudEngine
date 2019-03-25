@@ -5,7 +5,7 @@ PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
     std::vector<PointCloudVertex> vertices = LoadPlyFile(plyfile);
 
     // Create the octree
-    octree = new Octree(vertices);
+    octree = new Octree(vertices, Vector3::Zero);
 
     // Text for showing properties
     text = Hierarchy::Create(L"PointCloudLODText");
@@ -56,7 +56,7 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
         radius -= dt * 0.01f;
     }
 
-    radius = max(1.0f / resolutionY, radius);
+    radius = max(0.5f / resolutionY, radius);
 
     // Create new buffer from the current octree traversal
     if (level < 0)

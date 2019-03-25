@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class Octree
     {
     public:
-        Octree (std::vector<PointCloudVertex> vertices);
+        Octree (std::vector<PointCloudVertex> vertices, Vector3 center);
         ~Octree();
 
         std::vector<OctreeVertex> GetOctreeVertices(Vector3 localCameraPosition, float size);
@@ -18,7 +18,7 @@ namespace PointCloudEngine
     private:
         bool IsLeafNode();
 
-        const float octreeVertexMinSize = 1000 * FLT_EPSILON;
+        const float octreeVertexMinSize = FLT_EPSILON;
 
         Octree *parent = NULL;
         Octree *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
