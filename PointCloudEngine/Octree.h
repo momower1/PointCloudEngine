@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class Octree
     {
     public:
-        Octree (std::vector<PointCloudVertex> vertices, Vector3 center);
+        Octree (std::vector<PointCloudVertex> vertices, Vector3 center, Octree *parent = NULL);
         ~Octree();
 
         std::vector<OctreeVertex> GetOctreeVertices(Vector3 localCameraPosition, float size);
