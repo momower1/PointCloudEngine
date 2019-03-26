@@ -9,18 +9,14 @@ namespace PointCloudEngine
     class OctreeNode
     {
     public:
-        OctreeNode (std::vector<Vertex> vertices, Vector3 center, OctreeNode *parent);
+        OctreeNode (const std::vector<Vertex> &vertices, const Vector3 &center, OctreeNode *parent, const int &maxLevel);
         ~OctreeNode();
 
-        std::vector<OctreeNodeVertex> GetVertices(Vector3 localCameraPosition, float size);
-        std::vector<OctreeNodeVertex> GetVerticesAtLevel(int level);
+        std::vector<OctreeNodeVertex> GetVertices(const Vector3 &localCameraPosition, const float &size);
+        std::vector<OctreeNodeVertex> GetVerticesAtLevel(const int &level);
 
     private:
         bool IsLeafNode();
-
-        // Reducing this value heavily decreases the octree node count and therefore also the memory requirements
-        // TODO: Should be set individually for each ply model
-        const float octreeNodeMinSize = 0.0001f;
 
         OctreeNode *parent = NULL;
         OctreeNode *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };

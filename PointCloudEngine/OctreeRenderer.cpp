@@ -5,7 +5,7 @@ OctreeRenderer::OctreeRenderer(std::wstring plyfile)
     std::vector<Vertex> vertices = LoadPlyFile(plyfile);
 
     // Create the octree
-    octree = new Octree(vertices);
+    octree = new Octree(vertices, 13);
 
     // Text for showing properties
     text = Hierarchy::Create(L"OctreeRendererText");

@@ -1,6 +1,6 @@
 #include "OctreeNode.h"
 
-PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 center, OctreeNode *parent)
+PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, const Vector3 &center, OctreeNode *parent, const int &depth)
 {
     size_t size = vertices.size();
     
@@ -130,19 +130,15 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 c
     };
 
     // Only subdivide further if the size is above the minimum size
-    if (octreeVertex.size > octreeNodeMinSize)
+    if (depth > 0)
     {
         for (int i = 0; i < 8; i++)
         {
             if (childVertices[i].size() > 0)
             {
-                children[i] = new OctreeNode(childVertices[i], childCenters[i], this);
+                children[i] = new OctreeNode(childVertices[i], childCenters[i], this, depth - 1);
             }
         }
-    }
-    else
-    {
-        octreeVertex.size = octreeNodeMinSize;
     }
 }
 
@@ -155,7 +151,7 @@ PointCloudEngine::OctreeNode::~OctreeNode()
     }
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(Vector3 localCameraPosition, float size)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Vector3 &localCameraPosition, const float &size)
 {
     // TODO: View frustum culling, Visibility culling (normals)
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
@@ -167,7 +163,11 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(Vector3 
 
     if ((octreeVertex.size < worldSize) || IsLeafNode())
     {
-        octreeVertices.push_back(octreeVertex);
+        // Make sure that e.g. nodes with size 0 are drawn as well
+        OctreeNodeVertex tmp = octreeVertex;
+        tmp.size = worldSize;
+
+        octreeVertices.push_back(tmp);
     }
     else
     {
@@ -185,7 +185,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(Vector3 
     return octreeVertices;
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(int level)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(const int &level)
 {
     std::vector<OctreeNodeVertex> octreeVertices;
 

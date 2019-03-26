@@ -1,8 +1,8 @@
 #include "Octree.h"
 
-PointCloudEngine::Octree::Octree(std::vector<Vertex> vertices)
+PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int &depth)
 {
-    root = new OctreeNode(vertices, Vector3::Zero, NULL);
+    root = new OctreeNode(vertices, Vector3::Zero, NULL, depth);
 }
 
 PointCloudEngine::Octree::~Octree()
@@ -10,12 +10,12 @@ PointCloudEngine::Octree::~Octree()
     SafeDelete(root);
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(Vector3 localCameraPosition, float size)
+std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector3 &localCameraPosition, const float &size)
 {
     return root->GetVertices(localCameraPosition, size);
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(int level)
+std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const int &level)
 {
     return root->GetVerticesAtLevel(level);
 }
