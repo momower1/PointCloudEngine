@@ -1,6 +1,6 @@
 #include "OctreeNode.h"
 
-PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 center, OctreeNode *parent, int childIndex)
+PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 center, OctreeNode *parent)
 {
     size_t size = vertices.size();
     
@@ -14,12 +14,6 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 c
     // Then this cube is splitted into 8 smaller child cubes along the center
     // For each child cube the octree generation is repeated
     this->parent = parent;
-
-    // Assign the pointer to this octree node in the parent if one exists
-    if (this->parent != NULL)
-    {
-        this->parent->children[childIndex] = this;
-    }
 
     // Initialize average color
     double averageRed = 0;
@@ -136,20 +130,19 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 c
     };
 
     // Only subdivide further if the size is above the minimum size
-    if (octreeVertex.size > octreeVertexMinSize)
+    if (octreeVertex.size > octreeNodeMinSize)
     {
         for (int i = 0; i < 8; i++)
         {
             if (childVertices[i].size() > 0)
             {
-                // Add a new entry to the end of the queue (parents are always created before their children)
-                Octree::octreeQueue.push(OctreeQueueEntry{ i, childVertices[i], childCenters[i], this });
+                children[i] = new OctreeNode(childVertices[i], childCenters[i], this);
             }
         }
     }
     else
     {
-        octreeVertex.size = octreeVertexMinSize;
+        octreeVertex.size = octreeNodeMinSize;
     }
 }
 
@@ -162,14 +155,14 @@ PointCloudEngine::OctreeNode::~OctreeNode()
     }
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetOctreeVertices(Vector3 localCameraPosition, float size)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(Vector3 localCameraPosition, float size)
 {
     // TODO: View frustum culling, Visibility culling (normals)
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
     std::vector<OctreeNodeVertex> octreeVertices;
     float distanceToCamera = Vector3::Distance(localCameraPosition, octreeVertex.position);
 
-    // Scale the size by the fov and camera distance
+    // Scale the size by the fov and camera distance (how big is the size at that distance in world space?)
     float worldSize = size * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
     if ((octreeVertex.size < worldSize) || IsLeafNode())
@@ -183,7 +176,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetOctreeVertices(Ve
         {
             if (children[i] != NULL)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetOctreeVertices(localCameraPosition, size);
+                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, size);
                 octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }
@@ -192,7 +185,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetOctreeVertices(Ve
     return octreeVertices;
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetOctreeVerticesAtLevel(int level)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(int level)
 {
     std::vector<OctreeNodeVertex> octreeVertices;
 
@@ -207,7 +200,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetOctreeVerticesAtL
         {
             if (children[i] != NULL)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetOctreeVerticesAtLevel(level - 1);
+                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVerticesAtLevel(level - 1);
                 octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }
