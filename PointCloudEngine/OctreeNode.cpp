@@ -45,7 +45,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     // Only the root node could compute its center with minPosition + 0.5f * (maxPosition - minPosition) to improve spatial fit
     // But usually this is not an issue because the vertices should be oriented around the origin in object space anyways
     nodeVertex.position = center;
-    nodeVertex.size = max(max(extends.x, extends.y), extends.z);
+    nodeVertex.size = 2 * max(max(extends.x, extends.y), extends.z);
 
     // Save average color
     nodeVertex.colors[0] = Color(averageRed, averageGreen, averageBlue, averageAlpha);
@@ -111,7 +111,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     }
 
     // Assign the centers for each child cube
-    float childExtend = 0.5f * nodeVertex.size;
+    float childExtend = 0.25f * nodeVertex.size;
 
     // Correlates to the assigned child vertices
     Vector3 childCenters[8] =
@@ -155,16 +155,24 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Ve
     std::vector<OctreeNodeVertex> octreeVertices;
     float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
-    // Scale the size by the fov and camera distance (how big is the size at that distance in world space?)
+    // Scale the size by the fov and camera distance (Result: size at that distance in world space)
     float worldSize = size * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
     if ((nodeVertex.size < worldSize) || IsLeafNode())
     {
-        // Make sure that e.g. nodes with size 0 are drawn as well
-        OctreeNodeVertex tmp = nodeVertex;
-        tmp.size = worldSize;
+        // Make sure that e.g. single point nodes with size 0 are drawn as well
+        if (nodeVertex.size < FLT_EPSILON)
+        {
+            // Set the size temporarily to the world size to make sure that this node is visible
+            OctreeNodeVertex tmp = nodeVertex;
+            tmp.size = worldSize;
 
-        octreeVertices.push_back(tmp);
+            octreeVertices.push_back(tmp);
+        }
+        else
+        {
+            octreeVertices.push_back(nodeVertex);
+        }
     }
     else
     {

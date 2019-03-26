@@ -56,9 +56,10 @@ VS_OUTPUT VS(VS_INPUT input)
 [maxvertexcount(16)]
 void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
 {
-    float3 x = float3(input[0].size, 0, 0);
-    float3 y = float3(0, input[0].size, 0);
-    float3 z = float3(0, 0, input[0].size);
+    float extend = 0.5f * input[0].size;
+    float3 x = float3(extend, 0, 0);
+    float3 y = float3(0, extend, 0);
+    float3 z = float3(0, 0, extend);
 
     float4x4 WVP = mul(World, mul(View, Projection));
 

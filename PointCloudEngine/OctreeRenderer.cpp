@@ -51,7 +51,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         radius -= dt * 0.01f;
     }
 
-    radius = max(0.5f / resolutionY, radius);
+    radius = min(1.0f, max(1.0f / resolutionY, radius));
 
     // Create new buffer from the current octree traversal
     if (level < 0)

@@ -51,7 +51,7 @@ namespace PointCloudEngine
         Vector3 normals[6];
         Color colors[6];
 
-        // Minimal distance from the center position to each face of the cube
+        // Width of the whole cube
         float size;
     };
 }
