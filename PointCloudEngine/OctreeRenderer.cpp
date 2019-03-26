@@ -15,11 +15,6 @@ OctreeRenderer::OctreeRenderer(std::wstring plyfile)
     text->transform->scale = 0.3f * Vector3::One;
 }
 
-PointCloudEngine::OctreeRenderer::~OctreeRenderer()
-{
-    SafeDelete(octree);
-}
-
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
 {
     // Create the constant buffer for WVP
@@ -156,6 +151,8 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 
 void OctreeRenderer::Release()
 {
+    SafeDelete(octree);
+
     Hierarchy::ReleaseSceneObject(text);
 
     SafeRelease(vertexBuffer);

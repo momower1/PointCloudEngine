@@ -10,7 +10,6 @@ namespace PointCloudEngine
     {
     public:
         OctreeRenderer(std::wstring plyfile);
-        ~OctreeRenderer();
         void Initialize(SceneObject *sceneObject);
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);
