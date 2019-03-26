@@ -1,41 +1,41 @@
-#include "PointCloudLODRenderer.h"
+#include "OctreeRenderer.h"
 
-PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
+OctreeRenderer::OctreeRenderer(std::wstring plyfile)
 {
-    std::vector<PointCloudVertex> vertices = LoadPlyFile(plyfile);
+    std::vector<Vertex> vertices = LoadPlyFile(plyfile);
 
     // Create the octree
     octree = new Octree(vertices);
 
     // Text for showing properties
-    text = Hierarchy::Create(L"PointCloudLODText");
+    text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
     text->transform->position = Vector3(-1, -0.95, 0);
     text->transform->scale = 0.3f * Vector3::One;
 }
 
-PointCloudEngine::PointCloudLODRenderer::~PointCloudLODRenderer()
+PointCloudEngine::OctreeRenderer::~OctreeRenderer()
 {
     SafeDelete(octree);
 }
 
-void PointCloudLODRenderer::Initialize(SceneObject *sceneObject)
+void OctreeRenderer::Initialize(SceneObject *sceneObject)
 {
     // Create the constant buffer for WVP
     D3D11_BUFFER_DESC cbDescWVP;
     ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
     cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
-    cbDescWVP.ByteWidth = sizeof(PointCloudLODConstantBuffer);
+    cbDescWVP.ByteWidth = sizeof(OctreeRendererConstantBuffer);
     cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbDescWVP.CPUAccessFlags = 0;
     cbDescWVP.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &pointCloudLODConstantBuffer);
+    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBuffer);
     ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
 }
 
-void PointCloudLODRenderer::Update(SceneObject *sceneObject)
+void OctreeRenderer::Update(SceneObject *sceneObject)
 {
     // Handle input
     if (Input::GetKeyDown(Keyboard::Left) && (level > -1))
@@ -75,7 +75,7 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
     textRenderer->text = L"Octree Level: " + std::to_wstring(level) + L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize);
 }
 
-void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
+void OctreeRenderer::Draw(SceneObject *sceneObject)
 {
     int octreeVerticesSize = octreeVertices.size();
 
@@ -140,24 +140,24 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
         // Set shader constant buffer variables
-        pointCloudLODConstantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
-        pointCloudLODConstantBufferData.WorldInverseTranspose = pointCloudLODConstantBufferData.World.Invert().Transpose();
-        pointCloudLODConstantBufferData.View = camera.view.Transpose();
-        pointCloudLODConstantBufferData.Projection = camera.projection.Transpose();
+        constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+        constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
+        constantBufferData.View = camera.view.Transpose();
+        constantBufferData.Projection = camera.projection.Transpose();
 
         // Update effect file buffer, set shader buffer to our created buffer
-        d3d11DevCon->UpdateSubresource(pointCloudLODConstantBuffer, 0, NULL, &pointCloudLODConstantBufferData, 0, 0);
-        d3d11DevCon->VSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
-        d3d11DevCon->GSSetConstantBuffers(0, 1, &pointCloudLODConstantBuffer);
+        d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
+        d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
+        d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 
         d3d11DevCon->Draw(octreeVerticesSize, 0);
     }
 }
 
-void PointCloudLODRenderer::Release()
+void OctreeRenderer::Release()
 {
     Hierarchy::ReleaseSceneObject(text);
 
     SafeRelease(vertexBuffer);
-    SafeRelease(pointCloudLODConstantBuffer);
+    SafeRelease(constantBuffer);
 }

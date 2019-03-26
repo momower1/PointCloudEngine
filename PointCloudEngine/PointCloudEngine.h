@@ -51,8 +51,8 @@ namespace PointCloudEngine
     class Shader;
     class Transform;
     class TextRenderer;
-    class PointCloudRenderer;
-    class PointCloudLODRenderer;
+    class SplatRenderer;
+    class OctreeRenderer;
     class ConfigFile;
     class OctreeNode;
     class Octree;
@@ -72,8 +72,8 @@ using namespace PointCloudEngine;
 #include "OctreeNode.h"
 #include "Octree.h"
 #include "TextRenderer.h"
-#include "PointCloudRenderer.h"
-#include "PointCloudLODRenderer.h"
+#include "SplatRenderer.h"
+#include "OctreeRenderer.h"
 #include "Scene.h"
 
 // Global variables, accessable in other files
@@ -96,7 +96,7 @@ extern ID3D11DepthStencilState* depthStencilState;
 // Global function declarations
 extern void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr = E_FAIL);
 extern void SafeRelease(ID3D11Resource *resource);
-extern std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile);
+extern std::vector<Vertex> LoadPlyFile(std::wstring plyfile);
 
 // Function declarations
 bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);

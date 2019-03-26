@@ -1,16 +1,16 @@
-#ifndef POINTCLOUDLODRENDERER_H
-#define POINTCLOUDLODRENDERER_H
+#ifndef OCTREERENDERER_H
+#define OCTREERENDERER_H
 
 #pragma once
 #include "PointCloudEngine.h"
 
 namespace PointCloudEngine
 {
-    class PointCloudLODRenderer : public Component
+    class OctreeRenderer : public Component
     {
     public:
-        PointCloudLODRenderer(std::wstring plyfile);
-        ~PointCloudLODRenderer();
+        OctreeRenderer(std::wstring plyfile);
+        ~OctreeRenderer();
         void Initialize(SceneObject *sceneObject);
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);
@@ -18,7 +18,7 @@ namespace PointCloudEngine
 
     private:
         // Same constant buffer as in effect file, keep packing rules in mind
-        struct PointCloudLODConstantBuffer
+        struct OctreeRendererConstantBuffer
         {
             Matrix World;
             Matrix View;
@@ -33,12 +33,12 @@ namespace PointCloudEngine
         TextRenderer *textRenderer = NULL;
         std::vector<OctreeNodeVertex> octreeVertices;
         
-        PointCloudLODConstantBuffer pointCloudLODConstantBufferData;
+        OctreeRendererConstantBuffer constantBufferData;
 
         // Vertex buffer
         UINT vertexBufferSize = 0;
-        ID3D11Buffer* vertexBuffer;		                    // Holds vertex data
-        ID3D11Buffer* pointCloudLODConstantBuffer;		    // Stores data and sends it to the actual buffer in the effect file
+        ID3D11Buffer* vertexBuffer;		        // Holds vertex data
+        ID3D11Buffer* constantBuffer;		    // Stores data and sends it to the actual buffer in the effect file
     };
 }
 #endif

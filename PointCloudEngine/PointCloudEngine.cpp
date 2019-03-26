@@ -55,7 +55,7 @@ void SafeRelease(ID3D11Resource *resource)
     }
 }
 
-std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile)
+std::vector<Vertex> LoadPlyFile(std::wstring plyfile)
 {
     // Load ply file
     std::ifstream ss(plyfile, std::ios::binary);
@@ -81,7 +81,7 @@ std::vector<PointCloudVertex> LoadPlyFile(std::wstring plyfile)
     size_t strideColors = rawColors->buffer.size_bytes() / count;
 
     // When this trows an std::bad_alloc exception, the memory requirement is large -> build with x64
-    std::vector<PointCloudVertex> vertices(count);
+    std::vector<Vertex> vertices(count);
 
     // Fill each vertex with its data
     for (int i = 0; i < count; i++)

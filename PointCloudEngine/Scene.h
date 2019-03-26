@@ -1,7 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#define RENDERER PointCloudLODRenderer
+#define RENDERER OctreeRenderer
 
 #pragma once
 #include "PointCloudEngine.h"

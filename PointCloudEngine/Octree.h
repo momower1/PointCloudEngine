@@ -10,7 +10,7 @@ namespace PointCloudEngine
     {
         // This is all the data needed to create an octree node
         int childIndex;
-        std::vector<PointCloudVertex> vertices;
+        std::vector<Vertex> vertices;
         Vector3 center;
         OctreeNode *parent;
     };
@@ -20,7 +20,7 @@ namespace PointCloudEngine
     public:
         static std::queue<OctreeQueueEntry> octreeQueue;
 
-        Octree(std::vector<PointCloudVertex> vertices);
+        Octree(std::vector<Vertex> vertices);
         ~Octree();
 
         std::vector<OctreeNodeVertex> GetVertices(Vector3 localCameraPosition, float size);

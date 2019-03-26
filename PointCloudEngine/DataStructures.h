@@ -34,8 +34,9 @@ namespace PointCloudEngine
         Matrix rotation = Matrix::Identity;
     };
 
-    struct PointCloudVertex
+    struct Vertex
     {
+        // Stores the .ply file vertices
         Vector3 position;
         Vector3 normal;
         byte red, green, blue, alpha;

@@ -1,6 +1,6 @@
 #include "OctreeNode.h"
 
-PointCloudEngine::OctreeNode::OctreeNode(std::vector<PointCloudVertex> vertices, Vector3 center, OctreeNode *parent, int childIndex)
+PointCloudEngine::OctreeNode::OctreeNode(std::vector<Vertex> vertices, Vector3 center, OctreeNode *parent, int childIndex)
 {
     size_t size = vertices.size();
     
@@ -35,7 +35,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<PointCloudVertex> vertices,
 
     for (auto it = vertices.begin(); it != vertices.end(); it++)
     {
-        PointCloudVertex v = *it;
+        Vertex v = *it;
 
         extends.x = max(extends.x, abs(center.x - v.position.x));
         extends.y = max(extends.y, abs(center.y - v.position.y));
@@ -60,12 +60,12 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<PointCloudVertex> vertices,
     octreeVertex.alpha = round(averageAlpha);
 
     // Split and create children vertices
-    std::vector<PointCloudVertex> childVertices[8];
+    std::vector<Vertex> childVertices[8];
 
     // Fit each vertex into its corresponding child cube
     for (auto it = vertices.begin(); it != vertices.end(); it++)
     {
-        PointCloudVertex v = *it;
+        Vertex v = *it;
 
         if (v.position.x > center.x)
         {

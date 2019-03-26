@@ -1,20 +1,20 @@
-#include "PointCloudRenderer.h"
+#include "SplatRenderer.h"
 
-PointCloudRenderer::PointCloudRenderer(std::wstring plyfile)
+SplatRenderer::SplatRenderer(std::wstring plyfile)
 {
     vertices = LoadPlyFile(plyfile);
 
     // Set the default radius
-    pointCloudConstantBufferData.radius = 0.01f;
+    constantBufferData.radius = 0.01f;
 }
 
-void PointCloudRenderer::Initialize(SceneObject *sceneObject)
+void SplatRenderer::Initialize(SceneObject *sceneObject)
 {
     // Create a vertex buffer description
     D3D11_BUFFER_DESC vertexBufferDesc;
     ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
     vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = sizeof(PointCloudVertex) * vertices.size();
+    vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
     vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vertexBufferDesc.CPUAccessFlags = 0;
     vertexBufferDesc.MiscFlags = 0;
@@ -32,30 +32,30 @@ void PointCloudRenderer::Initialize(SceneObject *sceneObject)
     D3D11_BUFFER_DESC cbDescWVP;
     ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
     cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
-    cbDescWVP.ByteWidth = sizeof(PointCloudConstantBuffer);
+    cbDescWVP.ByteWidth = sizeof(SplatRendererConstantBuffer);
     cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbDescWVP.CPUAccessFlags = 0;
     cbDescWVP.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &pointCloudConstantBuffer);
+    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBuffer);
     ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
 }
 
-void PointCloudRenderer::Update(SceneObject *sceneObject)
+void SplatRenderer::Update(SceneObject *sceneObject)
 {
     if (Input::GetKey(Keyboard::Up))
     {
-        pointCloudConstantBufferData.radius += dt * 0.01f;
+        constantBufferData.radius += dt * 0.01f;
     }
     else if (Input::GetKey(Keyboard::Down))
     {
-        pointCloudConstantBufferData.radius -= dt * 0.01f;
+        constantBufferData.radius -= dt * 0.01f;
     }
 
-    pointCloudConstantBufferData.radius = max(0.0002f, pointCloudConstantBufferData.radius);
+    constantBufferData.radius = max(0.0002f, constantBufferData.radius);
 }
 
-void PointCloudRenderer::Draw(SceneObject *sceneObject)
+void SplatRenderer::Draw(SceneObject *sceneObject)
 {
     // Set the shaders
     d3d11DevCon->VSSetShader(pointCloudShader->vertexShader, 0, 0);
@@ -67,29 +67,29 @@ void PointCloudRenderer::Draw(SceneObject *sceneObject)
 
     // Bind the vertex buffer and index buffer to the input assembler (IA)
     UINT offset = 0;
-    UINT stride = sizeof(PointCloudVertex);
+    UINT stride = sizeof(Vertex);
     d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
     // Set primitive topology
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
     // Set shader constant buffer variables
-    pointCloudConstantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
-    pointCloudConstantBufferData.WorldInverseTranspose = pointCloudConstantBufferData.World.Invert().Transpose();
-    pointCloudConstantBufferData.View = camera.view.Transpose();
-    pointCloudConstantBufferData.Projection = camera.projection.Transpose();
-    pointCloudConstantBufferData.cameraPosition = camera.position;
+    constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+    constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
+    constantBufferData.View = camera.view.Transpose();
+    constantBufferData.Projection = camera.projection.Transpose();
+    constantBufferData.cameraPosition = camera.position;
 
     // Update effect file buffer, set shader buffer to our created buffer
-    d3d11DevCon->UpdateSubresource(pointCloudConstantBuffer, 0, NULL, &pointCloudConstantBufferData, 0, 0);
-    d3d11DevCon->VSSetConstantBuffers(0, 1, &pointCloudConstantBuffer);
-    d3d11DevCon->GSSetConstantBuffers(0, 1, &pointCloudConstantBuffer);
+    d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
+    d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
+    d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 
     d3d11DevCon->Draw(vertices.size(), 0);
 }
 
-void PointCloudRenderer::Release()
+void SplatRenderer::Release()
 {
     SafeRelease(vertexBuffer);
-    SafeRelease(pointCloudConstantBuffer);
+    SafeRelease(constantBuffer);
 }

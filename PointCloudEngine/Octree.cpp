@@ -3,7 +3,7 @@
 // Avoids recursion by using a queue (recursion can cause a stack overflow with large files)
 std::queue<OctreeQueueEntry> Octree::octreeQueue;
 
-PointCloudEngine::Octree::Octree(std::vector<PointCloudVertex> vertices)
+PointCloudEngine::Octree::Octree(std::vector<Vertex> vertices)
 {
     // This is the root node
     root = new OctreeNode(vertices, Vector3::Zero, NULL, 0);
