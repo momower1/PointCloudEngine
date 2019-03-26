@@ -228,6 +228,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClCompile Include="ConfigFile.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Octree.cpp" />
+    <ClCompile Include="OctreeNode.cpp" />
     <ClCompile Include="PointCloudEngine.cpp" />
     <ClCompile Include="PointCloudLODRenderer.cpp" />
     <ClCompile Include="PointCloudRenderer.cpp" />
@@ -244,6 +245,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClInclude Include="Input.h" />
     <ClInclude Include="Hierarchy.h" />
     <ClInclude Include="Octree.h" />
+    <ClInclude Include="OctreeNode.h" />
     <ClInclude Include="PointCloudLODRenderer.h" />
     <ClInclude Include="PointCloudRenderer.h" />
     <ClInclude Include="SceneObject.h" />

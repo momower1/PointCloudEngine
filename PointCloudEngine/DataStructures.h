@@ -41,7 +41,7 @@ namespace PointCloudEngine
         byte red, green, blue, alpha;
     };
 
-    struct OctreeVertex
+    struct OctreeNodeVertex
     {
         // Bounding volume cube, size is the minimal distance from the center position to each face of the cube
         Vector3 position;

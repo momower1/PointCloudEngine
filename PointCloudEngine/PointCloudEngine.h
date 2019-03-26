@@ -54,6 +54,7 @@ namespace PointCloudEngine
     class PointCloudRenderer;
     class PointCloudLODRenderer;
     class ConfigFile;
+    class OctreeNode;
     class Octree;
 }
 
@@ -68,6 +69,7 @@ using namespace PointCloudEngine;
 #include "Hierarchy.h"
 #include "DataStructures.h"
 #include "ConfigFile.h"
+#include "OctreeNode.h"
 #include "Octree.h"
 #include "TextRenderer.h"
 #include "PointCloudRenderer.h"

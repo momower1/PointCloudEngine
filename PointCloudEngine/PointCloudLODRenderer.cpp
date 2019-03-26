@@ -5,7 +5,7 @@ PointCloudLODRenderer::PointCloudLODRenderer(std::wstring plyfile)
     std::vector<PointCloudVertex> vertices = LoadPlyFile(plyfile);
 
     // Create the octree
-    octree = Octree::Create(vertices);
+    octree = new Octree(vertices);
 
     // Text for showing properties
     text = Hierarchy::Create(L"PointCloudLODText");
@@ -64,11 +64,11 @@ void PointCloudLODRenderer::Update(SceneObject *sceneObject)
         Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
         Vector3 localCameraPosition = Vector4::Transform(Vector4(camera.position.x, camera.position.y, camera.position.z, 1), worldInverse);
 
-        octreeVertices = octree->GetOctreeVertices(localCameraPosition, radius);
+        octreeVertices = octree->GetVertices(localCameraPosition, radius);
     }
     else
     {
-        octreeVertices = octree->GetOctreeVerticesAtLevel(level);
+        octreeVertices = octree->GetVerticesAtLevel(level);
     }
 
     // Set the text
@@ -92,7 +92,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
             D3D11_BUFFER_DESC vertexBufferDesc;
             ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
             vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-            vertexBufferDesc.ByteWidth = sizeof(OctreeVertex) * octreeVerticesSize;
+            vertexBufferDesc.ByteWidth = sizeof(OctreeNodeVertex) * octreeVerticesSize;
             vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
             vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
@@ -117,7 +117,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
             d3d11DevCon->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedVertexBuffer);
 
             // Update vertex buffer data
-            memcpy(mappedVertexBuffer.pData, &octreeVertices[0], octreeVerticesSize * sizeof(OctreeVertex));
+            memcpy(mappedVertexBuffer.pData, &octreeVertices[0], octreeVerticesSize * sizeof(OctreeNodeVertex));
 
             // Reenable GPU access
             d3d11DevCon->Unmap(vertexBuffer, 0);
@@ -133,7 +133,7 @@ void PointCloudLODRenderer::Draw(SceneObject *sceneObject)
 
         // Bind the vertex buffer and index buffer to the input assembler (IA)
         UINT offset = 0;
-        UINT stride = sizeof(OctreeVertex);
+        UINT stride = sizeof(OctreeNodeVertex);
         d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
         // Set primitive topology

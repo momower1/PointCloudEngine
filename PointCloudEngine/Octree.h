@@ -6,39 +6,28 @@
 
 namespace PointCloudEngine
 {
-    struct OctreeCreationQueueEntry
+    struct OctreeQueueEntry
     {
         // This is all the data needed to create an octree node
         int childIndex;
         std::vector<PointCloudVertex> vertices;
         Vector3 center;
-        Octree *parent;
+        OctreeNode *parent;
     };
 
     class Octree
     {
     public:
-        // Avoids recursion by using a queue (recursion can cause a stack overflow with large files)
-        static Octree* Create(std::vector<PointCloudVertex> vertices);
+        static std::queue<OctreeQueueEntry> octreeQueue;
 
-        Octree (std::vector<PointCloudVertex> vertices, Vector3 center, Octree *parent, int childIndex);
+        Octree(std::vector<PointCloudVertex> vertices);
         ~Octree();
 
-        std::vector<OctreeVertex> GetOctreeVertices(Vector3 localCameraPosition, float size);
-        std::vector<OctreeVertex> GetOctreeVerticesAtLevel(int level);
+        std::vector<OctreeNodeVertex> GetVertices(Vector3 localCameraPosition, float size);
+        std::vector<OctreeNodeVertex> GetVerticesAtLevel(int level);
 
     private:
-        bool IsLeafNode();
-
-        static std::queue<OctreeCreationQueueEntry> octreeCreationQueue;
-
-        // Reducing this value heavily decreases the octree node count and therefore also the memory requirements
-        // TODO: Should be set individually for each ply model
-        const float octreeVertexMinSize = 0.0001f;
-
-        Octree *parent = NULL;
-        Octree *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-        OctreeVertex octreeVertex;
+        OctreeNode *root = NULL;
     };
 }
 
