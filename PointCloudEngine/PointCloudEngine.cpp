@@ -88,7 +88,7 @@ std::vector<Vertex> LoadPlyFile(std::wstring plyfile)
     {
         std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
         std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
-        std::memcpy(&vertices[i].red, rawColors->buffer.get() + i * strideColors, strideColors);
+        std::memcpy(&vertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
     }
 
     return vertices;

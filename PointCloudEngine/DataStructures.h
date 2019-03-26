@@ -34,12 +34,36 @@ namespace PointCloudEngine
         Matrix rotation = Matrix::Identity;
     };
 
+    struct Color8
+    {
+        byte red;
+        byte green;
+        byte blue;
+        byte alpha;
+
+        Color8()
+        {
+            red = 0;
+            green = 0;
+            blue = 0;
+            alpha = 0;
+        }
+
+        Color8(byte red, byte green, byte blue, byte alpha)
+        {
+            this->red = red;
+            this->green = green;
+            this->blue = blue;
+            this->alpha = alpha;
+        }
+    };
+
     struct Vertex
     {
         // Stores the .ply file vertices
         Vector3 position;
         Vector3 normal;
-        byte red, green, blue, alpha;
+        Color8 color;
     };
 
     struct OctreeNodeVertex
@@ -49,7 +73,7 @@ namespace PointCloudEngine
 
         // The different normals and colors in object space based on 6 view directions (all sides of a the bounding volume cube)
         Vector3 normals[6];
-        Color colors[6];
+        Color8 colors[6];
 
         // Width of the whole cube
         float size;

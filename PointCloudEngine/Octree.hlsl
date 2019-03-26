@@ -19,12 +19,12 @@ struct VS_INPUT
     float3 normal3 : NORMAL3;
     float3 normal4 : NORMAL4;
     float3 normal5 : NORMAL5;
-    float4 color0 : COLOR0;
-    float4 color1 : COLOR1;
-    float4 color2 : COLOR2;
-    float4 color3 : COLOR3;
-    float4 color4 : COLOR4;
-    float4 color5 : COLOR5;
+    uint4 color0 : COLOR0;
+    uint4 color1 : COLOR1;
+    uint4 color2 : COLOR2;
+    uint4 color3 : COLOR3;
+    uint4 color4 : COLOR4;
+    uint4 color5 : COLOR5;
     float size : SIZE;
 };
 
@@ -48,7 +48,7 @@ VS_OUTPUT VS(VS_INPUT input)
     output.position = input.position;
     output.normal = normalize(mul(input.normal0, WorldInverseTranspose));
     output.size = input.size;
-    output.color = input.color0;
+    output.color = input.color0 / 255.0f;
 
     return output;
 }

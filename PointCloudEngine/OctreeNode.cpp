@@ -20,7 +20,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     double averageGreen = 0;
     double averageBlue = 0;
     double averageAlpha = 0;
-    double factor = 255.0f * size;
+    double factor = size;
 
     // Initialize extends of the cube (the maximal distance from the center in each axis)
     Vector3 extends = Vector3::Zero;
@@ -35,10 +35,10 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
         extends.y = max(extends.y, abs(center.y - v.position.y));
         extends.z = max(extends.z, abs(center.z - v.position.z));
 
-        averageRed += v.red / factor;
-        averageGreen += v.green / factor;
-        averageBlue += v.blue / factor;
-        averageAlpha += v.alpha / factor;
+        averageRed += v.color.red / factor;
+        averageGreen += v.color.green / factor;
+        averageBlue += v.color.blue / factor;
+        averageAlpha += v.color.alpha / factor;
     }
 
     // Save the bounding cube properties
@@ -48,7 +48,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     nodeVertex.size = 2 * max(max(extends.x, extends.y), extends.z);
 
     // Save average color
-    nodeVertex.colors[0] = Color(averageRed, averageGreen, averageBlue, averageAlpha);
+    nodeVertex.colors[0] = Color8(round(averageRed), round(averageGreen), round(averageBlue), round(averageAlpha));
 
     // Split and create children vertices
     std::vector<Vertex> childVertices[8];
