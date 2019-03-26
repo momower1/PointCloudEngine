@@ -117,10 +117,10 @@
     <FxCompile Include="Text.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="PointCloud.hlsl">
+    <FxCompile Include="Splat.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="PointCloudLOD.hlsl">
+    <FxCompile Include="Octree.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

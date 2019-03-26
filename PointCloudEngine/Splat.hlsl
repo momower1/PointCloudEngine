@@ -1,4 +1,4 @@
-cbuffer PointCloudConstantBuffer : register(b0)
+cbuffer SplatRendererConstantBuffer : register(b0)
 {
     float4x4 World;
 //------------------------------------------------------------------------------ (64 byte boundary)

@@ -211,8 +211,8 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <FxCompile Include="PointCloud.hlsl" />
-    <FxCompile Include="PointCloudLOD.hlsl" />
+    <FxCompile Include="Splat.hlsl" />
+    <FxCompile Include="Octree.hlsl" />
     <FxCompile Include="Text.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Effect</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>

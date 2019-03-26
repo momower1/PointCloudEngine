@@ -1,4 +1,4 @@
-cbuffer PointCloudLODConstantBuffer : register(b0)
+cbuffer OctreeRendererConstantBuffer : register(b0)
 {
     float4x4 World;
 //------------------------------------------------------------------------------ (64 byte boundary)
@@ -13,9 +13,19 @@ cbuffer PointCloudLODConstantBuffer : register(b0)
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float3 normal : NORMAL;
+    float3 normal0 : NORMAL0;
+    float3 normal1 : NORMAL1;
+    float3 normal2 : NORMAL2;
+    float3 normal3 : NORMAL3;
+    float3 normal4 : NORMAL4;
+    float3 normal5 : NORMAL5;
+    float4 color0 : COLOR0;
+    float4 color1 : COLOR1;
+    float4 color2 : COLOR2;
+    float4 color3 : COLOR3;
+    float4 color4 : COLOR4;
+    float4 color5 : COLOR5;
     float size : SIZE;
-    uint4 color : COLOR;
 };
 
 struct VS_OUTPUT
@@ -36,9 +46,9 @@ VS_OUTPUT VS(VS_INPUT input)
 {
     VS_OUTPUT output;
     output.position = input.position;
-    output.normal = normalize(mul(input.normal, WorldInverseTranspose));
+    output.normal = normalize(mul(input.normal0, WorldInverseTranspose));
     output.size = input.size;
-    output.color = input.color / 255.0f;
+    output.color = input.color0;
 
     return output;
 }

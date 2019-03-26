@@ -17,8 +17,8 @@ namespace PointCloudEngine
         void Release ();
 
         static D3D11_INPUT_ELEMENT_DESC textLayout[];
-        static D3D11_INPUT_ELEMENT_DESC pointCloudLayout[];
-        static D3D11_INPUT_ELEMENT_DESC pointCloudLODLayout[];
+        static D3D11_INPUT_ELEMENT_DESC splatLayout[];
+        static D3D11_INPUT_ELEMENT_DESC octreeLayout[];
 
         bool VS, PS, GS;
 
