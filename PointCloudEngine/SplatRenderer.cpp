@@ -4,8 +4,9 @@ SplatRenderer::SplatRenderer(std::wstring plyfile)
 {
     vertices = LoadPlyFile(plyfile);
 
-    // Set the default radius
-    constantBufferData.radius = 0.01f;
+    // Set the default values
+    constantBufferData.splatSize = 0.01f;
+    constantBufferData.fovAngleY = fovAngleY;
 }
 
 void SplatRenderer::Initialize(SceneObject *sceneObject)
@@ -43,27 +44,18 @@ void SplatRenderer::Initialize(SceneObject *sceneObject)
 
 void SplatRenderer::Update(SceneObject *sceneObject)
 {
-    if (Input::GetKey(Keyboard::Up))
-    {
-        constantBufferData.radius += dt * 0.01f;
-    }
-    else if (Input::GetKey(Keyboard::Down))
-    {
-        constantBufferData.radius -= dt * 0.01f;
-    }
-
-    constantBufferData.radius = max(0.0002f, constantBufferData.radius);
+    
 }
 
 void SplatRenderer::Draw(SceneObject *sceneObject)
 {
     // Set the shaders
-    d3d11DevCon->VSSetShader(pointCloudShader->vertexShader, 0, 0);
-    d3d11DevCon->GSSetShader(pointCloudShader->geometryShader, 0, 0);
-    d3d11DevCon->PSSetShader(pointCloudShader->pixelShader, 0, 0);
+    d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
+    d3d11DevCon->GSSetShader(splatShader->geometryShader, 0, 0);
+    d3d11DevCon->PSSetShader(splatShader->pixelShader, 0, 0);
 
     // Set the Input (Vertex) Layout
-    d3d11DevCon->IASetInputLayout(pointCloudShader->inputLayout);
+    d3d11DevCon->IASetInputLayout(splatShader->inputLayout);
 
     // Bind the vertex buffer and index buffer to the input assembler (IA)
     UINT offset = 0;
@@ -92,4 +84,9 @@ void SplatRenderer::Release()
 {
     SafeRelease(vertexBuffer);
     SafeRelease(constantBuffer);
+}
+
+void PointCloudEngine::SplatRenderer::SetSplatSize(const float &splatSize)
+{
+    constantBufferData.splatSize = splatSize;
 }

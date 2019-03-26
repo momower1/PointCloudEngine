@@ -148,24 +148,24 @@ PointCloudEngine::OctreeNode::~OctreeNode()
     }
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Vector3 &localCameraPosition, const float &size)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Vector3 &localCameraPosition, const float &splatSize)
 {
     // TODO: View frustum culling, Visibility culling (normals)
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
     std::vector<OctreeNodeVertex> octreeVertices;
     float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
-    // Scale the size by the fov and camera distance (Result: size at that distance in world space)
-    float worldSize = size * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+    // Scale the splat size by the fov and camera distance (Result: size at that distance in world space)
+    float splatSizeWorld = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
-    if ((nodeVertex.size < worldSize) || IsLeafNode())
+    if ((nodeVertex.size < splatSizeWorld) || IsLeafNode())
     {
         // Make sure that e.g. single point nodes with size 0 are drawn as well
         if (nodeVertex.size < FLT_EPSILON)
         {
-            // Set the size temporarily to the world size to make sure that this node is visible
+            // Set the size temporarily to the splat size in world space to make sure that this node is visible
             OctreeNodeVertex tmp = nodeVertex;
-            tmp.size = worldSize;
+            tmp.size = splatSizeWorld;
 
             octreeVertices.push_back(tmp);
         }
@@ -181,7 +181,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Ve
         {
             if (children[i] != NULL)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, size);
+                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, splatSize);
                 octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }

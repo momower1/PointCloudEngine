@@ -6,7 +6,7 @@
 
 namespace PointCloudEngine
 {
-    class OctreeRenderer : public Component
+    class OctreeRenderer : public Component, public ISetSplatSize
     {
     public:
         OctreeRenderer(std::wstring plyfile);
@@ -14,6 +14,8 @@ namespace PointCloudEngine
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);
         void Release();
+
+        void SetSplatSize(const float& splatSize);
 
     private:
         // Same constant buffer as in effect file, keep packing rules in mind
@@ -26,7 +28,8 @@ namespace PointCloudEngine
         };
 
         int level = -1;
-        float radius = 0.02f;
+        float splatSize = 0.01f;
+
         Octree *octree = NULL;
         SceneObject *text = NULL;
         TextRenderer *textRenderer = NULL;

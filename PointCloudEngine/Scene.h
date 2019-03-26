@@ -25,6 +25,7 @@ namespace PointCloudEngine
 
         Vector2 input;
         bool rotate = false;
+        float splatSize = 0.01f;
         float cameraPitch = 0;
         float cameraYaw = 0;
         float cameraSpeed = 0;

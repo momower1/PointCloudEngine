@@ -69,6 +69,7 @@ using namespace PointCloudEngine;
 #include "Hierarchy.h"
 #include "DataStructures.h"
 #include "ConfigFile.h"
+#include "ISetSplatSize.h"
 #include "OctreeNode.h"
 #include "Octree.h"
 #include "TextRenderer.h"
@@ -87,8 +88,8 @@ extern HRESULT hr;
 extern HWND hwnd;
 extern Camera camera;
 extern Shader* textShader;
-extern Shader* pointCloudShader;
-extern Shader* pointCloudLODShader;
+extern Shader* splatShader;
+extern Shader* octreeShader;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11DepthStencilState* depthStencilState;

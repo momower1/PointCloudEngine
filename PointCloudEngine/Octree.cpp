@@ -10,9 +10,9 @@ PointCloudEngine::Octree::~Octree()
     SafeDelete(root);
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector3 &localCameraPosition, const float &size)
+std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector3 &localCameraPosition, const float &splatSize)
 {
-    return root->GetVertices(localCameraPosition, size);
+    return root->GetVertices(localCameraPosition, splatSize);
 }
 
 std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const int &level)

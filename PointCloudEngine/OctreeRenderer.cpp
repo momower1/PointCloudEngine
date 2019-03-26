@@ -42,24 +42,13 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         level++;
     }
 
-    if (Input::GetKey(Keyboard::Up))
-    {
-        radius += dt * 0.01f;
-    }
-    else if (Input::GetKey(Keyboard::Down))
-    {
-        radius -= dt * 0.01f;
-    }
-
-    radius = min(1.0f, max(1.0f / resolutionY, radius));
-
     // Create new buffer from the current octree traversal
     if (level < 0)
     {
         Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
         Vector3 localCameraPosition = Vector4::Transform(Vector4(camera.position.x, camera.position.y, camera.position.z, 1), worldInverse);
 
-        octreeVertices = octree->GetVertices(localCameraPosition, radius);
+        octreeVertices = octree->GetVertices(localCameraPosition, splatSize);
     }
     else
     {
@@ -119,12 +108,12 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
         }
 
         // Set the shaders
-        d3d11DevCon->VSSetShader(pointCloudLODShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(pointCloudLODShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(pointCloudLODShader->pixelShader, 0, 0);
+        d3d11DevCon->VSSetShader(octreeShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeShader->pixelShader, 0, 0);
 
         // Set the Input (Vertex) Layout
-        d3d11DevCon->IASetInputLayout(pointCloudLODShader->inputLayout);
+        d3d11DevCon->IASetInputLayout(octreeShader->inputLayout);
 
         // Bind the vertex buffer and index buffer to the input assembler (IA)
         UINT offset = 0;
@@ -157,4 +146,9 @@ void OctreeRenderer::Release()
 
     SafeRelease(vertexBuffer);
     SafeRelease(constantBuffer);
+}
+
+void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
+{
+    this->splatSize = splatSize;
 }

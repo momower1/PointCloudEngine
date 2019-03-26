@@ -31,6 +31,19 @@ void Scene::Initialize()
 
 void Scene::Update(Timer &timer)
 {
+    // Interactively set the splat size in screen size
+    if (Input::GetKey(Keyboard::Up))
+    {
+        splatSize += dt * 0.01f;
+    }
+    else if (Input::GetKey(Keyboard::Down))
+    {
+        splatSize -= dt * 0.01f;
+    }
+
+    splatSize = min(1.0f, max(1.0f / resolutionY, splatSize));
+    pointCloudRenderer->SetSplatSize(splatSize);
+
     if (Input::GetKeyDown(Keyboard::Space))
     {
         rotate = !rotate;

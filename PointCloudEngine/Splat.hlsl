@@ -9,9 +9,12 @@ cbuffer SplatRendererConstantBuffer : register(b0)
     float4x4 WorldInverseTranspose;
 //------------------------------------------------------------------------------ (64 byte boundary)
     float3 cameraPosition;
-    float radius;
- //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 272 bytes with constant buffer packing rules
+    float fovAngleY;
+//------------------------------------------------------------------------------ (16 byte boundary)
+    float splatSize;
+    // 12 bytes auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+};  // Total: 288 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {
@@ -62,9 +65,10 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
     // Billboard should face in the same direction as the normal
-    float factor = radius * distance(cameraPosition, input[0].position);
-    float3 up = factor * normalize(cross(input[0].normal, cameraRight));
-    float3 right = factor * normalize(cross(input[0].normal, up));
+    float distanceToCamera = distance(cameraPosition, input[0].position);
+    float splatSizeWorld = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+    float3 up = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, cameraRight));
+    float3 right = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, up));
 
     float4x4 VP = mul(View, Projection);
 

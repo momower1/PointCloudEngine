@@ -9,10 +9,10 @@ namespace PointCloudEngine
     class OctreeNode
     {
     public:
-        OctreeNode (const std::vector<Vertex> &vertices, const Vector3 &center, OctreeNode *parent, const int &maxLevel);
+        OctreeNode (const std::vector<Vertex> &vertices, const Vector3 &center, OctreeNode *parent, const int &depth);
         ~OctreeNode();
 
-        std::vector<OctreeNodeVertex> GetVertices(const Vector3 &localCameraPosition, const float &size);
+        std::vector<OctreeNodeVertex> GetVertices(const Vector3 &localCameraPosition, const float &splatSize);
         std::vector<OctreeNodeVertex> GetVerticesAtLevel(const int &level);
 
     private:

@@ -6,7 +6,7 @@
 
 namespace PointCloudEngine
 {
-    class SplatRenderer : public Component
+    class SplatRenderer : public Component, public ISetSplatSize
     {
     public:
         SplatRenderer(std::wstring plyfile);
@@ -14,6 +14,8 @@ namespace PointCloudEngine
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);
         void Release();
+
+        void SetSplatSize(const float &splatSize);
 
     private:
         // Same constant buffer as in effect file, keep packing rules in mind
@@ -24,7 +26,9 @@ namespace PointCloudEngine
             Matrix Projection;
             Matrix WorldInverseTranspose;
             Vector3 cameraPosition;
-            float radius;
+            float fovAngleY;
+            float splatSize;
+            float padding[3];
         };
 
         std::vector<Vertex> vertices;
@@ -32,7 +36,7 @@ namespace PointCloudEngine
 
         // Vertex buffer
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
-        ID3D11Buffer* constantBuffer;		    // Stores data and sends it to the actual buffer in the effect file
+        ID3D11Buffer* constantBuffer;
     };
 }
 #endif
