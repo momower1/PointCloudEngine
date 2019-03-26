@@ -44,11 +44,11 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     // Save the bounding cube properties
     // Only the root node could compute its center with minPosition + 0.5f * (maxPosition - minPosition) to improve spatial fit
     // But usually this is not an issue because the vertices should be oriented around the origin in object space anyways
-    octreeVertex.position = center;
-    octreeVertex.size = max(max(extends.x, extends.y), extends.z);
+    nodeVertex.position = center;
+    nodeVertex.size = max(max(extends.x, extends.y), extends.z);
 
     // Save average color
-    octreeVertex.colors[0] = Color(averageRed, averageGreen, averageBlue, averageAlpha);
+    nodeVertex.colors[0] = Color(averageRed, averageGreen, averageBlue, averageAlpha);
 
     // Split and create children vertices
     std::vector<Vertex> childVertices[8];
@@ -111,7 +111,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     }
 
     // Assign the centers for each child cube
-    float childExtend = 0.5f * octreeVertex.size;
+    float childExtend = 0.5f * nodeVertex.size;
 
     // Correlates to the assigned child vertices
     Vector3 childCenters[8] =
@@ -153,15 +153,15 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Ve
     // TODO: View frustum culling, Visibility culling (normals)
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
     std::vector<OctreeNodeVertex> octreeVertices;
-    float distanceToCamera = Vector3::Distance(localCameraPosition, octreeVertex.position);
+    float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
     // Scale the size by the fov and camera distance (how big is the size at that distance in world space?)
     float worldSize = size * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
-    if ((octreeVertex.size < worldSize) || IsLeafNode())
+    if ((nodeVertex.size < worldSize) || IsLeafNode())
     {
         // Make sure that e.g. nodes with size 0 are drawn as well
-        OctreeNodeVertex tmp = octreeVertex;
+        OctreeNodeVertex tmp = nodeVertex;
         tmp.size = worldSize;
 
         octreeVertices.push_back(tmp);
@@ -188,7 +188,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(c
 
     if (level == 0)
     {
-        octreeVertices.push_back(octreeVertex);
+        octreeVertices.push_back(nodeVertex);
     }
     else if (level > 0)
     {

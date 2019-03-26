@@ -20,7 +20,7 @@ namespace PointCloudEngine
 
         OctreeNode *parent = NULL;
         OctreeNode *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-        OctreeNodeVertex octreeVertex;
+        OctreeNodeVertex nodeVertex;
     };
 }
 
