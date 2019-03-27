@@ -148,6 +148,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
         constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
         constantBufferData.View = camera.view.Transpose();
         constantBufferData.Projection = camera.projection.Transpose();
+        constantBufferData.cameraPosition = camera.position;
 
         // Update effect file buffer, set shader buffer to our created buffer
         d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);

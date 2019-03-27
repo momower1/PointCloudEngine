@@ -8,8 +8,8 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (64 byte boundary)
     float4x4 WorldInverseTranspose;
 //------------------------------------------------------------------------------ (64 byte boundary)
+    float3 cameraPosition;
     int viewDirectionIndex;
-    // 12 bytes auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 272 bytes with constant buffer packing rules
 
@@ -81,11 +81,10 @@ VS_OUTPUT VS(VS_INPUT input)
     output.position = input.position;
     output.size = input.size;
 
-    // Use world inverse to transform camera forward vector into local space
-    float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+    // Use world inverse to transform camera position into local space
     float4x4 worldInverse = transpose(WorldInverseTranspose);
 
-    float3 viewDirection = mul(float4(cameraForward, 0), worldInverse);
+    float3 viewDirection = input.position - mul(float4(cameraPosition, 1), worldInverse);
     float3 normal = float3(0, 0, 0);
     float4 color = float4(0, 0, 0, 0);
 
@@ -189,10 +188,5 @@ void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    if (input.color.a == 0)
-    {
-        discard;
-    }
-
     return input.color;
 }
