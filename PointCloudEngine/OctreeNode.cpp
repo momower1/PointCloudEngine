@@ -1,10 +1,10 @@
 #include "OctreeNode.h"
 
-PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, const Vector3 &center, OctreeNode *parent, const int &depth)
+PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, const Vector3 &center, const float &size, OctreeNode *parent, const int &depth)
 {
-    size_t size = vertices.size();
+    size_t vertexCount = vertices.size();
     
-    if (size == 0)
+    if (vertexCount == 0)
     {
         ErrorMessage(L"Cannot create Octree Node from empty vertices!", L"CreateNode", __FILEW__, __LINE__);
         return;
@@ -15,15 +15,16 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     // For each child cube the octree generation is repeated
     this->parent = parent;
 
+    // Assign node values given by the parent
+    nodeVertex.size = size;
+    nodeVertex.position = center;
+
     // Initialize average color
     double averageRed = 0;
     double averageGreen = 0;
     double averageBlue = 0;
     double averageAlpha = 0;
-    double factor = size;
-
-    // Initialize extends of the cube (the maximal distance from the center in each axis)
-    Vector3 extends = Vector3::Zero;
+    double factor = vertexCount;
 
     // TODO: Normal
 
@@ -31,21 +32,11 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     {
         Vertex v = *it;
 
-        extends.x = max(extends.x, abs(center.x - v.position.x));
-        extends.y = max(extends.y, abs(center.y - v.position.y));
-        extends.z = max(extends.z, abs(center.z - v.position.z));
-
         averageRed += v.color.red / factor;
         averageGreen += v.color.green / factor;
         averageBlue += v.color.blue / factor;
         averageAlpha += v.color.alpha / factor;
     }
-
-    // Save the bounding cube properties
-    // Only the root node could compute its center with minPosition + 0.5f * (maxPosition - minPosition) to improve spatial fit
-    // But usually this is not an issue because the vertices should be oriented around the origin in object space anyways
-    nodeVertex.position = center;
-    nodeVertex.size = 2 * max(max(extends.x, extends.y), extends.z);
 
     // Save average color
     nodeVertex.colors[0] = Color8(round(averageRed), round(averageGreen), round(averageBlue), round(averageAlpha));
@@ -133,7 +124,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
         {
             if (childVertices[i].size() > 0)
             {
-                children[i] = new OctreeNode(childVertices[i], childCenters[i], this, depth - 1);
+                children[i] = new OctreeNode(childVertices[i], childCenters[i], size / 2.0f, this, depth - 1);
             }
         }
     }
