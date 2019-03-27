@@ -126,5 +126,11 @@
     <FxCompile Include="Octree.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
+    <FxCompile Include="OctreeCube.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="OctreeSplat.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

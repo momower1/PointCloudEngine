@@ -30,6 +30,7 @@ namespace PointCloudEngine
         };
 
         int level = -1;
+        bool drawSplats = true;
         float splatSize = 0.01f;
 
         Octree *octree = NULL;

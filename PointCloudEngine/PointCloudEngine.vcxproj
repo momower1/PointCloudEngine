@@ -211,6 +211,8 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <FxCompile Include="OctreeCube.hlsl" />
+    <FxCompile Include="OctreeSplat.hlsl" />
     <FxCompile Include="Splat.hlsl" />
     <FxCompile Include="Octree.hlsl" />
     <FxCompile Include="Text.hlsl">

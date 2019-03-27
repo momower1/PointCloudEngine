@@ -17,7 +17,8 @@ Timer timer;
 Scene scene;
 Shader* textShader;
 Shader* splatShader;
-Shader* octreeShader;
+Shader* octreeCubeShader;
+Shader* octreeSplatShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -363,7 +364,8 @@ bool InitializeScene()
     // Compile the shared shaders
     textShader = Shader::Create(L"Text.hlsl", true, true, true, Shader::textLayout, 3);
     splatShader = Shader::Create(L"Splat.hlsl", true, true, true, Shader::splatLayout, 3);
-    octreeShader = Shader::Create(L"Octree.hlsl", true, true, true, Shader::octreeLayout, 14);
+    octreeCubeShader = Shader::Create(L"OctreeCube.hlsl", true, true, true, Shader::octreeLayout, 14);
+    octreeSplatShader = Shader::Create(L"OctreeSplat.hlsl", true, true, true, Shader::octreeLayout, 14);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");

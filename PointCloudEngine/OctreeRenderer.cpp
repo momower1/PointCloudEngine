@@ -62,6 +62,12 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         }
     }
 
+    // Toggle draw splats
+    if (Input::GetKeyDown(Keyboard::Enter))
+    {
+        drawSplats = !drawSplats;
+    }
+
     // Create new buffer from the current octree traversal
     if (level < 0)
     {
@@ -128,12 +134,21 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
         }
 
         // Set the shaders
-        d3d11DevCon->VSSetShader(octreeShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeShader->pixelShader, 0, 0);
+        if (drawSplats)
+        {
+            d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
+            d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
+            d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
+        }
+        else
+        {
+            d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
+            d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
+            d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
+        }
 
         // Set the Input (Vertex) Layout
-        d3d11DevCon->IASetInputLayout(octreeShader->inputLayout);
+        d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
 
         // Bind the vertex buffer and index buffer to the input assembler (IA)
         UINT offset = 0;
