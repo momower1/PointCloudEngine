@@ -60,6 +60,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     for (int i = 0; i < 6; i++)
     {
         nodeVertex.normals[i] /= visibilityFactorSums[i];
+        nodeVertex.normals[i].Normalize();
         
         averageReds[i] /= visibilityFactorSums[i];
         averageGreens[i] /= visibilityFactorSums[i];

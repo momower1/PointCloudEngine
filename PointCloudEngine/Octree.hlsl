@@ -13,7 +13,7 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 272 bytes with constant buffer packing rules
 
-const float3 viewDirections[6] =
+static const float3 viewDirections[6] =
 {
     float3(1.0f, 0.0f, 0.0f),
     float3(-1.0f, 0.0f, 0.0f),
