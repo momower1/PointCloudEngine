@@ -19,12 +19,13 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     nodeVertex.size = size;
     nodeVertex.position = center;
 
-    // Initialize average color
-    double averageRed = 0;
-    double averageGreen = 0;
-    double averageBlue = 0;
-    double averageAlpha = 0;
-    double factor = vertexCount;
+    // Initialize average colors and variables
+    float visibilityFactorSums[6] = { 0, 0, 0, 0, 0, 0 };
+    double averageReds[6] = { 0, 0, 0, 0, 0, 0 };
+    double averageGreens[6] = { 0, 0, 0, 0, 0, 0 };
+    double averageBlues[6] = { 0, 0, 0, 0, 0, 0 };
+    double averageAlphas[6] = { 0, 0, 0, 0, 0, 0 };
+    double colorFactor = vertexCount;
 
     // TODO: Normal
 
@@ -32,14 +33,41 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     {
         Vertex v = *it;
 
-        averageRed += v.color.red / factor;
-        averageGreen += v.color.green / factor;
-        averageBlue += v.color.blue / factor;
-        averageAlpha += v.color.alpha / factor;
+        // Average visible color and normal from all 6 view directions
+        for (int i = 0; i < 6; i++)
+        {
+            Vector3 viewDirection = Octree::viewDirections[i];
+            viewDirection.Normalize();
+
+            // Calculate visibility of this vertex from the view direction (0 if not visible, 1 if directly orthogonal to view direction)
+            float visibilityFactor = max(0, v.normal.Dot(-viewDirection));
+
+            // Sum up visible normals
+            nodeVertex.normals[i] += visibilityFactor * v.normal;
+
+            // Sum up visible colors
+            averageReds[i] += visibilityFactor * v.color.red;
+            averageGreens[i] += visibilityFactor * v.color.green;
+            averageBlues[i] += visibilityFactor * v.color.blue;
+            averageAlphas[i] += visibilityFactor * v.color.alpha;
+
+            // Divide sums by this value in the end
+            visibilityFactorSums[i] += visibilityFactor;
+        }
     }
 
-    // Save average color
-    nodeVertex.colors[0] = Color8(round(averageRed), round(averageGreen), round(averageBlue), round(averageAlpha));
+    // Divide all the weighted sums in order to get the weighted average
+    for (int i = 0; i < 6; i++)
+    {
+        nodeVertex.normals[i] /= visibilityFactorSums[i];
+        
+        averageReds[i] /= visibilityFactorSums[i];
+        averageGreens[i] /= visibilityFactorSums[i];
+        averageBlues[i] /= visibilityFactorSums[i];
+        averageAlphas[i] /= visibilityFactorSums[i];
+
+        nodeVertex.colors[i] = Color8(round(averageReds[i]), round(averageGreens[i]), round(averageBlues[i]), round(averageAlphas[i]));
+    }
 
     // Split and create children vertices
     std::vector<Vertex> childVertices[8];

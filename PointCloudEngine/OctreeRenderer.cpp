@@ -13,6 +13,9 @@ OctreeRenderer::OctreeRenderer(std::wstring plyfile)
 
     text->transform->position = Vector3(-1, -0.95, 0);
     text->transform->scale = 0.3f * Vector3::One;
+
+    // Don't use specific view direction, use camera view direction
+    constantBufferData.viewDirectionIndex = -1;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
@@ -32,7 +35,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 
 void OctreeRenderer::Update(SceneObject *sceneObject)
 {
-    // Handle input
+    // Select octree level with arrow keys (level -1 means that the level will be ignored)
     if (Input::GetKeyDown(Keyboard::Left) && (level > -1))
     {
         level--;
@@ -40,6 +43,23 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     else if (Input::GetKeyDown(Keyboard::Right) && ((octreeVertices.size() > 0) || (level < 0)))
     {
         level++;
+    }
+
+    // Select view direction with F1 to F6 keys
+    for (int i = 0; i < 6; i++)
+    {
+        if (Input::GetKeyDown((Keyboard::Keys)(Keyboard::F1 + i)))
+        {
+            // Reset to camera view direction if the same key is pressed twice
+            if (constantBufferData.viewDirectionIndex == i)
+            {
+                constantBufferData.viewDirectionIndex = -1;
+            }
+            else
+            {
+                constantBufferData.viewDirectionIndex = i;
+            }
+        }
     }
 
     // Create new buffer from the current octree traversal

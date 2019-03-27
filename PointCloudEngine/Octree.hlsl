@@ -8,7 +8,20 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (64 byte boundary)
     float4x4 WorldInverseTranspose;
 //------------------------------------------------------------------------------ (64 byte boundary)
-};  // Total: 256 bytes with constant buffer packing rules
+    int viewDirectionIndex;
+    // 12 bytes auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+};  // Total: 272 bytes with constant buffer packing rules
+
+const float3 viewDirections[6] =
+{
+    float3(1.0f, 0.0f, 0.0f),
+    float3(-1.0f, 0.0f, 0.0f),
+    float3(0.0f, 1.0f, 0.0f),
+    float3(0.0f, -1.0f, 0.0f),
+    float3(0.0f, 0.0f, 1.0f),
+    float3(0.0f, 0.0f, -1.0f)
+};
 
 struct VS_INPUT
 {
@@ -44,11 +57,63 @@ struct GS_OUTPUT
 
 VS_OUTPUT VS(VS_INPUT input)
 {
+    float3 normals[6] =
+    {
+        input.normal0,
+        input.normal1,
+        input.normal2,
+        input.normal3,
+        input.normal4,
+        input.normal5
+    };
+    
+    float4 colors[6] =
+    {
+        input.color0 / 255.0f,
+        input.color1 / 255.0f,
+        input.color2 / 255.0f,
+        input.color3 / 255.0f,
+        input.color4 / 255.0f,
+        input.color5 / 255.0f
+    };
+
     VS_OUTPUT output;
     output.position = input.position;
-    output.normal = normalize(mul(input.normal0, WorldInverseTranspose));
     output.size = input.size;
-    output.color = input.color0 / 255.0f;
+
+    // Use world inverse to transform camera forward vector into local space
+    float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+    float4x4 worldInverse = transpose(WorldInverseTranspose);
+
+    float3 viewDirection = mul(float4(cameraForward, 0), worldInverse);
+    float3 normal = float3(0, 0, 0);
+    float4 color = float4(0, 0, 0, 0);
+
+    if (viewDirectionIndex >= 0)
+    {
+        viewDirection = viewDirections[viewDirectionIndex];
+    }
+
+    viewDirection = normalize(viewDirection);
+
+    float visibilityFactorSum = 0;
+
+    // Compute the normal and color from this view direction
+    for (int i = 0; i < 6; i++)
+    {
+        float visibilityFactor = max(0, dot(normals[i], -viewDirection));
+
+        normal += visibilityFactor * normals[i];
+        color += visibilityFactor * colors[i];
+
+        visibilityFactorSum += visibilityFactor;
+    }
+
+    normal /= visibilityFactorSum;
+    color /= visibilityFactorSum;
+
+    output.normal = normalize(mul(normal, WorldInverseTranspose));
+    output.color = color;
 
     return output;
 }
@@ -124,5 +189,10 @@ void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
+    if (input.color.a == 0)
+    {
+        discard;
+    }
+
     return input.color;
 }

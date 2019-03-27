@@ -9,6 +9,8 @@ namespace PointCloudEngine
     class Octree
     {
     public:
+        static Vector3 viewDirections[6];
+
         Octree(const std::vector<Vertex> &vertices, const int &depth);
         ~Octree();
 

@@ -1,5 +1,15 @@
 #include "Octree.h"
 
+Vector3 Octree::viewDirections[6] =
+{
+    Vector3(1.0f, 0.0f, 0.0f),
+    Vector3(-1.0f, 0.0f, 0.0f),
+    Vector3(0.0f, 1.0f, 0.0f),
+    Vector3(0.0f, -1.0f, 0.0f),
+    Vector3(0.0f, 0.0f, 1.0f),
+    Vector3(0.0f, 0.0f, -1.0f)
+};
+
 PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int &depth)
 {
     // Calculate center and size of the root node

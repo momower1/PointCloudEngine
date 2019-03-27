@@ -25,6 +25,8 @@ namespace PointCloudEngine
             Matrix View;
             Matrix Projection;
             Matrix WorldInverseTranspose;
+            int viewDirectionIndex;
+            float padding[3];
         };
 
         int level = -1;
