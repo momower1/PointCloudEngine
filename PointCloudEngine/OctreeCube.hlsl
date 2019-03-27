@@ -12,6 +12,7 @@ void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
 
     GS_OUTPUT element;
     element.color = input[0].color;
+    element.normal = input[0].normal;
 
     float3 cube[] =
     {

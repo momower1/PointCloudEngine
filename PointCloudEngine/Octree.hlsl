@@ -55,6 +55,7 @@ struct VS_OUTPUT
 struct GS_OUTPUT
 {
     float4 position : SV_POSITION;
+    float3 normal : NORMAL;
     float4 color : COLOR;
 };
 
@@ -87,6 +88,7 @@ VS_OUTPUT VS(VS_INPUT input)
     // Use world inverse to transform camera position into local space
     float4x4 worldInverse = transpose(WorldInverseTranspose);
 
+    // View direction in local space
     float3 viewDirection = input.position - mul(float4(cameraPosition, 1), worldInverse);
     float3 normal = float3(0, 0, 0);
     float4 color = float4(0, 0, 0, 0);
@@ -103,12 +105,15 @@ VS_OUTPUT VS(VS_INPUT input)
     // Compute the normal and color from this view direction
     for (int i = 0; i < 6; i++)
     {
-        float visibilityFactor = max(0, dot(normals[i], -viewDirection));
+        float visibilityFactor = dot(normals[i], -viewDirection);
 
-        normal += visibilityFactor * normals[i];
-        color += visibilityFactor * colors[i];
+        if (visibilityFactor > 0)
+        {
+            normal += visibilityFactor * normals[i];
+            color += visibilityFactor * colors[i];
 
-        visibilityFactorSum += visibilityFactor;
+            visibilityFactorSum += visibilityFactor;
+        }
     }
 
     normal /= visibilityFactorSum;

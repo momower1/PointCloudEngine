@@ -27,8 +27,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     double averageAlphas[6] = { 0, 0, 0, 0, 0, 0 };
     double colorFactor = vertexCount;
 
-    // TODO: Normal
-
+    // Calculate view dependent colors and normals for this node
     for (auto it = vertices.begin(); it != vertices.end(); it++)
     {
         Vertex v = *it;
@@ -40,19 +39,22 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
             viewDirection.Normalize();
 
             // Calculate visibility of this vertex from the view direction (0 if not visible, 1 if directly orthogonal to view direction)
-            float visibilityFactor = max(0, v.normal.Dot(-viewDirection));
+            float visibilityFactor = v.normal.Dot(-viewDirection);
 
-            // Sum up visible normals
-            nodeVertex.normals[i] += visibilityFactor * v.normal;
+            if (visibilityFactor > 0)
+            {
+                // Sum up visible normals
+                nodeVertex.normals[i] += visibilityFactor * v.normal;
 
-            // Sum up visible colors
-            averageReds[i] += visibilityFactor * v.color.red;
-            averageGreens[i] += visibilityFactor * v.color.green;
-            averageBlues[i] += visibilityFactor * v.color.blue;
-            averageAlphas[i] += visibilityFactor * v.color.alpha;
+                // Sum up visible colors
+                averageReds[i] += visibilityFactor * v.color.red;
+                averageGreens[i] += visibilityFactor * v.color.green;
+                averageBlues[i] += visibilityFactor * v.color.blue;
+                averageAlphas[i] += visibilityFactor * v.color.alpha;
 
-            // Divide sums by this value in the end
-            visibilityFactorSums[i] += visibilityFactor;
+                // Divide sums by this value in the end
+                visibilityFactorSums[i] += visibilityFactor;
+            }
         }
     }
 
@@ -60,7 +62,6 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     for (int i = 0; i < 6; i++)
     {
         nodeVertex.normals[i] /= visibilityFactorSums[i];
-        nodeVertex.normals[i].Normalize();
         
         averageReds[i] /= visibilityFactorSums[i];
         averageGreens[i] /= visibilityFactorSums[i];

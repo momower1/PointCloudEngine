@@ -15,7 +15,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     */
 
     float3 position = mul(float4(input[0].position, 1), World);
-    float3 normal = mul(float4(input[0].normal, 0), WorldInverseTranspose);
+    float3 normal = normalize(mul(float4(input[0].normal, 0), WorldInverseTranspose));
 
     float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
     float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
@@ -27,14 +27,11 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float3 up = 0.5f * splatSizeWorld * normalize(cross(normal, cameraRight));
     float3 right = 0.5f * splatSizeWorld * normalize(cross(normal, up));
 
-    // TODO: Remove
-    up = 0.5f * splatSizeWorld * cameraUp;
-    right = 0.5f * splatSizeWorld * cameraRight;
-
     float4x4 VP = mul(View, Projection);
 
     GS_OUTPUT element;
     element.color = input[0].color;
+    element.normal = normal;
 
     element.position = mul(float4(position + up - right, 1), VP);
     output.Append(element);
