@@ -11,7 +11,10 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
     float3 cameraPosition;
     int viewDirectionIndex;
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 272 bytes with constant buffer packing rules
+    float fovAngleY;
+    float splatSize;
+    // 8 bytes auto padding
+};  // Total: 288 bytes with constant buffer packing rules
 
 static const float3 viewDirections[6] =
 {

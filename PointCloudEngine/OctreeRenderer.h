@@ -27,11 +27,13 @@ namespace PointCloudEngine
             Matrix WorldInverseTranspose;
             Vector3 cameraPosition;
             int viewDirectionIndex;
+            float fovAngleY;
+            float splatSize;
+            float padding[2];
         };
 
         int level = -1;
         bool drawSplats = true;
-        float splatSize = 0.01f;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;

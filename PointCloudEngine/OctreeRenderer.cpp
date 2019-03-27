@@ -16,6 +16,8 @@ OctreeRenderer::OctreeRenderer(std::wstring plyfile)
 
     // Don't use specific view direction, use camera view direction
     constantBufferData.viewDirectionIndex = -1;
+    constantBufferData.fovAngleY = fovAngleY;
+    constantBufferData.splatSize = 0.01f;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
@@ -74,7 +76,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
         Vector3 localCameraPosition = Vector4::Transform(Vector4(camera.position.x, camera.position.y, camera.position.z, 1), worldInverse);
 
-        octreeVertices = octree->GetVertices(localCameraPosition, splatSize);
+        octreeVertices = octree->GetVertices(localCameraPosition, constantBufferData.splatSize);
     }
     else
     {
@@ -186,5 +188,5 @@ void OctreeRenderer::Release()
 
 void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
 {
-    this->splatSize = splatSize;
+    constantBufferData.splatSize = splatSize;
 }
