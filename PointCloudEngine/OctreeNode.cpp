@@ -77,7 +77,9 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
         }
         else
         {
-            // TODO: Which normal to assign? (probably the view direction?)
+            // Make sure that this normal and color is ignored in the weighting process using empty normal and color
+            nodeVertex.normals[i] = PolarNormal();
+            nodeVertex.colors[i] = Color8(0, 0, 0, 0);
         }
     }
 

@@ -63,8 +63,13 @@ struct GS_OUTPUT
 
 float3 PolarNormalToFloat3(uint theta, uint phi)
 {
+    if (theta == 0 && phi == 0)
+    {
+        return float3(0, 0, 0);
+    }
+
     float t = PI * (theta / 255.0f);
-    float p = PI * ((phi / 128.0f) - 1.0f);
+    float p = PI * ((phi / 127.5f) - 1.0f);
 
     return float3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
 }

@@ -61,6 +61,7 @@ namespace PointCloudEngine
     struct PolarNormal
     {
         // Compact representation of a normal with polar coordinates using inclination theta and azimuth phi
+        // When theta=0 and phi=0 this represents an empty normal (0, 0, 0)
         // [0, pi] therefore 0=0, 255=pi
         byte theta;
         // [-pi, pi] therefore 0=-pi, 255=pi
@@ -77,13 +78,25 @@ namespace PointCloudEngine
             normal.Normalize();
 
             theta = 255.0f * (acos(normal.z) / XM_PI);
-            phi = 128.0f + 128.0f * (atan2f(normal.y, normal.x) / XM_PI);
+            phi = 127.5f + 127.5f * (atan2f(normal.y, normal.x) / XM_PI);
+
+            if (theta == 0 && phi == 0)
+            {
+                // Set phi to another value than 0 to avoid representing the empty normal (0, 0, 0)
+                // This is okay since phi has no inpact on the saved normal anyways
+                phi = 128;
+            }
         }
 
         Vector3 ToVector3()
         {
+            if (theta == 0 && phi == 0)
+            {
+                return Vector3(0, 0, 0);
+            }
+
             float t = XM_PI * (theta / 255.0f);
-            float p = XM_PI * ((phi / 128.0f) - 1.0f);
+            float p = XM_PI * ((phi / 127.5f) - 1.0f);
 
             return Vector3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
         }
