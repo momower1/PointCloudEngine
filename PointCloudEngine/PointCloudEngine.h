@@ -18,6 +18,7 @@
 #include <limits>
 #include <map>
 #include <queue>
+#include <math.h>
 
 // Tinyply
 #include "tinyply.h"

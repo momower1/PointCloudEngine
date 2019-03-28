@@ -16,6 +16,8 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
     // 8 bytes auto padding
 };  // Total: 288 bytes with constant buffer packing rules
 
+static const float PI = 3.141592654f;
+
 static const float3 viewDirections[6] =
 {
     float3(1.0f, 0.0f, 0.0f),
@@ -29,12 +31,12 @@ static const float3 viewDirections[6] =
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float3 normal0 : NORMAL0;
-    float3 normal1 : NORMAL1;
-    float3 normal2 : NORMAL2;
-    float3 normal3 : NORMAL3;
-    float3 normal4 : NORMAL4;
-    float3 normal5 : NORMAL5;
+    uint2 normal0 : NORMAL0;
+    uint2 normal1 : NORMAL1;
+    uint2 normal2 : NORMAL2;
+    uint2 normal3 : NORMAL3;
+    uint2 normal4 : NORMAL4;
+    uint2 normal5 : NORMAL5;
     uint4 color0 : COLOR0;
     uint4 color1 : COLOR1;
     uint4 color2 : COLOR2;
@@ -59,16 +61,29 @@ struct GS_OUTPUT
     float4 color : COLOR;
 };
 
+float3 PolarNormalToFloat3(uint theta, uint phi)
+{
+    float t = PI * (theta / 255.0f);
+    float p = PI * ((phi / 128.0f) - 1.0f);
+
+    return float3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
+}
+
+float3 PolarNormalToFloat3(uint2 polarNormal)
+{
+    return PolarNormalToFloat3(polarNormal.x, polarNormal.y);
+}
+
 VS_OUTPUT VS(VS_INPUT input)
 {
     float3 normals[6] =
     {
-        input.normal0,
-        input.normal1,
-        input.normal2,
-        input.normal3,
-        input.normal4,
-        input.normal5
+        PolarNormalToFloat3(input.normal0),
+        PolarNormalToFloat3(input.normal1),
+        PolarNormalToFloat3(input.normal2),
+        PolarNormalToFloat3(input.normal3),
+        PolarNormalToFloat3(input.normal4),
+        PolarNormalToFloat3(input.normal5)
     };
     
     float4 colors[6] =

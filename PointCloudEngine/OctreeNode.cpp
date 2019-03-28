@@ -19,13 +19,15 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     nodeVertex.size = size;
     nodeVertex.position = center;
 
-    // Initialize average colors and variables
+    // Sum up all the visibility factors to create weighted averages
     float visibilityFactorSums[6] = { 0, 0, 0, 0, 0, 0 };
+
+    // Initialize average colors and variables
+    Vector3 averageNormals[6] = { Vector3::Zero, Vector3::Zero, Vector3::Zero, Vector3::Zero, Vector3::Zero, Vector3::Zero };
     double averageReds[6] = { 0, 0, 0, 0, 0, 0 };
     double averageGreens[6] = { 0, 0, 0, 0, 0, 0 };
     double averageBlues[6] = { 0, 0, 0, 0, 0, 0 };
     double averageAlphas[6] = { 0, 0, 0, 0, 0, 0 };
-    double colorFactor = vertexCount;
 
     // Calculate view dependent colors and normals for this node
     for (auto it = vertices.begin(); it != vertices.end(); it++)
@@ -44,7 +46,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
             if (visibilityFactor > 0)
             {
                 // Sum up visible normals
-                nodeVertex.normals[i] += visibilityFactor * v.normal;
+                averageNormals[i] += visibilityFactor * v.normal;
 
                 // Sum up visible colors
                 averageReds[i] += visibilityFactor * v.color.red;
@@ -61,14 +63,22 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     // Divide all the weighted sums in order to get the weighted average
     for (int i = 0; i < 6; i++)
     {
-        nodeVertex.normals[i] /= visibilityFactorSums[i];
+        if (visibilityFactorSums[i] > 0)
+        {
+            averageNormals[i] /= visibilityFactorSums[i];
         
-        averageReds[i] /= visibilityFactorSums[i];
-        averageGreens[i] /= visibilityFactorSums[i];
-        averageBlues[i] /= visibilityFactorSums[i];
-        averageAlphas[i] /= visibilityFactorSums[i];
+            averageReds[i] /= visibilityFactorSums[i];
+            averageGreens[i] /= visibilityFactorSums[i];
+            averageBlues[i] /= visibilityFactorSums[i];
+            averageAlphas[i] /= visibilityFactorSums[i];
 
-        nodeVertex.colors[i] = Color8(round(averageReds[i]), round(averageGreens[i]), round(averageBlues[i]), round(averageAlphas[i]));
+            nodeVertex.normals[i] = PolarNormal(averageNormals[i]);
+            nodeVertex.colors[i] = Color8(round(averageReds[i]), round(averageGreens[i]), round(averageBlues[i]), round(averageAlphas[i]));
+        }
+        else
+        {
+            // TODO: Which normal to assign? (probably the view direction?)
+        }
     }
 
     // Split and create children vertices

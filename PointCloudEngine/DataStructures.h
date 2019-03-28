@@ -58,6 +58,40 @@ namespace PointCloudEngine
         }
     };
 
+    struct PolarNormal
+    {
+        // Compact representation of a normal with polar coordinates using inclination theta and azimuth phi
+        // [0, pi] therefore 0=0, 255=pi
+        byte theta;
+        // [-pi, pi] therefor 0=-pi, 255=pi
+        byte phi;
+
+        PolarNormal()
+        {
+            theta = 0;
+            phi = 0;
+        }
+
+        PolarNormal(Vector3 normal)
+        {
+            normal.Normalize();
+
+            float t = acos(normal.z);
+            float p = atan2f(normal.y, normal.x);
+
+            theta = 255.0f * (acos(normal.z) / XM_PI);
+            phi = 128.0f + 128.0f * (atan2f(normal.y, normal.x) / XM_PI);
+        }
+
+        Vector3 ToVector3()
+        {
+            float t = XM_PI * (theta / 255.0f);
+            float p = XM_PI * ((phi / 128.0f) - 1.0f);
+
+            return Vector3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
+        }
+    };
+
     struct Vertex
     {
         // Stores the .ply file vertices
@@ -72,7 +106,7 @@ namespace PointCloudEngine
         Vector3 position;
 
         // The different normals and colors in object space based on 6 view directions (all sides of a the bounding volume cube)
-        Vector3 normals[6];
+        PolarNormal normals[6];
         Color8 colors[6];
 
         // Width of the whole cube
