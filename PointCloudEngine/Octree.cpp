@@ -28,7 +28,7 @@ PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int 
     Vector3 center = minPosition + 0.5f * (diagonal);
     float size = max(max(diagonal.x, diagonal.y), diagonal.z);
 
-    root = new OctreeNode(vertices, center, size, NULL, depth);
+    root = new OctreeNode(vertices, center, size, depth);
 }
 
 PointCloudEngine::Octree::~Octree()
