@@ -7,14 +7,13 @@ void Scene::Initialize()
     // Create and load the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
 
-    std::wifstream plyfile(configFile->plyfile);
-
-    if (plyfile.is_open())
-    {
-        SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
-        pointCloudRenderer = new RENDERER(configFile->plyfile);
-        pointCloud->AddComponent(pointCloudRenderer);
-    }
+    // Create loading text and hide it
+    TextRenderer *loadingTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+    loadingTextRenderer->text = L"Loading...";
+    loadingText = Hierarchy::Create(L"Loading Text");
+    loadingText->AddComponent(loadingTextRenderer);
+    loadingText->transform->scale = Vector3::Zero;
+    loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
     // Create text renderer to display properties
     textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
@@ -27,6 +26,9 @@ void Scene::Initialize()
     camera.position = Vector3(0.0f, 2.5f, -3.0f);
 
     Input::SetSensitivity(1.0f, 0.5f);
+
+    // Try to load the last plyfile
+    DelayedLoadFile(configFile->plyfile);
 }
 
 void Scene::Update(Timer &timer)
@@ -48,7 +50,12 @@ void Scene::Update(Timer &timer)
     }
 
     splatSize = min(1.0f, max(1.0f / resolutionY, splatSize));
-    pointCloudRenderer->SetSplatSize(splatSize);
+
+    // Pass the splat size to the renderer
+    if (pointCloudRenderer != NULL)
+    {
+        pointCloudRenderer->SetSplatSize(splatSize);
+    }
 
     if (Input::GetKeyDown(Keyboard::Space))
     {
@@ -111,9 +118,19 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"Press [H] to show help");
     }
 
-    // Open file dialog to load another file
-    if (Input::GetKeyDown(Keyboard::O))
+    // Check if there is a file that should be loaded delayed
+    if (timeUntilLoadFile > 0)
     {
+        timeUntilLoadFile -= dt;
+
+        if (timeUntilLoadFile < 0)
+        {
+            LoadFile();
+        }
+    }
+    else if (Input::GetKeyDown(Keyboard::O))
+    {
+        // Open file dialog to load another file
         wchar_t filename[MAX_PATH];
         OPENFILENAMEW openFileName;
         ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
@@ -131,16 +148,7 @@ void Scene::Update(Timer &timer)
 
         if (GetOpenFileNameW(&openFileName))
         {
-            configFile->plyfile = std::wstring(filename);
-            SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
-
-            if (pointCloudRenderer != NULL)
-            {
-                pointCloud->RemoveComponent(pointCloudRenderer);
-            }
-
-            pointCloudRenderer = new RENDERER(configFile->plyfile);
-            pointCloud->AddComponent(pointCloudRenderer);
+            DelayedLoadFile(filename);
         }
 
         Input::SetMode(Mouse::MODE_RELATIVE);
@@ -165,4 +173,38 @@ void Scene::Release()
     SafeDelete(configFile);
 
     Hierarchy::ReleaseAllSceneObjects();
+}
+
+void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
+{
+    std::wifstream file(filepath);
+
+    // Check if the file exists
+    if (file.is_open())
+    {
+        // Load after some delay
+        timeUntilLoadFile = 0.1f;
+        configFile->plyfile = filepath;
+
+        // Show huge loading text
+        loadingText->transform->scale = 1.5f * Vector3::One;
+    }
+}
+
+void PointCloudEngine::Scene::LoadFile()
+{
+    SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
+
+    // Release resources before loading
+    if (pointCloudRenderer != NULL)
+    {
+        pointCloud->RemoveComponent(pointCloudRenderer);
+    }
+
+    // Load the file (takes a long time)
+    pointCloudRenderer = new RENDERER(configFile->plyfile);
+    pointCloud->AddComponent(pointCloudRenderer);
+
+    // Hide loading text
+    loadingText->transform->scale = Vector3::Zero;
 }
