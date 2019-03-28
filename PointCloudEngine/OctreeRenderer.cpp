@@ -12,7 +12,7 @@ OctreeRenderer::OctreeRenderer(std::wstring plyfile)
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
     text->transform->position = Vector3(-1, -0.95, 0);
-    text->transform->scale = 0.3f * Vector3::One;
+    text->transform->scale = 0.35f * Vector3::One;
 
     // Don't use specific view direction, use camera view direction
     constantBufferData.viewDirectionIndex = -1;
@@ -84,7 +84,9 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     }
 
     // Set the text
-    textRenderer->text = L"Octree Level: " + std::to_wstring(level) + L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize);
+    textRenderer->text = L"Octree Level: ";
+    textRenderer->text.append((level < 0) ? L"AUTO" : std::to_wstring(level));
+    textRenderer->text.append(L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize));
 }
 
 void OctreeRenderer::Draw(SceneObject *sceneObject)

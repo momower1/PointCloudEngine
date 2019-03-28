@@ -2,7 +2,7 @@ Texture2D spritesheet : register(t0);
 
 SamplerState SpritesheetSampler
 {
-    Filter = MIN_MAG_MIP_POINT;
+    Filter = MIN_MAG_MIP_LINEAR;
     AddressU = Clamp;
     AddressV = Clamp;
 };
@@ -113,12 +113,16 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
+    uint spritesheetWidth;
+    uint spritesheetHeight;
+    spritesheet.GetDimensions(spritesheetWidth, spritesheetHeight);
+
     float width = input.Rect.z - input.Rect.x;
     float height = input.Rect.w - input.Rect.y;
     
-    int3 pixel = int3(0, 0, 0);
-    pixel.x = input.Rect.x + input.UV.x * width;
-    pixel.y = input.Rect.y + input.UV.y * height;
+    float2 uv;
+    uv.x = (input.Rect.x + input.UV.x * width) / spritesheetWidth;
+    uv.y = (input.Rect.y + input.UV.y * height) / spritesheetHeight;
 
-    return color * spritesheet.Load(pixel);
+    return spritesheet.Sample(SpritesheetSampler, uv);
 }
