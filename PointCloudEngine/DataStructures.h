@@ -63,7 +63,7 @@ namespace PointCloudEngine
         // Compact representation of a normal with polar coordinates using inclination theta and azimuth phi
         // [0, pi] therefore 0=0, 255=pi
         byte theta;
-        // [-pi, pi] therefor 0=-pi, 255=pi
+        // [-pi, pi] therefore 0=-pi, 255=pi
         byte phi;
 
         PolarNormal()
@@ -75,9 +75,6 @@ namespace PointCloudEngine
         PolarNormal(Vector3 normal)
         {
             normal.Normalize();
-
-            float t = acos(normal.z);
-            float p = atan2f(normal.y, normal.x);
 
             theta = 255.0f * (acos(normal.z) / XM_PI);
             phi = 128.0f + 128.0f * (atan2f(normal.y, normal.x) / XM_PI);
