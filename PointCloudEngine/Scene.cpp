@@ -112,6 +112,7 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"[DOWN] Decrease splat size\n");
         textRenderer->text.append(L"[LEFT] Dectrease octree level\n");
         textRenderer->text.append(L"[RIGHT] Increase octree level\n");
+        textRenderer->text.append(L"[ESC] Quit application\n");
     }
     else
     {
