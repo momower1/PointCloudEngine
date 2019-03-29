@@ -192,17 +192,27 @@ void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
 
 void PointCloudEngine::Scene::LoadFile()
 {
-    SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
-
     // Release resources before loading
     if (pointCloudRenderer != NULL)
     {
         pointCloud->RemoveComponent(pointCloudRenderer);
     }
 
-    // Load the file (takes a long time)
-    pointCloudRenderer = new RENDERER(configFile->plyfile);
-    pointCloud->AddComponent(pointCloudRenderer);
+    std::vector<Vertex> vertices;
+
+    // Try to load the file
+    if (LoadPlyFile(vertices, configFile->plyfile))
+    {
+        SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
+
+        // Load the file (takes a long time)
+        pointCloudRenderer = new RENDERER(vertices);
+        pointCloud->AddComponent(pointCloudRenderer);
+    }
+    else
+    {
+        ErrorMessage(L"Could not open " + configFile->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!", L"File loading error", __FILEW__, __LINE__);
+    }
 
     // Hide loading text
     loadingText->transform->scale = Vector3::Zero;

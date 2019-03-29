@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class OctreeRenderer : public Component, public ISetSplatSize
     {
     public:
-        OctreeRenderer(std::wstring plyfile);
+        OctreeRenderer(const std::vector<Vertex> &vertices);
         void Initialize(SceneObject *sceneObject);
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);

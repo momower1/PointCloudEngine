@@ -1,9 +1,7 @@
 #include "OctreeRenderer.h"
 
-OctreeRenderer::OctreeRenderer(std::wstring plyfile)
+OctreeRenderer::OctreeRenderer(const std::vector<Vertex> &vertices)
 {
-    std::vector<Vertex> vertices = LoadPlyFile(plyfile);
-
     // Create the octree
     octree = new Octree(vertices, 12);
 

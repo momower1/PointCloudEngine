@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class SplatRenderer : public Component, public ISetSplatSize
     {
     public:
-        SplatRenderer(std::wstring plyfile);
+        SplatRenderer(const std::vector<Vertex> &vertices);
         void Initialize(SceneObject *sceneObject);
         void Update(SceneObject *sceneObject);
         void Draw(SceneObject *sceneObject);

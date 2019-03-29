@@ -99,7 +99,7 @@ extern ID3D11DepthStencilState* depthStencilState;
 // Global function declarations
 extern void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr = E_FAIL);
 extern void SafeRelease(ID3D11Resource *resource);
-extern std::vector<Vertex> LoadPlyFile(std::wstring plyfile);
+extern bool LoadPlyFile(std::vector<Vertex> &vertices, std::wstring plyfile);
 
 // Function declarations
 bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);

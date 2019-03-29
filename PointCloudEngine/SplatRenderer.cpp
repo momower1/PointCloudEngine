@@ -1,8 +1,8 @@
 #include "SplatRenderer.h"
 
-SplatRenderer::SplatRenderer(std::wstring plyfile)
+SplatRenderer::SplatRenderer(const std::vector<Vertex> &vertices)
 {
-    vertices = LoadPlyFile(plyfile);
+    this->vertices = vertices;
 
     // Set the default values
     constantBufferData.splatSize = 0.01f;

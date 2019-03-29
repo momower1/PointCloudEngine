@@ -56,43 +56,50 @@ void SafeRelease(ID3D11Resource *resource)
     }
 }
 
-std::vector<Vertex> LoadPlyFile(std::wstring plyfile)
+bool LoadPlyFile(std::vector<Vertex> &vertices, std::wstring plyfile)
 {
-    // Load ply file
-    std::ifstream ss(plyfile, std::ios::binary);
-
-    tinyply::PlyFile file;
-    file.parse_header(ss);
-
-    // Tinyply untyped byte buffers for properties
-    std::shared_ptr<tinyply::PlyData> rawPositions, rawNormals, rawColors;
-
-    // Hardcoded properties and elements
-    rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
-    rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
-    rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue" });
-
-    // Read the file
-    file.read(ss);
-
-    // Create vertices
-    size_t count = rawPositions->count;
-    size_t stridePositions = rawPositions->buffer.size_bytes() / count;
-    size_t strideNormals = rawNormals->buffer.size_bytes() / count;
-    size_t strideColors = rawColors->buffer.size_bytes() / count;
-
-    // When this trows an std::bad_alloc exception, the memory requirement is large -> build with x64
-    std::vector<Vertex> vertices(count);
-
-    // Fill each vertex with its data
-    for (int i = 0; i < count; i++)
+    try
     {
-        std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
-        std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
-        std::memcpy(&vertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
+        // Load ply file
+        std::ifstream ss(plyfile, std::ios::binary);
+
+        tinyply::PlyFile file;
+        file.parse_header(ss);
+
+        // Tinyply untyped byte buffers for properties
+        std::shared_ptr<tinyply::PlyData> rawPositions, rawNormals, rawColors;
+
+        // Hardcoded properties and elements
+        rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
+        rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
+        rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue" });
+
+        // Read the file
+        file.read(ss);
+
+        // Create vertices
+        size_t count = rawPositions->count;
+        size_t stridePositions = rawPositions->buffer.size_bytes() / count;
+        size_t strideNormals = rawNormals->buffer.size_bytes() / count;
+        size_t strideColors = rawColors->buffer.size_bytes() / count;
+
+        // When this trows an std::bad_alloc exception, the memory requirement is large -> build with x64
+        vertices = std::vector<Vertex>(count);
+
+        // Fill each vertex with its data
+        for (int i = 0; i < count; i++)
+        {
+            std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
+            std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
+            std::memcpy(&vertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        return false;
     }
 
-    return vertices;
+    return true;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
