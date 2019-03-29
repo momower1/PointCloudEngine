@@ -37,12 +37,12 @@ struct VS_INPUT
     uint2 normal3 : NORMAL3;
     uint2 normal4 : NORMAL4;
     uint2 normal5 : NORMAL5;
-    uint4 color0 : COLOR0;
-    uint4 color1 : COLOR1;
-    uint4 color2 : COLOR2;
-    uint4 color3 : COLOR3;
-    uint4 color4 : COLOR4;
-    uint4 color5 : COLOR5;
+    uint color0 : COLOR0;
+    uint color1 : COLOR1;
+    uint color2 : COLOR2;
+    uint color3 : COLOR3;
+    uint color4 : COLOR4;
+    uint color5 : COLOR5;
     float size : SIZE;
 };
 
@@ -51,14 +51,14 @@ struct VS_OUTPUT
     float3 position : POSITION;
     float3 normal : NORMAL;
     float size : SIZE;
-    float4 color : COLOR;
+    float3 color : COLOR;
 };
 
 struct GS_OUTPUT
 {
     float4 position : SV_POSITION;
     float3 normal : NORMAL;
-    float4 color : COLOR;
+    float3 color : COLOR;
 };
 
 float3 PolarNormalToFloat3(uint theta, uint phi)
@@ -79,6 +79,15 @@ float3 PolarNormalToFloat3(uint2 polarNormal)
     return PolarNormalToFloat3(polarNormal.x, polarNormal.y);
 }
 
+float3 Color16ToFloat3(uint color)
+{
+    float r = ((color >> 10) & 63) / 63.0f;
+    float g = ((color >> 4) & 63) / 63.0f;
+    float b = (color & 15) / 15.0f;
+
+    return float3(r, g, b);
+}
+
 VS_OUTPUT VS(VS_INPUT input)
 {
     float3 normals[6] =
@@ -91,14 +100,14 @@ VS_OUTPUT VS(VS_INPUT input)
         PolarNormalToFloat3(input.normal5)
     };
     
-    float4 colors[6] =
+    float3 colors[6] =
     {
-        input.color0 / 255.0f,
-        input.color1 / 255.0f,
-        input.color2 / 255.0f,
-        input.color3 / 255.0f,
-        input.color4 / 255.0f,
-        input.color5 / 255.0f
+        Color16ToFloat3(input.color0),
+        Color16ToFloat3(input.color1),
+        Color16ToFloat3(input.color2),
+        Color16ToFloat3(input.color3),
+        Color16ToFloat3(input.color4),
+        Color16ToFloat3(input.color5),
     };
 
     VS_OUTPUT output;
@@ -111,7 +120,7 @@ VS_OUTPUT VS(VS_INPUT input)
     // View direction in local space
     float3 viewDirection = input.position - mul(float4(cameraPosition, 1), worldInverse);
     float3 normal = float3(0, 0, 0);
-    float4 color = float4(0, 0, 0, 0);
+    float3 color = float3(0, 0, 0);
 
     if (viewDirectionIndex >= 0)
     {
@@ -147,5 +156,5 @@ VS_OUTPUT VS(VS_INPUT input)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return input.color;
+    return float4(input.color, 1);
 }

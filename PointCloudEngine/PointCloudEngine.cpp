@@ -70,7 +70,7 @@ std::vector<Vertex> LoadPlyFile(std::wstring plyfile)
     // Hardcoded properties and elements
     rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
     rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
-    rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" });
+    rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue" });
 
     // Read the file
     file.read(ss);

@@ -101,7 +101,7 @@ void Scene::Update(Timer &timer)
     if (help)
     {
         textRenderer->text.append(L"[H] Toggle help\n");
-        textRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue,alpha) format\n");
+        textRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
         textRenderer->text.append(L"[WASD] Move Camera\n");
         textRenderer->text.append(L"[MOUSE] Rotate Camera\n");
         textRenderer->text.append(L"[MOUSE WHEEL] Scale\n");

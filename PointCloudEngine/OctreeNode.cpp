@@ -25,7 +25,6 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     double averageReds[6] = { 0, 0, 0, 0, 0, 0 };
     double averageGreens[6] = { 0, 0, 0, 0, 0, 0 };
     double averageBlues[6] = { 0, 0, 0, 0, 0, 0 };
-    double averageAlphas[6] = { 0, 0, 0, 0, 0, 0 };
 
     // Calculate view dependent colors and normals for this node
     for (auto it = vertices.begin(); it != vertices.end(); it++)
@@ -47,10 +46,9 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
                 averageNormals[i] += visibilityFactor * v.normal;
 
                 // Sum up visible colors
-                averageReds[i] += visibilityFactor * v.color.red;
-                averageGreens[i] += visibilityFactor * v.color.green;
-                averageBlues[i] += visibilityFactor * v.color.blue;
-                averageAlphas[i] += visibilityFactor * v.color.alpha;
+                averageReds[i] += visibilityFactor * v.color[0];
+                averageGreens[i] += visibilityFactor * v.color[1];
+                averageBlues[i] += visibilityFactor * v.color[2];
 
                 // Divide sums by this value in the end
                 visibilityFactorSums[i] += visibilityFactor;
@@ -68,16 +66,15 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
             averageReds[i] /= visibilityFactorSums[i];
             averageGreens[i] /= visibilityFactorSums[i];
             averageBlues[i] /= visibilityFactorSums[i];
-            averageAlphas[i] /= visibilityFactorSums[i];
 
             nodeVertex.normals[i] = PolarNormal(averageNormals[i]);
-            nodeVertex.colors[i] = Color8(round(averageReds[i]), round(averageGreens[i]), round(averageBlues[i]), round(averageAlphas[i]));
+            nodeVertex.colors[i] = Color16(averageReds[i], averageGreens[i], averageBlues[i]);
         }
         else
         {
             // Make sure that this normal and color is ignored in the weighting process using empty normal and color
             nodeVertex.normals[i] = PolarNormal();
-            nodeVertex.colors[i] = Color8(0, 0, 0, 0);
+            nodeVertex.colors[i] = Color16();
         }
     }
 
