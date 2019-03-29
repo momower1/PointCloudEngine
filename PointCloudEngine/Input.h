@@ -49,8 +49,6 @@ namespace PointCloudEngine
         static Mouse::State mouseState;
         static Mouse::ButtonStateTracker mouseButtonStateTracker;
 
-        static float mouseSensitivity;
-        static float scrollSensitivity;
         static Vector2 rawMouseMovement;
     };
 }

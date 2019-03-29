@@ -11,9 +11,6 @@ Mouse Input::mouse;
 Mouse::State Input::mouseState;
 Mouse::ButtonStateTracker Input::mouseButtonStateTracker;
 
-float Input::mouseSensitivity = 1.0f;
-float Input::scrollSensitivity = 1.0f;
-
 float Input::mouseScrollDelta;
 Vector2 Input::rawMouseMovement;
 
@@ -83,13 +80,13 @@ void Input::Update()
     mouseButtonStateTracker.Update(mouseState);
 
     // Save mouse scroll delta
-    mouseScrollDelta = 0.01f * scrollSensitivity * mouseState.scrollWheelValue;
+    mouseScrollDelta = 0.01f * settings->scrollSensitivity * mouseState.scrollWheelValue;
     mouse.ResetScrollWheelValue();
 
     // For system wide mouse position set the mouse mode to absolute and get it from the mouse state (drawback: mouse can move out of the window)
     mousePosition.x = max(0, min(mousePosition.x + rawMouseMovement.x, settings->resolutionX));
     mousePosition.y = max(0, min(mousePosition.y + rawMouseMovement.y, settings->resolutionY));
-    mouseDelta = mouseSensitivity * rawMouseMovement;
+    mouseDelta = settings->mouseSensitivity * rawMouseMovement;
 
     // Reset delta value
     rawMouseMovement = Vector2(0, 0);
@@ -211,8 +208,8 @@ bool Input::GetMouseButtonDown(MouseButton::MouseButton button)
 
 void Input::SetSensitivity(float mouseSensitivity, float scrollSensitivity)
 {
-    Input::mouseSensitivity = mouseSensitivity;
-    Input::scrollSensitivity = scrollSensitivity;
+    settings->mouseSensitivity = mouseSensitivity;
+    settings->scrollSensitivity = scrollSensitivity;
 }
 
 void Input::SetMode(Mouse::Mode mode)

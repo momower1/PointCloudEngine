@@ -3,7 +3,7 @@
 OctreeRenderer::OctreeRenderer(const std::vector<Vertex> &vertices)
 {
     // Create the octree
-    octree = new Octree(vertices, 12);
+    octree = new Octree(vertices, settings->maxOctreeDepth);
 
     // Text for showing properties
     text = Hierarchy::Create(L"OctreeRendererText");
