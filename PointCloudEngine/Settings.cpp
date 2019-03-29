@@ -1,6 +1,6 @@
-#include "ConfigFile.h"
+#include "Settings.h"
 
-#define CONFIGFILENAME L"/.pointcloudengine"
+#define SETTINGS_FILENAME L"/settings.pointcloudengine"
 
 /*
     The file just consists of two lines with:
@@ -8,10 +8,10 @@
     2. float scale
 */
 
-PointCloudEngine::ConfigFile::ConfigFile()
+PointCloudEngine::Settings::Settings()
 {
     // Check if the config file exists that stores the last plyfile path
-    std::wifstream configFile(executableDirectory + CONFIGFILENAME);
+    std::wifstream configFile(executableDirectory + SETTINGS_FILENAME);
 
     if (configFile.is_open())
     {
@@ -23,10 +23,10 @@ PointCloudEngine::ConfigFile::ConfigFile()
     }
 }
 
-PointCloudEngine::ConfigFile::~ConfigFile()
+PointCloudEngine::Settings::~Settings()
 {
     // Save values to file
-    std::wofstream configFile(executableDirectory + CONFIGFILENAME);
+    std::wofstream configFile(executableDirectory + SETTINGS_FILENAME);
     configFile << plyfile << std::endl << scale;
     configFile.flush();
     configFile.close();

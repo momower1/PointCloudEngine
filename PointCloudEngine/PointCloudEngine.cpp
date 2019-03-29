@@ -7,14 +7,10 @@ HRESULT hr;
 Camera camera;
 HWND hwnd = NULL;
 LPCTSTR WndClassName = L"PointCloudEngine";
-float fovAngleY = 0.4f * XM_PI;
-int resolutionX = 1280;
-int resolutionY = 720;
-int msaaCount = 1;
-bool windowed = true;
 double dt = 0;
 Timer timer;
 Scene scene;
+Settings* settings;
 Shader* textShader;
 Shader* splatShader;
 Shader* octreeCubeShader;
@@ -110,7 +106,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     executablePath = std::wstring(buffer);
     executableDirectory = executablePath.substr(0, executablePath.find_last_of(L"\\/"));
 
-	if (!InitializeWindow(hInstance, nShowCmd, resolutionX, resolutionY, true))
+    // Load the settings
+    settings = new Settings();
+
+	if (!InitializeWindow(hInstance, nShowCmd, settings->resolutionX, settings->resolutionY, true))
 	{
         ErrorMessage(L"Window Initialization failed.", L"WinMain", __FILEW__, __LINE__);
 		return 0;
@@ -181,8 +180,8 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 {    
 	DXGI_MODE_DESC bufferDesc;		                                        // Describe the backbuffer
 	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));		                // Clear everything for safety
-	bufferDesc.Width = resolutionX;		                                    // Resolution X
-	bufferDesc.Height = resolutionY;		                                // Resolution Y
+	bufferDesc.Width = settings->resolutionX;		                                    // Resolution X
+	bufferDesc.Height = settings->resolutionY;		                                // Resolution Y
 	bufferDesc.RefreshRate.Numerator = 144;		                            // Hertz
 	bufferDesc.RefreshRate.Denominator = 1;
 	bufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;		                    // Describes the display format. 32bit unsigned int for 8bit Color RGBA
@@ -192,12 +191,12 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;		                                // Describe the spaw chain
 	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 	swapChainDesc.BufferDesc = bufferDesc;
-	swapChainDesc.SampleDesc.Count = msaaCount;		                                // Multisampling -> Smooth choppiness in edges and lines
+	swapChainDesc.SampleDesc.Count = settings->msaaCount;		            // Multisampling -> Smooth choppiness in edges and lines
     swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;		    // Describing the access the cpu has to the surface of the back buffer
 	swapChainDesc.BufferCount = 1;		                                    // 1 for double buffering, 2 for triple buffering and so on
 	swapChainDesc.OutputWindow = hwnd;
-	swapChainDesc.Windowed = windowed;		                                // Fullscreen might freeze the programm -> set windowed before exit
+	swapChainDesc.Windowed = settings->windowed;		                    // Fullscreen might freeze the programm -> set windowed before exit
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;		            // Let display driver decide what to do when swapping buffers
 
 	// Create device and swap chain
@@ -214,12 +213,12 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
 	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
 	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
-	depthStencilBufferDesc.Width = resolutionX;
-	depthStencilBufferDesc.Height = resolutionY;
+	depthStencilBufferDesc.Width = settings->resolutionX;
+	depthStencilBufferDesc.Height = settings->resolutionY;
 	depthStencilBufferDesc.MipLevels = 1;
 	depthStencilBufferDesc.ArraySize = 1;
 	depthStencilBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilBufferDesc.SampleDesc.Count = msaaCount;
+	depthStencilBufferDesc.SampleDesc.Count = settings->msaaCount;
 	depthStencilBufferDesc.SampleDesc.Quality = 0;
 	depthStencilBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -365,8 +364,8 @@ bool InitializeScene()
 	viewport.TopLeftY = 0;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
-	viewport.Width = resolutionX;
-	viewport.Height = resolutionY;
+	viewport.Width = settings->resolutionX;
+	viewport.Height = settings->resolutionY;
 
     // Compile the shared shaders
     textShader = Shader::Create(L"Text.hlsl", true, true, true, Shader::textLayout, 3);
@@ -409,7 +408,7 @@ void DrawScene()
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     // Camera view and projection matrix
-    camera.CalculateViewProjection(fovAngleY, (float)resolutionX / (float)resolutionY, 0.1f, 1000.0f);
+    camera.CalculateViewProjection(settings->fovAngleY, (float)settings->resolutionX / (float)settings->resolutionY, 0.1f, 1000.0f);
 
     // Bind viewport to rasterization stage
     d3d11DevCon->RSSetViewports(1, &viewport);
@@ -424,6 +423,9 @@ void DrawScene()
 
 void ReleaseObjects()
 {
+    // Delete settings (also saves them to the hard drive)
+    SafeDelete(settings);
+
     // Release and delete shaders
     Shader::ReleaseAllShaders();
     TextRenderer::ReleaseAllSpriteFonts();

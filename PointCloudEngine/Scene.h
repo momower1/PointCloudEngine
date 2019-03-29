@@ -25,7 +25,6 @@ namespace PointCloudEngine
         SceneObject *pointCloud = NULL;
         TextRenderer *textRenderer = NULL;
         RENDERER *pointCloudRenderer = NULL;
-        ConfigFile *configFile = NULL;
 
         Vector2 input;
         bool help = false;

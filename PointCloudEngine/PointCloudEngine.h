@@ -54,7 +54,7 @@ namespace PointCloudEngine
     class TextRenderer;
     class SplatRenderer;
     class OctreeRenderer;
-    class ConfigFile;
+    class Settings;
     class OctreeNode;
     class Octree;
 }
@@ -69,7 +69,7 @@ using namespace PointCloudEngine;
 #include "SceneObject.h"
 #include "Hierarchy.h"
 #include "DataStructures.h"
-#include "ConfigFile.h"
+#include "Settings.h"
 #include "ISetSplatSize.h"
 #include "OctreeNode.h"
 #include "Octree.h"
@@ -82,12 +82,10 @@ using namespace PointCloudEngine;
 extern std::wstring executablePath;
 extern std::wstring executableDirectory;
 extern double dt;
-extern float fovAngleY;
-extern int resolutionX;
-extern int resolutionY;
 extern HRESULT hr;
 extern HWND hwnd;
 extern Camera camera;
+extern Settings* settings;
 extern Shader* textShader;
 extern Shader* splatShader;
 extern Shader* octreeCubeShader;

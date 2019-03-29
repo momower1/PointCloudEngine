@@ -6,7 +6,7 @@ SplatRenderer::SplatRenderer(const std::vector<Vertex> &vertices)
 
     // Set the default values
     constantBufferData.splatSize = 0.01f;
-    constantBufferData.fovAngleY = fovAngleY;
+    constantBufferData.fovAngleY = settings->fovAngleY;
 }
 
 void SplatRenderer::Initialize(SceneObject *sceneObject)

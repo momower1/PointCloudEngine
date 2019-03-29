@@ -184,7 +184,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Ve
     float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
     // Scale the splat size by the fov and camera distance (Result: size at that distance in world space)
-    float splatSizeWorld = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+    float splatSizeWorld = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
 
     if ((nodeVertex.size < splatSizeWorld) || IsLeafNode())
     {

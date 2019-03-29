@@ -25,8 +25,8 @@ void Input::Initialize(HWND hwnd)
     mouseButtonStateTracker.Reset();
 
     // Set position
-    mousePosition.x = resolutionX / 2;
-    mousePosition.y = resolutionY / 2;
+    mousePosition.x = settings->resolutionX / 2;
+    mousePosition.y = settings->resolutionY / 2;
 
     // Keyboard
     keyboard.Reset();
@@ -87,8 +87,8 @@ void Input::Update()
     mouse.ResetScrollWheelValue();
 
     // For system wide mouse position set the mouse mode to absolute and get it from the mouse state (drawback: mouse can move out of the window)
-    mousePosition.x = max(0, min(mousePosition.x + rawMouseMovement.x, resolutionX));
-    mousePosition.y = max(0, min(mousePosition.y + rawMouseMovement.y, resolutionY));
+    mousePosition.x = max(0, min(mousePosition.x + rawMouseMovement.x, settings->resolutionX));
+    mousePosition.y = max(0, min(mousePosition.y + rawMouseMovement.y, settings->resolutionY));
     mouseDelta = mouseSensitivity * rawMouseMovement;
 
     // Reset delta value

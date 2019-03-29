@@ -14,7 +14,7 @@ OctreeRenderer::OctreeRenderer(const std::vector<Vertex> &vertices)
 
     // Don't use specific view direction, use camera view direction
     constantBufferData.viewDirectionIndex = -1;
-    constantBufferData.fovAngleY = fovAngleY;
+    constantBufferData.fovAngleY = settings->fovAngleY;
     constantBufferData.splatSize = 0.01f;
 }
 

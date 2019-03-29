@@ -2,8 +2,6 @@
 
 void Scene::Initialize()
 {
-    configFile = new ConfigFile();
-
     // Create and load the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
 
@@ -28,7 +26,7 @@ void Scene::Initialize()
     Input::SetSensitivity(1.0f, 0.5f);
 
     // Try to load the last plyfile
-    DelayedLoadFile(configFile->plyfile);
+    DelayedLoadFile(settings->plyfile);
 }
 
 void Scene::Update(Timer &timer)
@@ -49,7 +47,7 @@ void Scene::Update(Timer &timer)
         splatSize -= dt * 0.01f;
     }
 
-    splatSize = min(1.0f, max(1.0f / resolutionY, splatSize));
+    splatSize = min(1.0f, max(1.0f / settings->resolutionY, splatSize));
 
     // Pass the splat size to the renderer
     if (pointCloudRenderer != NULL)
@@ -69,8 +67,8 @@ void Scene::Update(Timer &timer)
     }
 
     // Scale the point cloud by the value saved in the config file
-    configFile->scale += Input::mouseScrollDelta;
-    pointCloud->transform->scale = configFile->scale * Vector3::One;
+    settings->scale += Input::mouseScrollDelta;
+    pointCloud->transform->scale = settings->scale * Vector3::One;
 
     // Rotate camera with mouse
     cameraYaw += dt * Input::mouseDelta.x;
@@ -169,8 +167,6 @@ void Scene::Draw()
 
 void Scene::Release()
 {
-    SafeDelete(configFile);
-
     Hierarchy::ReleaseAllSceneObjects();
 }
 
@@ -183,7 +179,7 @@ void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
     {
         // Load after some delay
         timeUntilLoadFile = 0.1f;
-        configFile->plyfile = filepath;
+        settings->plyfile = filepath;
 
         // Show huge loading text
         loadingText->transform->scale = 1.5f * Vector3::One;
@@ -201,9 +197,9 @@ void PointCloudEngine::Scene::LoadFile()
     std::vector<Vertex> vertices;
 
     // Try to load the file
-    if (LoadPlyFile(vertices, configFile->plyfile))
+    if (LoadPlyFile(vertices, settings->plyfile))
     {
-        SetWindowTextW(hwnd, (configFile->plyfile + L" - PointCloudEngine ").c_str());
+        SetWindowTextW(hwnd, (settings->plyfile + L" - PointCloudEngine ").c_str());
 
         // Load the file (takes a long time)
         pointCloudRenderer = new RENDERER(vertices);
@@ -211,7 +207,7 @@ void PointCloudEngine::Scene::LoadFile()
     }
     else
     {
-        ErrorMessage(L"Could not open " + configFile->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!", L"File loading error", __FILEW__, __LINE__);
+        ErrorMessage(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!", L"File loading error", __FILEW__, __LINE__);
     }
 
     // Hide loading text
