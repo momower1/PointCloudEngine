@@ -108,10 +108,8 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"[SPACE] Toggle rotation\n");
         textRenderer->text.append(L"[ENTER] Switch between octree splat/cube view\n");
         textRenderer->text.append(L"[F1-F6] Toggle view direction\n");
-        textRenderer->text.append(L"[UP] Increase splat size\n");
-        textRenderer->text.append(L"[DOWN] Decrease splat size\n");
-        textRenderer->text.append(L"[LEFT] Dectrease octree level\n");
-        textRenderer->text.append(L"[RIGHT] Increase octree level\n");
+        textRenderer->text.append(L"[UP/DOWN] Increase/decrease splat size\n");
+        textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
         textRenderer->text.append(L"[ESC] Quit application\n");
     }
     else
