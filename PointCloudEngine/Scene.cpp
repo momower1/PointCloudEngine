@@ -23,8 +23,6 @@ void Scene::Initialize()
     text->transform->scale = 0.35f * Vector3::One;
     camera.position = Vector3(0.0f, 2.5f, -3.0f);
 
-    Input::SetSensitivity(1.0f, 0.5f);
-
     // Try to load the last plyfile
     DelayedLoadFile(settings->plyfile);
 }
