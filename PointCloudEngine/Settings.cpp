@@ -5,13 +5,13 @@
 PointCloudEngine::Settings::Settings()
 {
     // Check if the config file exists that stores the last plyfile path
-    std::wifstream configFile(executableDirectory + SETTINGS_FILENAME);
+    std::wifstream settingsFile(executableDirectory + SETTINGS_FILENAME);
 
-    if (configFile.is_open())
+    if (settingsFile.is_open())
     {
         std::wstring line;
 
-        while (std::getline(configFile, line))
+        while (std::getline(settingsFile, line))
         {
             // Split the string
             int delimiter = line.find(L"=");
@@ -82,27 +82,30 @@ PointCloudEngine::Settings::Settings()
 PointCloudEngine::Settings::~Settings()
 {
     // Save values as lines with "variableName=variableValue" to file with comments
-    std::wofstream configFile(executableDirectory + SETTINGS_FILENAME);
+    std::wofstream settingsFile(executableDirectory + SETTINGS_FILENAME);
 
-    configFile << L"# Rendering Parameters" << std::endl;
-    configFile << nameof(fovAngleY) << L"=" << fovAngleY << std::endl;
-    configFile << nameof(resolutionX) << L"=" << resolutionX << std::endl;
-    configFile << nameof(resolutionY) << L"=" << resolutionY << std::endl;
-    configFile << nameof(msaaCount) << L"=" << msaaCount << std::endl;
-    configFile << nameof(windowed) << L"=" << windowed << std::endl;
-    configFile << std::endl;
+    settingsFile << L"# In order to change parameters:" << std::endl;
+    settingsFile << L"# Close the engine, edit this file and then restard the engine" << std::endl;
 
-    configFile << L"# Ply File Parameters" << std::endl;
-    configFile << nameof(plyfile) << L"=" << plyfile << std::endl;
-    configFile << nameof(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
-    configFile << nameof(scale) << L"=" << scale << std::endl;
-    configFile << std::endl;
+    settingsFile << L"# Rendering Parameters" << std::endl;
+    settingsFile << nameof(fovAngleY) << L"=" << fovAngleY << std::endl;
+    settingsFile << nameof(resolutionX) << L"=" << resolutionX << std::endl;
+    settingsFile << nameof(resolutionY) << L"=" << resolutionY << std::endl;
+    settingsFile << nameof(msaaCount) << L"=" << msaaCount << std::endl;
+    settingsFile << nameof(windowed) << L"=" << windowed << std::endl;
+    settingsFile << std::endl;
 
-    configFile << L"# Input Parameters" << std::endl;
-    configFile << nameof(mouseSensitivity) << L"=" << mouseSensitivity << std::endl;
-    configFile << nameof(scrollSensitivity) << L"=" << scrollSensitivity << std::endl;
-    configFile << std::endl;
+    settingsFile << L"# Ply File Parameters" << std::endl;
+    settingsFile << nameof(plyfile) << L"=" << plyfile << std::endl;
+    settingsFile << nameof(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
+    settingsFile << nameof(scale) << L"=" << scale << std::endl;
+    settingsFile << std::endl;
 
-    configFile.flush();
-    configFile.close();
+    settingsFile << L"# Input Parameters" << std::endl;
+    settingsFile << nameof(mouseSensitivity) << L"=" << mouseSensitivity << std::endl;
+    settingsFile << nameof(scrollSensitivity) << L"=" << scrollSensitivity << std::endl;
+    settingsFile << std::endl;
+
+    settingsFile.flush();
+    settingsFile.close();
 }
