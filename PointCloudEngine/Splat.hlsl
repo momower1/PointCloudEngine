@@ -98,5 +98,5 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return input.color;
+    return float4(input.color.rgb, 1);
 }
