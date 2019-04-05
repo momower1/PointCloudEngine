@@ -20,20 +20,20 @@ struct VS_INPUT
 {
     float3 position : POSITION;
     float3 normal : NORMAL;
-    uint4 color : COLOR;
+    uint3 color : COLOR;
 };
 
 struct VS_OUTPUT
 {
     float3 position : POSITION;
     float3 normal : NORMAL;
-    float4 color : COLOR;
+    float3 color : COLOR;
 };
 
 struct GS_OUTPUT
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR;
+    float3 color : COLOR;
 };
 
 VS_OUTPUT VS(VS_INPUT input)
@@ -98,5 +98,5 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return float4(input.color.rgb, 1);
+    return float4(input.color, 1);
 }
