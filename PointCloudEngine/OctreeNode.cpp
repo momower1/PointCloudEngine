@@ -234,8 +234,8 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Ve
         {
             float visibilityFactor = viewDirection.Dot(-nodeVertex.normals[i].ToVector3());
 
-            // This is incorrect and smaller than 0 because there can be vertices inside a cluster with different normals than the mean
-            // TODO: Save the maximum angle (normal cone) from the mean to the cluster vertices and compare with the angle in mind in order to do correct visibility culling
+            // This comparision can be incorrect in some cases because there can be vertices inside a cluster with different normals than the mean (that's why > -0.5f)
+            // TODO: Save the maximum angle (normal cone) from the mean to all normals in the cluster and compare with that angle in mind in order to always do correct visibility culling
             if (visibilityFactor > -0.5f)
             {
                 visible = true;
