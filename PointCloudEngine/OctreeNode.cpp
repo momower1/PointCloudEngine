@@ -223,17 +223,17 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Ve
     std::vector<OctreeNodeVertex> octreeVertices;
     float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
-    // Scale the splat size by the fov and camera distance (Result: size at that distance in world space)
-    float splatSizeWorld = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
+    // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
+    float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
 
-    if ((nodeVertex.size < splatSizeWorld) || IsLeafNode())
+    if ((nodeVertex.size < requiredSplatSize) || IsLeafNode())
     {
         // Make sure that e.g. single point nodes with size 0 are drawn as well
         if (nodeVertex.size < FLT_EPSILON)
         {
-            // Set the size temporarily to the splat size in world space to make sure that this node is visible
+            // Set the size temporarily to the splat size in local space to make sure that this node is visible
             OctreeNodeVertex tmp = nodeVertex;
-            tmp.size = splatSizeWorld;
+            tmp.size = requiredSplatSize;
 
             octreeVertices.push_back(tmp);
         }
