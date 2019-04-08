@@ -55,19 +55,16 @@ VS_OUTPUT VS(VS_INPUT input)
     float4x4 worldInverse = transpose(WorldInverseTranspose);
 
     // View direction in local space
-    float3 viewDirection = input.position - mul(float4(cameraPosition, 1), worldInverse);
+    float3 viewDirection = normalize(input.position - mul(float4(cameraPosition, 1), worldInverse));
     float3 normal = float3(0, 0, 0);
     float3 color = float3(0, 0, 0);
 
-    viewDirection = normalize(viewDirection);
-
-    // TODO: Use weights
     float visibilityFactorSum = 0;
 
     // Compute the normal and color from this view direction
     for (int i = 0; i < 6; i++)
     {
-        float visibilityFactor = dot(normals[i], -viewDirection);
+        float visibilityFactor = weights[i] * dot(normals[i], -viewDirection);
 
         if (visibilityFactor > 0)
         {
