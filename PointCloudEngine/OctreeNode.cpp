@@ -218,39 +218,63 @@ PointCloudEngine::OctreeNode::~OctreeNode()
 
 std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Vector3 &localCameraPosition, const float &splatSize)
 {
-    // TODO: View frustum culling, Visibility culling (normals)
+    // TODO: View frustum culling
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
     std::vector<OctreeNodeVertex> octreeVertices;
-    float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
+    Vector3 toCamera = localCameraPosition - nodeVertex.position;
+    float distanceToCamera = toCamera.Length();
 
-    // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
-    float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
+    // Visibility culling based on the normals
+    bool visible = false;
+    Vector3 viewDirection = -toCamera / distanceToCamera;
 
-    if ((nodeVertex.size < requiredSplatSize) || IsLeafNode())
+    for (int i = 0; i < 6; i++)
     {
-        // Make sure that e.g. single point nodes with size 0 are drawn as well
-        if (nodeVertex.size < FLT_EPSILON)
+        if (nodeVertex.weights[i] > 0)
         {
-            // Set the size temporarily to the splat size in local space to make sure that this node is visible
-            OctreeNodeVertex tmp = nodeVertex;
-            tmp.size = requiredSplatSize;
+            float visibilityFactor = viewDirection.Dot(-nodeVertex.normals[i].ToVector3());
 
-            octreeVertices.push_back(tmp);
+            // This is incorrect and smaller than 0 because there can be vertices inside a cluster with different normals than the mean
+            // TODO: Save the maximum angle (normal cone) from the mean to the cluster vertices and compare with the angle in mind in order to do correct visibility culling
+            if (visibilityFactor > -0.5f)
+            {
+                visible = true;
+                break;
+            }
+        }
+    }
+
+    if (visible)
+    {
+        // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
+        float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
+
+        if ((nodeVertex.size < requiredSplatSize) || IsLeafNode())
+        {
+            // Make sure that e.g. single point nodes with size 0 are drawn as well
+            if (nodeVertex.size < FLT_EPSILON)
+            {
+                // Set the size temporarily to the splat size in local space to make sure that this node is visible
+                OctreeNodeVertex tmp = nodeVertex;
+                tmp.size = requiredSplatSize;
+
+                octreeVertices.push_back(tmp);
+            }
+            else
+            {
+                octreeVertices.push_back(nodeVertex);
+            }
         }
         else
         {
-            octreeVertices.push_back(nodeVertex);
-        }
-    }
-    else
-    {
-        // Traverse the whole octree and add child vertices
-        for (int i = 0; i < 8; i++)
-        {
-            if (children[i] != NULL)
+            // Traverse the whole octree and add child vertices
+            for (int i = 0; i < 8; i++)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, splatSize);
-                octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
+                if (children[i] != NULL)
+                {
+                    std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, splatSize);
+                    octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
+                }
             }
         }
     }
