@@ -126,10 +126,16 @@
     <FxCompile Include="Octree.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="OctreeCube.hlsl">
+    <FxCompile Include="OctreeVSPS.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="OctreeSplat.hlsl">
+    <FxCompile Include="OctreeCubeGS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="OctreeSplatGS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="OctreeCluster.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

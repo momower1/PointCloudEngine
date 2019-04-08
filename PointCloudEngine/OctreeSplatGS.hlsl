@@ -1,4 +1,4 @@
-#include "Octree.hlsl"
+#include "OctreeVSPS.hlsl"
 
 [maxvertexcount(16)]
 void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)

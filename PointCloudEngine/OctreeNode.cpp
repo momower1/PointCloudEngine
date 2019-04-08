@@ -17,66 +17,106 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     nodeVertex.size = size;
     nodeVertex.position = center;
 
-    // Sum up all the visibility factors to create weighted averages
-    float visibilityFactorSums[6] = { 0, 0, 0, 0, 0, 0 };
+    // Apply the k-means clustering algorithm to find clusters for the normals
+    Vector3 means[6];
+    const int k = min(vertexCount, 6);
+    int verticesPerMean[6] = { 0, 0, 0, 0, 0, 0 };
 
-    // Initialize average colors and variables
-    Vector3 averageNormals[6] = { Vector3::Zero, Vector3::Zero, Vector3::Zero, Vector3::Zero, Vector3::Zero, Vector3::Zero };
+    // Set initial means to the first k normals
+    for (int i = 0; i < k; i++)
+    {
+        means[i] = vertices[i].normal;
+        verticesPerMean[i] = 1;
+    }
+
+    // Save the index of the mean that each vertex is assigned to
+    bool changed = true;
+    int *clusters = new int[vertexCount];
+    ZeroMemory(clusters, sizeof(int) * vertexCount);
+
+    while (changed)
+    {
+        // Assign all the vertices to the closest mean to them
+        for (int i = 0; i < vertexCount; i++)
+        {
+            float minDistance = Vector3::Distance(vertices[i].normal, means[clusters[i]]);
+
+            for (int j = 0; j < k; j++)
+            {
+                float distance = Vector3::Distance(vertices[i].normal, means[j]);
+
+                if (distance < minDistance)
+                {
+                    clusters[i] = j;
+                    minDistance = distance;
+                }
+            }
+        }
+
+        // Calculate the new means from the vertices in each cluster
+        Vector3 newMeans[6];
+
+        for (int i = 0; i < k; i++)
+        {
+            verticesPerMean[i] = 0;
+        }
+
+        for (int i = 0; i < vertexCount; i++)
+        {
+            newMeans[clusters[i]] += vertices[i].normal;
+            verticesPerMean[clusters[i]] += 1;
+        }
+
+        changed = false;
+
+        // Update the means
+        for (int i = 0; i < k; i++)
+        {
+            newMeans[i] /= verticesPerMean[i];
+
+            if (Vector3::DistanceSquared(means[i], newMeans[i]) > FLT_EPSILON)
+            {
+                changed = true;
+            }
+
+            means[i] = newMeans[i];
+        }
+
+    }
+
+    // Initialize average colors that are calculated per cluster
     double averageReds[6] = { 0, 0, 0, 0, 0, 0 };
     double averageGreens[6] = { 0, 0, 0, 0, 0, 0 };
     double averageBlues[6] = { 0, 0, 0, 0, 0, 0 };
 
-    // Calculate view dependent colors and normals for this node
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    // Calculate color
+    for (int i = 0; i < vertexCount; i++)
     {
-        Vertex v = *it;
-
-        // Average visible color and normal from all 6 view directions
-        for (int i = 0; i < 6; i++)
-        {
-            Vector3 viewDirection = Octree::viewDirections[i];
-            viewDirection.Normalize();
-
-            // Calculate visibility of this vertex from the view direction (0 if not visible, 1 if directly orthogonal to view direction)
-            float visibilityFactor = v.normal.Dot(-viewDirection);
-
-            if (visibilityFactor > 0)
-            {
-                // Sum up visible normals
-                averageNormals[i] += visibilityFactor * v.normal;
-
-                // Sum up visible colors
-                averageReds[i] += visibilityFactor * v.color[0];
-                averageGreens[i] += visibilityFactor * v.color[1];
-                averageBlues[i] += visibilityFactor * v.color[2];
-
-                // Divide sums by this value in the end
-                visibilityFactorSums[i] += visibilityFactor;
-            }
-        }
+        averageReds[clusters[i]] += vertices[i].color[0];
+        averageGreens[clusters[i]] += vertices[i].color[1];
+        averageBlues[clusters[i]] += vertices[i].color[2];
     }
 
-    // Divide all the weighted sums in order to get the weighted average
+    // Assign node vertex properties
     for (int i = 0; i < 6; i++)
     {
-        if (visibilityFactorSums[i] > 0)
+        if (verticesPerMean[i] > 0)
         {
-            averageNormals[i] /= visibilityFactorSums[i];
-        
-            averageReds[i] /= visibilityFactorSums[i];
-            averageGreens[i] /= visibilityFactorSums[i];
-            averageBlues[i] /= visibilityFactorSums[i];
+            averageReds[i] /= verticesPerMean[i];
+            averageGreens[i] /= verticesPerMean[i];
+            averageBlues[i] /= verticesPerMean[i];
 
-            nodeVertex.normals[i] = PolarNormal(averageNormals[i]);
+            nodeVertex.normals[i] = PolarNormal(means[i]);
             nodeVertex.colors[i] = Color16(averageReds[i], averageGreens[i], averageBlues[i]);
+            nodeVertex.weights[i] = verticesPerMean[i] / static_cast<float>(vertexCount);
         }
         else
         {
-            // Make sure that this normal and color is ignored in the weighting process using empty normal and color
-            nodeVertex.normals[i] = PolarNormal();
-            nodeVertex.colors[i] = Color16();
+            nodeVertex.weights[i] = 0;
         }
     }
+
+    delete[] clusters;
 
     // Split and create children vertices
     std::vector<Vertex> childVertices[8];

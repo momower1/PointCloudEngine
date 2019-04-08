@@ -12,8 +12,7 @@ OctreeRenderer::OctreeRenderer(const std::vector<Vertex> &vertices)
     text->transform->position = Vector3(-1, -0.95, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
-    // Don't use specific view direction, use camera view direction
-    constantBufferData.viewDirectionIndex = -1;
+    // Initialize constant buffer data
     constantBufferData.fovAngleY = settings->fovAngleY;
     constantBufferData.splatSize = 0.01f;
 }
@@ -45,27 +44,10 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         level++;
     }
 
-    // Select view direction with F1 to F6 keys
-    for (int i = 0; i < 6; i++)
-    {
-        if (Input::GetKeyDown((Keyboard::Keys)(Keyboard::F1 + i)))
-        {
-            // Reset to camera view direction if the same key is pressed twice
-            if (constantBufferData.viewDirectionIndex == i)
-            {
-                constantBufferData.viewDirectionIndex = -1;
-            }
-            else
-            {
-                constantBufferData.viewDirectionIndex = i;
-            }
-        }
-    }
-
     // Toggle draw splats
     if (Input::GetKeyDown(Keyboard::Enter))
     {
-        drawSplats = !drawSplats;
+        viewMode = (viewMode + 1) % 3;
     }
 
     // Create new buffer from the current octree traversal
@@ -136,17 +118,23 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
         }
 
         // Set the shaders
-        if (drawSplats)
+        if (viewMode == 0)
         {
             d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
         }
-        else
+        else if(viewMode == 1)
         {
             d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
+        }
+        else if (viewMode == 2)
+        {
+            d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
+            d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
+            d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
         }
 
         // Set the Input (Vertex) Layout

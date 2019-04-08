@@ -15,6 +15,7 @@ Shader* textShader;
 Shader* splatShader;
 Shader* octreeCubeShader;
 Shader* octreeSplatShader;
+Shader* octreeClusterShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -88,6 +89,9 @@ bool LoadPlyFile(std::vector<Vertex> &vertices, std::wstring plyfile)
             std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
             std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
             std::memcpy(&vertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
+
+            // Make sure that the normals are normalized
+            vertices[i].normal.Normalize();
         }
     }
     catch (const std::exception &e)
@@ -370,8 +374,9 @@ bool InitializeScene()
     // Compile the shared shaders
     textShader = Shader::Create(L"Text.hlsl", true, true, true, Shader::textLayout, 3);
     splatShader = Shader::Create(L"Splat.hlsl", true, true, true, Shader::splatLayout, 3);
-    octreeCubeShader = Shader::Create(L"OctreeCube.hlsl", true, true, true, Shader::octreeLayout, 14);
-    octreeSplatShader = Shader::Create(L"OctreeSplat.hlsl", true, true, true, Shader::octreeLayout, 14);
+    octreeCubeShader = Shader::Create(L"OctreeCubeGS.hlsl", true, true, true, Shader::octreeLayout, 20);
+    octreeSplatShader = Shader::Create(L"OctreeSplatGS.hlsl", true, true, true, Shader::octreeLayout, 20);
+    octreeClusterShader = Shader::Create(L"OctreeCluster.hlsl", true, true, true, Shader::octreeLayout, 20);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
