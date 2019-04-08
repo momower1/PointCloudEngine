@@ -32,12 +32,12 @@ struct VS_INPUT
     uint color3 : COLOR3;
     uint color4 : COLOR4;
     uint color5 : COLOR5;
-    float weight0 : WEIGHT0;
-    float weight1 : WEIGHT1;
-    float weight2 : WEIGHT2;
-    float weight3 : WEIGHT3;
-    float weight4 : WEIGHT4;
-    float weight5 : WEIGHT5;
+    uint weight0 : WEIGHT0;
+    uint weight1 : WEIGHT1;
+    uint weight2 : WEIGHT2;
+    uint weight3 : WEIGHT3;
+    uint weight4 : WEIGHT4;
+    uint weight5 : WEIGHT5;
     float size : SIZE;
 };
 

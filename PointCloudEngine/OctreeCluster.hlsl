@@ -18,16 +18,26 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 
     float4x4 WVP = mul(World, mul(View, Projection));
 
-    float maxWeight = max(input[0].weight0, max(input[0].weight1, max(input[0].weight2, max(input[0].weight3, max(input[0].weight4, input[0].weight5)))));
+    float weights[6] =
+    {
+        input[0].weight0 / 255.0f,
+        input[0].weight1 / 255.0f,
+        input[0].weight2 / 255.0f,
+        input[0].weight3 / 255.0f,
+        input[0].weight4 / 255.0f,
+        input[0].weight5 / 255.0f
+    };
+
+    float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
 
     float3 end[] =
     {
-        input[0].position + extend * (input[0].weight0 / maxWeight) * PolarNormalToFloat3(input[0].normal0),
-        input[0].position + extend * (input[0].weight1 / maxWeight) * PolarNormalToFloat3(input[0].normal1),
-        input[0].position + extend * (input[0].weight2 / maxWeight) * PolarNormalToFloat3(input[0].normal2),
-        input[0].position + extend * (input[0].weight3 / maxWeight) * PolarNormalToFloat3(input[0].normal3),
-        input[0].position + extend * (input[0].weight4 / maxWeight) * PolarNormalToFloat3(input[0].normal4),
-        input[0].position + extend * (input[0].weight5 / maxWeight) * PolarNormalToFloat3(input[0].normal5)
+        input[0].position + extend * (weights[0] / maxWeight) * PolarNormalToFloat3(input[0].normal0),
+        input[0].position + extend * (weights[1] / maxWeight) * PolarNormalToFloat3(input[0].normal1),
+        input[0].position + extend * (weights[2] / maxWeight) * PolarNormalToFloat3(input[0].normal2),
+        input[0].position + extend * (weights[3] / maxWeight) * PolarNormalToFloat3(input[0].normal3),
+        input[0].position + extend * (weights[4] / maxWeight) * PolarNormalToFloat3(input[0].normal4),
+        input[0].position + extend * (weights[5] / maxWeight) * PolarNormalToFloat3(input[0].normal5)
     };
 
     GS_OUTPUT element;
