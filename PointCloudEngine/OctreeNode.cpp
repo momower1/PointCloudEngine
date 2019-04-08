@@ -31,8 +31,8 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
 
     // Save the index of the mean that each vertex is assigned to
     bool changed = true;
-    int *clusters = new int[vertexCount];
-    ZeroMemory(clusters, sizeof(int) * vertexCount);
+    byte *clusters = new byte[vertexCount];
+    ZeroMemory(clusters, sizeof(byte) * vertexCount);
 
     while (changed)
     {
