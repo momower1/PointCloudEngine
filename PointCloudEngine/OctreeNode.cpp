@@ -218,63 +218,40 @@ PointCloudEngine::OctreeNode::~OctreeNode()
 
 std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const Vector3 &localCameraPosition, const float &splatSize)
 {
-    // TODO: View frustum culling
+    // TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
+    // TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
     std::vector<OctreeNodeVertex> octreeVertices;
-    Vector3 toCamera = localCameraPosition - nodeVertex.position;
-    float distanceToCamera = toCamera.Length();
+    float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
-    // Visibility culling based on the normals
-    bool visible = false;
-    Vector3 viewDirection = -toCamera / distanceToCamera;
+    // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
+    float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
 
-    for (int i = 0; i < 6; i++)
+    if ((nodeVertex.size < requiredSplatSize) || IsLeafNode())
     {
-        if (nodeVertex.weights[i] > 0)
+        // Make sure that e.g. single point nodes with size 0 are drawn as well
+        if (nodeVertex.size < FLT_EPSILON)
         {
-            float visibilityFactor = viewDirection.Dot(-nodeVertex.normals[i].ToVector3());
+            // Set the size temporarily to the splat size in local space to make sure that this node is visible
+            OctreeNodeVertex tmp = nodeVertex;
+            tmp.size = requiredSplatSize;
 
-            // This comparision can be incorrect in some cases because there can be vertices inside a cluster with different normals than the mean (that's why > -0.5f)
-            // TODO: Save the maximum angle (normal cone) from the mean to all normals in the cluster and compare with that angle in mind in order to always do correct visibility culling
-            if (visibilityFactor > -0.5f)
-            {
-                visible = true;
-                break;
-            }
-        }
-    }
-
-    if (visible)
-    {
-        // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
-        float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
-
-        if ((nodeVertex.size < requiredSplatSize) || IsLeafNode())
-        {
-            // Make sure that e.g. single point nodes with size 0 are drawn as well
-            if (nodeVertex.size < FLT_EPSILON)
-            {
-                // Set the size temporarily to the splat size in local space to make sure that this node is visible
-                OctreeNodeVertex tmp = nodeVertex;
-                tmp.size = requiredSplatSize;
-
-                octreeVertices.push_back(tmp);
-            }
-            else
-            {
-                octreeVertices.push_back(nodeVertex);
-            }
+            octreeVertices.push_back(tmp);
         }
         else
         {
-            // Traverse the whole octree and add child vertices
-            for (int i = 0; i < 8; i++)
+            octreeVertices.push_back(nodeVertex);
+        }
+    }
+    else
+    {
+        // Traverse the whole octree and add child vertices
+        for (int i = 0; i < 8; i++)
+        {
+            if (children[i] != NULL)
             {
-                if (children[i] != NULL)
-                {
-                    std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, splatSize);
-                    octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
-                }
+                std::vector<OctreeNodeVertex> childOctreeVertices = children[i]->GetVertices(localCameraPosition, splatSize);
+                octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }
     }
