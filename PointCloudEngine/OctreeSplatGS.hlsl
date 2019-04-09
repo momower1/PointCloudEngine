@@ -1,5 +1,10 @@
 #include "OctreeVSPS.hlsl"
 
+// Higher factor reduces the spacing between tilted splats but reduces the color diversity (blend overlapping splats to avoid this)
+// 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
+// 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
+static const float overlapFactor = 1.75f;
+
 [maxvertexcount(16)]
 void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
@@ -23,7 +28,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
     // Billboard should face in the same direction as the normal
     float distanceToCamera = distance(cameraPosition, position);
-    float splatSizeWorld = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+    float splatSizeWorld = overlapFactor * splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
     float3 up = 0.5f * splatSizeWorld * normalize(cross(normal, cameraRight));
     float3 right = 0.5f * splatSizeWorld * normalize(cross(normal, up));
 
