@@ -99,7 +99,7 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"[MOUSE] Rotate Camera\n");
         textRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
         textRenderer->text.append(L"[SPACE] Toggle rotation\n");
-        textRenderer->text.append(L"[ENTER] Switch between octree splat/cube view\n");
+        textRenderer->text.append(L"[ENTER] Switch node view mode\n");
         textRenderer->text.append(L"[UP/DOWN] Increase/decrease splat size\n");
         textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
         textRenderer->text.append(L"[ESC] Quit application\n");
@@ -193,7 +193,8 @@ void PointCloudEngine::Scene::LoadFile()
     // Try to load the file
     if (LoadPlyFile(vertices, settings->plyfile))
     {
-        SetWindowTextW(hwnd, (settings->plyfile + L" - PointCloudEngine ").c_str());
+        size_t vertexCount = vertices.size();
+        SetWindowTextW(hwnd, (std::to_wstring(vertexCount) + L" Points at " + settings->plyfile + L" - PointCloudEngine ").c_str());
 
         // Load the file (takes a long time)
         pointCloudRenderer = new RENDERER(vertices);

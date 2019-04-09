@@ -9,7 +9,7 @@ OctreeRenderer::OctreeRenderer(const std::vector<Vertex> &vertices)
     text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    text->transform->position = Vector3(-1, -0.95, 0);
+    text->transform->position = Vector3(-1, -0.90, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
@@ -65,9 +65,22 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     }
 
     // Set the text
-    textRenderer->text = L"Octree Level: ";
+    if (viewMode == 0)
+    {
+        textRenderer->text = L"Node View Mode: Splats\n";
+    }
+    else if (viewMode == 1)
+    {
+        textRenderer->text = L"Node View Mode: Bounding Cubes\n";
+    }
+    else if (viewMode == 2)
+    {
+        textRenderer->text = L"Node View Mode: Normal Clusters\n";
+    }
+
+    textRenderer->text.append(L"Octree Level: ");
     textRenderer->text.append((level < 0) ? L"AUTO" : std::to_wstring(level));
-    textRenderer->text.append(L", VertexBuffer: " + std::to_wstring(octreeVertices.size()) + L"/" + std::to_wstring(vertexBufferSize));
+    textRenderer->text.append(L", Vertex Count: " + std::to_wstring(octreeVertices.size()));
 }
 
 void OctreeRenderer::Draw(SceneObject *sceneObject)
