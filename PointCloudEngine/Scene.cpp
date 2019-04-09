@@ -21,7 +21,7 @@ void Scene::Initialize()
     // Transforms
     text->transform->position = Vector3(-1, 1, 0.5f);
     text->transform->scale = 0.35f * Vector3::One;
-    camera.position = Vector3(0.0f, 2.5f, -3.0f);
+    camera->SetPosition(Vector3(0.0f, 2.5f, -3.0f));
 
     // Try to load the last plyfile
     DelayedLoadFile(settings->plyfile);
@@ -72,7 +72,7 @@ void Scene::Update(Timer &timer)
     cameraYaw += dt * Input::mouseDelta.x;
     cameraPitch += dt * Input::mouseDelta.y;
     cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
-    camera.CalculateRightUpForward(cameraPitch, cameraYaw);
+    camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
 
     // Speed up camera when pressing shift
     if (Input::GetKey(Keyboard::LeftShift))
@@ -85,10 +85,7 @@ void Scene::Update(Timer &timer)
     }
 
     // Move camera with WASD keys
-    camera.position += Input::GetKey(Keyboard::W) * cameraSpeed * dt * camera.forward;
-    camera.position -= Input::GetKey(Keyboard::S) * cameraSpeed * dt * camera.forward;
-    camera.position -= Input::GetKey(Keyboard::A) * cameraSpeed * dt * camera.right;
-    camera.position += Input::GetKey(Keyboard::D) * cameraSpeed * dt * camera.right;
+    camera->TranslateRUF(cameraSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, cameraSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 
     // FPS counter
     textRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps\n";

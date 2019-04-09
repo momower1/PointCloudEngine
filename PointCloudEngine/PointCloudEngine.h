@@ -55,6 +55,7 @@ namespace PointCloudEngine
     class SplatRenderer;
     class OctreeRenderer;
     class Settings;
+    class Camera;
     class OctreeNode;
     class Octree;
 }
@@ -62,6 +63,7 @@ namespace PointCloudEngine
 using namespace PointCloudEngine;
 
 #include "Transform.h"
+#include "Camera.h"
 #include "Input.h"
 #include "Shader.h"
 #include "Timer.h"
@@ -84,8 +86,8 @@ extern std::wstring executableDirectory;
 extern double dt;
 extern HRESULT hr;
 extern HWND hwnd;
-extern Camera camera;
 extern Settings* settings;
+extern Camera* camera;
 extern Shader* textShader;
 extern Shader* splatShader;
 extern Shader* octreeCubeShader;

@@ -29,6 +29,14 @@ PointCloudEngine::Settings::Settings()
                 {
                     fovAngleY = std::stof(variableValue);
                 }
+                else if (variableName.compare(NAMEOF(nearZ)) == 0)
+                {
+                    nearZ = std::stof(variableValue);
+                }
+                else if (variableName.compare(NAMEOF(farZ)) == 0)
+                {
+                    farZ = std::stof(variableValue);
+                }
                 else if (variableName.compare(NAMEOF(resolutionX)) == 0)
                 {
                     resolutionX = std::stoi(variableValue);
@@ -80,6 +88,8 @@ PointCloudEngine::Settings::~Settings()
 
     settingsFile << L"# Rendering Parameters" << std::endl;
     settingsFile << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
+    settingsFile << NAMEOF(nearZ) << L"=" << nearZ << std::endl;
+    settingsFile << NAMEOF(farZ) << L"=" << farZ << std::endl;
     settingsFile << NAMEOF(resolutionX) << L"=" << resolutionX << std::endl;
     settingsFile << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
     settingsFile << NAMEOF(msaaCount) << L"=" << msaaCount << std::endl;

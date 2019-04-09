@@ -54,7 +54,8 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     if (level < 0)
     {
         Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
-        Vector3 localCameraPosition = Vector4::Transform(Vector4(camera.position.x, camera.position.y, camera.position.z, 1), worldInverse);
+        Vector3 cameraPosition = camera->GetPosition();
+        Vector3 localCameraPosition = Vector4::Transform(Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1), worldInverse);
 
         octreeVertices = octree->GetVertices(localCameraPosition, constantBufferData.splatSize);
     }
@@ -151,9 +152,9 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
         // Set shader constant buffer variables
         constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
         constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
-        constantBufferData.View = camera.view.Transpose();
-        constantBufferData.Projection = camera.projection.Transpose();
-        constantBufferData.cameraPosition = camera.position;
+        constantBufferData.View = camera->GetViewMatrix().Transpose();
+        constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
+        constantBufferData.cameraPosition = camera->GetPosition();
 
         // Update effect file buffer, set shader buffer to our created buffer
         d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);

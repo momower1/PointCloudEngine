@@ -4,13 +4,13 @@
 std::wstring executablePath;
 std::wstring executableDirectory;
 HRESULT hr;
-Camera camera;
 HWND hwnd = NULL;
 LPCTSTR WndClassName = L"PointCloudEngine";
 double dt = 0;
 Timer timer;
 Scene scene;
 Settings* settings;
+Camera* camera;
 Shader* textShader;
 Shader* splatShader;
 Shader* octreeCubeShader;
@@ -27,7 +27,6 @@ ID3D11Texture2D* depthStencilBuffer;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
-D3D11_VIEWPORT viewport;
 
 void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr)
 {
@@ -184,8 +183,8 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 {    
 	DXGI_MODE_DESC bufferDesc;		                                        // Describe the backbuffer
 	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));		                // Clear everything for safety
-	bufferDesc.Width = settings->resolutionX;		                                    // Resolution X
-	bufferDesc.Height = settings->resolutionY;		                                // Resolution Y
+	bufferDesc.Width = settings->resolutionX;		                        // Resolution X
+	bufferDesc.Height = settings->resolutionY;		                        // Resolution Y
 	bufferDesc.RefreshRate.Numerator = 144;		                            // Hertz
 	bufferDesc.RefreshRate.Denominator = 1;
 	bufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;		                    // Describes the display format. 32bit unsigned int for 8bit Color RGBA
@@ -362,14 +361,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 bool InitializeScene()
 {
-	// Create the viewport
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.Width = settings->resolutionX;
-	viewport.Height = settings->resolutionY;
+    // Create and initialize the camera
+    camera = new Camera();
 
     // Compile the shared shaders
     textShader = Shader::Create(L"Text.hlsl", true, true, true, Shader::textLayout, 3);
@@ -412,11 +405,8 @@ void DrawScene()
 	// Refresh the depth/stencil view
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    // Camera view and projection matrix
-    camera.CalculateViewProjection(settings->fovAngleY, (float)settings->resolutionX / (float)settings->resolutionY, 0.1f, 1000.0f);
-
-    // Bind viewport to rasterization stage
-    d3d11DevCon->RSSetViewports(1, &viewport);
+    // Calculates view and projection matrices and sets the viewport
+    camera->PrepareDraw();
 
     // Draw scene
     scene.Draw();
@@ -430,6 +420,8 @@ void ReleaseObjects()
 {
     // Delete settings (also saves them to the hard drive)
     SafeDelete(settings);
+
+    SafeDelete(camera);
 
     // Release and delete shaders
     Shader::ReleaseAllShaders();

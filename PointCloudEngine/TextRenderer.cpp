@@ -129,8 +129,8 @@ void TextRenderer::Draw(SceneObject *sceneObject)
     tmp.worldSpace = worldSpace;
     tmp.color = color;
     tmp.World = sceneObject->transform->worldMatrix.Transpose();
-    tmp.View = camera.view.Transpose();
-    tmp.Projection = camera.projection.Transpose();
+    tmp.View = camera->GetViewMatrix().Transpose();
+    tmp.Projection = camera->GetProjectionMatrix().Transpose();
 
     d3d11DevCon->UpdateSubresource(constantBufferText, 0, NULL, &tmp, 0, 0);		// Update effect file buffer
 

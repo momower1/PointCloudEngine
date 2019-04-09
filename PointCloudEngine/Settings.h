@@ -16,6 +16,8 @@ namespace PointCloudEngine
 
         // Rendering parameters default values
         float fovAngleY = 0.4f * XM_PI;
+        float nearZ = 0.1f;
+        float farZ = 1000.0f;
         int resolutionX = 1280;
         int resolutionY = 720;
         int msaaCount = 1;

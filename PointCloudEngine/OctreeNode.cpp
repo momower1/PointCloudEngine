@@ -30,11 +30,11 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
     }
 
     // Save the index of the mean that each vertex is assigned to
-    bool changed = true;
+    bool recalculateViewProjection = true;
     byte *clusters = new byte[vertexCount];
     ZeroMemory(clusters, sizeof(byte) * vertexCount);
 
-    while (changed)
+    while (recalculateViewProjection)
     {
         // Assign all the vertices to the closest mean to them
         for (int i = 0; i < vertexCount; i++)
@@ -67,7 +67,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
             verticesPerMean[clusters[i]] += 1;
         }
 
-        changed = false;
+        recalculateViewProjection = false;
 
         // Update the means
         for (int i = 0; i < k; i++)
@@ -76,7 +76,7 @@ PointCloudEngine::OctreeNode::OctreeNode(const std::vector<Vertex> &vertices, co
 
             if (Vector3::DistanceSquared(means[i], newMeans[i]) > FLT_EPSILON)
             {
-                changed = true;
+                recalculateViewProjection = true;
             }
 
             means[i] = newMeans[i];

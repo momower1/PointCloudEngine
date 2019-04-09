@@ -229,6 +229,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Octree.cpp" />
@@ -245,6 +246,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="ISetSplatSize.h" />
     <ClInclude Include="Input.h" />
