@@ -6,7 +6,7 @@
 
 namespace PointCloudEngine
 {
-    class OctreeRenderer : public Component, public ISetSplatSize
+    class OctreeRenderer : public Component, public IRenderer
     {
     public:
         OctreeRenderer(const std::vector<Vertex> &vertices);

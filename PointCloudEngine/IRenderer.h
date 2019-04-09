@@ -1,12 +1,12 @@
-#ifndef ISETSPLATSIZE_H
-#define ISETSPLATSIZE_H
+#ifndef IRENDERER_H
+#define IRENDERER_H
 
 #pragma once
 #include "PointCloudEngine.h"
 
 namespace PointCloudEngine
 {
-    class ISetSplatSize
+    class IRenderer
     {
     public:
         // Splat size is in screen size between 1 (whole screen) and 1.0f/resolutionY (one pixel)

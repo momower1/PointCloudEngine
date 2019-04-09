@@ -21,7 +21,6 @@ void Scene::Initialize()
     // Transforms
     text->transform->position = Vector3(-1, 1, 0.5f);
     text->transform->scale = 0.35f * Vector3::One;
-    camera->SetPosition(Vector3(0.0f, 2.5f, -3.0f));
 
     // Try to load the last plyfile
     DelayedLoadFile(settings->plyfile);
@@ -68,11 +67,18 @@ void Scene::Update(Timer &timer)
     settings->scale = max(0.1f, settings->scale + Input::mouseScrollDelta);
     pointCloud->transform->scale = settings->scale * Vector3::One;
 
-    // Rotate camera with mouse
-    cameraYaw += dt * Input::mouseDelta.x;
-    cameraPitch += dt * Input::mouseDelta.y;
-    cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
-    camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+    // Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
+    if (timeSinceLoadFile > 0.1f)
+    {
+        cameraYaw += dt * Input::mouseDelta.x;
+        cameraPitch += dt * Input::mouseDelta.y;
+        cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
+        camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+    }
+    else
+    {
+        timeSinceLoadFile += dt;
+    }
 
     // Speed up camera when pressing shift
     if (Input::GetKey(Keyboard::LeftShift))
@@ -196,7 +202,7 @@ void PointCloudEngine::Scene::LoadFile()
         size_t vertexCount = vertices.size();
         SetWindowTextW(hwnd, (std::to_wstring(vertexCount) + L" Points at " + settings->plyfile + L" - PointCloudEngine ").c_str());
 
-        // Load the file (takes a long time)
+        // Build the octree from the points (takes a long time)
         pointCloudRenderer = new RENDERER(vertices);
         pointCloud->AddComponent(pointCloudRenderer);
     }
@@ -207,4 +213,13 @@ void PointCloudEngine::Scene::LoadFile()
 
     // Hide loading text
     loadingText->transform->scale = Vector3::Zero;
+    timeSinceLoadFile = 0;
+
+    // Reset camera
+    camera->SetPosition(Vector3(0.0f, 2.5f, -5.0f));
+    cameraPitch = 0;
+    cameraYaw = 0;
+
+    // Reset other properties
+    splatSize = 0.01f;
 }

@@ -72,7 +72,7 @@ using namespace PointCloudEngine;
 #include "Hierarchy.h"
 #include "DataStructures.h"
 #include "Settings.h"
-#include "ISetSplatSize.h"
+#include "IRenderer.h"
 #include "OctreeNode.h"
 #include "Octree.h"
 #include "TextRenderer.h"

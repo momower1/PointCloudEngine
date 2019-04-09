@@ -65,13 +65,13 @@
     <ClInclude Include="OctreeRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ISetSplatSize.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

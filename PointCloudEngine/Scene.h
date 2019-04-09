@@ -35,6 +35,7 @@ namespace PointCloudEngine
         float cameraSpeed = 0;
 
         float timeUntilLoadFile = -1.0f;
+        float timeSinceLoadFile = 0.0f;
     };
 }
 #endif

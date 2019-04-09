@@ -6,7 +6,7 @@
 
 namespace PointCloudEngine
 {
-    class SplatRenderer : public Component, public ISetSplatSize
+    class SplatRenderer : public Component, public IRenderer
     {
     public:
         SplatRenderer(const std::vector<Vertex> &vertices);
