@@ -365,11 +365,11 @@ bool InitializeScene()
     camera = new Camera();
 
     // Compile the shared shaders
-    textShader = Shader::Create(L"Text.hlsl", true, true, true, Shader::textLayout, 3);
-    splatShader = Shader::Create(L"Splat.hlsl", true, true, true, Shader::splatLayout, 3);
-    octreeCubeShader = Shader::Create(L"OctreeCubeGS.hlsl", true, true, true, Shader::octreeLayout, 20);
-    octreeSplatShader = Shader::Create(L"OctreeSplatGS.hlsl", true, true, true, Shader::octreeLayout, 20);
-    octreeClusterShader = Shader::Create(L"OctreeCluster.hlsl", true, true, true, Shader::octreeLayout, 20);
+    textShader = Shader::Create(L"Shader/Text.hlsl", true, true, true, Shader::textLayout, 3);
+    splatShader = Shader::Create(L"Shader/Splat.hlsl", true, true, true, Shader::splatLayout, 3);
+    octreeCubeShader = Shader::Create(L"Shader/OctreeCubeGS.hlsl", true, true, true, Shader::octreeLayout, 20);
+    octreeSplatShader = Shader::Create(L"Shader/OctreeSplatGS.hlsl", true, true, true, Shader::octreeLayout, 20);
+    octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, Shader::octreeLayout, 20);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");

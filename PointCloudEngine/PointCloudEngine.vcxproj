@@ -102,9 +102,10 @@
     <FxCompile>
       <ShaderType>Effect</ShaderType>
       <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(OutDir)Shader\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)*.hlsl"
+      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
@@ -132,9 +133,10 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
       <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(OutDir)Shader\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)*.hlsl"
+      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
@@ -166,9 +168,10 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
       <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(OutDir)Shader\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)*.hlsl"
+      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
@@ -200,9 +203,10 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
       <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(OutDir)Shader\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)*.hlsl"
+      <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
