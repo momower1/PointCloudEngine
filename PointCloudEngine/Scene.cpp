@@ -215,8 +215,22 @@ void PointCloudEngine::Scene::LoadFile()
     loadingText->transform->scale = Vector3::Zero;
     timeSinceLoadFile = 0;
 
-    // Reset camera
-    camera->SetPosition(Vector3(0.0f, 2.5f, -5.0f));
+    // Reset point cloud
+    pointCloud->transform->position = Vector3::Zero;
+    pointCloud->transform->rotation = Quaternion::Identity;
+
+    // Set camera position in front of the object
+    if (pointCloudRenderer != NULL)
+    {
+        Vector3 boundingBoxPosition;
+        float boundingBoxSize;
+
+        pointCloudRenderer->GetBoundingCubePositionAndSize(boundingBoxPosition, boundingBoxSize);
+
+        camera->SetPosition(settings->scale * (boundingBoxPosition - boundingBoxSize * Vector3::UnitZ));
+    }
+
+    // Reset camera rotation
     cameraPitch = 0;
     cameraYaw = 0;
 

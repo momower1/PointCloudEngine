@@ -90,3 +90,9 @@ void PointCloudEngine::SplatRenderer::SetSplatSize(const float &splatSize)
 {
     constantBufferData.splatSize = splatSize;
 }
+
+void PointCloudEngine::SplatRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
+{
+    outPosition = Vector3::Zero;
+    outSize = settings->scale;
+}

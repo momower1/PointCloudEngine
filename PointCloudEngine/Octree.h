@@ -14,6 +14,7 @@ namespace PointCloudEngine
 
         std::vector<OctreeNodeVertex> GetVertices(const Vector3 &localCameraPosition, const float &splatSize);
         std::vector<OctreeNodeVertex> GetVerticesAtLevel(const int &level);
+        void GetRootPositionAndSize(Vector3 &outRootPosition, float &outSize);
 
     private:
         OctreeNode *root = NULL;

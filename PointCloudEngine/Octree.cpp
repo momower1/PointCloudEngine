@@ -35,3 +35,9 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const
 {
     return root->GetVerticesAtLevel(level);
 }
+
+void PointCloudEngine::Octree::GetRootPositionAndSize(Vector3 &outRootPosition, float &outSize)
+{
+    outRootPosition = root->nodeVertex.position;
+    outSize = root->nodeVertex.size;
+}

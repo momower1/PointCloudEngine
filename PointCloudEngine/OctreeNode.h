@@ -14,8 +14,6 @@ namespace PointCloudEngine
 
         std::vector<OctreeNodeVertex> GetVertices(const Vector3 &localCameraPosition, const float &splatSize);
         std::vector<OctreeNodeVertex> GetVerticesAtLevel(const int &level);
-
-    private:
         bool IsLeafNode();
 
         OctreeNode *children[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };

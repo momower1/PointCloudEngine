@@ -16,6 +16,7 @@ namespace PointCloudEngine
         void Release();
 
         void SetSplatSize(const float &splatSize);
+        void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
         // Same constant buffer as in effect file, keep packing rules in mind

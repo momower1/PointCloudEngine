@@ -192,3 +192,8 @@ void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
 {
     constantBufferData.splatSize = splatSize;
 }
+
+void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
+{
+    octree->GetRootPositionAndSize(outPosition, outSize);
+}
