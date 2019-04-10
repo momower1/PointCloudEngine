@@ -13,42 +13,18 @@ PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int 
     octreeFilepath = executableDirectory + L"/Octrees/" + filename + L".octree";
 
     // Try to load the octree from a file
-    std::wifstream octreeFile(octreeFilepath);
+    std::ifstream octreeFile(octreeFilepath, std::ios::in | std::ios::binary);
 
     // Only save the data when the file doesn't exist already
     if (octreeFile.is_open())
     {
-        // Parse the file
-        std::wstring line;
+        // Load binary data, first 4 bytes are the size of the vector
+        int nodesSize;
+        octreeFile.read((char*) &nodesSize, sizeof(int));
 
-        while (std::getline(octreeFile, line))
-        {
-            std::wstringstream stream(line);
-
-            OctreeNode n;
-
-            stream >> n.nodeVertex.position.x >> n.nodeVertex.position.y >> n.nodeVertex.position.z;
-            stream >> n.nodeVertex.size;
-
-            for (int i = 0; i < 6; i++)
-            {
-                int tmp;
-                stream >> tmp;
-                n.nodeVertex.normals[i].phi = tmp;
-                stream >> tmp;
-                n.nodeVertex.normals[i].theta = tmp;
-                stream >> n.nodeVertex.colors[i].data;
-                stream >> tmp;
-                n.nodeVertex.weights[i] = tmp;
-            }
-
-            for (int i = 0; i < 6; i++)
-            {
-                stream >> n.children[i];
-            }
-
-            nodes.push_back(n);
-        }
+        // Just read the binary data directly into the vector
+        nodes.resize(nodesSize);
+        octreeFile.read((char*)nodes.data(), nodesSize * sizeof(OctreeNode));
 
         // Stop here after loading the file
         return;
@@ -108,30 +84,14 @@ PointCloudEngine::Octree::~Octree()
     {
         // Save the octree in a file inside a new folder
         CreateDirectory((executableDirectory + L"/Octrees").c_str(), NULL);
-        std::wofstream octreeFile(octreeFilepath);
+        std::ofstream octreeFile(octreeFilepath, std::ios::out | std::ios::binary);
 
-        for (auto it = nodes.begin(); it != nodes.end(); it++)
-        {
-            OctreeNode n = *it;
+        // First 4 bytes are the size of the vector
+        int nodesSize = nodes.size();
+        octreeFile.write((char*)&nodesSize, sizeof(int));
 
-            // TODO: Save all properties in byte representation
-            octreeFile << n.nodeVertex.position.x << L" " << n.nodeVertex.position.y << L" " << n.nodeVertex.position.z << L" ";
-            octreeFile << n.nodeVertex.size << L" ";
-
-            for (int i = 0; i < 6; i++)
-            {
-                octreeFile << n.nodeVertex.normals[i].phi << L" " << n.nodeVertex.normals[i].theta << L" ";
-                octreeFile << n.nodeVertex.colors[i].data << L" ";
-                octreeFile << n.nodeVertex.weights[i] << L" ";
-            }
-
-            for (int i = 0; i < 6; i++)
-            {
-                octreeFile << n.children[i] << L" ";
-            }
-
-            octreeFile << std::endl;
-        }
+        // Write the vector data in binary format
+        octreeFile.write((char*)nodes.data(), nodesSize * sizeof(OctreeNode));
 
         octreeFile.flush();
         octreeFile.close();
