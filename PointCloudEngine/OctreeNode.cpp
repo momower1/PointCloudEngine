@@ -230,12 +230,11 @@ PointCloudEngine::OctreeNode::~OctreeNode()
 {
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode> &nodes, const Vector3 &localCameraPosition, const float &splatSize) const
+void PointCloudEngine::OctreeNode::GetVertices(std::queue<int> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const Vector3 &localCameraPosition, const float &splatSize) const
 {
     // TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
     // TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
     // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
-    std::vector<OctreeNodeVertex> octreeVertices;
     float distanceToCamera = Vector3::Distance(localCameraPosition, nodeVertex.position);
 
     // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
@@ -259,24 +258,19 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const st
     }
     else
     {
-        // Traverse the whole octree and add child vertices
+        // Traverse the child octrees
         for (int i = 0; i < 8; i++)
         {
             if (children[i] >= 0)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = nodes[children[i]].GetVertices(nodes, localCameraPosition, splatSize);
-                octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
+                nodesQueue.push(children[i]);
             }
         }
     }
-
-    return octreeVertices;
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(const std::vector<OctreeNode> &nodes, const int &level) const
+void PointCloudEngine::OctreeNode::GetVerticesAtLevel(std::queue<std::pair<int, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const int &level) const
 {
-    std::vector<OctreeNodeVertex> octreeVertices;
-
     if (level == 0)
     {
         octreeVertices.push_back(nodeVertex);
@@ -288,13 +282,10 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(c
         {
             if (children[i] >= 0)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = nodes[children[i]].GetVerticesAtLevel(nodes, level - 1);
-                octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
+                nodesQueue.push(std::pair<int, int>(children[i], level - 1));
             }
         }
     }
-
-    return octreeVertices;
 }
 
 bool PointCloudEngine::OctreeNode::IsLeafNode() const
