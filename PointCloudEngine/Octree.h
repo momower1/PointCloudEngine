@@ -19,6 +19,7 @@ namespace PointCloudEngine
     private:
         // Stores the hole octree, the root is the first element
         std::vector<OctreeNode> nodes;
+        std::wstring octreeFilepath;
     };
 }
 

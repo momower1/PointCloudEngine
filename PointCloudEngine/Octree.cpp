@@ -2,6 +2,58 @@
 
 PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int &depth)
 {
+    // Reserve vector memory for better performance
+    int predictedDepth = 1 + min(depth, log(vertices.size()) / log(8));
+    int predictedSize = pow(8, predictedDepth);
+    nodes.reserve(predictedSize);
+
+    // Try to load a previously saved octree file first before recreating the whole octree (saves a lot of time)
+    std::wstring filename = settings->plyfile.substr(settings->plyfile.find_last_of(L"\\/") + 1, settings->plyfile.length());
+    filename = filename.substr(0, filename.length() - 4);
+    octreeFilepath = executableDirectory + L"/Octrees/" + filename + L".octree";
+
+    // Try to load the octree from a file
+    std::wifstream octreeFile(octreeFilepath);
+
+    // Only save the data when the file doesn't exist already
+    if (octreeFile.is_open())
+    {
+        // Parse the file
+        std::wstring line;
+
+        while (std::getline(octreeFile, line))
+        {
+            std::wstringstream stream(line);
+
+            OctreeNode n;
+
+            stream >> n.nodeVertex.position.x >> n.nodeVertex.position.y >> n.nodeVertex.position.z;
+            stream >> n.nodeVertex.size;
+
+            for (int i = 0; i < 6; i++)
+            {
+                int tmp;
+                stream >> tmp;
+                n.nodeVertex.normals[i].phi = tmp;
+                stream >> tmp;
+                n.nodeVertex.normals[i].theta = tmp;
+                stream >> n.nodeVertex.colors[i].data;
+                stream >> tmp;
+                n.nodeVertex.weights[i] = tmp;
+            }
+
+            for (int i = 0; i < 6; i++)
+            {
+                stream >> n.children[i];
+            }
+
+            nodes.push_back(n);
+        }
+
+        // Stop here after loading the file
+        return;
+    }
+
     // Calculate center and size of the root node
     Vector3 minPosition = vertices.front().position;
     Vector3 maxPosition = minPosition;
@@ -48,6 +100,43 @@ PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int 
 
 PointCloudEngine::Octree::~Octree()
 {
+    // Try to open a previously saved file
+    std::wifstream file(octreeFilepath);
+
+    // Only save the data when the file doesn't exist already
+    if (!file.is_open())
+    {
+        // Save the octree in a file inside a new folder
+        CreateDirectory((executableDirectory + L"/Octrees").c_str(), NULL);
+        std::wofstream octreeFile(octreeFilepath);
+
+        for (auto it = nodes.begin(); it != nodes.end(); it++)
+        {
+            OctreeNode n = *it;
+
+            // TODO: Save all properties in byte representation
+            octreeFile << n.nodeVertex.position.x << L" " << n.nodeVertex.position.y << L" " << n.nodeVertex.position.z << L" ";
+            octreeFile << n.nodeVertex.size << L" ";
+
+            for (int i = 0; i < 6; i++)
+            {
+                octreeFile << n.nodeVertex.normals[i].phi << L" " << n.nodeVertex.normals[i].theta << L" ";
+                octreeFile << n.nodeVertex.colors[i].data << L" ";
+                octreeFile << n.nodeVertex.weights[i] << L" ";
+            }
+
+            for (int i = 0; i < 6; i++)
+            {
+                octreeFile << n.children[i] << L" ";
+            }
+
+            octreeFile << std::endl;
+        }
+
+        octreeFile.flush();
+        octreeFile.close();
+    }
+
     nodes.clear();
 }
 

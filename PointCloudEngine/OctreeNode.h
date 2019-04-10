@@ -9,6 +9,7 @@ namespace PointCloudEngine
     class OctreeNode
     {
     public:
+        OctreeNode();
         OctreeNode (std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, const OctreeNodeCreationEntry &entry);
         ~OctreeNode();
 

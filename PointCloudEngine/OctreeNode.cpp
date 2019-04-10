@@ -1,5 +1,10 @@
 #include "OctreeNode.h"
 
+PointCloudEngine::OctreeNode::OctreeNode()
+{
+    // Empty constructor used for parsing the .octree file
+}
+
 PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, const OctreeNodeCreationEntry &entry)
 {
     size_t vertexCount = entry.vertices.size();
