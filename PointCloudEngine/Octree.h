@@ -19,9 +19,6 @@ namespace PointCloudEngine
     private:
         // Stores the hole octree, the root is the first element
         std::vector<OctreeNode> nodes;
-
-        // Stores the nodes that should be created for each octree level
-        std::queue<OctreeNodeCreationEntry> nodeCreationQueue;
     };
 }
 

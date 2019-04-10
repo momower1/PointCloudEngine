@@ -18,6 +18,9 @@ PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int 
     Vector3 center = minPosition + 0.5f * (diagonal);
     float size = max(max(diagonal.x, diagonal.y), diagonal.z);
 
+    // Stores the nodes that should be created for each octree level
+    std::queue<OctreeNodeCreationEntry> nodeCreationQueue;
+
     OctreeNodeCreationEntry rootEntry;
     rootEntry.nodeIndex = -1;
     rootEntry.parentIndex = -1;
