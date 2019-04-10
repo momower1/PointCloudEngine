@@ -2,11 +2,6 @@
 
 PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int &depth)
 {
-    // Reserve vector memory for better performance
-    int predictedDepth = 1 + min(depth, log(vertices.size()) / log(8));
-    int predictedSize = pow(8, predictedDepth);
-    nodes.reserve(predictedSize);
-
     // Try to load a previously saved octree file first before recreating the whole octree (saves a lot of time)
     std::wstring filename = settings->plyfile.substr(settings->plyfile.find_last_of(L"\\/") + 1, settings->plyfile.length());
     filename = filename.substr(0, filename.length() - 4);
@@ -45,6 +40,11 @@ PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int 
     Vector3 diagonal = maxPosition - minPosition;
     Vector3 center = minPosition + 0.5f * (diagonal);
     float size = max(max(diagonal.x, diagonal.y), diagonal.z);
+
+    // Reserve vector memory for better performance
+    int predictedDepth = min(depth, log(vertices.size()) / log(8));
+    int predictedSize = pow(8, predictedDepth);
+    nodes.reserve(predictedSize);
 
     // Stores the nodes that should be created for each octree level
     std::queue<OctreeNodeCreationEntry> nodeCreationQueue;
