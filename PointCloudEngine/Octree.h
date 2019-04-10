@@ -17,7 +17,8 @@ namespace PointCloudEngine
         void GetRootPositionAndSize(Vector3 &outRootPosition, float &outSize);
 
     private:
-        OctreeNode *root = NULL;
+        // Stores the hole octree, the root is the first element
+        std::vector<OctreeNode*> nodes;
     };
 }
 

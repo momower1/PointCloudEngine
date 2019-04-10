@@ -18,26 +18,32 @@ PointCloudEngine::Octree::Octree(const std::vector<Vertex> &vertices, const int 
     Vector3 center = minPosition + 0.5f * (diagonal);
     float size = max(max(diagonal.x, diagonal.y), diagonal.z);
 
-    root = new OctreeNode(vertices, center, size, depth);
+    new OctreeNode(nodes, -1, -1, depth, vertices, center, size);
 }
 
 PointCloudEngine::Octree::~Octree()
 {
-    SafeDelete(root);
+    // Delete the whole array of nodes
+    for (auto it = nodes.begin(); it != nodes.end(); it++)
+    {
+        SafeDelete(*it);
+    }
+
+    nodes.clear();
 }
 
 std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector3 &localCameraPosition, const float &splatSize)
 {
-    return root->GetVertices(localCameraPosition, splatSize);
+    return nodes[0]->GetVertices(nodes, localCameraPosition, splatSize);
 }
 
 std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const int &level)
 {
-    return root->GetVerticesAtLevel(level);
+    return nodes[0]->GetVerticesAtLevel(nodes, level);
 }
 
 void PointCloudEngine::Octree::GetRootPositionAndSize(Vector3 &outRootPosition, float &outSize)
 {
-    outRootPosition = root->nodeVertex.position;
-    outSize = root->nodeVertex.size;
+    outRootPosition = nodes[0]->nodeVertex.position;
+    outSize = nodes[0]->nodeVertex.size;
 }
