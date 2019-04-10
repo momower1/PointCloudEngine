@@ -95,6 +95,18 @@ namespace PointCloudEngine
         // Width of the whole cube
         float size;
     };
+
+    // Stores all the data that is needed to create octree nodes
+    struct OctreeNodeCreationEntry
+    {
+        int nodeIndex;
+        int parentIndex;
+        int parentChildIndex;
+        std::vector<Vertex> vertices;
+        Vector3 center;
+        float size;
+        int depth;
+    };
 }
 
 #endif

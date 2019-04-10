@@ -1,8 +1,8 @@
 #include "OctreeNode.h"
 
-PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int parentIndex, int childIndex, const int &depth, const std::vector<Vertex> &vertices, const Vector3 &center, const float &size)
+PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, const OctreeNodeCreationEntry &entry)
 {
-    size_t vertexCount = vertices.size();
+    size_t vertexCount = entry.vertices.size();
     
     if (vertexCount == 0)
     {
@@ -14,8 +14,14 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
     // Then this cube is splitted into 8 smaller child cubes along the center
     // For each child cube the octree generation is repeated
     // Assign node values given by the parent
-    nodeVertex.size = size;
-    nodeVertex.position = center;
+    nodeVertex.size = entry.size;
+    nodeVertex.position = entry.center;
+
+    // Assign this child to its parent
+    if (entry.parentIndex >= 0 && entry.parentChildIndex >= 0)
+    {
+        nodes[entry.parentIndex].children[entry.parentChildIndex] = entry.nodeIndex;
+    }
 
     // Apply the k-means clustering algorithm to find clusters for the normals
     Vector3 means[6];
@@ -25,7 +31,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
     // Set initial means to the first k normals
     for (int i = 0; i < k; i++)
     {
-        means[i] = vertices[i].normal;
+        means[i] = entry.vertices[i].normal;
         verticesPerMean[i] = 1;
     }
 
@@ -39,11 +45,11 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
         // Assign all the vertices to the closest mean to them
         for (int i = 0; i < vertexCount; i++)
         {
-            float minDistance = Vector3::Distance(vertices[i].normal, means[clusters[i]]);
+            float minDistance = Vector3::Distance(entry.vertices[i].normal, means[clusters[i]]);
 
             for (int j = 0; j < k; j++)
             {
-                float distance = Vector3::Distance(vertices[i].normal, means[j]);
+                float distance = Vector3::Distance(entry.vertices[i].normal, means[j]);
 
                 if (distance < minDistance)
                 {
@@ -63,7 +69,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
 
         for (int i = 0; i < vertexCount; i++)
         {
-            newMeans[clusters[i]] += vertices[i].normal;
+            newMeans[clusters[i]] += entry.vertices[i].normal;
             verticesPerMean[clusters[i]] += 1;
         }
 
@@ -95,9 +101,9 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
     // Calculate color
     for (int i = 0; i < vertexCount; i++)
     {
-        averageReds[clusters[i]] += vertices[i].color[0];
-        averageGreens[clusters[i]] += vertices[i].color[1];
-        averageBlues[clusters[i]] += vertices[i].color[2];
+        averageReds[clusters[i]] += entry.vertices[i].color[0];
+        averageGreens[clusters[i]] += entry.vertices[i].color[1];
+        averageBlues[clusters[i]] += entry.vertices[i].color[2];
     }
 
     // Assign node vertex properties
@@ -121,28 +127,19 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
 
     delete[] clusters;
 
-    // Add this node to the array, and assign this child to the parent
-    nodes.push_back(this);
-    int nodeIndex = nodes.size() - 1;
-
-    if (parentIndex >= 0 && childIndex >= 0)
-    {
-        nodes[parentIndex]->children[childIndex] = nodeIndex;
-    }
-
     // Split and create children vertices
     std::vector<Vertex> childVertices[8];
 
     // Fit each vertex into its corresponding child cube
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto it = entry.vertices.begin(); it != entry.vertices.end(); it++)
     {
         Vertex v = *it;
 
-        if (v.position.x > center.x)
+        if (v.position.x > entry.center.x)
         {
-            if (v.position.y > center.y)
+            if (v.position.y > entry.center.y)
             {
-                if (v.position.z > center.z)
+                if (v.position.z > entry.center.z)
                 {
                     childVertices[0].push_back(v);
                 }
@@ -153,7 +150,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
             }
             else
             {
-                if (v.position.z > center.z)
+                if (v.position.z > entry.center.z)
                 {
                     childVertices[2].push_back(v);
                 }
@@ -165,9 +162,9 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
         }
         else
         {
-            if (v.position.y > center.y)
+            if (v.position.y > entry.center.y)
             {
-                if (v.position.z > center.z)
+                if (v.position.z > entry.center.z)
                 {
                     childVertices[4].push_back(v);
                 }
@@ -178,7 +175,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
             }
             else
             {
-                if (v.position.z > center.z)
+                if (v.position.z > entry.center.z)
                 {
                     childVertices[6].push_back(v);
                 }
@@ -196,25 +193,34 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
     // Correlates to the assigned child vertices
     Vector3 childCenters[8] =
     {
-        center + Vector3(childExtend, childExtend, childExtend),
-        center + Vector3(childExtend, childExtend, -childExtend),
-        center + Vector3(childExtend, -childExtend, childExtend),
-        center + Vector3(childExtend, -childExtend, -childExtend),
-        center + Vector3(-childExtend, childExtend, childExtend),
-        center + Vector3(-childExtend, childExtend, -childExtend),
-        center + Vector3(-childExtend, -childExtend, childExtend),
-        center + Vector3(-childExtend, -childExtend, -childExtend)
+        entry.center + Vector3(childExtend, childExtend, childExtend),
+        entry.center + Vector3(childExtend, childExtend, -childExtend),
+        entry.center + Vector3(childExtend, -childExtend, childExtend),
+        entry.center + Vector3(childExtend, -childExtend, -childExtend),
+        entry.center + Vector3(-childExtend, childExtend, childExtend),
+        entry.center + Vector3(-childExtend, childExtend, -childExtend),
+        entry.center + Vector3(-childExtend, -childExtend, childExtend),
+        entry.center + Vector3(-childExtend, -childExtend, -childExtend)
     };
 
     // Only subdivide further if the size is above the minimum size
-    if (depth > 0)
+    if (entry.depth > 0)
     {
         for (int i = 0; i < 8; i++)
         {
             if (childVertices[i].size() > 0)
             {
-                // Create the child nodes that will be added to the array
-                new OctreeNode(nodes, nodeIndex, i, depth - 1, childVertices[i], childCenters[i], size / 2.0f);
+                // Add a new entry to the queue
+                OctreeNodeCreationEntry childEntry;
+                childEntry.nodeIndex = -1;
+                childEntry.parentIndex = entry.nodeIndex;
+                childEntry.parentChildIndex = i;
+                childEntry.vertices = childVertices[i];
+                childEntry.center = childCenters[i];
+                childEntry.size = entry.size / 2.0f;
+                childEntry.depth = entry.depth - 1;
+
+                nodeCreationQueue.push(childEntry);
             }
         }
     }
@@ -222,10 +228,9 @@ PointCloudEngine::OctreeNode::OctreeNode(std::vector<OctreeNode*> &nodes, int pa
 
 PointCloudEngine::OctreeNode::~OctreeNode()
 {
-    // The octree class deletes all of the nodes
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode*> &nodes, const Vector3 &localCameraPosition, const float &splatSize)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode> &nodes, const Vector3 &localCameraPosition, const float &splatSize) const
 {
     // TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
     // TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
@@ -259,7 +264,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const st
         {
             if (children[i] >= 0)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = nodes[children[i]]->GetVertices(nodes, localCameraPosition, splatSize);
+                std::vector<OctreeNodeVertex> childOctreeVertices = nodes[children[i]].GetVertices(nodes, localCameraPosition, splatSize);
                 octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }
@@ -268,7 +273,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVertices(const st
     return octreeVertices;
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(const std::vector<OctreeNode*> &nodes, const int &level)
+std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(const std::vector<OctreeNode> &nodes, const int &level) const
 {
     std::vector<OctreeNodeVertex> octreeVertices;
 
@@ -283,7 +288,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(c
         {
             if (children[i] >= 0)
             {
-                std::vector<OctreeNodeVertex> childOctreeVertices = nodes[children[i]]->GetVerticesAtLevel(nodes, level - 1);
+                std::vector<OctreeNodeVertex> childOctreeVertices = nodes[children[i]].GetVerticesAtLevel(nodes, level - 1);
                 octreeVertices.insert(octreeVertices.end(), childOctreeVertices.begin(), childOctreeVertices.end());
             }
         }
@@ -292,7 +297,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::OctreeNode::GetVerticesAtLevel(c
     return octreeVertices;
 }
 
-bool PointCloudEngine::OctreeNode::IsLeafNode()
+bool PointCloudEngine::OctreeNode::IsLeafNode() const
 {
     for (int i = 0; i < 8; i++)
     {
