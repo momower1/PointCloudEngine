@@ -192,7 +192,7 @@ void PointCloudEngine::Scene::LoadFile()
     if (pointCloudRenderer != NULL)
     {
         pointCloud->RemoveComponent(pointCloudRenderer);
-        SetWindowTextW(hwnd, L"PointCloudEngine ");
+        SetWindowTextW(hwnd, L"PointCloudEngine");
     }
 
     try
@@ -211,7 +211,7 @@ void PointCloudEngine::Scene::LoadFile()
     if (pointCloudRenderer != NULL)
     {
         pointCloud->AddComponent(pointCloudRenderer);
-        SetWindowTextW(hwnd, (settings->plyfile + L" - PointCloudEngine ").c_str());
+        SetWindowTextW(hwnd, (settings->plyfile + L" - PointCloudEngine").c_str());
 
         // Set camera position in front of the object
         Vector3 boundingBoxPosition;
