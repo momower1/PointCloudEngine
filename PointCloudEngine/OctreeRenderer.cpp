@@ -9,7 +9,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    text->transform->position = Vector3(-1, -0.90, 0);
+    text->transform->position = Vector3(-1, -0.85f, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
@@ -65,17 +65,20 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     }
 
     // Set the text
+    int splatSizePixels = settings->resolutionY * constantBufferData.splatSize * constantBufferData.overlapFactor;
+    textRenderer->text = L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n";
+
     if (viewMode == 0)
     {
-        textRenderer->text = L"Node View Mode: Splats\n";
+        textRenderer->text.append(L"Node View Mode: Splats\n");
     }
     else if (viewMode == 1)
     {
-        textRenderer->text = L"Node View Mode: Bounding Cubes\n";
+        textRenderer->text.append(L"Node View Mode: Bounding Cubes\n");
     }
     else if (viewMode == 2)
     {
-        textRenderer->text = L"Node View Mode: Normal Clusters\n";
+        textRenderer->text.append(L"Node View Mode: Normal Clusters\n");
     }
 
     textRenderer->text.append(L"Octree Level: ");
@@ -168,6 +171,12 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
         constantBufferData.View = camera->GetViewMatrix().Transpose();
         constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
         constantBufferData.cameraPosition = camera->GetPosition();
+
+        // Draw overlapping splats to make sure that continuous surfaces are drawn
+        // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
+        // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
+        // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
+        constantBufferData.overlapFactor = 1.75f;
 
         // Update effect file buffer, set shader buffer to our created buffer
         d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);

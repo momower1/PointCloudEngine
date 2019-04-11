@@ -12,7 +12,8 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
     float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
     float splatSize;
-    // 12 bytes auto padding
+    float overlapFactor;
+    // 8 bytes auto padding
 };  // Total: 288 bytes with constant buffer packing rules
 
 static const float PI = 3.141592654f;

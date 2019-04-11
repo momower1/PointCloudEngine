@@ -29,7 +29,8 @@ namespace PointCloudEngine
             Vector3 cameraPosition;
             float fovAngleY;
             float splatSize;
-            float padding[3];
+            float overlapFactor;
+            float padding[2];
         };
 
         int level = -1;
