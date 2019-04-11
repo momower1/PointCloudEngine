@@ -52,7 +52,7 @@ void SafeRelease(ID3D11Resource *resource)
     }
 }
 
-bool LoadPlyFile(std::vector<Vertex> &vertices, std::wstring plyfile)
+bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile)
 {
     try
     {

@@ -192,23 +192,34 @@ void PointCloudEngine::Scene::LoadFile()
     if (pointCloudRenderer != NULL)
     {
         pointCloud->RemoveComponent(pointCloudRenderer);
+        SetWindowTextW(hwnd, L"PointCloudEngine ");
     }
 
-    std::vector<Vertex> vertices;
-
-    // Try to load the file
-    if (LoadPlyFile(vertices, settings->plyfile))
+    try
     {
-        size_t vertexCount = vertices.size();
-        SetWindowTextW(hwnd, (std::to_wstring(vertexCount) + L" Points at " + settings->plyfile + L" - PointCloudEngine ").c_str());
-
-        // Build the octree from the points (takes a long time)
-        pointCloudRenderer = new RENDERER(vertices);
-        pointCloud->AddComponent(pointCloudRenderer);
+        // Try to build the octree from the points (takes a long time)
+        pointCloudRenderer = new RENDERER(settings->plyfile);
     }
-    else
+    catch (std::exception e)
     {
         ErrorMessage(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!", L"File loading error", __FILEW__, __LINE__);
+
+        // Set the pointer to NULL because the creation of the object failed
+        pointCloudRenderer = NULL;
+    }
+
+    if (pointCloudRenderer != NULL)
+    {
+        pointCloud->AddComponent(pointCloudRenderer);
+        SetWindowTextW(hwnd, (settings->plyfile + L" - PointCloudEngine ").c_str());
+
+        // Set camera position in front of the object
+        Vector3 boundingBoxPosition;
+        float boundingBoxSize;
+
+        pointCloudRenderer->GetBoundingCubePositionAndSize(boundingBoxPosition, boundingBoxSize);
+
+        camera->SetPosition(settings->scale * (boundingBoxPosition - boundingBoxSize * Vector3::UnitZ));
     }
 
     // Hide loading text
@@ -218,17 +229,6 @@ void PointCloudEngine::Scene::LoadFile()
     // Reset point cloud
     pointCloud->transform->position = Vector3::Zero;
     pointCloud->transform->rotation = Quaternion::Identity;
-
-    // Set camera position in front of the object
-    if (pointCloudRenderer != NULL)
-    {
-        Vector3 boundingBoxPosition;
-        float boundingBoxSize;
-
-        pointCloudRenderer->GetBoundingCubePositionAndSize(boundingBoxPosition, boundingBoxSize);
-
-        camera->SetPosition(settings->scale * (boundingBoxPosition - boundingBoxSize * Vector3::UnitZ));
-    }
 
     // Reset camera rotation
     cameraPitch = 0;

@@ -1,8 +1,12 @@
 #include "SplatRenderer.h"
 
-SplatRenderer::SplatRenderer(const std::vector<Vertex> &vertices)
+SplatRenderer::SplatRenderer(const std::wstring &plyfile)
 {
-    this->vertices = vertices;
+    // Try to load the file
+    if (!LoadPlyFile(vertices, plyfile))
+    {
+        throw std::exception("Could not load .ply file!");
+    }
 
     // Set the default values
     constantBufferData.splatSize = 0.01f;

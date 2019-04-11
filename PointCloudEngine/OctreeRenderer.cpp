@@ -1,9 +1,9 @@
 #include "OctreeRenderer.h"
 
-OctreeRenderer::OctreeRenderer(const std::vector<Vertex> &vertices)
+OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
 {
-    // Create the octree
-    octree = new Octree(vertices, settings->maxOctreeDepth);
+    // Create the octree, throws exception on fail
+    octree = new Octree(plyfile);
 
     // Text for showing properties
     text = Hierarchy::Create(L"OctreeRendererText");
