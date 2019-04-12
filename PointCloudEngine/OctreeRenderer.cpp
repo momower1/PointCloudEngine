@@ -50,20 +50,6 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         viewMode = (viewMode + 1) % 3;
     }
 
-    // Create new buffer from the current octree traversal
-    if (level < 0)
-    {
-        Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
-        Vector3 cameraPosition = camera->GetPosition();
-        Vector3 localCameraPosition = Vector4::Transform(Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1), worldInverse);
-
-        octreeVertices = octree->GetVertices(localCameraPosition, constantBufferData.splatSize);
-    }
-    else
-    {
-        octreeVertices = octree->GetVerticesAtLevel(level);
-    }
-
     // Set the text
     int splatSizePixels = settings->resolutionY * constantBufferData.splatSize * constantBufferData.overlapFactor;
     textRenderer->text = L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n";
@@ -88,6 +74,20 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
 void OctreeRenderer::Draw(SceneObject *sceneObject)
 {
+    // Create new buffer from the current octree traversal
+    if (level < 0)
+    {
+        Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
+        Vector3 cameraPosition = camera->GetPosition();
+        Vector3 localCameraPosition = Vector4::Transform(Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1), worldInverse);
+
+        octreeVertices = octree->GetVertices(localCameraPosition, constantBufferData.splatSize);
+    }
+    else
+    {
+        octreeVertices = octree->GetVerticesAtLevel(level);
+    }
+
     int octreeVerticesSize = octreeVertices.size();
 
     if (octreeVerticesSize > 0)
