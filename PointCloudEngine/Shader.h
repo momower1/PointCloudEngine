@@ -30,10 +30,6 @@ namespace PointCloudEngine
 
     private:
         static std::vector<Shader*> shaders;
-
-        ID3DBlob* vertexShaderData = NULL;
-        ID3DBlob* geometryShaderData = NULL;
-        ID3DBlob* pixelShaderData = NULL;
     };
 }
 #endif

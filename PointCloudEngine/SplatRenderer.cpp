@@ -86,8 +86,8 @@ void SplatRenderer::Draw(SceneObject *sceneObject)
 
 void SplatRenderer::Release()
 {
-    SafeRelease(vertexBuffer);
-    SafeRelease(constantBuffer);
+    SAFE_RELEASE(vertexBuffer);
+    SAFE_RELEASE(constantBuffer);
 }
 
 void PointCloudEngine::SplatRenderer::SetSplatSize(const float &splatSize)

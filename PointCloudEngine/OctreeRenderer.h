@@ -19,6 +19,9 @@ namespace PointCloudEngine
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
+        void DrawOctree(SceneObject *sceneObject);
+        void DrawOctreeCompute(SceneObject *sceneObject);
+
         // Same constant buffer as in effect file, keep packing rules in mind
         struct OctreeRendererConstantBuffer
         {
@@ -35,6 +38,7 @@ namespace PointCloudEngine
 
         int level = -1;
         int viewMode = 0;
+        bool useComputeShader = false;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;
@@ -45,8 +49,12 @@ namespace PointCloudEngine
 
         // Vertex buffer
         UINT vertexBufferSize = 0;
-        ID3D11Buffer* vertexBuffer;		        // Holds vertex data
-        ID3D11Buffer* constantBuffer;		    // Stores data and sends it to the actual buffer in the effect file
+        ID3D11Buffer* vertexBuffer = NULL;		        // Holds vertex data
+        ID3D11Buffer* constantBuffer = NULL;		    // Stores data and sends it to the actual buffer in the effect file
+
+        // Compute shader
+        ID3D11ComputeShader *computeShader = NULL;
+        ID3D11Buffer *computeShaderBuffer = NULL;
     };
 }
 #endif

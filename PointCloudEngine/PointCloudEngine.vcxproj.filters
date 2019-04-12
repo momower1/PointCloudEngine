@@ -144,5 +144,8 @@
     <FxCompile Include="OctreeCluster.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
+    <FxCompile Include="OctreeCompute.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

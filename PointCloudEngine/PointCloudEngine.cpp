@@ -43,15 +43,6 @@ void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, 
     }
 }
 
-void SafeRelease(ID3D11Resource *resource)
-{
-    if (resource != NULL)
-    {
-        resource->Release();
-        resource = NULL;
-    }
-}
-
 bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile)
 {
     try
@@ -212,7 +203,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	// Create render target view, will be sended to the output merger stage of the pipeline
 	hr = d3d11Device->CreateRenderTargetView(backBuffer, NULL, &renderTargetView);		// NULL -> view accesses all subresources in mipmap level 0
     ErrorMessage(L"CreateRenderTargetView failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
-    SafeRelease(backBuffer);
+    SAFE_RELEASE(backBuffer);
 
 	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
 	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
@@ -420,7 +411,6 @@ void ReleaseObjects()
 {
     // Delete settings (also saves them to the hard drive)
     SafeDelete(settings);
-
     SafeDelete(camera);
 
     // Release and delete shaders
@@ -431,13 +421,12 @@ void ReleaseObjects()
     scene.Release();
 
     // Release the COM (Component Object Model) objects
-    swapChain->Release();
-    d3d11Device->Release();
-    d3d11DevCon->Release();
-    renderTargetView->Release();
-    depthStencilView->Release();
-    depthStencilState->Release();
-    rasterizerState->Release();
-
-    SafeRelease(depthStencilBuffer);
+    SAFE_RELEASE(swapChain);
+    SAFE_RELEASE(d3d11Device);
+    SAFE_RELEASE(d3d11DevCon);
+    SAFE_RELEASE(renderTargetView);
+    SAFE_RELEASE(depthStencilView);
+    SAFE_RELEASE(depthStencilState);
+    SAFE_RELEASE(depthStencilBuffer);
+    SAFE_RELEASE(rasterizerState);
 }

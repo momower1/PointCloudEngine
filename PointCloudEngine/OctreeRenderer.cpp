@@ -74,7 +74,39 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
 void OctreeRenderer::Draw(SceneObject *sceneObject)
 {
-    // Create new buffer from the current octree traversal
+    if (useComputeShader)
+    {
+        DrawOctreeCompute(sceneObject);
+    }
+    else
+    {
+        DrawOctree(sceneObject);
+    }
+}
+
+void OctreeRenderer::Release()
+{
+    SafeDelete(octree);
+
+    Hierarchy::ReleaseSceneObject(text);
+
+    SAFE_RELEASE(vertexBuffer);
+    SAFE_RELEASE(constantBuffer);
+}
+
+void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
+{
+    constantBufferData.splatSize = splatSize;
+}
+
+void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
+{
+    octree->GetRootPositionAndSize(outPosition, outSize);
+}
+
+void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
+{
+    // Create new buffer from the current octree traversal on the cpu
     if (level < 0)
     {
         Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
@@ -93,7 +125,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     if (octreeVerticesSize > 0)
     {
         // Release vertex buffer
-        SafeRelease(vertexBuffer);
+        SAFE_RELEASE(vertexBuffer);
 
         // Create a vertex buffer description with dynamic write access
         D3D11_BUFFER_DESC vertexBufferDesc;
@@ -121,7 +153,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
             d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
         }
-        else if(viewMode == 1)
+        else if (viewMode == 1)
         {
             d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
@@ -167,22 +199,15 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     }
 }
 
-void OctreeRenderer::Release()
+void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObject)
 {
-    SafeDelete(octree);
+    // TODO: Compile compute shader, initialize buffers
+    if (computeShader == NULL)
+    {
+        // Compile compute shader
+    }
 
-    Hierarchy::ReleaseSceneObject(text);
 
-    SafeRelease(vertexBuffer);
-    SafeRelease(constantBuffer);
-}
-
-void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
-{
-    constantBufferData.splatSize = splatSize;
-}
-
-void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
-{
-    octree->GetRootPositionAndSize(outPosition, outSize);
+    // TODO: Use compute shader to traverse the octree
+    // Store all the vertices that should be drawn in an appendstructuredbuffer and draw them by index
 }

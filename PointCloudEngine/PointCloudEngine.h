@@ -99,7 +99,6 @@ extern ID3D11DepthStencilState* depthStencilState;
 
 // Global function declarations
 extern void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr = E_FAIL);
-extern void SafeRelease(ID3D11Resource *resource);
 extern bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile);
 
 // Function declarations
@@ -111,6 +110,8 @@ void ReleaseObjects();
 bool InitializeScene();
 void UpdateScene();
 void DrawScene();
+
+#define SAFE_RELEASE(resource) if(resource != NULL) { resource->Release(); resource = NULL; }
 
 // Template function definitions
 template<typename T> void SafeDelete(T*& pointer)

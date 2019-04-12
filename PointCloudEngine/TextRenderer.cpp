@@ -52,7 +52,7 @@ void TextRenderer::Update(SceneObject *sceneObject)
     // Create vertex buffer if the text changed
     if (text != oldText)
     {
-        SafeRelease(vertexBuffer);
+        SAFE_RELEASE(vertexBuffer);
         vertices.clear();
 
         Vector2 glyphPosition = Vector2::Zero;
@@ -147,6 +147,6 @@ void TextRenderer::Draw(SceneObject *sceneObject)
 
 void TextRenderer::Release()
 {
-    shaderResourceView->Release();
-    SafeRelease(vertexBuffer);
+    SAFE_RELEASE(shaderResourceView);
+    SAFE_RELEASE(vertexBuffer);
 }
