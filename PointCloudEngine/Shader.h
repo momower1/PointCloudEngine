@@ -10,22 +10,23 @@ namespace PointCloudEngine
     {
     public:
         // Static functions for automatic memory management
-        static Shader* Create(std::wstring filename, bool VS, bool GS, bool PS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements);
+        static Shader* Create(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements);
         static void ReleaseAllShaders();
 
-        Shader (std::wstring filename, bool VS, bool GS, bool PS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements);
+        Shader (std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements);
         void Release ();
 
         static D3D11_INPUT_ELEMENT_DESC textLayout[];
         static D3D11_INPUT_ELEMENT_DESC splatLayout[];
         static D3D11_INPUT_ELEMENT_DESC octreeLayout[];
 
-        bool VS, PS, GS;
+        bool VS, PS, GS, CS;
 
         // Holds shader information
         ID3D11VertexShader* vertexShader = NULL;
         ID3D11GeometryShader* geometryShader = NULL;
         ID3D11PixelShader* pixelShader = NULL;
+        ID3D11ComputeShader* computeShader = NULL;
         ID3D11InputLayout* inputLayout = NULL;
 
     private:

@@ -41,9 +41,9 @@ D3D11_INPUT_ELEMENT_DESC Shader::octreeLayout[] =
     {"SIZE", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 };
 
-Shader* Shader::Create(std::wstring filename, bool VS, bool GS, bool PS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements)
+Shader* Shader::Create(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements)
 {
-    Shader *shader = new Shader(filename, VS, GS, PS, layout, numElements);
+    Shader *shader = new Shader(filename, VS, GS, PS, CS, layout, numElements);
     shaders.push_back(shader);
     return shader;
 }
@@ -60,11 +60,12 @@ void Shader::ReleaseAllShaders()
     shaders.clear();
 }
 
-Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements)
+Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_INPUT_ELEMENT_DESC *layout, UINT numElements)
 {
     this->VS = VS;
     this->GS = GS;
     this->PS = PS;
+    this->CS = CS;
 
     std::wstring filepath = (executableDirectory + L"/" + filename).c_str();
 
@@ -103,6 +104,16 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, D3D11_INPUT_ELE
         ErrorMessage(L"CreatePixelShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
         SAFE_RELEASE(pixelShaderData);
     }
+
+    if (CS)
+    {
+        ID3DBlob* computeShaderData = NULL;
+        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CS", "cs_5_0", 0, 0, &computeShaderData, 0);
+        ErrorMessage(L"D3DCompileFromFile failed for CS of " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+        hr = d3d11Device->CreateComputeShader(computeShaderData->GetBufferPointer(), computeShaderData->GetBufferSize(), NULL, &computeShader);
+        ErrorMessage(L"CreateComputeShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+        SAFE_RELEASE(computeShaderData);
+    }
 }
 
 void Shader::Release()
@@ -110,5 +121,6 @@ void Shader::Release()
     SAFE_RELEASE(vertexShader);
     SAFE_RELEASE(geometryShader);
     SAFE_RELEASE(pixelShader);
+    SAFE_RELEASE(computeShader);
     SAFE_RELEASE(inputLayout);
 }

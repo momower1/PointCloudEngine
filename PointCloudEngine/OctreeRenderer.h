@@ -19,10 +19,10 @@ namespace PointCloudEngine
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
-        void DrawOctree(SceneObject *sceneObject);
-        void DrawOctreeCompute(SceneObject *sceneObject);
+        void DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition);
+        void DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition);
 
-        // Same constant buffer as in effect file, keep packing rules in mind
+        // Same constant buffer as in hlsl file, keep packing rules in mind
         struct OctreeRendererConstantBuffer
         {
             Matrix World;
@@ -36,25 +36,28 @@ namespace PointCloudEngine
             float padding[2];
         };
 
+        struct ComputeShaderConstantBuffer
+        {
+            Vector3 localCameraPosition;
+            float splatSize;
+        };
+
         int level = -1;
         int viewMode = 0;
-        bool useComputeShader = false;
+        bool useComputeShader = true;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;
         TextRenderer *textRenderer = NULL;
         std::vector<OctreeNodeVertex> octreeVertices;
-        
-        OctreeRendererConstantBuffer constantBufferData;
 
-        // Vertex buffer
-        UINT vertexBufferSize = 0;
-        ID3D11Buffer* vertexBuffer = NULL;		        // Holds vertex data
-        ID3D11Buffer* constantBuffer = NULL;		    // Stores data and sends it to the actual buffer in the effect file
+        // Renderer buffer
+        ID3D11Buffer* octreeRendererConstantBuffer = NULL;
+        OctreeRendererConstantBuffer octreeRendererConstantBufferData;
 
         // Compute shader
-        ID3D11ComputeShader *computeShader = NULL;
-        ID3D11Buffer *computeShaderBuffer = NULL;
+        ID3D11Buffer *computeShaderConstantBuffer = NULL;
+        ComputeShaderConstantBuffer computeShaderConstantBufferData;
     };
 }
 #endif

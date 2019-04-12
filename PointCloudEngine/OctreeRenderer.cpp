@@ -13,8 +13,8 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
-    constantBufferData.fovAngleY = settings->fovAngleY;
-    constantBufferData.splatSize = 0.01f;
+    octreeRendererConstantBufferData.fovAngleY = settings->fovAngleY;
+    octreeRendererConstantBufferData.splatSize = 0.01f;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
@@ -28,8 +28,20 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     cbDescWVP.CPUAccessFlags = 0;
     cbDescWVP.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBuffer);
+    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &octreeRendererConstantBuffer);
     ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
+
+    // Create the constant buffer for the compute shader
+    D3D11_BUFFER_DESC computeShaderConstantBufferDesc;
+    ZeroMemory(&computeShaderConstantBufferDesc, sizeof(computeShaderConstantBufferDesc));
+    computeShaderConstantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    computeShaderConstantBufferDesc.ByteWidth = sizeof(ComputeShaderConstantBuffer);
+    computeShaderConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    computeShaderConstantBufferDesc.CPUAccessFlags = 0;
+    computeShaderConstantBufferDesc.MiscFlags = 0;
+
+    hr = d3d11Device->CreateBuffer(&computeShaderConstantBufferDesc, NULL, &computeShaderConstantBuffer);
+    ErrorMessage(L"CreateBuffer failed for the compute shader constant buffer.", L"Initialize", __FILEW__, __LINE__, hr);
 }
 
 void OctreeRenderer::Update(SceneObject *sceneObject)
@@ -51,7 +63,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     }
 
     // Set the text
-    int splatSizePixels = settings->resolutionY * constantBufferData.splatSize * constantBufferData.overlapFactor;
+    int splatSizePixels = settings->resolutionY * octreeRendererConstantBufferData.splatSize * octreeRendererConstantBufferData.overlapFactor;
     textRenderer->text = L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n";
 
     if (viewMode == 0)
@@ -74,13 +86,38 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
 void OctreeRenderer::Draw(SceneObject *sceneObject)
 {
+    // Transform the camera position into local space and save it in the constant buffers
+    Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
+    Vector3 cameraPosition = camera->GetPosition();
+    Vector3 localCameraPosition = Vector4::Transform(Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1), worldInverse);
+
+    // Set shader constant buffer variables
+    octreeRendererConstantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+    octreeRendererConstantBufferData.WorldInverseTranspose = octreeRendererConstantBufferData.World.Invert().Transpose();
+    octreeRendererConstantBufferData.View = camera->GetViewMatrix().Transpose();
+    octreeRendererConstantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
+    octreeRendererConstantBufferData.cameraPosition = camera->GetPosition();
+
+    // Draw overlapping splats to make sure that continuous surfaces are drawn
+    // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
+    // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
+    // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
+    octreeRendererConstantBufferData.overlapFactor = 1.75f;
+
+    // Update the hlsl file buffer, set shader buffer to our created buffer
+    d3d11DevCon->UpdateSubresource(octreeRendererConstantBuffer, 0, NULL, &octreeRendererConstantBufferData, 0, 0);
+
+    // Set shader buffer
+    d3d11DevCon->VSSetConstantBuffers(0, 1, &octreeRendererConstantBuffer);
+    d3d11DevCon->GSSetConstantBuffers(0, 1, &octreeRendererConstantBuffer);
+
     if (useComputeShader)
     {
-        DrawOctreeCompute(sceneObject);
+        DrawOctreeCompute(sceneObject, localCameraPosition);
     }
     else
     {
-        DrawOctree(sceneObject);
+        DrawOctree(sceneObject, localCameraPosition);
     }
 }
 
@@ -90,13 +127,14 @@ void OctreeRenderer::Release()
 
     Hierarchy::ReleaseSceneObject(text);
 
-    SAFE_RELEASE(vertexBuffer);
-    SAFE_RELEASE(constantBuffer);
+    SAFE_RELEASE(octreeRendererConstantBuffer);
+    SAFE_RELEASE(computeShaderConstantBuffer);
 }
 
 void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
 {
-    constantBufferData.splatSize = splatSize;
+    octreeRendererConstantBufferData.splatSize = splatSize;
+    computeShaderConstantBufferData.splatSize = splatSize;
 }
 
 void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
@@ -104,16 +142,12 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
     octree->GetRootPositionAndSize(outPosition, outSize);
 }
 
-void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
+void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
     // Create new buffer from the current octree traversal on the cpu
     if (level < 0)
     {
-        Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
-        Vector3 cameraPosition = camera->GetPosition();
-        Vector3 localCameraPosition = Vector4::Transform(Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1), worldInverse);
-
-        octreeVertices = octree->GetVertices(localCameraPosition, constantBufferData.splatSize);
+        octreeVertices = octree->GetVertices(localCameraPosition, octreeRendererConstantBufferData.splatSize);
     }
     else
     {
@@ -124,8 +158,8 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
 
     if (octreeVerticesSize > 0)
     {
-        // Release vertex buffer
-        SAFE_RELEASE(vertexBuffer);
+        // Create a new vertex buffer
+        ID3D11Buffer* vertexBuffer = NULL;
 
         // Create a vertex buffer description with dynamic write access
         D3D11_BUFFER_DESC vertexBufferDesc;
@@ -143,8 +177,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
         // Create the buffer
         hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
         ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
-
-        vertexBufferSize = octreeVerticesSize;
 
         // Set the shaders
         if (viewMode == 0)
@@ -177,37 +209,45 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
         // Set primitive topology
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-        // Set shader constant buffer variables
-        constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
-        constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
-        constantBufferData.View = camera->GetViewMatrix().Transpose();
-        constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
-        constantBufferData.cameraPosition = camera->GetPosition();
-
-        // Draw overlapping splats to make sure that continuous surfaces are drawn
-        // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
-        // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
-        // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
-        constantBufferData.overlapFactor = 1.75f;
-
-        // Update effect file buffer, set shader buffer to our created buffer
-        d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
-        d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
-        d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
-
         d3d11DevCon->Draw(octreeVerticesSize, 0);
+
+        SAFE_RELEASE(vertexBuffer);
     }
 }
 
-void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObject)
+void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
-    // TODO: Compile compute shader, initialize buffers
-    if (computeShader == NULL)
-    {
-        // Compile compute shader
-    }
+    // Set constant buffer data
+    computeShaderConstantBufferData.localCameraPosition = localCameraPosition;
 
+    // Update constant buffer
+    d3d11DevCon->UpdateSubresource(computeShaderConstantBuffer, 0, NULL, &computeShaderConstantBufferData, 0, 0);
+
+    // Set the constant buffer
+    d3d11DevCon->CSSetConstantBuffers(0, 1, &computeShaderConstantBuffer);
+
+    // Create vertex append buffer
+    D3D11_BUFFER_DESC vertexBufferDesc;
+    vertexBufferDesc.ByteWidth = sizeof(OctreeNode);
+    vertexBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    vertexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    vertexBufferDesc.StructureByteStride = sizeof(OctreeNode);
+    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.CPUAccessFlags = 0;
+
+    // Create root append buffer
+    D3D11_BUFFER_DESC rootBufferDesc;
+    rootBufferDesc.ByteWidth = sizeof(OctreeNode);
+    rootBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    rootBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    rootBufferDesc.StructureByteStride = sizeof(OctreeNode);
+    rootBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    rootBufferDesc.CPUAccessFlags = 0;
 
     // TODO: Use compute shader to traverse the octree
+    d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
+
     // Store all the vertices that should be drawn in an appendstructuredbuffer and draw them by index
+
+    // TODO: Set input layout, ..., Draw(...)
 }
