@@ -87,16 +87,17 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 void OctreeRenderer::Draw(SceneObject *sceneObject)
 {
     // Transform the camera position into local space and save it in the constant buffers
-    Matrix worldInverse = sceneObject->transform->worldMatrix.Invert();
+    Matrix world = sceneObject->transform->worldMatrix;
+    Matrix worldInverse = world.Invert();
     Vector3 cameraPosition = camera->GetPosition();
     Vector3 localCameraPosition = Vector4::Transform(Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1), worldInverse);
 
     // Set shader constant buffer variables
-    octreeRendererConstantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
-    octreeRendererConstantBufferData.WorldInverseTranspose = octreeRendererConstantBufferData.World.Invert().Transpose();
+    octreeRendererConstantBufferData.World = world.Transpose();
+    octreeRendererConstantBufferData.WorldInverseTranspose = worldInverse.Transpose();
     octreeRendererConstantBufferData.View = camera->GetViewMatrix().Transpose();
     octreeRendererConstantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
-    octreeRendererConstantBufferData.cameraPosition = camera->GetPosition();
+    octreeRendererConstantBufferData.cameraPosition = cameraPosition;
 
     // Draw overlapping splats to make sure that continuous surfaces are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)

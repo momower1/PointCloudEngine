@@ -90,7 +90,7 @@ namespace PointCloudEngine
         // TODO: One weight can be omitted because the sum of all weights is always 1
         PolarNormal normals[6];
         Color16 colors[6];
-        byte weights[6];
+        USHORT weights[6];
 
         // Width of the whole cube
         float size;

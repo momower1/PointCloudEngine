@@ -122,7 +122,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 
             nodeVertex.normals[i] = PolarNormal(means[i]);
             nodeVertex.colors[i] = Color16(averageReds[i], averageGreens[i], averageBlues[i]);
-            nodeVertex.weights[i] = (255.0f * verticesPerMean[i]) / vertexCount;
+            nodeVertex.weights[i] = ((float)0xffff * verticesPerMean[i]) / vertexCount;
         }
         else
         {

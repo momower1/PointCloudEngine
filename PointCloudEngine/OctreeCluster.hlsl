@@ -20,12 +20,12 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 
     float weights[6] =
     {
-        input[0].weight0 / 255.0f,
-        input[0].weight1 / 255.0f,
-        input[0].weight2 / 255.0f,
-        input[0].weight3 / 255.0f,
-        input[0].weight4 / 255.0f,
-        input[0].weight5 / 255.0f
+        input[0].weight0 / (float)0xffff,
+        input[0].weight1 / (float)0xffff,
+        input[0].weight2 / (float)0xffff,
+        input[0].weight3 / (float)0xffff,
+        input[0].weight4 / (float)0xffff,
+        input[0].weight5 / (float)0xffff
     };
 
     float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
