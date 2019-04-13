@@ -336,29 +336,51 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     d3d11DevCon->ClearUnorderedAccessViewUint(firstBufferUAV, data);
 
     // Use compute shader to traverse the octree
-    UINT one = 1;
     UINT zero = 0;
     d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
-    d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &firstBufferUAV, &one);
-    d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &secondBufferUAV, &zero);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
 
-    // First execution of the compute shader, appends the indices of the nodes that should be checked next into the second buffer
-    d3d11DevCon->Dispatch(1, 1, 1);
+    UINT structureCount = 1;
+    bool firstBufferIsInputConsumeBuffer = true;
 
-    d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, secondBufferUAV);
+    // Swap the input and output buffer as long as there is data in the output append buffer
+    do
+    {
+        if (firstBufferIsInputConsumeBuffer)
+        {
+            d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &firstBufferUAV, &structureCount);
+            d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &secondBufferUAV, &zero);
+        }
+        else
+        {
+            d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &secondBufferUAV, &structureCount);
+            d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &firstBufferUAV, &zero);
+        }
 
-    D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-    d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+        // Execution of the compute shader, appends the indices of the nodes that should be checked next to the output append buffer
+        d3d11DevCon->Dispatch(structureCount, 1, 1);
 
-    int structureCount = *(int*)mappedSubresource.pData;
+        if (firstBufferIsInputConsumeBuffer)
+        {
+            d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, secondBufferUAV);
+        }
+        else
+        {
+            d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, firstBufferUAV);
+        }
 
-    // Do as long as there is data in the output append buffer
-    //while (structureCount > 0)
-    //{
-    //    //...
-    //}
+        D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+        hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+        ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
+
+        structureCount = *(int*)mappedSubresource.pData;
+
+        d3d11DevCon->Unmap(structureCountBuffer, 0);
+
+        firstBufferIsInputConsumeBuffer = !firstBufferIsInputConsumeBuffer;
+
+    } while (structureCount > 0);
 
     // Create a vertex buffer description with dynamic write access
     D3D11_BUFFER_DESC vertexBufferDesc;
