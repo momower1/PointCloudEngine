@@ -23,24 +23,24 @@ struct OctreeNode
 };
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
-ConsumeStructuredBuffer<int> inputAppendBuffer : register(u0);
+ConsumeStructuredBuffer<int> inputConsumeBuffer : register(u0);
 AppendStructuredBuffer<int> outputAppendBuffer : register(u1);
 AppendStructuredBuffer<OctreeNodeVertex> vertexAppendBuffer : register(u2);
 
 [numthreads(1, 1, 1)]
 void CS (uint3 id : SV_DispatchThreadID )
 {
-    //int index = inputAppendBuffer.Consume();
+    int index = inputConsumeBuffer.Consume();
 
-    //// TODO: Remove
-    //OctreeNode n = nodesBuffer[index];
+    OctreeNode n = nodesBuffer[index];
 
-    //float3 color = Color16ToFloat3(n.nodeVertex.colors[0]);
-    //float3 normal = PolarNormalToFloat3(n.nodeVertex.normals[0]);
+    for (int i = 0; i < 8; i++)
+    {
+        if (n.children[i] >= 0)
+        {
+            outputAppendBuffer.Append(n.children[i]);
+        }
+    }
 
-    //outputAppendBuffer.Append(n.children[0]);
-    //
-    //vertexAppendBuffer.Append(n.nodeVertex);
-
-    vertexAppendBuffer.Append(nodesBuffer[id.x].nodeVertex);
+    vertexAppendBuffer.Append(n.nodeVertex);
 }

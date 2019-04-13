@@ -194,8 +194,15 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	swapChainDesc.Windowed = settings->windowed;		                    // Fullscreen might freeze the programm -> set windowed before exit
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;		            // Let display driver decide what to do when swapping buffers
 
+    // Add flags for the creation of the device for debugging
+    UINT flags = 0;
+
+#ifdef _DEBUG
+    flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
 	// Create device and swap chain
-	hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
+	hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
     ErrorMessage(L"D3D11CreateDeviceAndSwapChain failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
 
 	ID3D11Texture2D* backBuffer;
