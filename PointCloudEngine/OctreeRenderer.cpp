@@ -257,18 +257,19 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->CSSetConstantBuffers(0, 1, &computeShaderConstantBuffer);
 
     // Create vertex append buffer
-    ID3D11Buffer *vertexBuffer = NULL;
-    ID3D11UnorderedAccessView *vertexBufferUAV = NULL;
+    vertexBufferSize = 1000000;
+    ID3D11Buffer *vertexAppendBuffer = NULL;
+    ID3D11UnorderedAccessView *vertexAppendBufferUAV = NULL;
 
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    vertexBufferDesc.ByteWidth = sizeof(OctreeNodeVertex);  // Should be 0 but doesn't work (maybe the size of the buffer is restricted????)
-    vertexBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-    vertexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    vertexBufferDesc.StructureByteStride = sizeof(OctreeNodeVertex);
-    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.CPUAccessFlags = 0;
+    D3D11_BUFFER_DESC vertexAppendBufferDesc;
+    vertexAppendBufferDesc.ByteWidth = vertexBufferSize * sizeof(OctreeNodeVertex);  // Should be 0 but doesn't work (maybe the size of the buffer is restricted????)
+    vertexAppendBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    vertexAppendBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    vertexAppendBufferDesc.StructureByteStride = sizeof(OctreeNodeVertex);
+    vertexAppendBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexAppendBufferDesc.CPUAccessFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, NULL, &vertexBuffer);
+    hr = d3d11Device->CreateBuffer(&vertexAppendBufferDesc, NULL, &vertexAppendBuffer);
     ErrorMessage(L"CreateBuffer failed for vertex buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
 
     // Create UAV and bind it to the compute shader
@@ -277,9 +278,9 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     vertexBufferUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
     vertexBufferUAVDesc.Buffer.FirstElement = 0;
     vertexBufferUAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
-    vertexBufferUAVDesc.Buffer.NumElements = 1;     // Apparently this is the maximum count
+    vertexBufferUAVDesc.Buffer.NumElements = vertexBufferSize;     // Apparently this is the maximum count
 
-    hr = d3d11Device->CreateUnorderedAccessView(vertexBuffer, &vertexBufferUAVDesc, &vertexBufferUAV);
+    hr = d3d11Device->CreateUnorderedAccessView(vertexAppendBuffer, &vertexBufferUAVDesc, &vertexAppendBufferUAV);
     ErrorMessage(L"CreateUnorderedAccessView failed for vertex buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
 
     // Create empty output append buffer
@@ -303,13 +304,27 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     // TODO: Use compute shader to traverse the octree
     d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
-    d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexBufferUAV, NULL);
+    d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, NULL);
 
     // Execute the compute shader
-    d3d11DevCon->Dispatch(1, 1, 1);
+    d3d11DevCon->Dispatch(vertexBufferSize, 1, 1);
 
-    // Store all the vertices that should be drawn in an appendstructuredbuffer and draw them by index
-    vertexBufferSize = 1;
+    // Create vertex buffer and copy the appended vertices there
+    ID3D11Buffer* vertexBuffer = NULL;
+
+    // Create a vertex buffer description with dynamic write access
+    D3D11_BUFFER_DESC vertexBufferDesc;
+    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.ByteWidth = sizeof(OctreeNodeVertex) * vertexBufferSize;
+    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexBufferDesc.CPUAccessFlags = 0;
+
+    // Create the buffer
+    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, NULL, &vertexBuffer);
+    ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+
+    d3d11DevCon->CopyResource(vertexBuffer, vertexAppendBuffer);
 
     // TODO: Set input layout, ..., Draw(...)
     // Set the shaders
@@ -346,5 +361,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->Draw(vertexBufferSize, 0);
 
     SAFE_RELEASE(vertexBuffer);
-    SAFE_RELEASE(vertexBufferUAV);
+    SAFE_RELEASE(vertexAppendBuffer);
+    SAFE_RELEASE(vertexAppendBufferUAV);
 }
