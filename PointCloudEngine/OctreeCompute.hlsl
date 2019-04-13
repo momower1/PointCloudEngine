@@ -12,7 +12,7 @@ struct OctreeNodeVertex
     float3 position;
     half normals[6];
     half colors[6];
-    half weights[6];
+    uint weights;
     float size;
 };
 

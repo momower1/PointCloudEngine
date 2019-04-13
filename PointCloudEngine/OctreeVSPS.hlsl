@@ -39,12 +39,12 @@ VS_OUTPUT VS(VS_INPUT input)
 
     float weights[6] = 
     {
-        input.weight0 / (float)0xffff,
-        input.weight1 / (float)0xffff,
-        input.weight2 / (float)0xffff,
-        input.weight3 / (float)0xffff,
-        input.weight4 / (float)0xffff,
-        input.weight5 / (float)0xffff
+        (input.weights & 31) / 31.0f,
+        ((input.weights >> 5) & 31) / 31.0f,
+        ((input.weights >> 10) & 31) / 31.0f,
+        ((input.weights >> 15) & 31) / 31.0f,
+        ((input.weights >> 20) & 31) / 31.0f,
+        ((input.weights >> 25) & 31) / 31.0f
     };
 
     VS_OUTPUT output;

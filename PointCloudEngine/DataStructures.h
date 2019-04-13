@@ -86,11 +86,11 @@ namespace PointCloudEngine
         Vector3 position;
 
         // The different cluster mean normals and colors in object space calculated by k-means algorithm with k=6
-        // Each weights is the percentage of points assigned to this cluster (0=0%, 255=100%)
+        // Each weight is 5 bits and represents the percentage of points assigned to this cluster (0=0%, 31=100%)
         // TODO: One weight can be omitted because the sum of all weights is always 1
         PolarNormal normals[6];
         Color16 colors[6];
-        USHORT weights[6];
+        UINT weights;
 
         // Width of the whole cube
         float size;
