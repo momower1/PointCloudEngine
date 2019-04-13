@@ -10,8 +10,8 @@ cbuffer ComputeShaderConstantBuffer : register(b0)
 struct OctreeNodeVertex
 {
     float3 position;
-    half normals[6];
-    half colors[6];
+    uint normals[3];
+    uint colors[3];
     uint weights;
     float size;
 };

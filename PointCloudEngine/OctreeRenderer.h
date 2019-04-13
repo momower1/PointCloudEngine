@@ -45,7 +45,7 @@ namespace PointCloudEngine
         int level = -1;
         int viewMode = 0;
         bool useComputeShader = true;
-        int vertexBufferSize = 0;
+        int vertexBufferCount = 0;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;
