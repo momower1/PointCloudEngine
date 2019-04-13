@@ -44,6 +44,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     ErrorMessage(L"CreateBuffer failed for the compute shader constant buffer.", L"Initialize", __FILEW__, __LINE__, hr);
 
     // Create the buffer for the compute shader that stores all the octree nodes
+    // Maximum size is ~4.2 GB (UINT MAX)
     D3D11_BUFFER_DESC nodesBufferDesc;
     ZeroMemory(&nodesBufferDesc, sizeof(nodesBufferDesc));
     nodesBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -138,14 +139,52 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     d3d11DevCon->VSSetConstantBuffers(0, 1, &octreeRendererConstantBuffer);
     d3d11DevCon->GSSetConstantBuffers(0, 1, &octreeRendererConstantBuffer);
 
+    ID3D11Buffer *vertexBuffer = NULL;
+
+    // Get the vertex buffer and use the specified implementation
     if (useComputeShader)
     {
-        DrawOctreeCompute(sceneObject, localCameraPosition);
+        vertexBuffer = GetVertexBufferCompute(sceneObject, localCameraPosition);
     }
     else
     {
-        DrawOctree(sceneObject, localCameraPosition);
+        vertexBuffer = GetVertexBuffer(sceneObject, localCameraPosition);
     }
+
+    // Set the shaders
+    if (viewMode == 0)
+    {
+        d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
+    }
+    else if (viewMode == 1)
+    {
+        d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
+    }
+    else if (viewMode == 2)
+    {
+        d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
+    }
+
+    // Set the Input (Vertex) Layout
+    d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
+
+    // Bind the vertex buffer and to the input assembler (IA)
+    UINT offset = 0;
+    UINT stride = sizeof(OctreeNodeVertex);
+    d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+    // Set primitive topology
+    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+    d3d11DevCon->Draw(vertexBufferCount, 0);
+
+    SAFE_RELEASE(vertexBuffer);
 }
 
 void OctreeRenderer::Release()
@@ -171,8 +210,9 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
     octree->GetRootPositionAndSize(outPosition, outSize);
 }
 
-void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition)
+ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBuffer(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
+    ID3D11Buffer* vertexBuffer = NULL;
     std::vector<OctreeNodeVertex> octreeVertices;
 
     // Create new buffer from the current octree traversal on the cpu
@@ -189,9 +229,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, cons
 
     if (vertexBufferCount > 0)
     {
-        // Create a new vertex buffer
-        ID3D11Buffer* vertexBuffer = NULL;
-
         // Create a vertex buffer description with dynamic write access
         D3D11_BUFFER_DESC vertexBufferDesc;
         ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -208,46 +245,15 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, cons
         // Create the buffer
         hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
         ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
-
-        // Set the shaders
-        if (viewMode == 0)
-        {
-            d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
-            d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
-            d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
-        }
-        else if (viewMode == 1)
-        {
-            d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
-            d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
-            d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
-        }
-        else if (viewMode == 2)
-        {
-            d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
-            d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
-            d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
-        }
-
-        // Set the Input (Vertex) Layout
-        d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
-
-        // Bind the vertex buffer and index buffer to the input assembler (IA)
-        UINT offset = 0;
-        UINT stride = sizeof(OctreeNodeVertex);
-        d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-        // Set primitive topology
-        d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-        d3d11DevCon->Draw(vertexBufferCount, 0);
-
-        SAFE_RELEASE(vertexBuffer);
     }
+
+    return vertexBuffer;
 }
 
-void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition)
+ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
+    ID3D11Buffer *vertexBuffer = NULL;
+
     // Set constant buffer data
     computeShaderConstantBufferData.localCameraPosition = localCameraPosition;
 
@@ -311,9 +317,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     // Execute the compute shader
     d3d11DevCon->Dispatch(vertexBufferCount, 1, 1);
 
-    // Create vertex buffer and copy the appended vertices there
-    ID3D11Buffer* vertexBuffer = NULL;
-
     // Create a vertex buffer description with dynamic write access
     D3D11_BUFFER_DESC vertexBufferDesc;
     ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -326,42 +329,11 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     hr = d3d11Device->CreateBuffer(&vertexBufferDesc, NULL, &vertexBuffer);
     ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
 
+    // Copy the vertices from the append buffer to the final vertex buffer on the GPU
     d3d11DevCon->CopyResource(vertexBuffer, vertexAppendBuffer);
 
-    // Set the shaders
-    if (viewMode == 0)
-    {
-        d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
-    }
-    else if (viewMode == 1)
-    {
-        d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
-    }
-    else if (viewMode == 2)
-    {
-        d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
-    }
-
-    // Set the Input (Vertex) Layout
-    d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
-
-    // Bind the vertex append buffer as vertex buffer ??? 
-    UINT offset = 0;
-    UINT stride = sizeof(OctreeNodeVertex);
-    d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-    // Set primitive topology
-    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-    d3d11DevCon->Draw(vertexBufferCount, 0);
-
-    SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(vertexAppendBuffer);
     SAFE_RELEASE(vertexAppendBufferUAV);
+
+    return vertexBuffer;
 }

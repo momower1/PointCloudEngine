@@ -19,8 +19,8 @@ namespace PointCloudEngine
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
-        void DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition);
-        void DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition);
+        ID3D11Buffer* GetVertexBuffer(SceneObject *sceneObject, const Vector3 &localCameraPosition);
+        ID3D11Buffer* GetVertexBufferCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition);
 
         // Same constant buffer as in hlsl file, keep packing rules in mind
         struct OctreeRendererConstantBuffer
