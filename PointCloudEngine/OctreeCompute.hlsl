@@ -3,9 +3,11 @@
 cbuffer ComputeShaderConstantBuffer : register(b0)
 {
     float3 localCameraPosition;
-    float splatSize;
+    float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 16 bytes with constant buffer packing rules
+    float splatSize;
+//  12 bytes auto padding
+};  // Total: 32 bytes with constant buffer packing rules
 
 struct OctreeNodeVertex
 {
@@ -32,15 +34,43 @@ void CS (uint3 id : SV_DispatchThreadID )
 {
     int index = inputConsumeBuffer.Consume();
 
-    OctreeNode n = nodesBuffer[index];
+    OctreeNode node = nodesBuffer[index];
+
+    float distanceToCamera = distance(localCameraPosition, node.nodeVertex.position);
+    float requiredSplatSize = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+    bool isLeafNode = true;
 
     for (int i = 0; i < 8; i++)
     {
-        if (n.children[i] >= 0)
+        if (node.children[i] >= 0)
         {
-            outputAppendBuffer.Append(n.children[i]);
+            isLeafNode = false;
+            break;
         }
     }
 
-    vertexAppendBuffer.Append(n.nodeVertex);
+    if (node.nodeVertex.size < requiredSplatSize || isLeafNode)
+    {
+        if (node.nodeVertex.size < epsilon)
+        {
+            OctreeNodeVertex tmp = node.nodeVertex;
+            tmp.size = requiredSplatSize;
+
+            vertexAppendBuffer.Append(tmp);
+        }
+        else
+        {
+            vertexAppendBuffer.Append(node.nodeVertex);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            if (node.children[i] >= 0)
+            {
+                outputAppendBuffer.Append(node.children[i]);
+            }
+        }
+    }
 }

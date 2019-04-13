@@ -39,7 +39,9 @@ namespace PointCloudEngine
         struct ComputeShaderConstantBuffer
         {
             Vector3 localCameraPosition;
+            float fovAngleY;
             float splatSize;
+            float padding[3];
         };
 
         int level = -1;

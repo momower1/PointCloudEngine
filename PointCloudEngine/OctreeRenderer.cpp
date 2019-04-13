@@ -13,6 +13,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
+    computeShaderConstantBufferData.fovAngleY = settings->fovAngleY;
     octreeRendererConstantBufferData.fovAngleY = settings->fovAngleY;
     octreeRendererConstantBufferData.splatSize = 0.01f;
 }
@@ -370,6 +371,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
             d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, firstBufferUAV);
         }
 
+        // Get the structure count from the buffer
         D3D11_MAPPED_SUBRESOURCE mappedSubresource;
         hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
         ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
@@ -396,6 +398,17 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
 
     // Copy the vertices from the append buffer to the final vertex buffer on the GPU
     d3d11DevCon->CopyResource(vertexBuffer, vertexAppendBuffer);
+
+    // Set the actual vertex buffer count from the vertex append buffer structure counter
+    d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, vertexAppendBufferUAV);
+
+    D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+    hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+    ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
+
+    vertexBufferCount = *(int*)mappedSubresource.pData;
+
+    d3d11DevCon->Unmap(structureCountBuffer, 0);
 
     SAFE_RELEASE(firstBuffer);
     SAFE_RELEASE(secondBuffer);
