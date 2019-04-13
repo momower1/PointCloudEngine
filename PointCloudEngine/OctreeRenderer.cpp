@@ -42,6 +42,32 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 
     hr = d3d11Device->CreateBuffer(&computeShaderConstantBufferDesc, NULL, &computeShaderConstantBuffer);
     ErrorMessage(L"CreateBuffer failed for the compute shader constant buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+
+    // Create the buffer for the compute shader that stores all the octree nodes
+    D3D11_BUFFER_DESC nodesBufferDesc;
+    ZeroMemory(&nodesBufferDesc, sizeof(nodesBufferDesc));
+    nodesBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    nodesBufferDesc.ByteWidth = octree->nodes.size() * sizeof(OctreeNode);
+    nodesBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    nodesBufferDesc.StructureByteStride = sizeof(OctreeNode);
+    nodesBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    nodesBufferDesc.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA nodesBufferData;
+    ZeroMemory(&nodesBufferData, sizeof(nodesBufferData));
+    nodesBufferData.pSysMem = octree->nodes.data();
+
+    hr = d3d11Device->CreateBuffer(&nodesBufferDesc, &nodesBufferData, &nodesBuffer);
+    ErrorMessage(L"CreateBuffer failed for the nodes buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC nodesBufferSRVDesc;
+    ZeroMemory(&nodesBufferSRVDesc, sizeof(nodesBufferSRVDesc));
+    nodesBufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+    nodesBufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    nodesBufferSRVDesc.Buffer.ElementWidth = octree->nodes.size();
+
+    hr = d3d11Device->CreateShaderResourceView(nodesBuffer, &nodesBufferSRVDesc, &nodesBufferSRV);
+    ErrorMessage(L"CreateShaderResourceView failed for the nodes buffer srv.", L"Initialize", __FILEW__, __LINE__, hr);
 }
 
 void OctreeRenderer::Update(SceneObject *sceneObject)
@@ -51,7 +77,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     {
         level--;
     }
-    else if (Input::GetKeyDown(Keyboard::Right) && ((octreeVertices.size() > 0) || (level < 0)))
+    else if (Input::GetKeyDown(Keyboard::Right) && ((vertexBufferSize > 0) || (level < 0)))
     {
         level++;
     }
@@ -81,7 +107,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
     textRenderer->text.append(L"Octree Level: ");
     textRenderer->text.append((level < 0) ? L"AUTO" : std::to_wstring(level));
-    textRenderer->text.append(L", Vertex Count: " + std::to_wstring(octreeVertices.size()));
+    textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferSize));
 }
 
 void OctreeRenderer::Draw(SceneObject *sceneObject)
@@ -128,6 +154,7 @@ void OctreeRenderer::Release()
 
     Hierarchy::ReleaseSceneObject(text);
 
+    SAFE_RELEASE(nodesBuffer);
     SAFE_RELEASE(octreeRendererConstantBuffer);
     SAFE_RELEASE(computeShaderConstantBuffer);
 }
@@ -145,6 +172,8 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 
 void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
+    std::vector<OctreeNodeVertex> octreeVertices;
+
     // Create new buffer from the current octree traversal on the cpu
     if (level < 0)
     {
@@ -155,9 +184,9 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, cons
         octreeVertices = octree->GetVerticesAtLevel(level);
     }
 
-    int octreeVerticesSize = octreeVertices.size();
+    vertexBufferSize = octreeVertices.size();
 
-    if (octreeVerticesSize > 0)
+    if (vertexBufferSize > 0)
     {
         // Create a new vertex buffer
         ID3D11Buffer* vertexBuffer = NULL;
@@ -166,7 +195,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, cons
         D3D11_BUFFER_DESC vertexBufferDesc;
         ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
         vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        vertexBufferDesc.ByteWidth = sizeof(OctreeNodeVertex) * octreeVerticesSize;
+        vertexBufferDesc.ByteWidth = sizeof(OctreeNodeVertex) * vertexBufferSize;
         vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         vertexBufferDesc.CPUAccessFlags = 0;
 
@@ -210,7 +239,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, cons
         // Set primitive topology
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-        d3d11DevCon->Draw(octreeVerticesSize, 0);
+        d3d11DevCon->Draw(vertexBufferSize, 0);
 
         SAFE_RELEASE(vertexBuffer);
     }
@@ -228,27 +257,94 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->CSSetConstantBuffers(0, 1, &computeShaderConstantBuffer);
 
     // Create vertex append buffer
+    ID3D11Buffer *vertexBuffer = NULL;
+    ID3D11UnorderedAccessView *vertexBufferUAV = NULL;
+
     D3D11_BUFFER_DESC vertexBufferDesc;
-    vertexBufferDesc.ByteWidth = sizeof(OctreeNode);
+    vertexBufferDesc.ByteWidth = sizeof(OctreeNodeVertex);  // Should be 0 but doesn't work (maybe the size of the buffer is restricted????)
     vertexBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
     vertexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    vertexBufferDesc.StructureByteStride = sizeof(OctreeNode);
+    vertexBufferDesc.StructureByteStride = sizeof(OctreeNodeVertex);
     vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     vertexBufferDesc.CPUAccessFlags = 0;
 
-    // Create root append buffer
-    D3D11_BUFFER_DESC rootBufferDesc;
-    rootBufferDesc.ByteWidth = sizeof(OctreeNode);
-    rootBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-    rootBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    rootBufferDesc.StructureByteStride = sizeof(OctreeNode);
-    rootBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    rootBufferDesc.CPUAccessFlags = 0;
+    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, NULL, &vertexBuffer);
+    ErrorMessage(L"CreateBuffer failed for vertex buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    // Create UAV and bind it to the compute shader
+    D3D11_UNORDERED_ACCESS_VIEW_DESC vertexBufferUAVDesc;
+    vertexBufferUAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+    vertexBufferUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    vertexBufferUAVDesc.Buffer.FirstElement = 0;
+    vertexBufferUAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
+    vertexBufferUAVDesc.Buffer.NumElements = 1;     // Apparently this is the maximum count
+
+    hr = d3d11Device->CreateUnorderedAccessView(vertexBuffer, &vertexBufferUAVDesc, &vertexBufferUAV);
+    ErrorMessage(L"CreateUnorderedAccessView failed for vertex buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    // Create empty output append buffer
+    D3D11_BUFFER_DESC outputBufferDesc;
+    outputBufferDesc.ByteWidth = 0;
+    outputBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    outputBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    outputBufferDesc.StructureByteStride = sizeof(int);
+    outputBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    outputBufferDesc.CPUAccessFlags = 0;
+
+    // Create input consume buffer with 0 as the only entry (root index)
+    D3D11_BUFFER_DESC inputBufferDesc;
+    inputBufferDesc.ByteWidth = sizeof(int);
+    inputBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    inputBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    inputBufferDesc.StructureByteStride = sizeof(int);
+    inputBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    inputBufferDesc.CPUAccessFlags = 0;
 
     // TODO: Use compute shader to traverse the octree
     d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
+    d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
+    d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexBufferUAV, NULL);
+
+    // Execute the compute shader
+    d3d11DevCon->Dispatch(1, 1, 1);
 
     // Store all the vertices that should be drawn in an appendstructuredbuffer and draw them by index
+    vertexBufferSize = 1;
 
     // TODO: Set input layout, ..., Draw(...)
+    // Set the shaders
+    if (viewMode == 0)
+    {
+        d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
+    }
+    else if (viewMode == 1)
+    {
+        d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
+    }
+    else if (viewMode == 2)
+    {
+        d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
+        d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
+    }
+
+    // Set the Input (Vertex) Layout
+    d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
+
+    // Bind the vertex append buffer as vertex buffer ??? 
+    UINT offset = 0;
+    UINT stride = sizeof(OctreeNodeVertex);
+    d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+    // Set primitive topology
+    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+    d3d11DevCon->Draw(vertexBufferSize, 0);
+
+    SAFE_RELEASE(vertexBuffer);
+    SAFE_RELEASE(vertexBufferUAV);
 }

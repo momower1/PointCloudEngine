@@ -44,18 +44,20 @@ namespace PointCloudEngine
 
         int level = -1;
         int viewMode = 0;
-        bool useComputeShader = false;
+        bool useComputeShader = true;
+        int vertexBufferSize = 0;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;
         TextRenderer *textRenderer = NULL;
-        std::vector<OctreeNodeVertex> octreeVertices;
 
         // Renderer buffer
         ID3D11Buffer* octreeRendererConstantBuffer = NULL;
         OctreeRendererConstantBuffer octreeRendererConstantBufferData;
 
         // Compute shader
+        ID3D11Buffer *nodesBuffer = NULL;
+        ID3D11ShaderResourceView *nodesBufferSRV = NULL;
         ID3D11Buffer *computeShaderConstantBuffer = NULL;
         ComputeShaderConstantBuffer computeShaderConstantBufferData;
     };

@@ -56,8 +56,8 @@ namespace PointCloudEngine
     class OctreeRenderer;
     class Settings;
     class Camera;
-    class OctreeNode;
     class Octree;
+    struct OctreeNode;
 }
 
 using namespace PointCloudEngine;

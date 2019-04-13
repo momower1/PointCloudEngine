@@ -6,7 +6,7 @@
 
 namespace PointCloudEngine
 {
-    class OctreeNode
+    struct OctreeNode
     {
     public:
         OctreeNode();
