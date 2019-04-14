@@ -336,9 +336,10 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     // Set the constant buffer
     d3d11DevCon->CSSetConstantBuffers(0, 1, &computeShaderConstantBuffer);
 
-    // This is used to unbind views from the shaders
-    ID3D11UnorderedAccessView* emptyUAV[1] = { NULL };
-    ID3D11ShaderResourceView* emptySRV[1] = { NULL };
+    // This is used to unbind buffers and views from the shaders
+    ID3D11Buffer* nullBuffer[1] = { NULL };
+    ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
+    ID3D11ShaderResourceView* nullSRV[1] = { NULL };
 
     // Set 0 as the only entry (root index) for the first buffer, will be used as input consume buffer in the shader
     UINT data[4] = { 0, 0, 0, 0};
@@ -358,8 +359,8 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     do
     {
         // Unbind first
-        d3d11DevCon->CSSetUnorderedAccessViews(0, 1, emptyUAV, &zero);
-        d3d11DevCon->CSSetUnorderedAccessViews(1, 1, emptyUAV, &zero);
+        d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+        d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 
         if (firstBufferIsInputConsumeBuffer)
         {
@@ -418,7 +419,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->Unmap(structureCountBuffer, 0);
 
     // Unbind vertex append buffer in order to use it as structured buffer
-    d3d11DevCon->CSSetUnorderedAccessViews(2, 1, emptyUAV, &zero);
+    d3d11DevCon->CSSetUnorderedAccessViews(2, 1, nullUAV, &zero);
 
     // Set the shaders
     d3d11DevCon->VSSetShader(octreeComputeSplatShader->vertexShader, 0, 0);
@@ -430,11 +431,11 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 
     // Set an empty input layout and vertex buffer that only sends the vertex id to the shader
     d3d11DevCon->IASetInputLayout(NULL);
-
+    d3d11DevCon->IASetVertexBuffers(0, 1, nullBuffer, &zero, &zero);
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
     d3d11DevCon->Draw(vertexBufferCount, 0);
 
     // Unbind the vertex append buffer as structured buffer
-    d3d11DevCon->VSSetShaderResources(0, 1, emptySRV);
+    d3d11DevCon->VSSetShaderResources(0, 1, nullSRV);
 }
