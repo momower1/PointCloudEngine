@@ -122,7 +122,8 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     ZeroMemory(&vertexAppendBufferSRVDesc, sizeof(vertexAppendBufferSRVDesc));
     vertexAppendBufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
     vertexAppendBufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-    vertexAppendBufferSRVDesc.Buffer.ElementWidth = maxVertexBufferCount;
+    vertexAppendBufferSRVDesc.Buffer.ElementWidth = sizeof(OctreeNodeVertex);
+    vertexAppendBufferSRVDesc.Buffer.NumElements = maxVertexBufferCount;
 
     hr = d3d11Device->CreateShaderResourceView(vertexAppendBuffer, &vertexAppendBufferSRVDesc, &vertexAppendBufferSRV);
     ErrorMessage(L"CreateShaderResourceView failed for the vertex append buffer srv.", L"Initialize", __FILEW__, __LINE__, hr);

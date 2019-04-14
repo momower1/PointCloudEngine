@@ -9,12 +9,12 @@ VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
     VS_INPUT input;
 
     input.position = v.position;
-    input.normal0 = v.normals[0] >> 16;
-    input.normal1 = v.normals[0] & 0xffff;
-    input.normal2 = v.normals[1] >> 16;
-    input.normal3 = v.normals[1] & 0xffff;
-    input.normal4 = v.normals[2] >> 16;
-    input.normal5 = v.normals[2] & 0xffff;
+    input.normal0 = uint2(v.normals[0] >> 24, (v.normals[0] >> 16) & 0xff);
+    input.normal1 = uint2((v.normals[0] >> 8) & 0xff, v.normals[0] & 0xff);
+    input.normal2 = uint2(v.normals[1] >> 24, (v.normals[1] >> 16) & 0xff);
+    input.normal3 = uint2((v.normals[1] >> 8) & 0xff, v.normals[1] & 0xff);
+    input.normal4 = uint2(v.normals[2] >> 24, (v.normals[2] >> 16) & 0xff);
+    input.normal5 = uint2((v.normals[2] >> 8) & 0xff, v.normals[2] & 0xff);
     input.color0 = v.colors[0] >> 16;
     input.color1 = v.colors[0] & 0xffff;
     input.color2 = v.colors[1] >> 16;
