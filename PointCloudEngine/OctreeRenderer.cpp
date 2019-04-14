@@ -265,7 +265,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     d3d11DevCon->CSSetConstantBuffers(0, 1, &computeShaderConstantBuffer);
 
     // Create vertex append buffer, specify the maximum size of all the buffers here
-    vertexBufferCount = 1000000;
+    vertexBufferCount = 2000000;
     ID3D11Buffer *firstBuffer = NULL;
     ID3D11Buffer *secondBuffer = NULL;
     ID3D11Buffer *vertexAppendBuffer = NULL;
@@ -342,6 +342,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
 
+    UINT iteration = 0;
     UINT structureCount = 1;
     bool firstBufferIsInputConsumeBuffer = true;
 
@@ -368,7 +369,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
             UINT threadCount = min(65535, remainingThreadsToSpawn);
             d3d11DevCon->Dispatch(threadCount, 1, 1);
 
-            remainingThreadsToSpawn -= threadCount;
+            remainingThreadsToSpawn = max(0, remainingThreadsToSpawn - threadCount);
         }
 
         if (firstBufferIsInputConsumeBuffer)
@@ -391,7 +392,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
 
         firstBufferIsInputConsumeBuffer = !firstBufferIsInputConsumeBuffer;
 
-    } while (structureCount > 0);
+    } while ((structureCount > 0) && (iteration++ < settings->maxOctreeDepth));
 
     // Create a vertex buffer description with dynamic write access
     D3D11_BUFFER_DESC vertexBufferDesc;
