@@ -94,6 +94,7 @@ extern Shader* octreeCubeShader;
 extern Shader* octreeSplatShader;
 extern Shader* octreeClusterShader;
 extern Shader* octreeComputeShader;
+extern Shader* octreeComputeSplatShader;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11DepthStencilState* depthStencilState;

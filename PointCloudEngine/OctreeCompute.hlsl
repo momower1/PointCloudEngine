@@ -9,21 +9,6 @@ cbuffer ComputeShaderConstantBuffer : register(b0)
 //  12 bytes auto padding
 };  // Total: 32 bytes with constant buffer packing rules
 
-struct OctreeNodeVertex
-{
-    float3 position;
-    uint normals[3];
-    uint colors[3];
-    uint weights;
-    float size;
-};
-
-struct OctreeNode
-{
-    int children[8];
-    OctreeNodeVertex nodeVertex;
-};
-
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
 ConsumeStructuredBuffer<int> inputConsumeBuffer : register(u0);
 AppendStructuredBuffer<int> outputAppendBuffer : register(u1);

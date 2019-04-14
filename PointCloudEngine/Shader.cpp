@@ -73,9 +73,12 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
         hr = d3d11Device->CreateVertexShader(vertexShaderData->GetBufferPointer(), vertexShaderData->GetBufferSize(), NULL, &vertexShader);
         ErrorMessage(L"CreateVertexShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
 
-        // Create the Input (Vertex) Layout with numElements being the size of the input layout array
-        hr = d3d11Device->CreateInputLayout(layout, numElements, vertexShaderData->GetBufferPointer(), vertexShaderData->GetBufferSize(), &inputLayout);
-        ErrorMessage(L"CreateInputLayout failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+        if (numElements > 0)
+        {
+            // Create the Input (Vertex) Layout with numElements being the size of the input layout array
+            hr = d3d11Device->CreateInputLayout(layout, numElements, vertexShaderData->GetBufferPointer(), vertexShaderData->GetBufferSize(), &inputLayout);
+            ErrorMessage(L"CreateInputLayout failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+        }
 
         SAFE_RELEASE(vertexShaderData);
     }

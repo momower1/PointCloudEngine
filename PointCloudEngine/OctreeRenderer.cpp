@@ -70,6 +70,73 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 
     hr = d3d11Device->CreateShaderResourceView(nodesBuffer, &nodesBufferSRVDesc, &nodesBufferSRV);
     ErrorMessage(L"CreateShaderResourceView failed for the nodes buffer srv.", L"Initialize", __FILEW__, __LINE__, hr);
+
+    // Create general buffer description for append/consume buffer
+    D3D11_BUFFER_DESC appendConsumeBufferDesc;
+    ZeroMemory(&appendConsumeBufferDesc, sizeof(appendConsumeBufferDesc));
+    appendConsumeBufferDesc.ByteWidth = maxVertexBufferCount * sizeof(int);
+    appendConsumeBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    appendConsumeBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    appendConsumeBufferDesc.StructureByteStride = sizeof(int);
+    appendConsumeBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+
+    // Create general UAV description for append/consume buffers
+    D3D11_UNORDERED_ACCESS_VIEW_DESC appendConsumeBufferUAVDesc;
+    ZeroMemory(&appendConsumeBufferUAVDesc, sizeof(appendConsumeBufferUAVDesc));
+    appendConsumeBufferUAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+    appendConsumeBufferUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    appendConsumeBufferUAVDesc.Buffer.FirstElement = 0;
+    appendConsumeBufferUAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
+    appendConsumeBufferUAVDesc.Buffer.NumElements = maxVertexBufferCount;
+
+    // Create the first buffer and its UAV
+    hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &firstBuffer);
+    ErrorMessage(L"CreateBuffer failed for first buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    hr = d3d11Device->CreateUnorderedAccessView(firstBuffer, &appendConsumeBufferUAVDesc, &firstBufferUAV);
+    ErrorMessage(L"CreateUnorderedAccessView failed for first buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    // Create the second buffer and its UAV
+    hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &secondBuffer);
+    ErrorMessage(L"CreateBuffer failed for second buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    hr = d3d11Device->CreateUnorderedAccessView(secondBuffer, &appendConsumeBufferUAVDesc, &secondBufferUAV);
+    ErrorMessage(L"CreateUnorderedAccessView failed for second buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    // Create the vertex append buffer
+    D3D11_BUFFER_DESC vertexAppendBufferDesc;
+    ZeroMemory(&vertexAppendBufferDesc, sizeof(vertexAppendBufferDesc));
+    vertexAppendBufferDesc.ByteWidth = maxVertexBufferCount * sizeof(OctreeNodeVertex);
+    vertexAppendBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    vertexAppendBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    vertexAppendBufferDesc.StructureByteStride = sizeof(OctreeNodeVertex);
+    vertexAppendBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+
+    hr = d3d11Device->CreateBuffer(&vertexAppendBufferDesc, NULL, &vertexAppendBuffer);
+    ErrorMessage(L"CreateBuffer failed for vertex buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    hr = d3d11Device->CreateUnorderedAccessView(vertexAppendBuffer, &appendConsumeBufferUAVDesc, &vertexAppendBufferUAV);
+    ErrorMessage(L"CreateUnorderedAccessView failed for vertex buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC vertexAppendBufferSRVDesc;
+    ZeroMemory(&vertexAppendBufferSRVDesc, sizeof(vertexAppendBufferSRVDesc));
+    vertexAppendBufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+    vertexAppendBufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    vertexAppendBufferSRVDesc.Buffer.ElementWidth = maxVertexBufferCount;
+
+    hr = d3d11Device->CreateShaderResourceView(vertexAppendBuffer, &vertexAppendBufferSRVDesc, &vertexAppendBufferSRV);
+    ErrorMessage(L"CreateShaderResourceView failed for the vertex append buffer srv.", L"Initialize", __FILEW__, __LINE__, hr);
+
+    // Create the structure count buffer that is simply used to check for the size of the append/consume buffers
+    D3D11_BUFFER_DESC structureCountBufferDesc;
+    ZeroMemory(&structureCountBufferDesc, sizeof(structureCountBufferDesc));
+    structureCountBufferDesc.ByteWidth = sizeof(UINT);
+    structureCountBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    structureCountBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    structureCountBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+    hr = d3d11Device->CreateBuffer(&structureCountBufferDesc, NULL, &structureCountBuffer);
+    ErrorMessage(L"CreateBuffer failed for structure count buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
 }
 
 void OctreeRenderer::Update(SceneObject *sceneObject)
@@ -145,47 +212,12 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     // Get the vertex buffer and use the specified implementation
     if (useComputeShader)
     {
-        vertexBuffer = GetVertexBufferCompute(sceneObject, localCameraPosition);
+        DrawOctreeCompute(sceneObject, localCameraPosition);
     }
     else
     {
-        vertexBuffer = GetVertexBuffer(sceneObject, localCameraPosition);
+        DrawOctree(sceneObject, localCameraPosition);
     }
-
-    // Set the shaders
-    if (viewMode == 0)
-    {
-        d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
-    }
-    else if (viewMode == 1)
-    {
-        d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
-    }
-    else if (viewMode == 2)
-    {
-        d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
-        d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
-        d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
-    }
-
-    // Set the Input (Vertex) Layout
-    d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
-
-    // Bind the vertex buffer and to the input assembler (IA)
-    UINT offset = 0;
-    UINT stride = sizeof(OctreeNodeVertex);
-    d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-    // Set primitive topology
-    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-    d3d11DevCon->Draw(vertexBufferCount, 0);
-
-    SAFE_RELEASE(vertexBuffer);
 }
 
 void OctreeRenderer::Release()
@@ -195,7 +227,14 @@ void OctreeRenderer::Release()
     Hierarchy::ReleaseSceneObject(text);
 
     SAFE_RELEASE(nodesBuffer);
+    SAFE_RELEASE(firstBuffer);
+    SAFE_RELEASE(secondBuffer);
+    SAFE_RELEASE(vertexAppendBuffer);
+    SAFE_RELEASE(structureCountBuffer);
     SAFE_RELEASE(nodesBufferSRV);
+    SAFE_RELEASE(firstBufferUAV);
+    SAFE_RELEASE(secondBufferUAV);
+    SAFE_RELEASE(vertexAppendBufferUAV);
     SAFE_RELEASE(octreeRendererConstantBuffer);
     SAFE_RELEASE(computeShaderConstantBuffer);
 }
@@ -211,9 +250,8 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
     octree->GetRootPositionAndSize(outPosition, outSize);
 }
 
-ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBuffer(SceneObject *sceneObject, const Vector3 &localCameraPosition)
+void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
-    ID3D11Buffer* vertexBuffer = NULL;
     std::vector<OctreeNodeVertex> octreeVertices;
 
     // Create new buffer from the current octree traversal on the cpu
@@ -230,7 +268,9 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBuffer(SceneObject *sce
 
     if (vertexBufferCount > 0)
     {
-        // Create a vertex buffer description with dynamic write access
+        ID3D11Buffer* vertexBuffer = NULL;
+
+        // Create a vertex buffer description
         D3D11_BUFFER_DESC vertexBufferDesc;
         ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
         vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -246,15 +286,46 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBuffer(SceneObject *sce
         // Create the buffer
         hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
         ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"GetVertexBuffer", __FILEW__, __LINE__, hr);
-    }
 
-    return vertexBuffer;
+        // Set the shaders
+        if (viewMode == 0)
+        {
+            d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
+            d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
+            d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
+        }
+        else if (viewMode == 1)
+        {
+            d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
+            d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
+            d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
+        }
+        else if (viewMode == 2)
+        {
+            d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
+            d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
+            d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
+        }
+
+        // Set the Input (Vertex) Layout
+        d3d11DevCon->IASetInputLayout(octreeCubeShader->inputLayout);
+
+        // Bind the vertex buffer and to the input assembler (IA)
+        UINT offset = 0;
+        UINT stride = sizeof(OctreeNodeVertex);
+        d3d11DevCon->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+        // Set primitive topology
+        d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+        d3d11DevCon->Draw(vertexBufferCount, 0);
+
+        SAFE_RELEASE(vertexBuffer);
+    }
 }
 
-ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition)
+void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
-    ID3D11Buffer *vertexBuffer = NULL;
-
     // Set constant buffer data
     computeShaderConstantBufferData.localCameraPosition = localCameraPosition;
 
@@ -264,73 +335,9 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     // Set the constant buffer
     d3d11DevCon->CSSetConstantBuffers(0, 1, &computeShaderConstantBuffer);
 
-    // Create vertex append buffer, specify the maximum size of all the buffers here
-    vertexBufferCount = 2000000;
-    ID3D11Buffer *firstBuffer = NULL;
-    ID3D11Buffer *secondBuffer = NULL;
-    ID3D11Buffer *vertexAppendBuffer = NULL;
-    ID3D11Buffer *structureCountBuffer = NULL;
-    ID3D11UnorderedAccessView *firstBufferUAV = NULL;
-    ID3D11UnorderedAccessView *secondBufferUAV = NULL;
-    ID3D11UnorderedAccessView *vertexAppendBufferUAV = NULL;
-
-    // Create general buffer description for append/consume buffer
-    D3D11_BUFFER_DESC appendConsumeBufferDesc;
-    ZeroMemory(&appendConsumeBufferDesc, sizeof(appendConsumeBufferDesc));
-    appendConsumeBufferDesc.ByteWidth = vertexBufferCount * sizeof(int);
-    appendConsumeBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-    appendConsumeBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    appendConsumeBufferDesc.StructureByteStride = sizeof(int);
-    appendConsumeBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-
-    // Create general UAV description for append/consume buffers
-    D3D11_UNORDERED_ACCESS_VIEW_DESC appendConsumeBufferUAVDesc;
-    ZeroMemory(&appendConsumeBufferUAVDesc, sizeof(appendConsumeBufferUAVDesc));
-    appendConsumeBufferUAVDesc.Format = DXGI_FORMAT_UNKNOWN;
-    appendConsumeBufferUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    appendConsumeBufferUAVDesc.Buffer.FirstElement = 0;
-    appendConsumeBufferUAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
-    appendConsumeBufferUAVDesc.Buffer.NumElements = vertexBufferCount;
-
-    // Create the first buffer and its UAV
-    hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &firstBuffer);
-    ErrorMessage(L"CreateBuffer failed for first buffer.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    hr = d3d11Device->CreateUnorderedAccessView(firstBuffer, &appendConsumeBufferUAVDesc, &firstBufferUAV);
-    ErrorMessage(L"CreateUnorderedAccessView failed for first buffer uav.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    // Create the second buffer and its UAV
-    hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &secondBuffer);
-    ErrorMessage(L"CreateBuffer failed for second buffer.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    hr = d3d11Device->CreateUnorderedAccessView(secondBuffer, &appendConsumeBufferUAVDesc, &secondBufferUAV);
-    ErrorMessage(L"CreateUnorderedAccessView failed for second buffer uav.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    // Create the vertex append buffer
-    D3D11_BUFFER_DESC vertexAppendBufferDesc;
-    ZeroMemory(&vertexAppendBufferDesc, sizeof(vertexAppendBufferDesc));
-    vertexAppendBufferDesc.ByteWidth = vertexBufferCount * sizeof(OctreeNodeVertex);
-    vertexAppendBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-    vertexAppendBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    vertexAppendBufferDesc.StructureByteStride = sizeof(OctreeNodeVertex);
-    vertexAppendBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-
-    hr = d3d11Device->CreateBuffer(&vertexAppendBufferDesc, NULL, &vertexAppendBuffer);
-    ErrorMessage(L"CreateBuffer failed for vertex buffer.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    hr = d3d11Device->CreateUnorderedAccessView(vertexAppendBuffer, &appendConsumeBufferUAVDesc, &vertexAppendBufferUAV);
-    ErrorMessage(L"CreateUnorderedAccessView failed for vertex buffer uav.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    // Create the structure count buffer that is simply used to check for the size of the append/consume buffers
-    D3D11_BUFFER_DESC structureCountBufferDesc;
-    ZeroMemory(&structureCountBufferDesc, sizeof(structureCountBufferDesc));
-    structureCountBufferDesc.ByteWidth = sizeof(UINT);
-    structureCountBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    structureCountBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    structureCountBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-    hr = d3d11Device->CreateBuffer(&structureCountBufferDesc, NULL, &structureCountBuffer);
-    ErrorMessage(L"CreateBuffer failed for structure count buffer.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
+    // This is used to unbind views from the shaders
+    ID3D11UnorderedAccessView* emptyUAV[1] = { NULL };
+    ID3D11ShaderResourceView* emptySRV[1] = { NULL };
 
     // Set 0 as the only entry (root index) for the first buffer, will be used as input consume buffer in the shader
     UINT data[4] = { 0, 0, 0, 0};
@@ -349,6 +356,10 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     // Swap the input and output buffer as long as there is data in the output append buffer
     do
     {
+        // Unbind first
+        d3d11DevCon->CSSetUnorderedAccessViews(0, 1, emptyUAV, &zero);
+        d3d11DevCon->CSSetUnorderedAccessViews(1, 1, emptyUAV, &zero);
+
         if (firstBufferIsInputConsumeBuffer)
         {
             d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &firstBufferUAV, &structureCount);
@@ -384,7 +395,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
         // Get the structure count from the buffer
         D3D11_MAPPED_SUBRESOURCE mappedSubresource;
         hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-        ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
+        ErrorMessage(L"Map failed for structure count buffer", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
 
         structureCount = *(UINT*)mappedSubresource.pData;
 
@@ -394,39 +405,35 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
 
     } while ((structureCount > 0) && (iteration++ < settings->maxOctreeDepth));
 
-    // Create a vertex buffer description with dynamic write access
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth = vertexBufferCount * sizeof(OctreeNodeVertex);
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vertexBufferDesc.CPUAccessFlags = 0;
-
-    // Create the final vertex buffer
-    hr = d3d11Device->CreateBuffer(&vertexBufferDesc, NULL, &vertexBuffer);
-    ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
-
-    // Copy the vertices from the append buffer to the final vertex buffer on the GPU
-    d3d11DevCon->CopyResource(vertexBuffer, vertexAppendBuffer);
-
-    // Set the actual vertex buffer count from the vertex append buffer structure counter
+    // Get the actual vertex buffer count from the vertex append buffer structure counter
     d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, vertexAppendBufferUAV);
 
     D3D11_MAPPED_SUBRESOURCE mappedSubresource;
     hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-    ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
+    ErrorMessage(L"Map failed for structure count buffer", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
 
     vertexBufferCount = *(UINT*)mappedSubresource.pData;
 
     d3d11DevCon->Unmap(structureCountBuffer, 0);
 
-    SAFE_RELEASE(firstBuffer);
-    SAFE_RELEASE(secondBuffer);
-    SAFE_RELEASE(vertexAppendBuffer);
-    SAFE_RELEASE(structureCountBuffer);
-    SAFE_RELEASE(firstBufferUAV);
-    SAFE_RELEASE(secondBufferUAV);
-    SAFE_RELEASE(vertexAppendBufferUAV);
+    // Unbind vertex append buffer in order to use it as structured buffer
+    d3d11DevCon->CSSetUnorderedAccessViews(2, 1, emptyUAV, &zero);
 
-    return vertexBuffer;
+    // Set the shaders
+    d3d11DevCon->VSSetShader(octreeComputeSplatShader->vertexShader, 0, 0);
+    d3d11DevCon->GSSetShader(octreeComputeSplatShader->geometryShader, 0, 0);
+    d3d11DevCon->PSSetShader(octreeComputeSplatShader->pixelShader, 0, 0);
+
+    // Set the vertex append buffer as structured buffer in the vertex shader
+    d3d11DevCon->VSSetShaderResources(0, 1, &vertexAppendBufferSRV);
+
+    // Set an empty input layout and vertex buffer that only sends the vertex id to the shader
+    d3d11DevCon->IASetInputLayout(NULL);
+
+    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+    d3d11DevCon->Draw(vertexBufferCount, 0);
+
+    // Unbind the vertex append buffer as structured buffer
+    d3d11DevCon->VSSetShaderResources(0, 1, emptySRV);
 }

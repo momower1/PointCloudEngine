@@ -231,6 +231,9 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CS</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CS</EntryPointName>
     </FxCompile>
+    <FxCompile Include="OctreeComputeSplat.hlsl" />
+    <FxCompile Include="OctreeCube.hlsl" />
+    <FxCompile Include="OctreeSplat.hlsl" />
     <FxCompile Include="OctreeVSPS.hlsl" />
     <FxCompile Include="OctreeCubeGS.hlsl" />
     <FxCompile Include="OctreeSplatGS.hlsl" />

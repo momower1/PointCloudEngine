@@ -1,6 +1,21 @@
 static const float pi = 3.141592654f;
 static const float epsilon = 1.192092896e-07f;
 
+struct OctreeNodeVertex
+{
+    float3 position;
+    uint normals[3];
+    uint colors[3];
+    uint weights;
+    float size;
+};
+
+struct OctreeNode
+{
+    int children[8];
+    OctreeNodeVertex nodeVertex;
+};
+
 float3 PolarNormalToFloat3(uint theta, uint phi)
 {
     // Theta and phi are in range [0, 255]

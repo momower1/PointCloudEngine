@@ -15,7 +15,7 @@ struct GS_OUTPUT
     float3 color : COLOR;
 };
 
-VS_OUTPUT VS(VS_INPUT input)
+VS_OUTPUT VertexShaderFunction(VS_INPUT input)
 {
     float3 normals[6] =
     {
@@ -26,7 +26,7 @@ VS_OUTPUT VS(VS_INPUT input)
         PolarNormalToFloat3(input.normal4),
         PolarNormalToFloat3(input.normal5)
     };
-    
+
     float3 colors[6] =
     {
         Color16ToFloat3(input.color0),
@@ -37,7 +37,7 @@ VS_OUTPUT VS(VS_INPUT input)
         Color16ToFloat3(input.color5)
     };
 
-    float weights[6] = 
+    float weights[6] =
     {
         (input.weights & 31) / 31.0f,
         ((input.weights >> 5) & 31) / 31.0f,
@@ -84,7 +84,7 @@ VS_OUTPUT VS(VS_INPUT input)
     return output;
 }
 
-float4 PS(GS_OUTPUT input) : SV_TARGET
+float4 PixelShaderFunction(GS_OUTPUT input)
 {
     return float4(input.color, 1);
 }

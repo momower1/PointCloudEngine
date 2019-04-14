@@ -19,8 +19,8 @@ namespace PointCloudEngine
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
-        ID3D11Buffer* GetVertexBuffer(SceneObject *sceneObject, const Vector3 &localCameraPosition);
-        ID3D11Buffer* GetVertexBufferCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition);
+        void DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition);
+        void DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition);
 
         // Same constant buffer as in hlsl file, keep packing rules in mind
         struct OctreeRendererConstantBuffer
@@ -58,9 +58,18 @@ namespace PointCloudEngine
         OctreeRendererConstantBuffer octreeRendererConstantBufferData;
 
         // Compute shader
+        UINT maxVertexBufferCount = 5000000;
         ID3D11Buffer *nodesBuffer = NULL;
-        ID3D11ShaderResourceView *nodesBufferSRV = NULL;
+        ID3D11Buffer *firstBuffer = NULL;
+        ID3D11Buffer *secondBuffer = NULL;
+        ID3D11Buffer *vertexAppendBuffer = NULL;
+        ID3D11Buffer *structureCountBuffer = NULL;
         ID3D11Buffer *computeShaderConstantBuffer = NULL;
+        ID3D11ShaderResourceView *nodesBufferSRV = NULL;
+        ID3D11ShaderResourceView *vertexAppendBufferSRV = NULL;
+        ID3D11UnorderedAccessView *firstBufferUAV = NULL;
+        ID3D11UnorderedAccessView *secondBufferUAV = NULL;
+        ID3D11UnorderedAccessView *vertexAppendBufferUAV = NULL;
         ComputeShaderConstantBuffer computeShaderConstantBufferData;
     };
 }
