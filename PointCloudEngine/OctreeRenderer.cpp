@@ -360,7 +360,16 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
         }
 
         // Execution of the compute shader, appends the indices of the nodes that should be checked next to the output append buffer
-        d3d11DevCon->Dispatch(structureCount, 1, 1);
+        // The maximum number of concurrent threads is 65535, call again until finished
+        UINT remainingThreadsToSpawn = structureCount;
+
+        while (remainingThreadsToSpawn > 0)
+        {
+            UINT threadCount = min(65535, remainingThreadsToSpawn);
+            d3d11DevCon->Dispatch(threadCount, 1, 1);
+
+            remainingThreadsToSpawn -= threadCount;
+        }
 
         if (firstBufferIsInputConsumeBuffer)
         {
