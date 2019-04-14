@@ -21,6 +21,7 @@ namespace PointCloudEngine
     private:
         void DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition);
         void DrawOctreeCompute(SceneObject *sceneObject, const Vector3 &localCameraPosition);
+        UINT GetStructureCount(ID3D11UnorderedAccessView *UAV);
 
         // Same constant buffer as in hlsl file, keep packing rules in mind
         struct OctreeRendererConstantBuffer

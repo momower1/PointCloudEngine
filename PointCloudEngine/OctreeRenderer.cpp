@@ -385,38 +385,23 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
             remainingThreadsToSpawn = max(0, remainingThreadsToSpawn - threadCount);
         }
 
+        // Get the structure count from the buffer
         if (firstBufferIsInputConsumeBuffer)
         {
-            d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, secondBufferUAV);
+            structureCount = GetStructureCount(secondBufferUAV);
         }
         else
         {
-            d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, firstBufferUAV);
+            structureCount = GetStructureCount(firstBufferUAV);
         }
 
-        // Get the structure count from the buffer
-        D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-        hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-        ErrorMessage(L"Map failed for structure count buffer", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
-
-        structureCount = *(UINT*)mappedSubresource.pData;
-
-        d3d11DevCon->Unmap(structureCountBuffer, 0);
-
+        // Swap the buffers
         firstBufferIsInputConsumeBuffer = !firstBufferIsInputConsumeBuffer;
 
     } while ((structureCount > 0) && (iteration++ < settings->maxOctreeDepth));
 
     // Get the actual vertex buffer count from the vertex append buffer structure counter
-    d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, vertexAppendBufferUAV);
-
-    D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-    hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-    ErrorMessage(L"Map failed for structure count buffer", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
-
-    vertexBufferCount = *(UINT*)mappedSubresource.pData;
-
-    d3d11DevCon->Unmap(structureCountBuffer, 0);
+    vertexBufferCount = GetStructureCount(vertexAppendBufferUAV);
 
     // Unbind vertex append buffer in order to use it as structured buffer
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, nullUAV, &zero);
@@ -438,4 +423,26 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 
     // Unbind the vertex append buffer as structured buffer
     d3d11DevCon->VSSetShaderResources(0, 1, nullSRV);
+}
+
+UINT PointCloudEngine::OctreeRenderer::GetStructureCount(ID3D11UnorderedAccessView *UAV)
+{
+    int output = 0;
+
+    if (structureCountBuffer != NULL)
+    {
+        // Copy the count into the buffer
+        d3d11DevCon->CopyStructureCount(structureCountBuffer, 0, UAV);
+
+        // Read the value by mapping the memory to the CPU
+        D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+        hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+        ErrorMessage(L"Map failed for structure count buffer", L"GetStructureCount", __FILEW__, __LINE__, hr);
+
+        output = *(UINT*)mappedSubresource.pData;
+
+        d3d11DevCon->Unmap(structureCountBuffer, 0);
+    }
+
+    return output;
 }
