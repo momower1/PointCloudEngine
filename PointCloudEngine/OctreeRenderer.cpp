@@ -324,7 +324,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     // Create the structure count buffer that is simply used to check for the size of the append/consume buffers
     D3D11_BUFFER_DESC structureCountBufferDesc;
     ZeroMemory(&structureCountBufferDesc, sizeof(structureCountBufferDesc));
-    structureCountBufferDesc.ByteWidth = sizeof(int);
+    structureCountBufferDesc.ByteWidth = sizeof(UINT);
     structureCountBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     structureCountBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     structureCountBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -385,7 +385,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
         hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
         ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
 
-        structureCount = *(int*)mappedSubresource.pData;
+        structureCount = *(UINT*)mappedSubresource.pData;
 
         d3d11DevCon->Unmap(structureCountBuffer, 0);
 
@@ -415,7 +415,7 @@ ID3D11Buffer* PointCloudEngine::OctreeRenderer::GetVertexBufferCompute(SceneObje
     hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
     ErrorMessage(L"Map failed for structure count buffer", L"GetVertexBufferCompute", __FILEW__, __LINE__, hr);
 
-    vertexBufferCount = *(int*)mappedSubresource.pData;
+    vertexBufferCount = *(UINT*)mappedSubresource.pData;
 
     d3d11DevCon->Unmap(structureCountBuffer, 0);
 
