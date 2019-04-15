@@ -42,7 +42,8 @@ namespace PointCloudEngine
             Vector3 localCameraPosition;
             float fovAngleY;
             float splatSize;
-            float padding[3];
+            UINT inputCount;
+            float padding[2];
         };
 
         int level = -1;
@@ -59,7 +60,7 @@ namespace PointCloudEngine
         OctreeRendererConstantBuffer octreeRendererConstantBufferData;
 
         // Compute shader
-        UINT maxVertexBufferCount = 5000000;
+        UINT maxVertexBufferCount = 15000000;
         ID3D11Buffer *nodesBuffer = NULL;
         ID3D11Buffer *firstBuffer = NULL;
         ID3D11Buffer *secondBuffer = NULL;

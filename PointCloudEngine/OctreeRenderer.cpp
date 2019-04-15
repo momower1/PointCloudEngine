@@ -352,7 +352,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
 
     UINT iteration = 0;
-    UINT structureCount = 1;
+    UINT inputCount = 1;
     bool firstBufferIsInputConsumeBuffer = true;
 
     // Swap the input and output buffer as long as there is data in the output append buffer
@@ -364,41 +364,36 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 
         if (firstBufferIsInputConsumeBuffer)
         {
-            d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &firstBufferUAV, &structureCount);
+            d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &firstBufferUAV, &inputCount);
             d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &secondBufferUAV, &zero);
         }
         else
         {
-            d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &secondBufferUAV, &structureCount);
+            d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &secondBufferUAV, &inputCount);
             d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &firstBufferUAV, &zero);
         }
 
+        // Update constant buffer to make sure that not too much is appended or consumed
+        computeShaderConstantBufferData.inputCount = inputCount;
+        d3d11DevCon->UpdateSubresource(computeShaderConstantBuffer, 0, NULL, &computeShaderConstantBufferData, 0, 0);
+
         // Execution of the compute shader, appends the indices of the nodes that should be checked next to the output append buffer
-        // The maximum number of concurrent threads is 65535, call again until finished
-        UINT remainingThreadsToSpawn = structureCount;
+        d3d11DevCon->Dispatch(ceil(inputCount / 1024.0f), 1, 1);
 
-        while (remainingThreadsToSpawn > 0)
-        {
-            UINT threadCount = min(65535, remainingThreadsToSpawn);
-            d3d11DevCon->Dispatch(threadCount, 1, 1);
-
-            remainingThreadsToSpawn = max(0, remainingThreadsToSpawn - threadCount);
-        }
-
-        // Get the structure count from the buffer
+        // Get the output append buffer structure count
         if (firstBufferIsInputConsumeBuffer)
         {
-            structureCount = GetStructureCount(secondBufferUAV);
+            inputCount = GetStructureCount(secondBufferUAV);
         }
         else
         {
-            structureCount = GetStructureCount(firstBufferUAV);
+            inputCount = GetStructureCount(firstBufferUAV);
         }
 
         // Swap the buffers
         firstBufferIsInputConsumeBuffer = !firstBufferIsInputConsumeBuffer;
 
-    } while ((structureCount > 0) && (iteration++ < settings->maxOctreeDepth));
+    } while ((inputCount > 0) && (iteration++ < settings->maxOctreeDepth));
 
     // Get the actual vertex buffer count from the vertex append buffer structure counter
     vertexBufferCount = GetStructureCount(vertexAppendBufferUAV);
