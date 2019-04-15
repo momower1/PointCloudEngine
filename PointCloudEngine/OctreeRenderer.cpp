@@ -351,7 +351,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
 
-    UINT iteration = 0;
     UINT inputCount = 1;
     bool firstBufferIsInputConsumeBuffer = true;
 
@@ -393,7 +392,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
         // Swap the buffers
         firstBufferIsInputConsumeBuffer = !firstBufferIsInputConsumeBuffer;
 
-    } while ((inputCount > 0) && (iteration++ < settings->maxOctreeDepth));
+    } while (inputCount > 0);
 
     // Get the actual vertex buffer count from the vertex append buffer structure counter
     vertexBufferCount = GetStructureCount(vertexAppendBufferUAV);
