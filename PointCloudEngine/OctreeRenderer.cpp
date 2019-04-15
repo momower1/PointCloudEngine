@@ -208,8 +208,6 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     d3d11DevCon->VSSetConstantBuffers(0, 1, &octreeRendererConstantBuffer);
     d3d11DevCon->GSSetConstantBuffers(0, 1, &octreeRendererConstantBuffer);
 
-    ID3D11Buffer *vertexBuffer = NULL;
-
     // Get the vertex buffer and use the specified implementation
     if (useComputeShader)
     {
