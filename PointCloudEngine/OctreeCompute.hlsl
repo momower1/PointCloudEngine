@@ -1,4 +1,4 @@
-#include "Common.hlsl"
+#include "Octree.hlsl"
 
 cbuffer ComputeShaderConstantBuffer : register(b0)
 {
@@ -16,7 +16,7 @@ AppendStructuredBuffer<uint> outputAppendBuffer : register(u1);
 AppendStructuredBuffer<uint> vertexAppendBuffer : register(u2);
 
 [numthreads(1024, 1, 1)]
-void CS (uint3 id : SV_DispatchThreadID )
+void CS (uint3 id : SV_DispatchThreadID)
 {
     // Make sure that this thread is working on valid data
     if (id.x < inputCount)

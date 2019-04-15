@@ -1,4 +1,4 @@
-#include "OctreeSplatGS.hlsl"
+#include "OctreeShaderFunctions.hlsl"
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
 StructuredBuffer<uint> vertexBuffer : register(t1);
@@ -28,9 +28,4 @@ VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
     input.size = v.size;
 
     return VertexShaderFunction(input);
-}
-
-float4 PS(GS_OUTPUT input) : SV_TARGET
-{
-    return PixelShaderFunction(input);
 }

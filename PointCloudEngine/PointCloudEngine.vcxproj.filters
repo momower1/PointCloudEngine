@@ -132,22 +132,10 @@
     <FxCompile Include="Octree.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="OctreeVSPS.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
-    <FxCompile Include="OctreeCubeGS.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
-    <FxCompile Include="OctreeSplatGS.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
     <FxCompile Include="OctreeCluster.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="OctreeCompute.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
-    <FxCompile Include="Common.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="OctreeCube.hlsl">
@@ -156,7 +144,10 @@
     <FxCompile Include="OctreeSplat.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="OctreeComputeSplat.hlsl">
+    <FxCompile Include="OctreeComputeVS.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="OctreeShaderFunctions.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

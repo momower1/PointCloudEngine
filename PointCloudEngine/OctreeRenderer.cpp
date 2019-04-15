@@ -403,10 +403,24 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, nullUAV, &zero);
 
-    // Set the shaders
-    d3d11DevCon->VSSetShader(octreeComputeSplatShader->vertexShader, 0, 0);
-    d3d11DevCon->GSSetShader(octreeComputeSplatShader->geometryShader, 0, 0);
-    d3d11DevCon->PSSetShader(octreeComputeSplatShader->pixelShader, 0, 0);
+    // Set the shaders, only the vertex shader is different from the CPU implementation
+    d3d11DevCon->VSSetShader(octreeComputeVSShader->vertexShader, 0, 0);
+
+    if (viewMode == 0)
+    {
+        d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
+    }
+    else if (viewMode == 1)
+    {
+        d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
+    }
+    else if (viewMode == 2)
+    {
+        d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
+        d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
+    }
 
     // Set the vertex append buffer as structured buffer in the vertex shader
     d3d11DevCon->VSSetShaderResources(0, 1, &nodesBufferSRV);

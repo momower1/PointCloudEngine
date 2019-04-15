@@ -1,10 +1,4 @@
-#include "Octree.hlsl"
-
-struct GS_OUTPUT
-{
-    float4 position : SV_POSITION;
-    float3 color : COLOR;
-};
+#include "OctreeShaderFunctions.hlsl"
 
 VS_INPUT VS(VS_INPUT input)
 {
@@ -41,6 +35,8 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
     };
 
     GS_OUTPUT element;
+    element.normal = float3(0, 0, 0);
+
     element.position = mul(float4(input[0].position, 1), WVP);
     element.color = Color16ToFloat3(input[0].color0);
     output.Append(element);
@@ -86,5 +82,5 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return float4(input.color, 1);
+    return PixelShaderFunction(input);
 }

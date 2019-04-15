@@ -1,19 +1,22 @@
 #include "Octree.hlsl"
 
-struct VS_OUTPUT
+cbuffer OctreeRendererConstantBuffer : register(b0)
 {
-    float3 position : POSITION;
-    float3 normal : NORMAL;
-    float size : SIZE;
-    float3 color : COLOR;
-};
-
-struct GS_OUTPUT
-{
-    float4 position : SV_POSITION;
-    float3 normal : NORMAL;
-    float3 color : COLOR;
-};
+    float4x4 World;
+    //------------------------------------------------------------------------------ (64 byte boundary)
+    float4x4 View;
+    //------------------------------------------------------------------------------ (64 byte boundary)
+    float4x4 Projection;
+    //------------------------------------------------------------------------------ (64 byte boundary)
+    float4x4 WorldInverseTranspose;
+    //------------------------------------------------------------------------------ (64 byte boundary)
+    float3 cameraPosition;
+    float fovAngleY;
+    //------------------------------------------------------------------------------ (16 byte boundary)
+    float splatSize;
+    float overlapFactor;
+    // 8 bytes auto padding
+};  // Total: 288 bytes with constant buffer packing rules
 
 VS_OUTPUT VertexShaderFunction(VS_INPUT input)
 {

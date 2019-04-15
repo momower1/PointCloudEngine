@@ -17,7 +17,7 @@ Shader* octreeCubeShader;
 Shader* octreeSplatShader;
 Shader* octreeClusterShader;
 Shader* octreeComputeShader;
-Shader* octreeComputeSplatShader;
+Shader* octreeComputeVSShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -371,7 +371,7 @@ bool InitializeScene()
     octreeSplatShader = Shader::Create(L"Shader/OctreeSplat.hlsl", true, true, true, false, Shader::octreeLayout, 15);
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 15);
     octreeComputeShader = Shader::Create(L"Shader/OctreeCompute.hlsl", false, false, false, true, NULL, 0);
-    octreeComputeSplatShader = Shader::Create(L"Shader/OctreeComputeSplat.hlsl", true, true, true, false, NULL, 0);
+    octreeComputeVSShader = Shader::Create(L"Shader/OctreeComputeVS.hlsl", true, false, false, false, NULL, 0);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
