@@ -190,7 +190,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 
     // Set shader constant buffer variables
     octreeRendererConstantBufferData.World = world.Transpose();
-    octreeRendererConstantBufferData.WorldInverseTranspose = worldInverse.Transpose();
+    octreeRendererConstantBufferData.WorldInverseTranspose = worldInverse;
     octreeRendererConstantBufferData.View = camera->GetViewMatrix().Transpose();
     octreeRendererConstantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     octreeRendererConstantBufferData.cameraPosition = cameraPosition;
