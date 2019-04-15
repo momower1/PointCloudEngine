@@ -1,5 +1,6 @@
-static const float pi = 3.141592654f;
-static const float epsilon = 1.192092896e-07f;
+#define PI 3.141592654f
+#define EPSILON 1.192092896e-07f
+#define UINT_MAX 0xffffffff
 
 struct OctreeNodeVertex
 {
@@ -12,7 +13,7 @@ struct OctreeNodeVertex
 
 struct OctreeNode
 {
-    int children[8];
+    uint children[8];
     OctreeNodeVertex nodeVertex;
 };
 
@@ -24,8 +25,8 @@ float3 PolarNormalToFloat3(uint theta, uint phi)
         return float3(0, 0, 0);
     }
 
-    float t = pi * (theta / 255.0f);
-    float p = pi * ((phi / 127.5f) - 1.0f);
+    float t = PI * (theta / 255.0f);
+    float p = PI * ((phi / 127.5f) - 1.0f);
 
     return float3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
 }

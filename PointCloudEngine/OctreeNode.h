@@ -11,14 +11,24 @@ namespace PointCloudEngine
     public:
         OctreeNode();
         OctreeNode (std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, const OctreeNodeCreationEntry &entry);
-        ~OctreeNode();
 
-        void GetVertices(std::queue<int> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const Vector3 &localCameraPosition, const float &splatSize) const;
-        void GetVerticesAtLevel(std::queue<std::pair<int, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const int &level) const;
+        void GetVertices(std::queue<UINT> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const Vector3 &localCameraPosition, const float &splatSize) const;
+        void GetVerticesAtLevel(std::queue<std::pair<UINT, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const int &level) const;
         bool IsLeafNode() const;
 
-        // Negative index means that there is no child
-        int children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+        // UINT_MAX index means that there is no child
+        UINT children[8] =
+        {
+            UINT_MAX,
+            UINT_MAX,
+            UINT_MAX,
+            UINT_MAX,
+            UINT_MAX,
+            UINT_MAX,
+            UINT_MAX,
+            UINT_MAX
+        };
+
         OctreeNodeVertex nodeVertex;
     };
 }

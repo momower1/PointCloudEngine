@@ -1,10 +1,13 @@
 #include "OctreeSplatGS.hlsl"
 
-StructuredBuffer<OctreeNodeVertex> vertexBuffer : register(t0);
+StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
+StructuredBuffer<uint> vertexBuffer : register(t1);
 
 VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
 {
-    OctreeNodeVertex v = vertexBuffer[vertexID];
+    uint index = vertexBuffer[vertexID];
+
+    OctreeNodeVertex v = nodesBuffer[index].nodeVertex;
 
     VS_INPUT input;
 

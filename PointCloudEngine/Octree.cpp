@@ -37,8 +37,8 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
         std::queue<OctreeNodeCreationEntry> nodeCreationQueue;
 
         OctreeNodeCreationEntry rootEntry;
-        rootEntry.nodeIndex = -1;
-        rootEntry.parentIndex = -1;
+        rootEntry.nodeIndex = UINT_MAX;
+        rootEntry.parentIndex = UINT_MAX;
         rootEntry.parentChildIndex = -1;
         rootEntry.vertices = vertices;
         rootEntry.center = center;
@@ -69,14 +69,14 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector
 {
     // Use a queue instead of recursion to traverse the octree in the memory layout order (improves cache efficiency)
     std::vector<OctreeNodeVertex> octreeVertices;
-    std::queue<int> nodesQueue;
+    std::queue<UINT> nodesQueue;
 
     // Check the root node first
     nodesQueue.push(0);
 
     while (!nodesQueue.empty())
     {
-        int nodeIndex = nodesQueue.front();
+        UINT nodeIndex = nodesQueue.front();
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
@@ -91,14 +91,14 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const
     // Use a queue instead of recursion to traverse the octree in the memory layout order (improves cache efficiency)
     // The queue stores the indices of the nodes that need to be checked and the level of that node
     std::vector<OctreeNodeVertex> octreeVertices;
-    std::queue<std::pair<int, int>> nodesQueue;
+    std::queue<std::pair<UINT, int>> nodesQueue;
 
     // Check the root node first
-    nodesQueue.push(std::pair<int, int>(0, level));
+    nodesQueue.push(std::pair<UINT, int>(0, level));
 
     while (!nodesQueue.empty())
     {
-        std::pair<int, int> nodePair = nodesQueue.front();
+        std::pair<UINT, int> nodePair = nodesQueue.front();
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
@@ -128,8 +128,8 @@ bool PointCloudEngine::Octree::LoadFromOctreeFile()
     if (octreeFile.is_open())
     {
         // Load binary data, first 4 bytes are the size of the vector
-        int nodesSize;
-        octreeFile.read((char*)&nodesSize, sizeof(int));
+        UINT nodesSize;
+        octreeFile.read((char*)&nodesSize, sizeof(UINT));
 
         // Just read the binary data directly into the vector
         nodes.resize(nodesSize);
@@ -155,8 +155,8 @@ void PointCloudEngine::Octree::SaveToOctreeFile()
         std::ofstream octreeFile(octreeFilepath, std::ios::out | std::ios::binary);
 
         // First 4 bytes are the size of the vector
-        int nodesSize = nodes.size();
-        octreeFile.write((char*)&nodesSize, sizeof(int));
+        UINT nodesSize = nodes.size();
+        octreeFile.write((char*)&nodesSize, sizeof(UINT));
 
         // Write the vector data in binary format
         octreeFile.write((char*)nodes.data(), nodesSize * sizeof(OctreeNode));

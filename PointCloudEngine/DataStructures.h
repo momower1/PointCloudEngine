@@ -99,8 +99,8 @@ namespace PointCloudEngine
     // Stores all the data that is needed to create octree nodes
     struct OctreeNodeCreationEntry
     {
-        int nodeIndex;
-        int parentIndex;
+        UINT nodeIndex;
+        UINT parentIndex;
         int parentChildIndex;
         std::vector<Vertex> vertices;
         Vector3 center;
