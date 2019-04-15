@@ -241,19 +241,8 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<UINT> &nodesQueue, std
 
     if ((nodeVertex.size < requiredSplatSize) || IsLeafNode())
     {
-        // Make sure that e.g. single point nodes with size 0 are drawn as well
-        if (nodeVertex.size < FLT_EPSILON)
-        {
-            // Set the size temporarily to the splat size in local space to make sure that this node is visible
-            OctreeNodeVertex tmp = nodeVertex;
-            tmp.size = requiredSplatSize;
-
-            octreeVertices.push_back(tmp);
-        }
-        else
-        {
-            octreeVertices.push_back(nodeVertex);
-        }
+        // Draw this vertex
+        octreeVertices.push_back(nodeVertex);
     }
     else
     {
