@@ -9,7 +9,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    text->transform->position = Vector3(-1, -0.85f, 0);
+    text->transform->position = Vector3(-1.0f, -0.79f, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
@@ -151,9 +151,16 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         viewMode = (viewMode + 1) % 3;
     }
 
+    if (Input::GetKeyDown(Keyboard::Back))
+    {
+        useComputeShader = !useComputeShader;
+    }
+
     // Set the text
+    textRenderer->text = useComputeShader ? L"GPU Computation\n" : L"CPU Computation\n";
+
     int splatSizePixels = settings->resolutionY * octreeRendererConstantBufferData.splatSize * octreeRendererConstantBufferData.overlapFactor;
-    textRenderer->text = L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n";
+    textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");
 
     if (viewMode == 0)
     {
