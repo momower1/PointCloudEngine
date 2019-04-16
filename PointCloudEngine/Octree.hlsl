@@ -39,8 +39,12 @@ struct GS_OUTPUT
 struct OctreeNodeVertex
 {
     float3 position;
-    uint normals[3];
-    uint colors[3];
+	uint normal01;
+	uint normal23;
+	uint normal45;
+	uint color01;
+	uint color23;
+	uint color45;
     uint weights;
     float size;
 };

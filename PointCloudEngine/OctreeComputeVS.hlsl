@@ -12,18 +12,18 @@ VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
     VS_INPUT input;
 
     input.position = v.position;
-    input.normal0 = uint2(v.normals[0] >> 24, (v.normals[0] >> 16) & 0xff);
-    input.normal1 = uint2((v.normals[0] >> 8) & 0xff, v.normals[0] & 0xff);
-    input.normal2 = uint2(v.normals[1] >> 24, (v.normals[1] >> 16) & 0xff);
-    input.normal3 = uint2((v.normals[1] >> 8) & 0xff, v.normals[1] & 0xff);
-    input.normal4 = uint2(v.normals[2] >> 24, (v.normals[2] >> 16) & 0xff);
-    input.normal5 = uint2((v.normals[2] >> 8) & 0xff, v.normals[2] & 0xff);
-    input.color0 = v.colors[0] >> 16;
-    input.color1 = v.colors[0] & 0xffff;
-    input.color2 = v.colors[1] >> 16;
-    input.color3 = v.colors[1] & 0xffff;
-    input.color4 = v.colors[2] >> 16;
-    input.color5 = v.colors[2] & 0xffff;
+    input.normal0 = uint2(v.normal01 >> 24, (v.normal01 >> 16) & 0xff);
+    input.normal1 = uint2((v.normal01 >> 8) & 0xff, v.normal01 & 0xff);
+    input.normal2 = uint2(v.normal23 >> 24, (v.normal23 >> 16) & 0xff);
+    input.normal3 = uint2((v.normal23 >> 8) & 0xff, v.normal23 & 0xff);
+    input.normal4 = uint2(v.normal45 >> 24, (v.normal45 >> 16) & 0xff);
+    input.normal5 = uint2((v.normal45 >> 8) & 0xff, v.normal45 & 0xff);
+    input.color0 = v.color01 >> 16;
+    input.color1 = v.color01 & 0xffff;
+    input.color2 = v.color23 >> 16;
+    input.color3 = v.color23 & 0xffff;
+    input.color4 = v.color45 >> 16;
+    input.color5 = v.color45 & 0xffff;
     input.weights = v.weights;
     input.size = v.size;
 
