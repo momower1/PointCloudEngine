@@ -339,15 +339,14 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
     ID3D11ShaderResourceView* nullSRV[1] = { NULL };
 
-    // Set 0 as the only entry (root index) for the first buffer, will be used as input consume buffer in the shader
-    UINT data[4] = { 0, 0, 0, 0};
-    d3d11DevCon->ClearUnorderedAccessViewUint(firstBufferUAV, data);
-
     // Use compute shader to traverse the octree
     UINT zero = 0;
     d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
+
+	// Set 0 as the only entry (root index) for the first buffer, will be used as input consume buffer in the shader
+	d3d11DevCon->ClearUnorderedAccessViewUint(firstBufferUAV, &zero);
 
     // Stop iterating when all levels of the octree were checked
     UINT iteration = 0;
