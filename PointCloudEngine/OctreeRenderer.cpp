@@ -26,8 +26,6 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
     cbDescWVP.ByteWidth = sizeof(OctreeRendererConstantBuffer);
     cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbDescWVP.CPUAccessFlags = 0;
-    cbDescWVP.MiscFlags = 0;
 
     hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &octreeRendererConstantBuffer);
     ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
@@ -38,8 +36,6 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     computeShaderConstantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     computeShaderConstantBufferDesc.ByteWidth = sizeof(ComputeShaderConstantBuffer);
     computeShaderConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    computeShaderConstantBufferDesc.CPUAccessFlags = 0;
-    computeShaderConstantBufferDesc.MiscFlags = 0;
 
     hr = d3d11Device->CreateBuffer(&computeShaderConstantBufferDesc, NULL, &computeShaderConstantBuffer);
     ErrorMessage(L"CreateBuffer failed for the compute shader constant buffer.", L"Initialize", __FILEW__, __LINE__, hr);
@@ -53,11 +49,10 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     nodesBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     nodesBufferDesc.StructureByteStride = sizeof(OctreeNode);
     nodesBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    nodesBufferDesc.CPUAccessFlags = 0;
 
     D3D11_SUBRESOURCE_DATA nodesBufferData;
     ZeroMemory(&nodesBufferData, sizeof(nodesBufferData));
-    nodesBufferData.pSysMem = octree->nodes.data();
+	nodesBufferData.pSysMem = octree->nodes.data();
 
     hr = d3d11Device->CreateBuffer(&nodesBufferDesc, &nodesBufferData, &nodesBuffer);
     ErrorMessage(L"CreateBuffer failed for the nodes buffer.", L"Initialize", __FILEW__, __LINE__, hr);
@@ -86,7 +81,6 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     ZeroMemory(&appendConsumeBufferUAVDesc, sizeof(appendConsumeBufferUAVDesc));
     appendConsumeBufferUAVDesc.Format = DXGI_FORMAT_UNKNOWN;
     appendConsumeBufferUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    appendConsumeBufferUAVDesc.Buffer.FirstElement = 0;
     appendConsumeBufferUAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
     appendConsumeBufferUAVDesc.Buffer.NumElements = maxVertexBufferCount;
 
