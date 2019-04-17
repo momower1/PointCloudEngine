@@ -29,8 +29,15 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
         float size = max(max(diagonal.x, diagonal.y), diagonal.z);
 
         // Reserve vector memory for better performance
-        int predictedDepth = min(settings->maxOctreeDepth , log(vertices.size()) / log(8));
-        int predictedSize = pow(8, predictedDepth);
+		// This is the size if the vertices would perfectly split by 8 into the octree (always smaller than the real size)
+		UINT predictedSize = 0;
+        UINT predictedDepth = min(settings->maxOctreeDepth , log(vertices.size()) / log(8));
+
+		for (UINT i = 0; i <= predictedDepth; i++)
+		{
+			predictedSize += pow(8, i);
+		}
+
         nodes.reserve(predictedSize);
 
         // Stores the nodes that should be created for each octree level
