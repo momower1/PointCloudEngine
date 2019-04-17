@@ -14,15 +14,12 @@ PointCloudEngine::Settings::Settings()
         while (std::getline(settingsFile, line))
         {
             // Split the string
-            int delimiter = line.find(L"=");
+            size_t delimiter = line.find(L"=");
 
             if (delimiter > 0)
             {
-                std::wstring variableNameW = line.substr(0, delimiter);
+                std::wstring variableName = line.substr(0, delimiter);
                 std::wstring variableValue = line.substr(delimiter + 1, line.length());
-
-                // NAMEOF doesn't work with wstring sadly, convert to string
-                std::string variableName = std::string(variableNameW.begin(), variableNameW.end());
 
                 // Parse by variable name
                 if (variableName.compare(NAMEOF(fovAngleY)) == 0)

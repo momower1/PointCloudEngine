@@ -1,8 +1,6 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#define NAMEOF(variable) #variable
-
 #pragma once
 #include "PointCloudEngine.h"
 

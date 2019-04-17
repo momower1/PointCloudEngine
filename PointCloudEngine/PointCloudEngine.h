@@ -113,6 +113,7 @@ bool InitializeScene();
 void UpdateScene();
 void DrawScene();
 
+#define NAMEOF(variable) std::wstring(L#variable)
 #define SAFE_RELEASE(resource) if(resource != NULL) { resource->Release(); resource = NULL; }
 
 // Template function definitions
