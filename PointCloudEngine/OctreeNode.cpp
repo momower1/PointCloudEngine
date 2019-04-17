@@ -11,7 +11,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     
     if (vertexCount == 0)
     {
-        ErrorMessage(L"Cannot create Octree Node from empty vertices!", L"CreateNode", __FILEW__, __LINE__);
+		ERROR_MESSAGE(L"Cannot create " + NAMEOF(OctreeNode) + L" from 0 " + NAMEOF(vertexCount));
         return;
     }
 

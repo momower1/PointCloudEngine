@@ -30,19 +30,20 @@ ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state 
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
 
-void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr)
+void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line)
 {
-    if (FAILED(hr))
-    {
-        _com_error error(hr);
-        std::wstringstream headerStream, messageStream;
-        std::wstring filename = file.substr(file.find_last_of(L"/\\") + 1);
-        headerStream << L"Error 0x" << std::hex << hr << L" " << header;
-        messageStream << message << L"\n\n" << error.ErrorMessage() << L" in " << filename << " at line " << line;
-        header = std::wstring(headerStream.str());
-        message = std::wstring(messageStream.str());
-        MessageBox(hwnd, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
-    }
+	if (FAILED(hr))
+	{
+		// Display the error code and message as well as the line and file of the error
+		_com_error error(hr);
+		std::wstringstream headerStream, messageStream;
+		std::wstring filename = file.substr(file.find_last_of(L"/\\") + 1);
+		headerStream << L"Error 0x" << std::hex << hr;
+		messageStream << message << L"\n\n" << error.ErrorMessage() << L" in " << filename << " at line " << line;
+		std::wstring header = std::wstring(headerStream.str());
+		message = std::wstring(messageStream.str());
+		MessageBox(hwnd, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
+	}
 }
 
 bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile)
@@ -107,19 +108,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	if (!InitializeWindow(hInstance, nShowCmd, settings->resolutionX, settings->resolutionY, true))
 	{
-        ErrorMessage(L"Window Initialization failed.", L"WinMain", __FILEW__, __LINE__);
+		ERROR_MESSAGE(NAMEOF(InitializeWindow) + L" failed!");
 		return 0;
 	}
 
 	if (!InitializeDirect3d11App(hInstance))
 	{
-        ErrorMessage(L"Direct3D Initialization failed.", L"WinMain", __FILEW__, __LINE__);
+		ERROR_MESSAGE(NAMEOF(InitializeDirect3d11App) + L" failed!");
 		return 0;
 	}
 
 	if (!InitializeScene())
 	{
-        ErrorMessage(L"Scene Initialization failed.", L"WinMain", __FILEW__, __LINE__);
+		ERROR_MESSAGE(NAMEOF(InitializeScene) + L" failed!");
 		return 0;
 	}
 
@@ -152,7 +153,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 
 	if (!RegisterClassEx(&wc))
 	{
-        ErrorMessage(L"Class Registration failed.", L"InitializeWindow", __FILEW__, __LINE__);
+		ERROR_MESSAGE(NAMEOF(RegisterClassEx) + L" failed!");
 		return 1;
 	}
 
@@ -161,7 +162,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 
 	if (!hwnd)
 	{
-        ErrorMessage(L"Window Creation failed.", L"InitializeWindow", __FILEW__, __LINE__);
+		ERROR_MESSAGE(NAMEOF(CreateWindowEx) + L" failed!");
 		return 1;
 	}
 
@@ -204,14 +205,14 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
 	// Create device and swap chain
 	hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
-    ErrorMessage(L"D3D11CreateDeviceAndSwapChain failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
 
 	ID3D11Texture2D* backBuffer;
 	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);		// Create backbuffer for the render target view
 
 	// Create render target view, will be sended to the output merger stage of the pipeline
 	hr = d3d11Device->CreateRenderTargetView(backBuffer, NULL, &renderTargetView);		// NULL -> view accesses all subresources in mipmap level 0
-    ErrorMessage(L"CreateRenderTargetView failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
     SAFE_RELEASE(backBuffer);
 
 	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
@@ -230,7 +231,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
 	// Create the depth/stencil view
 	hr = d3d11Device->CreateTexture2D(&depthStencilBufferDesc, NULL, &depthStencilBuffer);
-    ErrorMessage(L"CreateTexture2D failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
     // Depth / Stencil description
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
@@ -259,7 +260,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
     // Create depth stencil state
     hr = d3d11Device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
-    ErrorMessage(L"CreateDepthStencilState failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
     d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
 
     // Create blend state for transparency
@@ -275,7 +276,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
     hr = d3d11Device->CreateBlendState(&blendStateDesc, &blendState);
-    ErrorMessage(L"CreateBlendState failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed!");
     float blendFactor[] = {0, 0, 0, 0};
     UINT sampleMask = 0xffffffff;
     d3d11DevCon->OMSetBlendState(blendState, blendFactor, sampleMask);
@@ -288,7 +289,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     depthStencilViewDesc.Texture2DMS.UnusedField_NothingToDefine = 0;
 
 	hr = d3d11Device->CreateDepthStencilView(depthStencilBuffer, &depthStencilViewDesc, &depthStencilView);
-    ErrorMessage(L"CreateDepthStencilView failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
 
 	// Describing the render state
 	D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -305,7 +306,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     rasterizerDesc.AntialiasedLineEnable = TRUE;
 
 	hr = d3d11Device->CreateRasterizerState(&rasterizerDesc, &rasterizerState);
-    ErrorMessage(L"CreateRasterizerState failed.", L"InitializeDirect3d11App", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRasterizerState) + L" failed!");
 
 	// Bind the rasterizer render state
 	d3d11DevCon->RSSetState(rasterizerState);
@@ -415,7 +416,7 @@ void DrawScene()
 
 	// Present backbuffer to the screen
 	hr = swapChain->Present(1, 0);
-    ErrorMessage(L"SwapChain->Present failed.", L"DrawScene", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
 }
 
 void ReleaseObjects()

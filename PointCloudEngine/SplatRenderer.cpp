@@ -31,7 +31,7 @@ void SplatRenderer::Initialize(SceneObject *sceneObject)
 
     // Create the buffer
     hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-    ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
     // Create the constant buffer for WVP
     D3D11_BUFFER_DESC cbDescWVP;
@@ -43,7 +43,7 @@ void SplatRenderer::Initialize(SceneObject *sceneObject)
     cbDescWVP.MiscFlags = 0;
 
     hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBuffer);
-    ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
 }
 
 void SplatRenderer::Update(SceneObject *sceneObject)

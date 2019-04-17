@@ -28,7 +28,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
     hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &octreeRendererConstantBuffer);
-    ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(octreeRendererConstantBuffer));
 
     // Create the constant buffer for the compute shader
     D3D11_BUFFER_DESC computeShaderConstantBufferDesc;
@@ -38,7 +38,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     computeShaderConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
     hr = d3d11Device->CreateBuffer(&computeShaderConstantBufferDesc, NULL, &computeShaderConstantBuffer);
-    ErrorMessage(L"CreateBuffer failed for the compute shader constant buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(computeShaderConstantBuffer));
 
     // Create the buffer for the compute shader that stores all the octree nodes
     // Maximum size is ~4.2 GB due to UINT_MAX
@@ -55,7 +55,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	nodesBufferData.pSysMem = octree->nodes.data();
 
     hr = d3d11Device->CreateBuffer(&nodesBufferDesc, &nodesBufferData, &nodesBuffer);
-    ErrorMessage(L"CreateBuffer failed for the nodes buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(nodesBuffer));
 
     D3D11_SHADER_RESOURCE_VIEW_DESC nodesBufferSRVDesc;
     ZeroMemory(&nodesBufferSRVDesc, sizeof(nodesBufferSRVDesc));
@@ -65,7 +65,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     nodesBufferSRVDesc.Buffer.NumElements = octree->nodes.size();
 
     hr = d3d11Device->CreateShaderResourceView(nodesBuffer, &nodesBufferSRVDesc, &nodesBufferSRV);
-    ErrorMessage(L"CreateShaderResourceView failed for the nodes buffer srv.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(nodesBufferSRV));
 
     // Create general buffer description for append/consume buffer
     D3D11_BUFFER_DESC appendConsumeBufferDesc;
@@ -86,24 +86,24 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 
     // Create the first buffer and its UAV
     hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &firstBuffer);
-    ErrorMessage(L"CreateBuffer failed for first buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(firstBuffer));
 
     hr = d3d11Device->CreateUnorderedAccessView(firstBuffer, &appendConsumeBufferUAVDesc, &firstBufferUAV);
-    ErrorMessage(L"CreateUnorderedAccessView failed for first buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(firstBufferUAV));
 
     // Create the second buffer and its UAV
     hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &secondBuffer);
-    ErrorMessage(L"CreateBuffer failed for second buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(secondBuffer));
 
     hr = d3d11Device->CreateUnorderedAccessView(secondBuffer, &appendConsumeBufferUAVDesc, &secondBufferUAV);
-    ErrorMessage(L"CreateUnorderedAccessView failed for second buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(secondBufferUAV));
 
     // Create the vertex append buffer
     hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &vertexAppendBuffer);
-    ErrorMessage(L"CreateBuffer failed for vertex buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexAppendBuffer));
 
     hr = d3d11Device->CreateUnorderedAccessView(vertexAppendBuffer, &appendConsumeBufferUAVDesc, &vertexAppendBufferUAV);
-    ErrorMessage(L"CreateUnorderedAccessView failed for vertex buffer uav.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(vertexAppendBufferUAV));
 
     D3D11_SHADER_RESOURCE_VIEW_DESC vertexAppendBufferSRVDesc;
     ZeroMemory(&vertexAppendBufferSRVDesc, sizeof(vertexAppendBufferSRVDesc));
@@ -113,7 +113,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     vertexAppendBufferSRVDesc.Buffer.NumElements = maxVertexBufferCount;
 
     hr = d3d11Device->CreateShaderResourceView(vertexAppendBuffer, &vertexAppendBufferSRVDesc, &vertexAppendBufferSRV);
-    ErrorMessage(L"CreateShaderResourceView failed for the vertex append buffer srv.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(vertexAppendBufferSRV));
 
     // Create the structure count buffer that is simply used to check for the size of the append/consume buffers
     D3D11_BUFFER_DESC structureCountBufferDesc;
@@ -124,7 +124,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     structureCountBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
     hr = d3d11Device->CreateBuffer(&structureCountBufferDesc, NULL, &structureCountBuffer);
-    ErrorMessage(L"CreateBuffer failed for structure count buffer.", L"DrawOctreeCompute", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(structureCountBuffer));
 }
 
 void OctreeRenderer::Update(SceneObject *sceneObject)
@@ -278,7 +278,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, cons
 
         // Create the buffer
         hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-        ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"GetVertexBuffer", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
         // Set the shaders
         if (viewMode == 0)
@@ -443,7 +443,7 @@ UINT PointCloudEngine::OctreeRenderer::GetStructureCount(ID3D11UnorderedAccessVi
         // Read the value by mapping the memory to the CPU
         D3D11_MAPPED_SUBRESOURCE mappedSubresource;
         hr = d3d11DevCon->Map(structureCountBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-        ErrorMessage(L"Map failed for structure count buffer", L"GetStructureCount", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11DevCon->Map) + L" failed for the " + NAMEOF(structureCountBuffer));
 
         output = *(UINT*)mappedSubresource.pData;
 

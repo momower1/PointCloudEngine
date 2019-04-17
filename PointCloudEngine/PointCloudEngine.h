@@ -80,6 +80,22 @@ using namespace PointCloudEngine;
 #include "OctreeRenderer.h"
 #include "Scene.h"
 
+// Preprocessor macros
+#define NAMEOF(variable) std::wstring(L#variable)
+#define ERROR_MESSAGE(message) ErrorMessageOnFail(E_FAIL, message, __FILEW__, __LINE__)
+#define ERROR_MESSAGE_ON_FAIL(hr, message) ErrorMessageOnFail(hr, message, __FILEW__, __LINE__)
+#define SAFE_RELEASE(resource) if(resource != NULL) { resource->Release(); resource = NULL; }
+
+// Template function definitions
+template<typename T> void SafeDelete(T*& pointer)
+{
+	if (pointer != NULL)
+	{
+		delete pointer;
+		pointer = NULL;
+	}
+}
+
 // Global variables, accessable in other files
 extern std::wstring executablePath;
 extern std::wstring executableDirectory;
@@ -100,7 +116,7 @@ extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11DepthStencilState* depthStencilState;
 
 // Global function declarations
-extern void ErrorMessage(std::wstring message, std::wstring header, std::wstring file, int line, HRESULT hr = E_FAIL);
+extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
 extern bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile);
 
 // Function declarations
@@ -112,17 +128,4 @@ void ReleaseObjects();
 bool InitializeScene();
 void UpdateScene();
 void DrawScene();
-
-#define NAMEOF(variable) std::wstring(L#variable)
-#define SAFE_RELEASE(resource) if(resource != NULL) { resource->Release(); resource = NULL; }
-
-// Template function definitions
-template<typename T> void SafeDelete(T*& pointer)
-{
-    if (pointer != NULL)
-    {
-        delete pointer;
-        pointer = NULL;
-    }
-}
 #endif

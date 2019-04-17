@@ -44,7 +44,7 @@ void TextRenderer::Initialize(SceneObject *sceneObject)
     cbDescWVP.MiscFlags = 0;
 
     hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBufferText);
-    ErrorMessage(L"CreateBuffer failed for the constant buffer matrices.", L"Initialize", __FILEW__, __LINE__, hr);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBufferText));
 }
 
 void TextRenderer::Update(SceneObject *sceneObject)
@@ -97,7 +97,7 @@ void TextRenderer::Update(SceneObject *sceneObject)
 
         // Create the buffer
         hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-        ErrorMessage(L"CreateBuffer failed for the vertex buffer.", L"Initialize", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
         oldText = text;
     }

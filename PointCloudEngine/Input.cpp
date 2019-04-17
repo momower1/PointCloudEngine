@@ -38,7 +38,7 @@ void Input::Initialize(HWND hwnd)
 
     if (!RegisterRawInputDevices(&rawMouseInputDevice, 1, sizeof(RAWINPUTDEVICE)))
     {
-        ErrorMessage(L"Raw mouse input device could not be registered!", L"Initialize Window", __FILEW__, __LINE__);
+		ERROR_MESSAGE(NAMEOF(RegisterRawInputDevices) + L" failed!");
     }
 }
 
@@ -49,7 +49,7 @@ void Input::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
     if (msg == WM_INPUT)
     {
-        UINT dwSize;
+        UINT dwSize = 0;
 
         // Determine the size of the input data
         GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));

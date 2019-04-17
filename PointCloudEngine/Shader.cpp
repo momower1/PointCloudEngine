@@ -64,20 +64,20 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
 
     std::wstring filepath = (executableDirectory + L"/" + filename).c_str();
 
-    // Compile and create the shaders from file
+    // Compile and create the shaders from file, the shader functions have to be named VS, GS, PS and CS for this to work
     if (VS)
     {
         ID3DBlob* vertexShaderData = NULL;
         hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &vertexShaderData, 0);
-        ErrorMessage(L"D3DCompileFromFile failed for VS of " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the VS of " + filepath);
         hr = d3d11Device->CreateVertexShader(vertexShaderData->GetBufferPointer(), vertexShaderData->GetBufferSize(), NULL, &vertexShader);
-        ErrorMessage(L"CreateVertexShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateVertexShader) + L" failed for the VS of " + filepath);
 
         if (numElements > 0)
         {
             // Create the Input (Vertex) Layout with numElements being the size of the input layout array
             hr = d3d11Device->CreateInputLayout(layout, numElements, vertexShaderData->GetBufferPointer(), vertexShaderData->GetBufferSize(), &inputLayout);
-            ErrorMessage(L"CreateInputLayout failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateInputLayout) + L" failed for the VS of " + filepath);
         }
 
         SAFE_RELEASE(vertexShaderData);
@@ -87,9 +87,9 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     {
         ID3DBlob* geometryShaderData = NULL;
         hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GS", "gs_5_0", 0, 0, &geometryShaderData, 0);
-        ErrorMessage(L"D3DCompileFromFile failed for GS of " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the GS of " + filepath);
         hr = d3d11Device->CreateGeometryShader(geometryShaderData->GetBufferPointer(), geometryShaderData->GetBufferSize(), NULL, &geometryShader);
-        ErrorMessage(L"CreateGeometryShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateGeometryShader) + L" failed for the GS of " + filepath);
         SAFE_RELEASE(geometryShaderData);
     }
 
@@ -97,9 +97,9 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     {
         ID3DBlob* pixelShaderData = NULL;
         hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &pixelShaderData, 0);
-        ErrorMessage(L"D3DCompileFromFile failed for PS of " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the PS of " + filepath);
         hr = d3d11Device->CreatePixelShader(pixelShaderData->GetBufferPointer(), pixelShaderData->GetBufferSize(), NULL, &pixelShader);
-        ErrorMessage(L"CreatePixelShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreatePixelShader) + L" failed for the PS of " + filepath);
         SAFE_RELEASE(pixelShaderData);
     }
 
@@ -107,9 +107,9 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     {
         ID3DBlob* computeShaderData = NULL;
         hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CS", "cs_5_0", 0, 0, &computeShaderData, 0);
-        ErrorMessage(L"D3DCompileFromFile failed for CS of " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the CS of " + filepath);
         hr = d3d11Device->CreateComputeShader(computeShaderData->GetBufferPointer(), computeShaderData->GetBufferSize(), NULL, &computeShader);
-        ErrorMessage(L"CreateComputeShader failed for " + filepath, L"Shader", __FILEW__, __LINE__, hr);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateComputeShader) + L" failed for the CS of " + filepath);
         SAFE_RELEASE(computeShaderData);
     }
 }

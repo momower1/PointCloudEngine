@@ -203,7 +203,7 @@ void PointCloudEngine::Scene::LoadFile()
     }
     catch (std::exception e)
     {
-        ErrorMessage(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!", L"File loading error", __FILEW__, __LINE__);
+		ERROR_MESSAGE(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!");
 
         // Set the pointer to NULL because the creation of the object failed
         pointCloudRenderer = NULL;
