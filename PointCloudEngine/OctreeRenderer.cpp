@@ -432,7 +432,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 
 UINT PointCloudEngine::OctreeRenderer::GetStructureCount(ID3D11UnorderedAccessView *UAV)
 {
-    int output = 0;
+    UINT output = 0;
 
     if (structureCountBuffer != NULL)
     {
