@@ -8,7 +8,7 @@ namespace PointCloudEngine
 {
     struct Color16
     {
-        // 6 bits: red, 6 bits green, 4 bits blue
+        // 6 bits red, 6 bits green, 4 bits blue
         unsigned short data;
 
         Color16()

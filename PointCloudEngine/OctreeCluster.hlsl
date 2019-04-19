@@ -22,8 +22,10 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
         ((input[0].weights >> 25) & 31) / 31.0f
     };
 
+	// Scale the length of the normal (sum of all weights is one)
     float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
 
+	// Store all of the end vertices for the normals here for readability
     float3 end[] =
     {
         input[0].position + extend * (weights[0] / maxWeight) * PolarNormalToFloat3(input[0].normal0),
@@ -37,6 +39,7 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
     GS_OUTPUT element;
     element.normal = float3(0, 0, 0);
 
+	// Append a line from the center to the end of each normal
     element.position = mul(float4(input[0].position, 1), WVP);
     element.color = Color16ToFloat3(input[0].color0);
     output.Append(element);

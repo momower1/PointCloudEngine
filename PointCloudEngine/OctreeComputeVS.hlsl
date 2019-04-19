@@ -11,6 +11,7 @@ VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
 
     VS_INPUT input;
 
+	// Convert from the struct in the buffer to the vertex layout
 	// The bit order is swapped here to LittleEndian, highest value bits are actually now the most right bits
     input.position = v.position;
     input.normal0 = uint2(v.normal01 & 0xff, (v.normal01 >> 8) & 0xff);

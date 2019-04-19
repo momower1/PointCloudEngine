@@ -38,6 +38,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     element.color = input[0].color;
     element.normal = normal;
 
+	// Append the vertices in the correct order to create a billboard
     element.position = mul(float4(position + up - right, 1), VP);
     output.Append(element);
 

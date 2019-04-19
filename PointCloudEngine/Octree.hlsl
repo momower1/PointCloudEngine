@@ -76,6 +76,7 @@ float3 PolarNormalToFloat3(uint2 polarNormal)
 
 float3 Color16ToFloat3(uint color)
 {
+	// 6 bits red, 6 bits green, 4 bits blue
     float r = ((color >> 10) & 63) / 63.0f;
     float g = ((color >> 4) & 63) / 63.0f;
     float b = (color & 15) / 15.0f;

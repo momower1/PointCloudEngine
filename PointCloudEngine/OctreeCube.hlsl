@@ -19,6 +19,7 @@ void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
     element.color = input[0].color;
     element.normal = input[0].normal;
 
+	// Store all the cube vertices here for readability
     float3 cube[] =
     {
         input[0].position - x - y - z,
@@ -31,6 +32,7 @@ void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
         input[0].position + x + y + z
     };
 
+	// Append in such a way that the lowest possible number of vertices is used
     element.position = mul(float4(cube[3], 1), WVP);
     output.Append(element);
     element.position = mul(float4(cube[0], 1), WVP);
