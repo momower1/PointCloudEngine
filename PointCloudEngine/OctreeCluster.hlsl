@@ -2,7 +2,7 @@
 
 VS_INPUT VS(VS_INPUT input)
 {
-    return input;
+    return VertexShaderFunction(input);
 }
 
 [maxvertexcount(12)]

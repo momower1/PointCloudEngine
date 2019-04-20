@@ -21,14 +21,6 @@ struct VS_INPUT
     float size : SIZE;
 };
 
-struct VS_OUTPUT
-{
-    float3 position : POSITION;
-    float3 normal : NORMAL;
-    float size : SIZE;
-    float3 color : COLOR;
-};
-
 struct GS_OUTPUT
 {
     float4 position : SV_POSITION;

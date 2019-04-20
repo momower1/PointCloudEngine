@@ -3,7 +3,7 @@
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
 StructuredBuffer<uint> vertexBuffer : register(t1);
 
-VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
+VS_INPUT VS(uint vertexID : SV_VERTEXID)
 {
     uint index = vertexBuffer[vertexID];
 
@@ -29,5 +29,5 @@ VS_OUTPUT VS(uint vertexID : SV_VERTEXID)
     input.weights = v.weights;
     input.size = v.size;
 
-    return VertexShaderFunction(input);
+    return input;
 }

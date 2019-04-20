@@ -1,13 +1,33 @@
 #include "OctreeShaderFunctions.hlsl"
 
-VS_OUTPUT VS(VS_INPUT input)
+VS_INPUT VS(VS_INPUT input)
 {
     return VertexShaderFunction(input);
 }
 
 [maxvertexcount(16)]
-void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
+void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 {
+	float3 colors[6] =
+	{
+		Color16ToFloat3(input[0].color0),
+		Color16ToFloat3(input[0].color1),
+		Color16ToFloat3(input[0].color2),
+		Color16ToFloat3(input[0].color3),
+		Color16ToFloat3(input[0].color4),
+		Color16ToFloat3(input[0].color5)
+	};
+
+	float weights[6] =
+	{
+		(input[0].weights & 31) / 31.0f,
+		((input[0].weights >> 5) & 31) / 31.0f,
+		((input[0].weights >> 10) & 31) / 31.0f,
+		((input[0].weights >> 15) & 31) / 31.0f,
+		((input[0].weights >> 20) & 31) / 31.0f,
+		((input[0].weights >> 25) & 31) / 31.0f
+	};
+
     float extend = 0.5f * input[0].size;
     float3 x = float3(extend, 0, 0);
     float3 y = float3(0, extend, 0);
@@ -16,8 +36,14 @@ void GS(point VS_OUTPUT input[1], inout LineStream<GS_OUTPUT> output)
     float4x4 WVP = mul(World, mul(View, Projection));
 
     GS_OUTPUT element;
-    element.color = input[0].color;
-    element.normal = input[0].normal;
+	element.color = float3(0, 0, 0);
+	element.normal = float3(0, 0, 0);
+
+	// Assign the average color from all the points inside this cube
+	for (int i = 0; i < 6; i++)
+	{
+		element.color += weights[i] * colors[i];
+	}
 
 	// Store all the cube vertices here for readability
     float3 cube[] =
