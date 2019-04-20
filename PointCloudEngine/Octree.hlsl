@@ -28,23 +28,35 @@ struct GS_OUTPUT
     float3 color : COLOR;
 };
 
-struct OctreeNodeVertex
+struct OctreeNodeTraversalEntry
 {
-    float3 position;
+	uint index;
+	float3 position;
+	float size;
+};
+
+struct OctreeNodeProperties
+{
 	uint normal01;
 	uint normal23;
 	uint normal45;
 	uint color01;
 	uint color23;
 	uint color45;
-    uint weights;
-    float size;
+	uint weights;
+};
+
+struct OctreeNodeVertex
+{
+	float3 position;
+	OctreeNodeProperties properties;
+	float size;
 };
 
 struct OctreeNode
 {
     uint children[8];
-    OctreeNodeVertex nodeVertex;
+    OctreeNodeProperties properties;
 };
 
 float3 PolarNormalToFloat3(uint theta, uint phi)

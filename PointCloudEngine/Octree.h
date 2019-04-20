@@ -13,13 +13,16 @@ namespace PointCloudEngine
 
         std::vector<OctreeNodeVertex> GetVertices(const Vector3 &localCameraPosition, const float &splatSize) const;
         std::vector<OctreeNodeVertex> GetVerticesAtLevel(const int &level) const;
-        void GetRootPositionAndSize(Vector3 &outRootPosition, float &outSize) const;
         bool LoadFromOctreeFile();
         void SaveToOctreeFile();
 
         // Stores the hole octree, the root is the first element
         std::vector<OctreeNode> nodes;
-        std::wstring octreeFilepath;
+		Vector3 rootPosition;
+		float rootSize = 0;
+
+	private:
+		std::wstring octreeFilepath;
     };
 }
 

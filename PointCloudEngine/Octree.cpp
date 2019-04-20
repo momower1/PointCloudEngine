@@ -24,9 +24,10 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
             maxPosition = Vector3::Max(maxPosition, v.position);
         }
 
+		// Compute the root node position and size, will be used to compute all the other node positions and sizes at runtime
         Vector3 diagonal = maxPosition - minPosition;
-        Vector3 center = minPosition + 0.5f * (diagonal);
-        float size = max(max(diagonal.x, diagonal.y), diagonal.z);
+        rootPosition = minPosition + 0.5f * (diagonal);
+        rootSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
         // Reserve vector memory for better performance
 		// This is the size if the vertices would perfectly split by 8 into the octree (always smaller than the real size)
@@ -48,8 +49,8 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
         rootEntry.parentIndex = UINT_MAX;
         rootEntry.parentChildIndex = -1;
         rootEntry.vertices = vertices;
-        rootEntry.center = center;
-        rootEntry.size = size;
+        rootEntry.position = rootPosition;
+        rootEntry.size = rootSize;
         rootEntry.depth = settings->maxOctreeDepth;
 
         nodeCreationQueue.push(rootEntry);
@@ -76,18 +77,24 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector
 {
     // Use a queue instead of recursion to traverse the octree in the memory layout order (improves cache efficiency)
     std::vector<OctreeNodeVertex> octreeVertices;
-    std::queue<UINT> nodesQueue;
+	std::queue<OctreeNodeTraversalEntry> nodesQueue;
+
+	// Use this struct to compute the node positions and sizes at runtime
+	OctreeNodeTraversalEntry rootEntry;
+	rootEntry.index = 0;
+	rootEntry.position = rootPosition;
+	rootEntry.size = rootSize;
 
     // Check the root node first
-    nodesQueue.push(0);
+    nodesQueue.push(rootEntry);
 
     while (!nodesQueue.empty())
     {
-        UINT nodeIndex = nodesQueue.front();
+		OctreeNodeTraversalEntry entry = nodesQueue.front();
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
-        nodes[nodeIndex].GetVertices(nodesQueue, octreeVertices, localCameraPosition, splatSize);
+        nodes[entry.index].GetVertices(nodesQueue, octreeVertices, entry, localCameraPosition, splatSize);
     }
 
     return octreeVertices;
@@ -98,27 +105,27 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const
     // Use a queue instead of recursion to traverse the octree in the memory layout order (improves cache efficiency)
     // The queue stores the indices of the nodes that need to be checked and the level of that node
     std::vector<OctreeNodeVertex> octreeVertices;
-    std::queue<std::pair<UINT, int>> nodesQueue;
+    std::queue<std::pair<OctreeNodeTraversalEntry, int>> nodesQueue;
+
+	// Use this struct to compute the node positions and sizes at runtime
+	OctreeNodeTraversalEntry rootEntry;
+	rootEntry.index = 0;
+	rootEntry.position = rootPosition;
+	rootEntry.size = rootSize;
 
     // Check the root node first
-    nodesQueue.push(std::pair<UINT, int>(0, level));
+    nodesQueue.push(std::pair<OctreeNodeTraversalEntry, int>(rootEntry, level));
 
     while (!nodesQueue.empty())
     {
-        std::pair<UINT, int> nodePair = nodesQueue.front();
+        std::pair<OctreeNodeTraversalEntry, int> nodePair = nodesQueue.front();
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
-        nodes[nodePair.first].GetVerticesAtLevel(nodesQueue, octreeVertices, nodePair.second);
+        nodes[nodePair.first.index].GetVerticesAtLevel(nodesQueue, octreeVertices, nodePair.first, nodePair.second);
     }
 
     return octreeVertices;
-}
-
-void PointCloudEngine::Octree::GetRootPositionAndSize(Vector3 &outRootPosition, float &outSize) const
-{
-    outRootPosition = nodes[0].nodeVertex.position;
-    outSize = nodes[0].nodeVertex.size;
 }
 
 bool PointCloudEngine::Octree::LoadFromOctreeFile()
@@ -134,7 +141,13 @@ bool PointCloudEngine::Octree::LoadFromOctreeFile()
     // Only save the data when the file doesn't exist already
     if (octreeFile.is_open())
     {
-        // Load binary data, first 4 bytes are the size of the vector
+		// Read the root position as the first entry
+		octreeFile.read((char*)&rootPosition, sizeof(Vector3));
+
+		// Then the root size
+		octreeFile.read((char*)&rootSize, sizeof(float));
+
+        // Load the size of the following vector
         UINT nodesSize;
         octreeFile.read((char*)&nodesSize, sizeof(UINT));
 
@@ -161,7 +174,13 @@ void PointCloudEngine::Octree::SaveToOctreeFile()
         CreateDirectory((executableDirectory + L"/Octrees").c_str(), NULL);
         std::ofstream octreeFile(octreeFilepath, std::ios::out | std::ios::binary);
 
-        // First 4 bytes are the size of the vector
+		// Write the root position
+		octreeFile.write((char*)&rootPosition, sizeof(Vector3));
+
+		// Then the root size
+		octreeFile.write((char*)&rootSize, sizeof(float));
+
+        // Write the size of the following vector
         UINT nodesSize = nodes.size();
         octreeFile.write((char*)&nodesSize, sizeof(UINT));
 

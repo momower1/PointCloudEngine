@@ -70,10 +70,10 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     // Create general buffer description for append/consume buffer
     D3D11_BUFFER_DESC appendConsumeBufferDesc;
     ZeroMemory(&appendConsumeBufferDesc, sizeof(appendConsumeBufferDesc));
-    appendConsumeBufferDesc.ByteWidth = maxVertexBufferCount * sizeof(UINT);
+    appendConsumeBufferDesc.ByteWidth = maxVertexBufferCount * sizeof(OctreeNodeTraversalEntry);
     appendConsumeBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
     appendConsumeBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    appendConsumeBufferDesc.StructureByteStride = sizeof(UINT);
+    appendConsumeBufferDesc.StructureByteStride = sizeof(OctreeNodeTraversalEntry);
     appendConsumeBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 
     // Create general UAV description for append/consume buffers
@@ -109,7 +109,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     ZeroMemory(&vertexAppendBufferSRVDesc, sizeof(vertexAppendBufferSRVDesc));
     vertexAppendBufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
     vertexAppendBufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-    vertexAppendBufferSRVDesc.Buffer.ElementWidth = sizeof(UINT);
+    vertexAppendBufferSRVDesc.Buffer.ElementWidth = sizeof(OctreeNodeTraversalEntry);
     vertexAppendBufferSRVDesc.Buffer.NumElements = maxVertexBufferCount;
 
     hr = d3d11Device->CreateShaderResourceView(vertexAppendBuffer, &vertexAppendBufferSRVDesc, &vertexAppendBufferSRV);
@@ -240,7 +240,8 @@ void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
 
 void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
-    octree->GetRootPositionAndSize(outPosition, outSize);
+	outPosition = octree->rootPosition;
+	outSize = octree->rootSize;
 }
 
 void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition)
@@ -339,8 +340,22 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
 
-	// Set 0 as the only entry (root index) for the first buffer, will be used as input consume buffer in the shader
-	d3d11DevCon->ClearUnorderedAccessViewUint(firstBufferUAV, &zero);
+	// Set root entry for the first buffer, will be used as input consume buffer in the shader
+	OctreeNodeTraversalEntry rootEntry;
+	rootEntry.index = 0;
+	rootEntry.position = octree->rootPosition;
+	rootEntry.size = octree->rootSize;
+
+	D3D11_BOX rootEntryBox;
+	rootEntryBox.left = 0;
+	rootEntryBox.right = sizeof(OctreeNodeTraversalEntry);
+	rootEntryBox.top = 0;
+	rootEntryBox.bottom = 1;
+	rootEntryBox.front = 0;
+	rootEntryBox.back = 1;
+
+	// Copy to the first element in the buffer
+	d3d11DevCon->UpdateSubresource(firstBuffer, 0, &rootEntryBox, &rootEntry, 0, 0);
 
     // Stop iterating when all levels of the octree were checked
     UINT inputCount = 1;
