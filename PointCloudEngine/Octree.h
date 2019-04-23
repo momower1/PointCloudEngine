@@ -18,6 +18,8 @@ namespace PointCloudEngine
 
         // Stores the hole octree, the root is the first element
         std::vector<OctreeNode> nodes;
+		// Stores all the child indices for the nodes
+		std::vector<UINT> children;
 		Vector3 rootPosition;
 		float rootSize = 0;
 

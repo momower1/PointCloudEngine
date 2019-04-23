@@ -5,7 +5,7 @@ PointCloudEngine::OctreeNode::OctreeNode()
     // Default constructor used for parsing from file
 }
 
-PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, const OctreeNodeCreationEntry &entry)
+PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, std::vector<UINT>& children, const OctreeNodeCreationEntry &entry)
 {
     size_t vertexCount = entry.vertices.size();
     
@@ -19,9 +19,9 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     // Then this cube is splitted into 8 smaller child cubes along the center
     // For each child cube the octree generation is repeated
     // Assign this child to its parent
-    if (entry.parentIndex != UINT_MAX && entry.parentChildIndex >= 0)
+    if (entry.nodesIndex != UINT_MAX && entry.childrenIndex != UINT_MAX)
     {
-        nodes[entry.parentIndex].children[entry.parentChildIndex] = entry.nodeIndex;
+		children[entry.childrenIndex] = entry.nodesIndex;
     }
 
     // Apply the k-means clustering algorithm to find clusters for the normals
@@ -189,27 +189,36 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     // Only subdivide further if the size is above the minimum size
     if (entry.depth > 0)
     {
+		childrenMask = 0;
+		childrenStart = children.size();
+
         for (int i = 0; i < 8; i++)
         {
             if (childVertices[i].size() > 0)
             {
                 // Add a new entry to the queue
                 OctreeNodeCreationEntry childEntry;
-                childEntry.nodeIndex = UINT_MAX;
-                childEntry.parentIndex = entry.nodeIndex;
-                childEntry.parentChildIndex = i;
+                childEntry.nodesIndex = UINT_MAX;
+				childEntry.childrenIndex = children.size();
                 childEntry.vertices = childVertices[i];
                 childEntry.position = GetChildPosition(entry.position, entry.size, i);
                 childEntry.size = entry.size * 0.5f;
                 childEntry.depth = entry.depth - 1;
 
+				// Add this entry to the mask
+				childrenMask |= 1 << i;
+
+				// Reserve a spot for the children index that will be assigned later
+				children.push_back(UINT_MAX);
+
+				// Add this to the queue
                 nodeCreationQueue.push(childEntry);
             }
         }
     }
 }
 
-void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize) const
+void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT>& children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize) const
 {
     // TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
     // TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
@@ -226,23 +235,28 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
     }
     else
     {
-        // Traverse the child octrees
-        for (int i = 0; i < 8; i++)
-        {
-            if (children[i] != UINT_MAX)
-            {
+		size_t count = 0;
+
+		// Traverse the children
+		for (int i = 0; i < 8; i++)
+		{
+			// Check if this child exists and add it to the queue
+			if (childrenMask & (1 << i))
+			{
 				OctreeNodeTraversalEntry childEntry;
-				childEntry.index = children[i];
+				childEntry.index = children[childrenStart + count];
 				childEntry.position = GetChildPosition(entry.position, entry.size, i);
 				childEntry.size = entry.size * 0.5f;
 
-                nodesQueue.push(childEntry);
-            }
-        }
+				nodesQueue.push(childEntry);
+
+				count++;
+			}
+		}
     }
 }
 
-void PointCloudEngine::OctreeNode::GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>>& nodesQueue, std::vector<OctreeNodeVertex>& octreeVertices, const OctreeNodeTraversalEntry& entry, const int& level) const
+void PointCloudEngine::OctreeNode::GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>>& nodesQueue, std::vector<OctreeNodeVertex>& octreeVertices, const std::vector<UINT>& children, const OctreeNodeTraversalEntry& entry, const int& level) const
 {
     if (level == 0)
     {
@@ -250,33 +264,30 @@ void PointCloudEngine::OctreeNode::GetVerticesAtLevel(std::queue<std::pair<Octre
     }
     else if (level > 0)
     {
-        // Traverse the whole octree and add child vertices
+		size_t count = 0;
+
+        // Traverse the children
         for (int i = 0; i < 8; i++)
         {
-            if (children[i] != UINT_MAX)
-            {
+			// Check if this child exists and add it to the queue
+			if (childrenMask & (1 << i))
+			{
 				OctreeNodeTraversalEntry childEntry;
-				childEntry.index = children[i];
+				childEntry.index = children[childrenStart + count];
 				childEntry.position = GetChildPosition(entry.position, entry.size, i);
 				childEntry.size = entry.size * 0.5f;
 
-                nodesQueue.push(std::pair<OctreeNodeTraversalEntry, int>(childEntry, level - 1));
-            }
+				nodesQueue.push(std::pair<OctreeNodeTraversalEntry, int>(childEntry, level - 1));
+
+				count++;
+			}
         }
     }
 }
 
 bool PointCloudEngine::OctreeNode::IsLeafNode() const
 {
-    for (int i = 0; i < 8; i++)
-    {
-        if (children[i] != UINT_MAX)
-        {
-            return false;
-        }
-    }
-
-    return true;
+	return (childrenMask == 0);
 }
 
 Vector3 PointCloudEngine::OctreeNode::GetChildPosition(const Vector3& parentPosition, const float& parentSize, int childIndex) const

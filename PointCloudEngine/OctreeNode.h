@@ -10,24 +10,19 @@ namespace PointCloudEngine
     {
     public:
         OctreeNode();
-        OctreeNode (std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, const OctreeNodeCreationEntry &entry);
+        OctreeNode (std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, std::vector<UINT> &children, const OctreeNodeCreationEntry &entry);
 
-        void GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize) const;
-        void GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const int &level) const;
+        void GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT> &children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize) const;
+        void GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT> &children, const OctreeNodeTraversalEntry &entry, const int &level) const;
         bool IsLeafNode() const;
 
-        // UINT_MAX index means that there is no child
-        UINT children[8] =
-        {
-            UINT_MAX,
-            UINT_MAX,
-            UINT_MAX,
-            UINT_MAX,
-            UINT_MAX,
-            UINT_MAX,
-            UINT_MAX,
-            UINT_MAX
-        };
+		// Mask stores one bit for each of the children: 1 when it exists, 0 when it doesn't
+		byte childrenMask = 0;
+
+		// Stores the start index in the children array where the actual child indices are stored
+		// The mask determines which children corresponds to which index e.g. 01011011 would only store the 2nd, 4th, 5th, 7th and 8th indices in the array right after each other
+		// E.g. when there are 5 children then this is the index of the first child, then the 4 following array entries are the other indices
+		UINT childrenStart = 0;
 
 		OctreeNodeProperties properties;
 
