@@ -11,6 +11,7 @@ cbuffer ComputeShaderConstantBuffer : register(b0)
 };  // Total: 32 bytes with constant buffer packing rules
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
+StructuredBuffer<uint> childrenBuffer : register(t1);
 ConsumeStructuredBuffer<OctreeNodeTraversalEntry> inputConsumeBuffer : register(u0);
 AppendStructuredBuffer<OctreeNodeTraversalEntry> outputAppendBuffer : register(u1);
 AppendStructuredBuffer<OctreeNodeTraversalEntry> vertexAppendBuffer : register(u2);
@@ -28,19 +29,9 @@ void CS (uint3 id : SV_DispatchThreadID)
         // Calculate required splat size
         float distanceToCamera = distance(localCameraPosition, entry.position);
         float requiredSplatSize = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
-        bool isLeafNode = true;
-
-        for (int i = 0; i < 8; i++)
-        {
-            if (node.children[i] != UINT_MAX)
-            {
-                isLeafNode = false;
-                break;
-            }
-        }
 
         // Check against required splat size and draw this vertex if it is smaller
-        if (entry.size < requiredSplatSize || isLeafNode)
+        if (entry.size < requiredSplatSize || node.childrenMask == 0)
         {
             vertexAppendBuffer.Append(entry);
         }
@@ -60,18 +51,22 @@ void CS (uint3 id : SV_DispatchThreadID)
 				entry.position + float3(-childExtend, -childExtend, -childExtend)
 			};
 
+			uint count = 0;
+
             // Check all the children in the next compute shader iteration
             for (int i = 0; i < 8; i++)
             {
-                if (node.children[i] != UINT_MAX)
-                {
+				if (node.childrenMask & (1 << i))
+				{
 					OctreeNodeTraversalEntry childEntry;
-					childEntry.index = node.children[i];
+					childEntry.index = childrenBuffer[node.childrenStart + count];
 					childEntry.position = childPositions[i];
 					childEntry.size = entry.size * 0.5f;
 
-                    outputAppendBuffer.Append(childEntry);
-                }
+					outputAppendBuffer.Append(childEntry);
+
+					count++;
+				}
             }
         }
     }

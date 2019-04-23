@@ -62,12 +62,14 @@ namespace PointCloudEngine
         // Compute shader
         UINT maxVertexBufferCount = 15000000;
         ID3D11Buffer *nodesBuffer = NULL;
+		ID3D11Buffer *childrenBuffer = NULL;
         ID3D11Buffer *firstBuffer = NULL;
         ID3D11Buffer *secondBuffer = NULL;
         ID3D11Buffer *vertexAppendBuffer = NULL;
         ID3D11Buffer *structureCountBuffer = NULL;
         ID3D11Buffer *computeShaderConstantBuffer = NULL;
         ID3D11ShaderResourceView *nodesBufferSRV = NULL;
+		ID3D11ShaderResourceView* childrenBufferSRV = NULL;
         ID3D11ShaderResourceView *vertexAppendBufferSRV = NULL;
         ID3D11UnorderedAccessView *firstBufferUAV = NULL;
         ID3D11UnorderedAccessView *secondBufferUAV = NULL;

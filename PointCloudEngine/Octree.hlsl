@@ -55,7 +55,8 @@ struct OctreeNodeVertex
 
 struct OctreeNode
 {
-    uint children[8];
+	uint childrenMask;
+	uint childrenStart;
     OctreeNodeProperties properties;
 };
 

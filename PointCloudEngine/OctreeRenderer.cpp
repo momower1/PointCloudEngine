@@ -67,6 +67,32 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     hr = d3d11Device->CreateShaderResourceView(nodesBuffer, &nodesBufferSRVDesc, &nodesBufferSRV);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(nodesBufferSRV));
 
+	// Create the buffer that stores the children indices
+	D3D11_BUFFER_DESC childrenBufferDesc;
+	ZeroMemory(&childrenBufferDesc, sizeof(childrenBufferDesc));
+	childrenBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	childrenBufferDesc.ByteWidth = octree->children.size() * sizeof(UINT);
+	childrenBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	childrenBufferDesc.StructureByteStride = sizeof(UINT);
+	childrenBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+	D3D11_SUBRESOURCE_DATA childrenBufferData;
+	ZeroMemory(&childrenBufferData, sizeof(childrenBufferData));
+	childrenBufferData.pSysMem = octree->children.data();
+
+	hr = d3d11Device->CreateBuffer(&childrenBufferDesc, &childrenBufferData, &childrenBuffer);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(childrenBuffer));
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC childrenBufferSRVDesc;
+	ZeroMemory(&childrenBufferSRVDesc, sizeof(childrenBufferSRVDesc));
+	childrenBufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+	childrenBufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	childrenBufferSRVDesc.Buffer.ElementWidth = sizeof(UINT);
+	childrenBufferSRVDesc.Buffer.NumElements = octree->children.size();
+
+	hr = d3d11Device->CreateShaderResourceView(childrenBuffer, &childrenBufferSRVDesc, &childrenBufferSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(childrenBufferSRV));
+
     // Create general buffer description for append/consume buffer
     D3D11_BUFFER_DESC appendConsumeBufferDesc;
     ZeroMemory(&appendConsumeBufferDesc, sizeof(appendConsumeBufferDesc));
@@ -220,11 +246,13 @@ void OctreeRenderer::Release()
     Hierarchy::ReleaseSceneObject(text);
 
     SAFE_RELEASE(nodesBuffer);
+	SAFE_RELEASE(childrenBuffer);
     SAFE_RELEASE(firstBuffer);
     SAFE_RELEASE(secondBuffer);
     SAFE_RELEASE(vertexAppendBuffer);
     SAFE_RELEASE(structureCountBuffer);
     SAFE_RELEASE(nodesBufferSRV);
+	SAFE_RELEASE(childrenBufferSRV);
     SAFE_RELEASE(firstBufferUAV);
     SAFE_RELEASE(secondBufferUAV);
     SAFE_RELEASE(vertexAppendBufferUAV);
@@ -338,6 +366,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     UINT zero = 0;
     d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
     d3d11DevCon->CSSetShaderResources(0, 1, &nodesBufferSRV);
+	d3d11DevCon->CSSetShaderResources(1, 1, &childrenBufferSRV);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, &vertexAppendBufferUAV, &zero);
 
 	// Set root entry for the first buffer, will be used as input consume buffer in the shader
@@ -406,6 +435,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 
     // Unbind nodes and vertex append buffer in order to use it in the vertex shader
     d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
+	d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
     d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
     d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
     d3d11DevCon->CSSetUnorderedAccessViews(2, 1, nullUAV, &zero);
