@@ -84,11 +84,13 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
     // Billboard should face in the same direction as the normal
+	// Also the size should not go below the sampling rate in order to avoid holes
     float distanceToCamera = distance(cameraPosition, worldPosition);
-	float splatSizeLocal = max(samplingRate, overlapFactor * input[0].size);
-    float splatSizeWorld = length(mul(float3(splatSizeLocal, 0, 0), World).xyz);
-    float3 up = 0.5f * splatSizeWorld * normalize(cross(worldNormal, cameraRight));
-    float3 right = 0.5f * splatSizeWorld * normalize(cross(worldNormal, up));
+    float sizeWorld = length(mul(float3(max(samplingRate, input[0].size), 0, 0), World).xyz);
+	float splatSizeWorld = overlapFactor * splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+	float billboardSize = max(sizeWorld, splatSizeWorld);
+    float3 up = 0.5f * billboardSize * normalize(cross(worldNormal, cameraRight));
+    float3 right = 0.5f * billboardSize * normalize(cross(worldNormal, up));
 
     float4x4 VP = mul(View, Projection);
 
