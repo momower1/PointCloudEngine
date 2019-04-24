@@ -14,8 +14,9 @@ cbuffer OctreeRendererConstantBuffer : register(b0)
     float fovAngleY;
     //------------------------------------------------------------------------------ (16 byte boundary)
     float splatSize;
+	float samplingRate;
     float overlapFactor;
-    // 8 bytes auto padding
+    // 4 bytes auto padding
 };  // Total: 288 bytes with constant buffer packing rules
 
 VS_INPUT VertexShaderFunction(VS_INPUT input)

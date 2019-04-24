@@ -9,13 +9,14 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    text->transform->position = Vector3(-1.0f, -0.79f, 0);
+    text->transform->position = Vector3(-1.0f, -0.74f, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
     computeShaderConstantBufferData.fovAngleY = settings->fovAngleY;
     octreeRendererConstantBufferData.fovAngleY = settings->fovAngleY;
-    octreeRendererConstantBufferData.splatSize = 0.01f;
+	octreeRendererConstantBufferData.samplingRate = 0.01f;
+	octreeRendererConstantBufferData.splatSize = 0.01f;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
@@ -176,11 +177,24 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         useComputeShader = !useComputeShader;
     }
 
+	// Change the sampling rate
+	if (Input::GetKey(Keyboard::Q))
+	{
+		octreeRendererConstantBufferData.samplingRate -= dt * 0.01f;
+	}
+	else if (Input::GetKey(Keyboard::E))
+	{
+		octreeRendererConstantBufferData.samplingRate += dt * 0.01f;
+	}
+
+	octreeRendererConstantBufferData.samplingRate = max(0.0001f, octreeRendererConstantBufferData.samplingRate);
+
     // Set the text
     textRenderer->text = useComputeShader ? L"GPU Computation\n" : L"CPU Computation\n";
 
     int splatSizePixels = settings->resolutionY * octreeRendererConstantBufferData.splatSize * octreeRendererConstantBufferData.overlapFactor;
     textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");
+	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(octreeRendererConstantBufferData.samplingRate) + L"\n");
 
     if (viewMode == 0)
     {
@@ -219,7 +233,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
     // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
     // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
-    octreeRendererConstantBufferData.overlapFactor = 1.75f;
+	octreeRendererConstantBufferData.overlapFactor = 1.75f;
 
     // Update the hlsl file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(octreeRendererConstantBuffer, 0, NULL, &octreeRendererConstantBufferData, 0, 0);

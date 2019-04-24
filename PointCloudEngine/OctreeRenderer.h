@@ -33,8 +33,9 @@ namespace PointCloudEngine
             Vector3 cameraPosition;
             float fovAngleY;
             float splatSize;
+			float samplingRate;
             float overlapFactor;
-            float padding[2];
+            float padding;
         };
 
         struct ComputeShaderConstantBuffer

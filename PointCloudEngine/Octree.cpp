@@ -40,6 +40,7 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
 		}
 
         nodes.reserve(predictedSize);
+		children.reserve(predictedSize);
 
         // Stores the nodes that should be created for each octree level
         std::queue<OctreeNodeCreationEntry> nodeCreationQueue;
