@@ -8,24 +8,20 @@ VS_INPUT VS(VS_INPUT input)
 [maxvertexcount(16)]
 void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 {
-	float3 colors[6] =
+	float3 colors[4] =
 	{
 		Color16ToFloat3(input[0].color0),
 		Color16ToFloat3(input[0].color1),
 		Color16ToFloat3(input[0].color2),
-		Color16ToFloat3(input[0].color3),
-		Color16ToFloat3(input[0].color4),
-		Color16ToFloat3(input[0].color5)
+		Color16ToFloat3(input[0].color3)
 	};
 
-	float weights[6] =
+	float weights[4] =
 	{
-		(input[0].weights & 31) / 31.0f,
-		((input[0].weights >> 5) & 31) / 31.0f,
-		((input[0].weights >> 10) & 31) / 31.0f,
-		((input[0].weights >> 15) & 31) / 31.0f,
-		((input[0].weights >> 20) & 31) / 31.0f,
-		((input[0].weights >> 25) & 31) / 31.0f
+		input[0].weight0 / 255.0f,
+		input[0].weight1 / 255.0f,
+		input[0].weight2 / 255.0f,
+		input[0].weight3 / 255.0f
 	};
 
     float extend = 0.5f * input[0].size;
@@ -40,7 +36,7 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 	element.normal = float3(0, 0, 0);
 
 	// Assign the average color from all the points inside this cube
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		element.color += weights[i] * colors[i];
 	}

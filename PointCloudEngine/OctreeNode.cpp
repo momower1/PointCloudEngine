@@ -25,9 +25,9 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 
     // Apply the k-means clustering algorithm to find clusters for the normals
-    Vector3 means[6];
-    const int k = min(vertexCount, 6);
-    UINT verticesPerMean[6] = { 0, 0, 0, 0, 0, 0 };
+    Vector3 means[4];
+    const int k = min(vertexCount, 4);
+    UINT verticesPerMean[4] = { 0, 0, 0, 0 };
 
     // Set initial means to the first k normals
     for (int i = 0; i < k; i++)
@@ -61,7 +61,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
         }
 
         // Calculate the new means from the vertices in each cluster
-        Vector3 newMeans[6];
+        Vector3 newMeans[4];
 
         for (int i = 0; i < k; i++)
         {
@@ -95,9 +95,9 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 
     // Initialize average colors that are calculated per cluster
-    double averageReds[6] = { 0, 0, 0, 0, 0, 0 };
-    double averageGreens[6] = { 0, 0, 0, 0, 0, 0 };
-    double averageBlues[6] = { 0, 0, 0, 0, 0, 0 };
+    double averageReds[4] = { 0, 0, 0, 0 };
+    double averageGreens[4] = { 0, 0, 0, 0 };
+    double averageBlues[4] = { 0, 0, 0, 0 };
 
     // Calculate color
     for (UINT i = 0; i < vertexCount; i++)
@@ -108,10 +108,10 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 
     // Assign node properties
-    properties.weights = 0;
-
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 4; i++)
     {
+		properties.weights[i] = 0;
+
         if (verticesPerMean[i] > 0)
         {
             averageReds[i] /= verticesPerMean[i];
@@ -120,7 +120,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 
             properties.normals[i] = PolarNormal(means[i]);
             properties.colors[i] = Color16(averageReds[i], averageGreens[i], averageBlues[i]);
-            properties.weights |= static_cast<UINT>((31.0f * verticesPerMean[i]) / vertexCount) << (i * 5);
+			properties.weights[i] = (255.0f * verticesPerMean[i]) / vertexCount;
         }
     }
 

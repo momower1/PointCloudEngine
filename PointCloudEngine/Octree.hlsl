@@ -9,15 +9,14 @@ struct VS_INPUT
     uint2 normal1 : NORMAL1;
     uint2 normal2 : NORMAL2;
     uint2 normal3 : NORMAL3;
-    uint2 normal4 : NORMAL4;
-    uint2 normal5 : NORMAL5;
     uint color0 : COLOR0;
     uint color1 : COLOR1;
     uint color2 : COLOR2;
     uint color3 : COLOR3;
-    uint color4 : COLOR4;
-    uint color5 : COLOR5;
-    uint weights : WEIGHTS;
+    uint weight0 : WEIGHT0;
+	uint weight1 : WEIGHT1;
+	uint weight2 : WEIGHT2;
+	uint weight3 : WEIGHT3;
     float size : SIZE;
 };
 
@@ -39,10 +38,8 @@ struct OctreeNodeProperties
 {
 	uint normal01;
 	uint normal23;
-	uint normal45;
 	uint color01;
 	uint color23;
-	uint color45;
 	uint weights;
 };
 

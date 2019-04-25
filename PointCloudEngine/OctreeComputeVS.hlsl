@@ -17,15 +17,14 @@ VS_INPUT VS(uint vertexID : SV_VERTEXID)
     input.normal1 = uint2((p.normal01 >> 16) & 0xff, (p.normal01 >> 24) & 0xff);
 	input.normal2 = uint2(p.normal23 & 0xff, (p.normal23 >> 8) & 0xff);
 	input.normal3 = uint2((p.normal23 >> 16) & 0xff, (p.normal23 >> 24) & 0xff);
-	input.normal4 = uint2(p.normal45 & 0xff, (p.normal45 >> 8) & 0xff);
-	input.normal5 = uint2((p.normal45 >> 16) & 0xff, (p.normal45 >> 24) & 0xff);
     input.color0 = p.color01 & 0xffff;
     input.color1 = p.color01 >> 16;
 	input.color2 = p.color23 & 0xffff;
 	input.color3 = p.color23 >> 16;
-	input.color4 = p.color45 & 0xffff;
-	input.color5 = p.color45 >> 16;
-    input.weights = p.weights;
+	input.weight0 = p.weights & 0xff;
+	input.weight1 = (p.weights >> 8) & 0xff;
+	input.weight2 = (p.weights >> 16) & 0xff;
+	input.weight3 = (p.weights >> 24) & 0xff;
     input.size = entry.size;
 
     return input;

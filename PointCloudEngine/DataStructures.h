@@ -82,12 +82,12 @@ namespace PointCloudEngine
 
 	struct OctreeNodeProperties
 	{
-		// The different cluster mean normals and colors in object space calculated by k-means algorithm with k=6
-		// Each weight is 5 bits and represents the percentage of points assigned to this cluster (0=0%, 31=100%)
+		// The different cluster mean normals and colors in object space calculated by k-means algorithm with k=4
+		// Each weight represents the percentage of points assigned to this cluster (0=0%, 255=100%)
 		// TODO: One weight can be omitted because the sum of all weights is always 1
-		PolarNormal normals[6];
-		Color16 colors[6];
-		UINT weights;
+		PolarNormal normals[4];
+		Color16 colors[4];
+		byte weights[4];
 	};
 
     struct OctreeNodeVertex
