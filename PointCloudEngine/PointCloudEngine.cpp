@@ -95,6 +95,29 @@ bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile)
     return true;
 }
 
+void SaveScreenshotToFile()
+{
+	// Get the screen buffer from the swap chain
+	ID3D11Texture2D* backBuffer;
+	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->GetBuffer) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+
+	if (SUCCEEDED(hr))
+	{
+		// Save the texture to the hard drive
+		CreateDirectory((executableDirectory + L"/Screenshots").c_str(), NULL);
+		hr = SaveWICTextureToFile(d3d11DevCon, backBuffer, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+
+		if (SUCCEEDED(hr))
+		{
+			// Make a successful sound
+			Beep(750, 75);
+			Beep(1000, 150);
+		}
+	}
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     // Save the executable directory path
@@ -105,6 +128,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Load the settings
     settings = new Settings();
+
+	// Initialize the COM interface
+	hr = CoInitialize(NULL);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CoInitialize) + L" failed!");
 
 	if (!InitializeWindow(hInstance, nShowCmd, settings->resolutionX, settings->resolutionY, true))
 	{

@@ -78,6 +78,12 @@ void Scene::Update(Timer &timer)
 		}
 	}
 
+	// Screenshot on F9
+	if (Input::GetKeyDown(Keyboard::F9))
+	{
+		SaveScreenshotToFile();
+	}
+
     // Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
     if (timeSinceLoadFile > 0.1f)
     {
@@ -122,6 +128,7 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
         textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
 		textRenderer->text.append(L"[F1-F6] Select camera position\n");
+		textRenderer->text.append(L"[F9] Screenshot\n");
         textRenderer->text.append(L"[ESC] Quit application\n");
     }
     else
