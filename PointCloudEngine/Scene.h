@@ -36,6 +36,26 @@ namespace PointCloudEngine
 
         float timeUntilLoadFile = -1.0f;
         float timeSinceLoadFile = 0.0f;
+
+		Vector3 cameraPositions[6] =
+		{
+			Vector3(0, 0, -10),
+			Vector3(0, 0, 10),
+			Vector3(-10, 0, 0),
+			Vector3(10, 0, 0),
+			Vector3(0, 10, 0),
+			Vector3(0, -10, 0)
+		};
+
+		Vector2 cameraPitchYaws[6] =
+		{
+			Vector2(0, 0),
+			Vector2(0, XM_PI),
+			Vector2(0, XM_PI / 2),
+			Vector2(0, -XM_PI / 2),
+			Vector2(XM_PI / 2, 0),
+			Vector2(-XM_PI / 2, 0)
+		};
     };
 }
 #endif

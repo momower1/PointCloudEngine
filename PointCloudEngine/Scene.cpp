@@ -67,6 +67,17 @@ void Scene::Update(Timer &timer)
     settings->scale = max(0.1f, settings->scale + Input::mouseScrollDelta);
     pointCloud->transform->scale = settings->scale * Vector3::One;
 
+	// Select a camera position and rotation
+	for (int i = 0; i < 6; i++)
+	{
+		if (Input::GetKeyDown((Keyboard::Keys)(Keyboard::F1 + i)))
+		{
+			camera->SetPosition(cameraPositions[i]);
+			cameraPitch = cameraPitchYaws[i].x;
+			cameraYaw = cameraPitchYaws[i].y;
+		}
+	}
+
     // Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
     if (timeSinceLoadFile > 0.1f)
     {
@@ -110,6 +121,7 @@ void Scene::Update(Timer &timer)
 		textRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
         textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
         textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
+		textRenderer->text.append(L"[F1-F6] Select camera position\n");
         textRenderer->text.append(L"[ESC] Quit application\n");
     }
     else
