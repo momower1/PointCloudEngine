@@ -5,25 +5,23 @@ VS_INPUT VS(VS_INPUT input)
     return VertexShaderFunction(input);
 }
 
-[maxvertexcount(12)]
+[maxvertexcount(8)]
 void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 {
     float extend = 0.5f * input[0].size;
 
     float4x4 WVP = mul(World, mul(View, Projection));
 
-    float weights[6] =
-    {
-        (input[0].weights & 31) / 31.0f,
-        ((input[0].weights >> 5) & 31) / 31.0f,
-        ((input[0].weights >> 10) & 31) / 31.0f,
-        ((input[0].weights >> 15) & 31) / 31.0f,
-        ((input[0].weights >> 20) & 31) / 31.0f,
-        ((input[0].weights >> 25) & 31) / 31.0f
-    };
+	float weights[4] =
+	{
+		input[0].weight0 / 255.0f,
+		input[0].weight1 / 255.0f,
+		input[0].weight2 / 255.0f,
+		1.0f - (input[0].weight0 + input[0].weight1 + input[0].weight2) / 255.0f
+	};
 
 	// Scale the length of the normal (sum of all weights is one)
-    float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
+    float maxWeight = max(weights[0], max(weights[1], max(weights[2], weights[3])));
 
 	// Store all of the end vertices for the normals here for readability
     float3 end[] =
@@ -32,8 +30,6 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
         input[0].position + extend * (weights[1] / maxWeight) * PolarNormalToFloat3(input[0].normal1),
         input[0].position + extend * (weights[2] / maxWeight) * PolarNormalToFloat3(input[0].normal2),
         input[0].position + extend * (weights[3] / maxWeight) * PolarNormalToFloat3(input[0].normal3),
-        input[0].position + extend * (weights[4] / maxWeight) * PolarNormalToFloat3(input[0].normal4),
-        input[0].position + extend * (weights[5] / maxWeight) * PolarNormalToFloat3(input[0].normal5)
     };
 
     GS_OUTPUT element;
@@ -65,20 +61,6 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
     element.color = Color16ToFloat3(input[0].color3);
     output.Append(element);
     element.position = mul(float4(end[3], 1), WVP);
-    output.Append(element);
-    output.RestartStrip();
-
-    element.position = mul(float4(input[0].position, 1), WVP);
-    element.color = Color16ToFloat3(input[0].color4);
-    output.Append(element);
-    element.position = mul(float4(end[4], 1), WVP);
-    output.Append(element);
-    output.RestartStrip();
-
-    element.position = mul(float4(input[0].position, 1), WVP);
-    element.color = Color16ToFloat3(input[0].color5);
-    output.Append(element);
-    element.position = mul(float4(end[5], 1), WVP);
     output.Append(element);
     output.RestartStrip();
 }

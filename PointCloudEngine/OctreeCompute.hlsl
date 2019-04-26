@@ -26,12 +26,15 @@ void CS (uint3 id : SV_DispatchThreadID)
 		OctreeNodeTraversalEntry entry = inputConsumeBuffer.Consume();
         OctreeNode node = nodesBuffer[entry.index];
 
+		// Get the childrenMask
+		uint childrenMask = node.properties.childrenMaskAndWeights & 0xff;
+
         // Calculate required splat size
         float distanceToCamera = distance(localCameraPosition, entry.position);
         float requiredSplatSize = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
         // Check against required splat size and draw this vertex if it is smaller
-        if (entry.size < requiredSplatSize || node.childrenMask == 0)
+        if (entry.size < requiredSplatSize || childrenMask == 0)
         {
             vertexAppendBuffer.Append(entry);
         }
@@ -56,7 +59,7 @@ void CS (uint3 id : SV_DispatchThreadID)
             // Check all the children in the next compute shader iteration
             for (int i = 0; i < 8; i++)
             {
-				if (node.childrenMask & (1 << i))
+				if (childrenMask & (1 << i))
 				{
 					OctreeNodeTraversalEntry childEntry;
 					childEntry.index = childrenBuffer[node.childrenStart + count];

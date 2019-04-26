@@ -16,15 +16,12 @@ namespace PointCloudEngine
         void GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT> &children, const OctreeNodeTraversalEntry &entry, const int &level) const;
         bool IsLeafNode() const;
 
-		// Mask where the lowest 8 bit store one bit for each of the children: 1 when it exists, 0 when it doesn't
-		// TODO: This could easily be stored in one byte but the shader can only parse 32bit values -> maybe move into weights?
-		UINT childrenMask = 0;
-
 		// Stores the start index in the children array where the actual child indices are stored
-		// The mask determines which children corresponds to which index e.g. 01011011 would only store the 2nd, 4th, 5th, 7th and 8th indices in the array right after each other
-		// E.g. when there are 5 children then this is the index of the first child, then the 4 following array entries are the other indices
+		// The childrenMask from the properties determines which children corresponds to which index
+		// E.g. a childrenMask of 01011011 means that the array only stores the 2nd, 4th, 5th, 7th and 8th indices from the start right after each other
 		UINT childrenStart = 0;
 
+		// Stores the childrenMask, weights, normals and colors
 		OctreeNodeProperties properties;
 
 	private:
