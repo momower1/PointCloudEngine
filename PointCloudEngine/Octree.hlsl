@@ -5,6 +5,10 @@
 struct VS_INPUT
 {
     float3 position : POSITION;
+	uint childrenMask : CHILDRENMASK;
+	uint weight0 : WEIGHT0;
+	uint weight1 : WEIGHT1;
+	uint weight2 : WEIGHT2;
     uint2 normal0 : NORMAL0;
     uint2 normal1 : NORMAL1;
     uint2 normal2 : NORMAL2;
@@ -13,10 +17,6 @@ struct VS_INPUT
     uint color1 : COLOR1;
     uint color2 : COLOR2;
     uint color3 : COLOR3;
-    uint weight0 : WEIGHT0;
-	uint weight1 : WEIGHT1;
-	uint weight2 : WEIGHT2;
-	uint weight3 : WEIGHT3;
     float size : SIZE;
 };
 
@@ -36,11 +36,11 @@ struct OctreeNodeTraversalEntry
 
 struct OctreeNodeProperties
 {
-	uint normal01;
-	uint normal23;
-	uint color01;
-	uint color23;
-	uint weights;
+	uint childrenMaskAndWeights;			// 1 byte childrenMask, 1 byte weight0, 1 byte weight1, 1 byte weight2
+	uint normal01;							// 2 byte normal0, 2 byte normal1
+	uint normal23;							// 2 byte normal2, 2 byte normal3
+	uint color01;							// 2 byte color0, 2 byte color1
+	uint color23;							// 2 byte color2, 2 byte color3
 };
 
 struct OctreeNodeVertex
@@ -52,7 +52,6 @@ struct OctreeNodeVertex
 
 struct OctreeNode
 {
-	uint childrenMask;
 	uint childrenStart;
     OctreeNodeProperties properties;
 };

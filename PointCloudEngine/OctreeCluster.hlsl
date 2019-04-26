@@ -17,7 +17,7 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 		input[0].weight0 / 255.0f,
 		input[0].weight1 / 255.0f,
 		input[0].weight2 / 255.0f,
-		input[0].weight3 / 255.0f
+		1.0f - (input[0].weight0 + input[0].weight1 + input[0].weight2) / 255.0f
 	};
 
 	// Scale the length of the normal (sum of all weights is one)

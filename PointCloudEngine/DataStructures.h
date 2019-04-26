@@ -82,12 +82,17 @@ namespace PointCloudEngine
 
 	struct OctreeNodeProperties
 	{
-		// The different cluster mean normals and colors in object space calculated by k-means algorithm with k=4
+		// Mask where the lowest 8 bit store one bit for each of the children: 1 when it exists, 0 when it doesn't
+		// The shader can only parse 32bit values -> combine to UINT (8 bit mask, 3 * 8 bit weights) with the weights
+		byte childrenMask;
+
 		// Each weight represents the percentage of points assigned to this cluster (0=0%, 255=100%)
-		// TODO: One weight can be omitted because the sum of all weights is always 1
+		// One weight can be omitted because the sum of all weights is always 100%
+		byte weights[3];
+
+		// The different cluster mean normals and colors in object space calculated by k-means algorithm with k=4
 		PolarNormal normals[4];
 		Color16 colors[4];
-		byte weights[4];
 	};
 
     struct OctreeNodeVertex

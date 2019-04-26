@@ -21,7 +21,7 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 		Color16ToFloat3(input[0].color0),
 		Color16ToFloat3(input[0].color1),
 		Color16ToFloat3(input[0].color2),
-		Color16ToFloat3(input[0].color3),
+		Color16ToFloat3(input[0].color3)
 	};
 
 	float weights[4] =
@@ -29,7 +29,7 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 		input[0].weight0 / 255.0f,
 		input[0].weight1 / 255.0f,
 		input[0].weight2 / 255.0f,
-		input[0].weight3 / 255.0f
+		1.0f - (input[0].weight0 + input[0].weight1 + input[0].weight2) / 255.0f
 	};
 
 	// Use world inverse to transform camera position into local space
@@ -80,7 +80,7 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     // Billboard should face in the same direction as the normal
 	// Also the size should not go below the sampling rate in order to avoid holes
     float distanceToCamera = distance(cameraPosition, worldPosition);
-    float sizeWorld = length(mul(float3(max(samplingRate, input[0].size), 0, 0), World).xyz);
+    float sizeWorld = length(mul(float3(samplingRate, 0, 0), World).xyz);
 	float splatSizeWorld = overlapFactor * splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 	float billboardSize = max(sizeWorld, splatSizeWorld);
     float3 up = 0.5f * billboardSize * normalize(cross(worldNormal, cameraRight));
