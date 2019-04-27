@@ -15,10 +15,8 @@ namespace PointCloudEngine
         bool LoadFromOctreeFile();
         void SaveToOctreeFile();
 
-        // Stores the hole octree, the root is the first element
+        // Stores the hole octree, the root is the first element then all the children of the root node follow and so on
         std::vector<OctreeNode> nodes;
-		// Stores all the child indices for the nodes
-		std::vector<UINT> children;
 		Vector3 rootPosition;
 		float rootSize = 0;
 

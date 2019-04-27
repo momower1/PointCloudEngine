@@ -12,7 +12,6 @@ cbuffer ComputeShaderConstantBuffer : register(b0)
 };  // Total: 32 bytes with constant buffer packing rules
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
-StructuredBuffer<uint> childrenBuffer : register(t1);
 ConsumeStructuredBuffer<OctreeNodeTraversalEntry> inputConsumeBuffer : register(u0);
 AppendStructuredBuffer<OctreeNodeTraversalEntry> outputAppendBuffer : register(u1);
 AppendStructuredBuffer<OctreeNodeTraversalEntry> vertexAppendBuffer : register(u2);
@@ -80,7 +79,7 @@ void CS (uint3 id : SV_DispatchThreadID)
 				if (childrenMask & (1 << i))
 				{
 					OctreeNodeTraversalEntry childEntry;
-					childEntry.index = childrenBuffer[node.childrenStart + count];
+					childEntry.index = node.childrenStart + count;
 					childEntry.position = childPositions[i];
 					childEntry.size = entry.size * 0.5f;
 					childEntry.depth = entry.depth + 1;

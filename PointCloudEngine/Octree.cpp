@@ -29,18 +29,10 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
         rootPosition = minPosition + 0.5f * (diagonal);
         rootSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
-        // Reserve vector memory for better performance
-		// This is the size if the vertices would perfectly split by 8 into the octree (always smaller than the real size)
-		UINT predictedSize = 0;
-        UINT predictedDepth = min(settings->maxOctreeDepth , log(vertices.size()) / log(8));
-
-		for (UINT i = 0; i <= predictedDepth; i++)
-		{
-			predictedSize += pow(8, i);
-		}
-
-        nodes.reserve(predictedSize);
-		children.reserve(predictedSize);
+		// Stores the indices in the nodes array of the children of a node
+		// Will only be used while creating the octree (for simplicity)
+		// Finding the correct child index is easier this way
+		std::vector<UINT> children;
 
         // Stores the nodes that should be created for each octree level
         std::queue<OctreeNodeCreationEntry> nodeCreationQueue;
@@ -67,6 +59,14 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
             // Create the nodes and fill the queue
             nodes.push_back(OctreeNode(nodeCreationQueue, nodes, children, first));
         }
+
+		// Now the nodes actually store the childrenStart index for the children array instead of the nodes array
+		for (auto it = nodes.begin(); it != nodes.end(); it++)
+		{
+			// Overwrite the index with one that is referencing the nodes array (that's fine because the nodes array stores children after each other and in order)
+			// Then there is no need to store the children array anymore
+			it->childrenStart = children[it->childrenStart];
+		}
 
         // Save the generated octree in a file
         SaveToOctreeFile();
@@ -97,7 +97,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
-        nodes[entry.index].GetVertices(nodesQueue, octreeVertices, children, entry, localCameraPosition, splatSize, level);
+        nodes[entry.index].GetVertices(nodesQueue, octreeVertices, entry, localCameraPosition, splatSize, level);
     }
 
     return octreeVertices;
@@ -126,17 +126,9 @@ bool PointCloudEngine::Octree::LoadFromOctreeFile()
         UINT nodesSize;
         octreeFile.read((char*)&nodesSize, sizeof(UINT));
 
-		// Load the size of the children vector
-		UINT childrenSize;
-		octreeFile.read((char*)&childrenSize, sizeof(UINT));
-
         // Read the binary data directly into the nodes vector
         nodes.resize(nodesSize);
         octreeFile.read((char*)nodes.data(), nodesSize * sizeof(OctreeNode));
-
-		// Read the binary data directly into the children vector
-		children.resize(childrenSize);
-		octreeFile.read((char*)children.data(), childrenSize * sizeof(UINT));
 
         // Stop here after loading the file
         return true;
@@ -167,15 +159,8 @@ void PointCloudEngine::Octree::SaveToOctreeFile()
         UINT nodesSize = nodes.size();
         octreeFile.write((char*)&nodesSize, sizeof(UINT));
 
-		// Write the size of the children vector
-		UINT childrenSize = children.size();
-		octreeFile.write((char*)&childrenSize, sizeof(UINT));
-
         // Write the nodes data in binary format
         octreeFile.write((char*)nodes.data(), nodesSize * sizeof(OctreeNode));
-
-		// Write the children data in binary format
-		octreeFile.write((char*)children.data(), childrenSize * sizeof(UINT));
 
         octreeFile.flush();
         octreeFile.close();

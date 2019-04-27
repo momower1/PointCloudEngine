@@ -222,7 +222,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 }
 
-void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT>& children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize, const int &level) const
+void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize, const int &level) const
 {
 	bool traverseChildren = true;
 
@@ -266,7 +266,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 			if (properties.childrenMask & (1 << i))
 			{
 				OctreeNodeTraversalEntry childEntry;
-				childEntry.index = children[childrenStart + count];
+				childEntry.index = childrenStart + count;
 				childEntry.position = GetChildPosition(entry.position, entry.size, i);
 				childEntry.size = entry.size * 0.5f;
 				childEntry.depth = entry.depth + 1;
