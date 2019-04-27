@@ -1,4 +1,5 @@
-#include "OctreeShaderFunctions.hlsl"
+#include "Octree.hlsl"
+#include "OctreeConstantBuffer.hlsl"
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
 StructuredBuffer<OctreeNodeTraversalEntry> vertexBuffer : register(t1);

@@ -71,7 +71,7 @@ using namespace PointCloudEngine;
 #include "Component.h"
 #include "SceneObject.h"
 #include "Hierarchy.h"
-#include "DataStructures.h"
+#include "Structures.h"
 #include "Settings.h"
 #include "IRenderer.h"
 #include "OctreeNode.h"

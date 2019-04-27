@@ -1,15 +1,5 @@
 #include "Octree.hlsl"
-
-cbuffer ComputeShaderConstantBuffer : register(b0)
-{
-    float3 localCameraPosition;
-    float fovAngleY;
-//------------------------------------------------------------------------------ (16 byte boundary)
-    float splatSize;
-	int level;
-    uint inputCount;
-//  4 bytes auto padding
-};  // Total: 32 bytes with constant buffer packing rules
+#include "OctreeConstantBuffer.hlsl"
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
 ConsumeStructuredBuffer<OctreeNodeTraversalEntry> inputConsumeBuffer : register(u0);

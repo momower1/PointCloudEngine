@@ -231,8 +231,8 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CS</EntryPointName>
     </FxCompile>
     <FxCompile Include="OctreeComputeVS.hlsl" />
+    <FxCompile Include="OctreeConstantBuffer.hlsl" />
     <FxCompile Include="OctreeCube.hlsl" />
-    <FxCompile Include="OctreeShaderFunctions.hlsl" />
     <FxCompile Include="OctreeSplat.hlsl" />
     <FxCompile Include="Splat.hlsl" />
     <FxCompile Include="Octree.hlsl" />
@@ -281,7 +281,7 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     <ClInclude Include="Shader.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Timer.h" />
-    <ClInclude Include="DataStructures.h" />
+    <ClInclude Include="Structures.h" />
     <ClInclude Include="tinyply.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>

@@ -1,5 +1,5 @@
-#ifndef DATASTRUCTURES_H
-#define DATASTRUCTURES_H
+#ifndef STRUCTURES_H
+#define STRUCTURES_H
 
 #pragma once
 #include "PointCloudEngine.h"
@@ -125,6 +125,31 @@ namespace PointCloudEngine
 		Vector3 position;
 		float size;
 		int depth;
+	};
+
+	// Same constant buffers as in hlsl file, keep packing rules in mind
+	struct OctreeConstantBuffer
+	{
+		Matrix World;
+		Matrix View;
+		Matrix Projection;
+		Matrix WorldInverseTranspose;
+		Vector3 cameraPosition;
+		float padding0;
+		Vector3 localCameraPosition;
+		float padding1;
+		Vector4 localViewFrustum[8];
+		float fovAngleY;
+		float splatSize;
+		float samplingRate;
+		float overlapFactor;
+		int level;
+
+		// Compute shader data
+		UINT inputCount;
+
+		float padding2;
+		float padding3;
 	};
 }
 

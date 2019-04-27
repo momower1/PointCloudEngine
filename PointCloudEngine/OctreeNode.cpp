@@ -222,14 +222,14 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 }
 
-void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize, const int &level) const
+void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
 {
 	bool traverseChildren = true;
 
 	// Check if only to return the vertices at the given level
-	if (level >= 0)
+	if (octreeConstantBufferData.level >= 0)
 	{
-		if (entry.depth == level)
+		if (entry.depth == octreeConstantBufferData.level)
 		{
 			// Draw this vertex and don't traverse further
 			traverseChildren = false;
@@ -242,10 +242,10 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 		// TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
 		// TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
 		// Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
-		float distanceToCamera = Vector3::Distance(localCameraPosition, entry.position);
+		float distanceToCamera = Vector3::Distance(octreeConstantBufferData.localCameraPosition, entry.position);
 
 		// Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
-		float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
+		float requiredSplatSize = octreeConstantBufferData.splatSize * (2.0f * tan(octreeConstantBufferData.fovAngleY / 2.0f)) * distanceToCamera;
 
 		if ((entry.size < requiredSplatSize) || IsLeafNode())
 		{

@@ -1,8 +1,9 @@
-#include "OctreeShaderFunctions.hlsl"
+#include "Octree.hlsl"
+#include "OctreeConstantBuffer.hlsl"
 
 VS_INPUT VS(VS_INPUT input)
 {
-    return VertexShaderFunction(input);
+    return input;
 }
 
 [maxvertexcount(16)]
@@ -116,5 +117,5 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return PixelShaderFunction(input);
+    return float4(input.color.rgb, 1);
 }
