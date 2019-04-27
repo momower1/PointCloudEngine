@@ -288,17 +288,8 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 
 void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject, const Vector3 &localCameraPosition)
 {
-    std::vector<OctreeNodeVertex> octreeVertices;
-
-    // Create new buffer from the current octree traversal on the cpu
-    if (level < 0)
-    {
-        octreeVertices = octree->GetVertices(localCameraPosition, octreeRendererConstantBufferData.splatSize);
-    }
-    else
-    {
-        octreeVertices = octree->GetVerticesAtLevel(level);
-    }
+	// Create new buffer from the current octree traversal on the cpu
+    std::vector<OctreeNodeVertex> octreeVertices = octree->GetVertices(localCameraPosition, octreeRendererConstantBufferData.splatSize, level);
 
     vertexBufferCount = octreeVertices.size();
 
@@ -364,6 +355,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 {
     // Set constant buffer data
     computeShaderConstantBufferData.localCameraPosition = localCameraPosition;
+	computeShaderConstantBufferData.level = level;
 
     // Update constant buffer
     d3d11DevCon->UpdateSubresource(computeShaderConstantBuffer, 0, NULL, &computeShaderConstantBufferData, 0, 0);
@@ -388,6 +380,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 	rootEntry.index = 0;
 	rootEntry.position = octree->rootPosition;
 	rootEntry.size = octree->rootSize;
+	rootEntry.depth = 0;
 
 	D3D11_BOX rootEntryBox;
 	rootEntryBox.left = 0;

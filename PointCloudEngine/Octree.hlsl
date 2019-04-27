@@ -32,6 +32,7 @@ struct OctreeNodeTraversalEntry
 	uint index;
 	float3 position;
 	float size;
+	int depth;
 };
 
 struct OctreeNodeProperties

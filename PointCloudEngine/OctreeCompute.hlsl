@@ -6,8 +6,9 @@ cbuffer ComputeShaderConstantBuffer : register(b0)
     float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
     float splatSize;
+	int level;
     uint inputCount;
-//  8 bytes auto padding
+//  4 bytes auto padding
 };  // Total: 32 bytes with constant buffer packing rules
 
 StructuredBuffer<OctreeNode> nodesBuffer : register(t0);
@@ -29,16 +30,33 @@ void CS (uint3 id : SV_DispatchThreadID)
 		// Get the childrenMask
 		uint childrenMask = node.properties.childrenMaskAndWeights & 0xff;
 
-        // Calculate required splat size
-        float distanceToCamera = distance(localCameraPosition, entry.position);
-        float requiredSplatSize = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+		bool traverseChildren = true;
 
-        // Check against required splat size and draw this vertex if it is smaller
-        if (entry.size < requiredSplatSize || childrenMask == 0)
-        {
-            vertexAppendBuffer.Append(entry);
-        }
-        else
+		// Check if only to return the vertices at the given level
+		if (level >= 0)
+		{
+			if (entry.depth == level)
+			{
+				// Draw this vertex and don't traverse further
+				traverseChildren = false;
+				vertexAppendBuffer.Append(entry);
+			}
+		}
+		else
+		{
+			// Calculate required splat size
+			float distanceToCamera = distance(localCameraPosition, entry.position);
+			float requiredSplatSize = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+
+			// Check against required splat size and draw this vertex if it is smaller
+			if (entry.size < requiredSplatSize || childrenMask == 0)
+			{
+				traverseChildren = false;
+				vertexAppendBuffer.Append(entry);
+			}
+		}
+
+        if (traverseChildren)
         {
 			float childExtend = 0.25f * entry.size;
 
@@ -65,6 +83,7 @@ void CS (uint3 id : SV_DispatchThreadID)
 					childEntry.index = childrenBuffer[node.childrenStart + count];
 					childEntry.position = childPositions[i];
 					childEntry.size = entry.size * 0.5f;
+					childEntry.depth = entry.depth + 1;
 
 					outputAppendBuffer.Append(childEntry);
 

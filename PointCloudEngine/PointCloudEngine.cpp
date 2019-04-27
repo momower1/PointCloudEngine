@@ -304,7 +304,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
     hr = d3d11Device->CreateBlendState(&blendStateDesc, &blendState);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed!");
-    float blendFactor[] = {0, 0, 0, 0};
+	float blendFactor[4] = { 0, 0, 0, 0 };
     UINT sampleMask = 0xffffffff;
     d3d11DevCon->OMSetBlendState(blendState, blendFactor, sampleMask);
 

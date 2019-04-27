@@ -51,7 +51,7 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
         rootEntry.vertices = vertices;
         rootEntry.position = rootPosition;
         rootEntry.size = rootSize;
-        rootEntry.depth = settings->maxOctreeDepth;
+        rootEntry.depth = 0;
 
         nodeCreationQueue.push(rootEntry);
 
@@ -73,8 +73,10 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
     }
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector3 &localCameraPosition, const float &splatSize) const
+std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector3 &localCameraPosition, const float &splatSize, const int &level) const
 {
+	// If the level is -1 then it is ignored and only the node vertices with the projected size smaller than the splat size are returned
+	// Otherwise the camera positiona and splat size is ignored and only the node vertices at the given octree level are returned
     // Use a queue instead of recursion to traverse the octree in the memory layout order (improves cache efficiency)
     std::vector<OctreeNodeVertex> octreeVertices;
 	std::queue<OctreeNodeTraversalEntry> nodesQueue;
@@ -84,6 +86,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector
 	rootEntry.index = 0;
 	rootEntry.position = rootPosition;
 	rootEntry.size = rootSize;
+	rootEntry.depth = 0;
 
     // Check the root node first
     nodesQueue.push(rootEntry);
@@ -94,35 +97,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Vector
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
-        nodes[entry.index].GetVertices(nodesQueue, octreeVertices, children, entry, localCameraPosition, splatSize);
-    }
-
-    return octreeVertices;
-}
-
-std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVerticesAtLevel(const int &level) const
-{
-    // Use a queue instead of recursion to traverse the octree in the memory layout order (improves cache efficiency)
-    // The queue stores the indices of the nodes that need to be checked and the level of that node
-    std::vector<OctreeNodeVertex> octreeVertices;
-    std::queue<std::pair<OctreeNodeTraversalEntry, int>> nodesQueue;
-
-	// Use this struct to compute the node positions and sizes at runtime
-	OctreeNodeTraversalEntry rootEntry;
-	rootEntry.index = 0;
-	rootEntry.position = rootPosition;
-	rootEntry.size = rootSize;
-
-    // Check the root node first
-    nodesQueue.push(std::pair<OctreeNodeTraversalEntry, int>(rootEntry, level));
-
-    while (!nodesQueue.empty())
-    {
-        std::pair<OctreeNodeTraversalEntry, int> nodePair = nodesQueue.front();
-        nodesQueue.pop();
-
-        // Check the node, add the vertex or add its children to the queue
-        nodes[nodePair.first.index].GetVerticesAtLevel(nodesQueue, octreeVertices, children, nodePair.first, nodePair.second);
+        nodes[entry.index].GetVertices(nodesQueue, octreeVertices, children, entry, localCameraPosition, splatSize, level);
     }
 
     return octreeVertices;

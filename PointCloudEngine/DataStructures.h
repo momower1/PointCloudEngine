@@ -124,6 +124,7 @@ namespace PointCloudEngine
 		UINT index;
 		Vector3 position;
 		float size;
+		int depth;
 	};
 }
 

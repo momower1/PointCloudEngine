@@ -12,8 +12,7 @@ namespace PointCloudEngine
         OctreeNode();
         OctreeNode (std::queue<OctreeNodeCreationEntry> &nodeCreationQueue, std::vector<OctreeNode> &nodes, std::vector<UINT> &children, const OctreeNodeCreationEntry &entry);
 
-        void GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT> &children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize) const;
-        void GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT> &children, const OctreeNodeTraversalEntry &entry, const int &level) const;
+        void GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT> &children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize, const int &level) const;
         bool IsLeafNode() const;
 
 		// Stores the start index in the children array where the actual child indices are stored

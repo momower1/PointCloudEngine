@@ -132,7 +132,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 	}
 
     // Only subdivide further when this is not a leaf node and the max octree depth is not met yet
-    if ((vertexCount > 1) && (entry.depth > 0))
+    if ((vertexCount > 1) && (entry.depth < settings->maxOctreeDepth))
     {
 		// Split and create children vertices
 		std::vector<Vertex> childVertices[8];
@@ -207,7 +207,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
                 childEntry.vertices = childVertices[i];
                 childEntry.position = GetChildPosition(entry.position, entry.size, i);
                 childEntry.size = entry.size * 0.5f;
-                childEntry.depth = entry.depth - 1;
+                childEntry.depth = entry.depth + 1;
 
 				// Add this entry to the mask
 				properties.childrenMask |= 1 << i;
@@ -222,23 +222,41 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 }
 
-void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT>& children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize) const
+void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const std::vector<UINT>& children, const OctreeNodeTraversalEntry &entry, const Vector3 &localCameraPosition, const float &splatSize, const int &level) const
 {
-    // TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
-    // TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
-    // Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
-    float distanceToCamera = Vector3::Distance(localCameraPosition, entry.position);
+	bool traverseChildren = true;
 
-    // Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
-    float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
+	// Check if only to return the vertices at the given level
+	if (level >= 0)
+	{
+		if (entry.depth == level)
+		{
+			// Draw this vertex and don't traverse further
+			traverseChildren = false;
+			octreeVertices.push_back(GetVertexFromTraversalEntry(entry));
+		}
+	}
+	else
+	{
+		// Only return the vertices that have a projected size smaller than the required splat size
+		// TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
+		// TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+		// Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
+		float distanceToCamera = Vector3::Distance(localCameraPosition, entry.position);
 
-    if ((entry.size < requiredSplatSize) || IsLeafNode())
-    {
-        // Draw this vertex
-        octreeVertices.push_back(GetVertexFromTraversalEntry(entry));
-    }
-    else
-    {
+		// Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
+		float requiredSplatSize = splatSize * (2.0f * tan(settings->fovAngleY / 2.0f)) * distanceToCamera;
+
+		if ((entry.size < requiredSplatSize) || IsLeafNode())
+		{
+			// Draw this vertex, don't traverse further
+			traverseChildren = false;
+			octreeVertices.push_back(GetVertexFromTraversalEntry(entry));
+		}
+	}
+
+	if (traverseChildren)
+	{
 		size_t count = 0;
 
 		// Traverse the children
@@ -251,42 +269,14 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 				childEntry.index = children[childrenStart + count];
 				childEntry.position = GetChildPosition(entry.position, entry.size, i);
 				childEntry.size = entry.size * 0.5f;
+				childEntry.depth = entry.depth + 1;
 
 				nodesQueue.push(childEntry);
 
 				count++;
 			}
 		}
-    }
-}
-
-void PointCloudEngine::OctreeNode::GetVerticesAtLevel(std::queue<std::pair<OctreeNodeTraversalEntry, int>>& nodesQueue, std::vector<OctreeNodeVertex>& octreeVertices, const std::vector<UINT>& children, const OctreeNodeTraversalEntry& entry, const int& level) const
-{
-    if (level == 0)
-    {
-        octreeVertices.push_back(GetVertexFromTraversalEntry(entry));
-    }
-    else if (level > 0)
-    {
-		size_t count = 0;
-
-        // Traverse the children
-        for (int i = 0; i < 8; i++)
-        {
-			// Check if this child exists and add it to the queue
-			if (properties.childrenMask & (1 << i))
-			{
-				OctreeNodeTraversalEntry childEntry;
-				childEntry.index = children[childrenStart + count];
-				childEntry.position = GetChildPosition(entry.position, entry.size, i);
-				childEntry.size = entry.size * 0.5f;
-
-				nodesQueue.push(std::pair<OctreeNodeTraversalEntry, int>(childEntry, level - 1));
-
-				count++;
-			}
-        }
-    }
+	}
 }
 
 bool PointCloudEngine::OctreeNode::IsLeafNode() const

@@ -43,8 +43,9 @@ namespace PointCloudEngine
             Vector3 localCameraPosition;
             float fovAngleY;
             float splatSize;
+			int level;
             UINT inputCount;
-            float padding[2];
+            float padding;
         };
 
         int level = -1;
