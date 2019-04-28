@@ -194,7 +194,8 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 			}
 		}
 
-		childrenStart = children.size();
+		// Store the start index of the children in the children array
+		childrenStartOrLeafPositionFactors = children.size();
 
         for (int i = 0; i < 8; i++)
         {
@@ -220,6 +221,36 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
             }
         }
     }
+	else
+	{
+		// This is a leaf node with childrenMask=0 representing exactly one or more vertices
+		// The bounding cube can be much larger than the vertices that it represents -> the bounding cube position does not represent the vertex positions well
+		// Idea: store factors from the average vertex position in the childrenStartOrLeafPositionFactors to representing a more accurate position
+		// Each 8 bits store the distance factor from the smallest position of the bounding cube in respect to the size of the cube in each axis (x, y, z)
+		childrenStartOrLeafPositionFactors = 0;
+
+		// Compute the average position of the vertices contained in this leaf node
+		Vector3 averagePosition = Vector3::Zero;
+
+		for (UINT i = 0; i < vertexCount; i++)
+		{
+			averagePosition += entry.vertices[i].position;
+		}
+
+		averagePosition /= vertexCount;
+
+		// Use the offset from the smallest position of the bounding cube to compute the factors
+		Vector3 offset = averagePosition - (entry.position - (0.5f * entry.size * Vector3::One));
+
+		float factorX = offset.x / entry.size;
+		float factorY = offset.y / entry.size;
+		float factorZ = offset.z / entry.size;
+
+		// Store all of them in the 32bit uint
+		childrenStartOrLeafPositionFactors |= static_cast<UINT>(0xff * factorX) << 16;
+		childrenStartOrLeafPositionFactors |= static_cast<UINT>(0xff * factorY) << 8;
+		childrenStartOrLeafPositionFactors |= static_cast<UINT>(0xff * factorZ);
+	}
 }
 
 void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
@@ -244,7 +275,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 		// Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
 		float distanceToCamera = Vector3::Distance(octreeConstantBufferData.localCameraPosition, entry.position);
 
-		// Scale the local space splat size by the fov and camera distance (Result: size at that distance in local space)
+		// Scale the local space splat size by the fov and camera distance (result: size at that distance in local space)
 		float requiredSplatSize = octreeConstantBufferData.splatSize * (2.0f * tan(octreeConstantBufferData.fovAngleY / 2.0f)) * distanceToCamera;
 
 		if ((entry.size < requiredSplatSize) || IsLeafNode())
@@ -266,7 +297,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 			if (properties.childrenMask & (1 << i))
 			{
 				OctreeNodeTraversalEntry childEntry;
-				childEntry.index = childrenStart + count;
+				childEntry.index = childrenStartOrLeafPositionFactors + count;
 				childEntry.position = GetChildPosition(entry.position, entry.size, i);
 				childEntry.size = entry.size * 0.5f;
 				childEntry.depth = entry.depth + 1;
@@ -313,9 +344,27 @@ Vector3 PointCloudEngine::OctreeNode::GetChildPosition(const Vector3& parentPosi
 OctreeNodeVertex PointCloudEngine::OctreeNode::GetVertexFromTraversalEntry(const OctreeNodeTraversalEntry& entry) const
 {
 	OctreeNodeVertex vertex;
-	vertex.position = entry.position;
-	vertex.size = entry.size;
+
+	// Check if this is a leaf node and therefore the position is stored more accurately in childrenStartOrLeafPositionFactors
+	if (IsLeafNode())
+	{
+		// Extract the factors from childrenStartOrLeafPositionFactors and compute the more accurate position
+		Vector3 startPosition = entry.position - (0.5f * entry.size * Vector3::One);
+
+		// Get the factors from the 32bit uint
+		float factorX = ((childrenStartOrLeafPositionFactors >> 16) & 0xff) / 255.0f;
+		float factorY = ((childrenStartOrLeafPositionFactors >> 8) & 0xff) / 255.0f;
+		float factorZ = (childrenStartOrLeafPositionFactors & 0xff) / 255.0f;
+
+		vertex.position = startPosition + entry.size * Vector3(factorX, factorY, factorZ);
+	}
+	else
+	{
+		vertex.position = entry.position;
+	}
+
 	vertex.properties = properties;
+	vertex.size = entry.size;
 
 	return vertex;
 }

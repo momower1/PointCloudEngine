@@ -69,7 +69,7 @@ void CS (uint3 id : SV_DispatchThreadID)
 				if (childrenMask & (1 << i))
 				{
 					OctreeNodeTraversalEntry childEntry;
-					childEntry.index = node.childrenStart + count;
+					childEntry.index = node.childrenStartOrLeafPositionFactors + count;
 					childEntry.position = childPositions[i];
 					childEntry.size = entry.size * 0.5f;
 					childEntry.depth = entry.depth + 1;

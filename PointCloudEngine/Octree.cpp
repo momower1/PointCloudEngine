@@ -60,12 +60,15 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
             nodes.push_back(OctreeNode(nodeCreationQueue, nodes, children, first));
         }
 
-		// Now the nodes actually store the childrenStart index for the children array instead of the nodes array
+		// Now the nodes actually store the childrenStartOrLeafPositionFactors index for the children array instead of the nodes array
 		for (auto it = nodes.begin(); it != nodes.end(); it++)
 		{
 			// Overwrite the index with one that is referencing the nodes array (that's fine because the nodes array stores children after each other and in order)
 			// Then there is no need to store the children array anymore
-			it->childrenStart = children[it->childrenStart];
+			if (it->properties.childrenMask != 0)
+			{
+				it->childrenStartOrLeafPositionFactors = children[it->childrenStartOrLeafPositionFactors];
+			}
 		}
 
         // Save the generated octree in a file
