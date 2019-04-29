@@ -258,6 +258,8 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 	bool traverseChildren = true;
 	bool insideViewFrustum = true;
 
+	// TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+
 	// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
 	if (!entry.parentInsideViewFrustum)
 	{
@@ -289,7 +291,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 		int outsideCount = 0;
 		int insideCount = 0;
 
-		// Check if the bounding cube is fully inside, fully outside or at the edge of the view frustum
+		// Check if the bounding cube is fully inside, fully outside or overlapping the view frustum
 		for (int i = 0; i < 8; i++)
 		{
 			// Check for each position if it is inside the view frustum
@@ -297,6 +299,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 
 			for (int j = 0; j < 6; j++)
 			{
+				// Compute the signed distance to each of the planes
 				if (viewFrustumPlanes[j].DotCoordinate(boundingCube[i]) > 0)
 				{
 					// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
@@ -317,12 +320,15 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 
 		if (outsideCount == 8)
 		{
+			// TODO: Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection)
+			// TODO: Check if the cube is actually so large that it contains positions of the view frustum
+
 			// The whole cube is outside, don't add it or any of its children
 			return;
 		}
 		else if (insideCount != 0 && outsideCount != 0)
 		{
-			// Some positions are outside and some are inside the view frustum, stop here and check the children again
+			// Some positions are outside and some are inside the view frustum, check the children again
 			insideViewFrustum = false;
 		}
 
@@ -341,10 +347,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 	}
 	else
 	{
-		// Only return the vertices that have a projected size smaller than the required splat size
-		// TODO: View frustum culling by checking the node bounding box against all the view frustum planes (don't check again if fully inside)
-		// TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
-		// Only return a vertex if its projected size is smaller than the passed size or it is a leaf node
+		// Only return the vertices that have a projected size smaller than the required splat size or it is a leaf node
 		float distanceToCamera = Vector3::Distance(octreeConstantBufferData.localCameraPosition, entry.position);
 
 		// Scale the local space splat size by the fov and camera distance (result: size at that distance in local space)
