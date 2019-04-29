@@ -141,19 +141,31 @@ namespace PointCloudEngine
 		float padding1;
 		Vector3 localViewFrustumNearTopLeft;
 		float padding2;
-		Vector3 localViewFrustumFarBottomRight;
+		Vector3 localViewFrustumNearTopRight;
 		float padding3;
-		Vector3 localViewFrustumNearNormal;
+		Vector3 localViewFrustumNearBottomLeft;
 		float padding4;
-		Vector3 localViewFrustumFarNormal;
+		Vector3 localViewFrustumNearBottomRight;
 		float padding5;
-		Vector3 localViewFrustumLeftNormal;
+		Vector3 localViewFrustumFarTopLeft;
 		float padding6;
-		Vector3 localViewFrustumRightNormal;
+		Vector3 localViewFrustumFarTopRight;
 		float padding7;
-		Vector3 localViewFrustumTopNormal;
+		Vector3 localViewFrustumFarBottomLeft;
 		float padding8;
-		Vector3 localViewFrustumBottomNormal;
+		Vector3 localViewFrustumFarBottomRight;
+		float padding9;
+		Vector3 localViewPlaneNearNormal;
+		float padding10;
+		Vector3 localViewPlaneFarNormal;
+		float padding11;
+		Vector3 localViewPlaneLeftNormal;
+		float padding12;
+		Vector3 localViewPlaneRightNormal;
+		float padding13;
+		Vector3 localViewPlaneTopNormal;
+		float padding14;
+		Vector3 localViewPlaneBottomNormal;
 		float fovAngleY;
 		float splatSize;
 		float samplingRate;
@@ -163,9 +175,9 @@ namespace PointCloudEngine
 		// Compute shader data
 		UINT inputCount;
 
-		float padding9;
-		float padding10;
-		float padding11;
+		float padding15;
+		float padding16;
+		float padding17;
 	};
 }
 

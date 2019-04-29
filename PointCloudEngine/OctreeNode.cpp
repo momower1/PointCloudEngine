@@ -266,12 +266,12 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 		// Generate all the 6 planes of the view frustum
 		Plane viewFrustumPlanes[6] =
 		{
-			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumNearNormal),			// Near Plane
-			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarNormal),			// Far Plane
-			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumLeftNormal),			// Left Plane
-			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumRightNormal),		// Right Plane
-			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumTopNormal),			// Top Plane
-			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumBottomNormal)		// Bottom Plane
+			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneNearNormal),			// Near Plane
+			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneFarNormal),		// Far Plane
+			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneLeftNormal),			// Left Plane
+			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneRightNormal),		// Right Plane
+			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneTopNormal),			// Top Plane
+			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneBottomNormal)		// Bottom Plane
 		};
 
 		float extends = entry.size / 2.0f;
