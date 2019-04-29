@@ -256,6 +256,90 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
 {
 	bool traverseChildren = true;
+	bool insideViewFrustum = true;
+
+	// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
+	if (!entry.parentInsideViewFrustum)
+	{
+		// Generate all the 6 planes of the view frustum
+		Vector3 viewFrustumPlanePositions[6] =
+		{
+			octreeConstantBufferData.localViewFrustumNearTopLeft,		// Near Plane
+			octreeConstantBufferData.localViewFrustumFarBottomRight,	// Far Plane
+			octreeConstantBufferData.localViewFrustumNearTopLeft, 		// Left Plane
+			octreeConstantBufferData.localViewFrustumFarBottomRight, 	// Right Plane
+			octreeConstantBufferData.localViewFrustumNearTopLeft,		// Top Plane
+			octreeConstantBufferData.localViewFrustumFarBottomRight 	// Bottom Plane
+		};
+
+		Vector3 viewFrustumPlaneNormals[6] =
+		{
+			octreeConstantBufferData.localViewFrustumNearNormal,		// Near Plane
+			octreeConstantBufferData.localViewFrustumFarNormal,			// Far Plane
+			octreeConstantBufferData.localViewFrustumLeftNormal,		// Left Plane
+			octreeConstantBufferData.localViewFrustumRightNormal,		// Right Plane
+			octreeConstantBufferData.localViewFrustumTopNormal,			// Top Plane
+			octreeConstantBufferData.localViewFrustumBottomNormal		// Bottom Plane
+		};
+
+		float extends = entry.size / 2.0f;
+
+		Vector3 boundingCube[8] =
+		{
+			entry.position + Vector3(extends, extends, extends),
+			entry.position + Vector3(-extends, extends, extends),
+			entry.position + Vector3(extends, -extends, extends),
+			entry.position + Vector3(extends, extends, -extends),
+			entry.position + Vector3(-extends, -extends, extends),
+			entry.position + Vector3(extends, -extends, -extends),
+			entry.position + Vector3(-extends, extends, -extends),
+			entry.position + Vector3(-extends, -extends, -extends),
+		};
+
+		int outsideCount = 0;
+		int insideCount = 0;
+
+		// Check if the bounding cube is fully inside, fully outside or at the edge of the view frustum
+		for (int i = 0; i < 8; i++)
+		{
+			// Check for each position if it is inside the view frustum
+			bool positionIsInside = true;
+
+			for (int j = 0; j < 6; j++)
+			{
+				float signedDistance = viewFrustumPlaneNormals[j].Dot(boundingCube[i] - viewFrustumPlanePositions[j]);
+
+				if (signedDistance > 0)
+				{
+					// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
+					positionIsInside = false;
+					break;
+				}
+			}
+
+			if (positionIsInside)
+			{
+				insideCount++;
+			}
+			else
+			{
+				outsideCount++;
+			}
+		}
+
+		if (outsideCount == 8)
+		{
+			// The whole cube is outside, don't add it or any of its children
+			return;
+		}
+		else if (insideCount != 0 && outsideCount != 0)
+		{
+			// Some positions are outside and some are inside the view frustum, stop here and check the children again
+			insideViewFrustum = false;
+		}
+
+		// Otherwise the cube is fully inside the view frustum as assumed
+	}
 
 	// Check if only to return the vertices at the given level
 	if (octreeConstantBufferData.level >= 0)
@@ -300,6 +384,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 				childEntry.index = childrenStartOrLeafPositionFactors + count;
 				childEntry.position = GetChildPosition(entry.position, entry.size, i);
 				childEntry.size = entry.size * 0.5f;
+				childEntry.parentInsideViewFrustum = insideViewFrustum;
 				childEntry.depth = entry.depth + 1;
 
 				nodesQueue.push(childEntry);

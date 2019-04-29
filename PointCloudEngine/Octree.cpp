@@ -89,6 +89,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Octree
 	rootEntry.index = 0;
 	rootEntry.position = rootPosition;
 	rootEntry.size = rootSize;
+	rootEntry.parentInsideViewFrustum = false;
 	rootEntry.depth = 0;
 
     // Check the root node first

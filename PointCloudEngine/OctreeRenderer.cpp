@@ -190,22 +190,26 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	Matrix worldViewProjectionInverse = (sceneObject->transform->worldMatrix * camera->GetViewMatrix() * camera->GetProjectionMatrix()).Invert();
 
 	// Set the initial values to be transformed by the matrix
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(-1, 1, 0, 1);		// Near Plane Top Left
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(1, 1, 0, 1);			// Near Plane Top Right
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(-1, -1, 0, 1);		// Near Plane Bottom Left
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(1, -1, 0, 1);		// Near Plane Bottom Right
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(-1, 1, 1, 1);		// Far Plane Top Left
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(1, 1, 1, 1);			// Far Plane Top Right
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(-1, -1, 1, 1);		// Far Plane Bottom Left
-	octreeConstantBufferData.localViewFrustum[0] = Vector4(1, -1, 1, 1);		// Far Plane Bottom Right
+	Vector3 localViewFrustum[8] =
+	{
+		Vector3(-1, 1, 0),		// Near Plane Top Left
+		Vector3(1, 1, 0),		// Near Plane Top Right
+		Vector3(-1, -1, 0),		// Near Plane Bottom Left
+		Vector3(1, -1, 0),		// Near Plane Bottom Right
+		Vector3(-1, 1, 1),		// Far Plane Top Left
+		Vector3(1, 1, 1),		// Far Plane Top Right
+		Vector3(-1, -1, 1),		// Far Plane Bottom Left
+		Vector3(1, -1, 1)		// Far Plane Bottom Right
+	};
 
 	for (int i = 0; i < 8; i++)
 	{
 		// Transform into local space
-		Vector4 transformed = Vector4::Transform(octreeConstantBufferData.localViewFrustum[i], worldViewProjectionInverse);
+		Vector4 transformed = Vector4(localViewFrustum[i].x, localViewFrustum[i].y, localViewFrustum[i].z, 1);
+		transformed = Vector4::Transform(transformed, worldViewProjectionInverse);
 
 		// Normalize by dividing by w
-		octreeConstantBufferData.localViewFrustum[i] = transformed / transformed.w;
+		localViewFrustum[i] = transformed / transformed.w;
 	}
 
     // Set shader constant buffer variables
@@ -215,6 +219,14 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
 	octreeConstantBufferData.cameraPosition = cameraPosition;
 	octreeConstantBufferData.localCameraPosition = localCameraPosition;
+	octreeConstantBufferData.localViewFrustumNearTopLeft = localViewFrustum[0];
+	octreeConstantBufferData.localViewFrustumFarBottomRight = localViewFrustum[7];
+	octreeConstantBufferData.localViewFrustumNearNormal = (localViewFrustum[1] - localViewFrustum[0]).Cross(localViewFrustum[2] - localViewFrustum[0]);
+	octreeConstantBufferData.localViewFrustumFarNormal = (localViewFrustum[7] - localViewFrustum[6]).Cross(localViewFrustum[4] - localViewFrustum[6]);
+	octreeConstantBufferData.localViewFrustumLeftNormal = (localViewFrustum[0] - localViewFrustum[4]).Cross(localViewFrustum[6] - localViewFrustum[4]);
+	octreeConstantBufferData.localViewFrustumRightNormal = (localViewFrustum[3] - localViewFrustum[7]).Cross(localViewFrustum[5] - localViewFrustum[7]);
+	octreeConstantBufferData.localViewFrustumTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
+	octreeConstantBufferData.localViewFrustumBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
 
     // Draw overlapping splats to make sure that continuous surfaces are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
@@ -355,6 +367,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 	rootEntry.index = 0;
 	rootEntry.position = octree->rootPosition;
 	rootEntry.size = octree->rootSize;
+	rootEntry.parentInsideViewFrustum = false;
 	rootEntry.depth = 0;
 
 	D3D11_BOX rootEntryBox;

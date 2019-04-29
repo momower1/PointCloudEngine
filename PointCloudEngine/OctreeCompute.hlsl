@@ -20,6 +20,12 @@ void CS (uint3 id : SV_DispatchThreadID)
 		uint childrenMask = node.properties.childrenMaskAndWeights & 0xff;
 
 		bool traverseChildren = true;
+		bool insideViewFrustum = true;
+
+		if (!entry.parentInsideViewFrustum)
+		{
+			// TODO: View frustum culling
+		}
 
 		// Check if only to return the vertices at the given level
 		if (level >= 0)
@@ -72,6 +78,7 @@ void CS (uint3 id : SV_DispatchThreadID)
 					childEntry.index = node.childrenStartOrLeafPositionFactors + count;
 					childEntry.position = childPositions[i];
 					childEntry.size = entry.size * 0.5f;
+					childEntry.parentInsideViewFrustum = insideViewFrustum;
 					childEntry.depth = entry.depth + 1;
 
 					outputAppendBuffer.Append(childEntry);

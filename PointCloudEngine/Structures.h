@@ -124,6 +124,7 @@ namespace PointCloudEngine
 		UINT index;
 		Vector3 position;
 		float size;
+		bool parentInsideViewFrustum;
 		int depth;
 	};
 
@@ -138,7 +139,21 @@ namespace PointCloudEngine
 		float padding0;
 		Vector3 localCameraPosition;
 		float padding1;
-		Vector4 localViewFrustum[8];
+		Vector3 localViewFrustumNearTopLeft;
+		float padding2;
+		Vector3 localViewFrustumFarBottomRight;
+		float padding3;
+		Vector3 localViewFrustumNearNormal;
+		float padding4;
+		Vector3 localViewFrustumFarNormal;
+		float padding5;
+		Vector3 localViewFrustumLeftNormal;
+		float padding6;
+		Vector3 localViewFrustumRightNormal;
+		float padding7;
+		Vector3 localViewFrustumTopNormal;
+		float padding8;
+		Vector3 localViewFrustumBottomNormal;
 		float fovAngleY;
 		float splatSize;
 		float samplingRate;
@@ -148,8 +163,9 @@ namespace PointCloudEngine
 		// Compute shader data
 		UINT inputCount;
 
-		float padding2;
-		float padding3;
+		float padding9;
+		float padding10;
+		float padding11;
 	};
 }
 

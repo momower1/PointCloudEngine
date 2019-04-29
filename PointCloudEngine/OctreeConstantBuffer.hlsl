@@ -14,18 +14,39 @@ cbuffer OctreeConstantBuffer : register(b0)
 	float3 localCameraPosition;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float4 localViewFrustum[8];
-//------------------------------------------------------------------------------ (128 byte boundary)
+	float3 localViewFrustumNearTopLeft;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumFarBottomRight;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumNearNormal;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumFarNormal;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumLeftNormal;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumRightNormal;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumTopNormal;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumBottomNormal;
 	float fovAngleY;
+//------------------------------------------------------------------------------ (16 byte boundary)
 	float splatSize;
 	float samplingRate;
 	float overlapFactor;
-//------------------------------------------------------------------------------ (16 byte boundary)
 	int level;
+//------------------------------------------------------------------------------ (16 byte boundary)
 
 	// Compute shader data
 	uint inputCount;
 
-	// 8 byte auto padding
+	// 12 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };	// Total: 448 bytes with constant buffer packing rules
