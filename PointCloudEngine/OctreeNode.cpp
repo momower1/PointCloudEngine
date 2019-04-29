@@ -320,8 +320,8 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 
 		if (outsideCount == 8)
 		{
-			// TODO: Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection)
-			// TODO: Check if the cube is actually so large that it contains positions of the view frustum
+			// Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection, cube contains view frustum)
+			// TODO: Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
 
 			// The whole cube is outside, don't add it or any of its children
 			return;
