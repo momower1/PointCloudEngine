@@ -262,24 +262,14 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 	if (!entry.parentInsideViewFrustum)
 	{
 		// Generate all the 6 planes of the view frustum
-		Vector3 viewFrustumPlanePositions[6] =
+		Plane viewFrustumPlanes[6] =
 		{
-			octreeConstantBufferData.localViewFrustumNearTopLeft,		// Near Plane
-			octreeConstantBufferData.localViewFrustumFarBottomRight,	// Far Plane
-			octreeConstantBufferData.localViewFrustumNearTopLeft, 		// Left Plane
-			octreeConstantBufferData.localViewFrustumFarBottomRight, 	// Right Plane
-			octreeConstantBufferData.localViewFrustumNearTopLeft,		// Top Plane
-			octreeConstantBufferData.localViewFrustumFarBottomRight 	// Bottom Plane
-		};
-
-		Vector3 viewFrustumPlaneNormals[6] =
-		{
-			octreeConstantBufferData.localViewFrustumNearNormal,		// Near Plane
-			octreeConstantBufferData.localViewFrustumFarNormal,			// Far Plane
-			octreeConstantBufferData.localViewFrustumLeftNormal,		// Left Plane
-			octreeConstantBufferData.localViewFrustumRightNormal,		// Right Plane
-			octreeConstantBufferData.localViewFrustumTopNormal,			// Top Plane
-			octreeConstantBufferData.localViewFrustumBottomNormal		// Bottom Plane
+			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumNearNormal),			// Near Plane
+			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarNormal),			// Far Plane
+			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumLeftNormal),			// Left Plane
+			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumRightNormal),		// Right Plane
+			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumTopNormal),			// Top Plane
+			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumBottomNormal)		// Bottom Plane
 		};
 
 		float extends = entry.size / 2.0f;
@@ -307,9 +297,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 
 			for (int j = 0; j < 6; j++)
 			{
-				float signedDistance = viewFrustumPlaneNormals[j].Dot(boundingCube[i] - viewFrustumPlanePositions[j]);
-
-				if (signedDistance > 0)
+				if (viewFrustumPlanes[j].DotCoordinate(boundingCube[i]) > 0)
 				{
 					// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
 					positionIsInside = false;
