@@ -23,7 +23,7 @@ namespace PointCloudEngine
 
         // Ply file parameters default values
         std::wstring plyfile = L"";
-        int maxOctreeDepth = 12;
+        int maxOctreeDepth = 16;
         float scale = 1.0f;
 
         // Input parameters default values
