@@ -321,7 +321,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 		if (outsideCount == 8)
 		{
 			// Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection, cube contains view frustum)
-			// TODO: Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
+			// Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
 			Vector3 rays[12][2] =
 			{
 				{ octreeConstantBufferData.localViewFrustumNearTopRight, octreeConstantBufferData.localViewFrustumNearTopLeft },
@@ -343,7 +343,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 			// Create a sphere that encloses the bounding cube to test against
 			bool intersects = false;
 			Vector3 c = entry.position;
-			float r = 0.5f * Vector3(entry.size, entry.size, entry.size).Length();
+			float r = Vector3(extends, extends, extends).Length();
 
 			for (int i = 0; i < 12; i++)
 			{
@@ -367,6 +367,8 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 
 					if ((d1 >= 0 && d1 <= l) || (d2 >= 0 && d2 <= l))
 					{
+						// Interecting, check children again
+						insideViewFrustum = false;
 						intersects = true;
 						break;
 					}
