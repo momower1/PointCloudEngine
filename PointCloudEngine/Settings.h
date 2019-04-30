@@ -27,7 +27,7 @@ namespace PointCloudEngine
         float scale = 1.0f;
 
         // Input parameters default values
-        float mouseSensitivity = 0.5f;
+        float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;
     };
 }

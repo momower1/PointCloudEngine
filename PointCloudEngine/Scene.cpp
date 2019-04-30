@@ -87,8 +87,8 @@ void Scene::Update(Timer &timer)
     // Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
     if (timeSinceLoadFile > 0.1f)
     {
-        cameraYaw += dt * Input::mouseDelta.x;
-        cameraPitch += dt * Input::mouseDelta.y;
+        cameraYaw += Input::mouseDelta.x;
+        cameraPitch += Input::mouseDelta.y;
         cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
         camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
     }
