@@ -448,6 +448,9 @@ void DrawScene()
 
 void ReleaseObjects()
 {
+	// Release scene objects
+	scene.Release();
+
     // Delete settings (also saves them to the hard drive)
     SafeDelete(settings);
     SafeDelete(camera);
@@ -455,9 +458,6 @@ void ReleaseObjects()
     // Release and delete shaders
     Shader::ReleaseAllShaders();
     TextRenderer::ReleaseAllSpriteFonts();
-
-    // Release scene objects
-    scene.Release();
 
     // Release the COM (Component Object Model) objects
     SAFE_RELEASE(swapChain);
