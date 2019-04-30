@@ -124,7 +124,7 @@ namespace PointCloudEngine
 		UINT index;
 		Vector3 position;
 		float size;
-		bool parentInsideViewFrustum;
+		int parentInsideViewFrustum;	// Its used like a bool but stored as an int because the shader can only read 32bit values
 		int depth;
 	};
 

@@ -328,12 +328,10 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 				{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumNearBottomLeft },
 				{ octreeConstantBufferData.localViewFrustumNearBottomLeft, octreeConstantBufferData.localViewFrustumNearTopLeft },
 				{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumNearTopRight },
-
 				{ octreeConstantBufferData.localViewFrustumFarTopRight, octreeConstantBufferData.localViewFrustumFarTopLeft },
 				{ octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarBottomLeft },
 				{ octreeConstantBufferData.localViewFrustumFarBottomLeft, octreeConstantBufferData.localViewFrustumFarTopLeft },
 				{ octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarTopRight },
-
 				{ octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumFarTopLeft },
 				{ octreeConstantBufferData.localViewFrustumNearTopRight, octreeConstantBufferData.localViewFrustumFarTopRight },
 				{ octreeConstantBufferData.localViewFrustumNearBottomLeft, octreeConstantBufferData.localViewFrustumFarBottomLeft },
