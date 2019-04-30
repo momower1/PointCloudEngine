@@ -9,7 +9,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    text->transform->position = Vector3(-1.0f, -0.74f, 0);
+    text->transform->position = Vector3(-1.0f, -0.685f, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
@@ -136,10 +136,17 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         viewMode = (viewMode + 1) % 3;
     }
 
+	// Toggle CPU / GPU octree traversal
     if (Input::GetKeyDown(Keyboard::Back))
     {
         useComputeShader = !useComputeShader;
     }
+
+	// Toggle view frustum culling
+	if (Input::GetKeyDown(Keyboard::C))
+	{
+		useViewFrustumCulling = !useViewFrustumCulling;
+	}
 
 	// Change the sampling rate
 	if (Input::GetKey(Keyboard::Q))
@@ -154,7 +161,8 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 	octreeConstantBufferData.samplingRate = max(0.0001f, octreeConstantBufferData.samplingRate);
 
     // Set the text
-    textRenderer->text = useComputeShader ? L"GPU Computation\n" : L"CPU Computation\n";
+    textRenderer->text = useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n";
+	textRenderer->text.append(useViewFrustumCulling ? L"View Frustum Culling Enabled\n" : L"View Frustum Culling Disabled\n");
 
     int splatSizePixels = settings->resolutionY * octreeConstantBufferData.splatSize * octreeConstantBufferData.overlapFactor;
     textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");
@@ -291,7 +299,7 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
 {
 	// Create new buffer from the current octree traversal on the cpu
-    std::vector<OctreeNodeVertex> octreeVertices = octree->GetVertices(octreeConstantBufferData);
+    std::vector<OctreeNodeVertex> octreeVertices = octree->GetVertices(octreeConstantBufferData, useViewFrustumCulling);
 
     vertexBufferCount = octreeVertices.size();
 
@@ -374,7 +382,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
 	rootEntry.index = 0;
 	rootEntry.position = octree->rootPosition;
 	rootEntry.size = octree->rootSize;
-	rootEntry.parentInsideViewFrustum = false;
+	rootEntry.parentInsideViewFrustum = !useViewFrustumCulling;
 	rootEntry.depth = 0;
 
 	D3D11_BOX rootEntryBox;

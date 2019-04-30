@@ -76,7 +76,7 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
     }
 }
 
-std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const OctreeConstantBuffer &octreeConstantBufferData) const
+std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const OctreeConstantBuffer &octreeConstantBufferData, const bool &viewFrustumCulling) const
 {
 	// If the level is -1 then it is ignored and only the node vertices with the projected size smaller than the splat size are returned
 	// Otherwise the camera positiona and splat size is ignored and only the node vertices at the given octree level are returned
@@ -89,7 +89,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Octree
 	rootEntry.index = 0;
 	rootEntry.position = rootPosition;
 	rootEntry.size = rootSize;
-	rootEntry.parentInsideViewFrustum = false;
+	rootEntry.parentInsideViewFrustum = !viewFrustumCulling;
 	rootEntry.depth = 0;
 
     // Check the root node first
