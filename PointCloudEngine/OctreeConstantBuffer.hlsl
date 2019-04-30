@@ -17,25 +17,43 @@ cbuffer OctreeConstantBuffer : register(b0)
 	float3 localViewFrustumNearTopLeft;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumNearTopRight;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumNearBottomLeft;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumNearBottomRight;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumFarTopLeft;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumFarTopRight;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float3 localViewFrustumFarBottomLeft;
+	// 4 byte auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
 	float3 localViewFrustumFarBottomRight;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 localViewFrustumNearNormal;
+	float3 localViewPlaneNearNormal;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 localViewFrustumFarNormal;
+	float3 localViewPlaneFarNormal;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 localViewFrustumLeftNormal;
+	float3 localViewPlaneLeftNormal;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 localViewFrustumRightNormal;
+	float3 localViewPlaneRightNormal;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 localViewFrustumTopNormal;
+	float3 localViewPlaneTopNormal;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 localViewFrustumBottomNormal;
+	float3 localViewPlaneBottomNormal;
 	float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
 	float splatSize;
@@ -49,4 +67,4 @@ cbuffer OctreeConstantBuffer : register(b0)
 
 	// 12 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-};	// Total: 448 bytes with constant buffer packing rules
+};	// Total: 544 bytes with constant buffer packing rules

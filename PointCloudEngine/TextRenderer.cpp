@@ -16,7 +16,7 @@ void TextRenderer::ReleaseAllSpriteFonts()
 {
     for (auto it = fonts.begin(); it != fonts.end(); it++)
     {
-        delete (*it).second;
+		SafeDelete((*it).second);
     }
 
     fonts.clear();
@@ -34,16 +34,16 @@ TextRenderer::TextRenderer(SpriteFont *spriteFont, bool worldSpace)
 
 void TextRenderer::Initialize(SceneObject *sceneObject)
 {
-    // Create the constant buffer for WVP
-    D3D11_BUFFER_DESC cbDescWVP;
-    ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
-    cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
-    cbDescWVP.ByteWidth = sizeof(ConstantBufferText);
-    cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbDescWVP.CPUAccessFlags = 0;
-    cbDescWVP.MiscFlags = 0;
+    // Create the constant buffer
+    D3D11_BUFFER_DESC constantBufferTextDesc;
+    ZeroMemory(&constantBufferTextDesc, sizeof(constantBufferTextDesc));
+    constantBufferTextDesc.Usage = D3D11_USAGE_DEFAULT;
+    constantBufferTextDesc.ByteWidth = sizeof(ConstantBufferText);
+    constantBufferTextDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    constantBufferTextDesc.CPUAccessFlags = 0;
+    constantBufferTextDesc.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBufferText);
+    hr = d3d11Device->CreateBuffer(&constantBufferTextDesc, NULL, &constantBufferText);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBufferText));
 }
 
@@ -147,6 +147,7 @@ void TextRenderer::Draw(SceneObject *sceneObject)
 
 void TextRenderer::Release()
 {
+	SAFE_RELEASE(constantBufferText);
     SAFE_RELEASE(shaderResourceView);
     SAFE_RELEASE(vertexBuffer);
 }

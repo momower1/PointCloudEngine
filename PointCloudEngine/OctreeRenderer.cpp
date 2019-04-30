@@ -220,13 +220,19 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.cameraPosition = cameraPosition;
 	octreeConstantBufferData.localCameraPosition = localCameraPosition;
 	octreeConstantBufferData.localViewFrustumNearTopLeft = localViewFrustum[0];
+	octreeConstantBufferData.localViewFrustumNearTopRight = localViewFrustum[1];
+	octreeConstantBufferData.localViewFrustumNearBottomLeft = localViewFrustum[2];
+	octreeConstantBufferData.localViewFrustumNearBottomRight = localViewFrustum[3];
+	octreeConstantBufferData.localViewFrustumFarTopLeft = localViewFrustum[4];
+	octreeConstantBufferData.localViewFrustumFarTopRight = localViewFrustum[5];
+	octreeConstantBufferData.localViewFrustumFarBottomLeft = localViewFrustum[6];
 	octreeConstantBufferData.localViewFrustumFarBottomRight = localViewFrustum[7];
-	octreeConstantBufferData.localViewFrustumNearNormal = (localViewFrustum[1] - localViewFrustum[0]).Cross(localViewFrustum[2] - localViewFrustum[0]);
-	octreeConstantBufferData.localViewFrustumFarNormal = (localViewFrustum[7] - localViewFrustum[6]).Cross(localViewFrustum[4] - localViewFrustum[6]);
-	octreeConstantBufferData.localViewFrustumLeftNormal = (localViewFrustum[0] - localViewFrustum[4]).Cross(localViewFrustum[6] - localViewFrustum[4]);
-	octreeConstantBufferData.localViewFrustumRightNormal = (localViewFrustum[3] - localViewFrustum[7]).Cross(localViewFrustum[5] - localViewFrustum[7]);
-	octreeConstantBufferData.localViewFrustumTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
-	octreeConstantBufferData.localViewFrustumBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
+	octreeConstantBufferData.localViewPlaneNearNormal = (localViewFrustum[1] - localViewFrustum[0]).Cross(localViewFrustum[2] - localViewFrustum[0]);
+	octreeConstantBufferData.localViewPlaneFarNormal = (localViewFrustum[7] - localViewFrustum[6]).Cross(localViewFrustum[4] - localViewFrustum[6]);
+	octreeConstantBufferData.localViewPlaneLeftNormal = (localViewFrustum[0] - localViewFrustum[4]).Cross(localViewFrustum[6] - localViewFrustum[4]);
+	octreeConstantBufferData.localViewPlaneRightNormal = (localViewFrustum[3] - localViewFrustum[7]).Cross(localViewFrustum[5] - localViewFrustum[7]);
+	octreeConstantBufferData.localViewPlaneTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
+	octreeConstantBufferData.localViewPlaneBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
 
     // Draw overlapping splats to make sure that continuous surfaces are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
@@ -266,6 +272,7 @@ void OctreeRenderer::Release()
     SAFE_RELEASE(nodesBufferSRV);
     SAFE_RELEASE(firstBufferUAV);
     SAFE_RELEASE(secondBufferUAV);
+	SAFE_RELEASE(vertexAppendBufferSRV);
     SAFE_RELEASE(vertexAppendBufferUAV);
     SAFE_RELEASE(octreeConstantBuffer);
 }
