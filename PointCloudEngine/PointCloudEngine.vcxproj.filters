@@ -15,6 +15,9 @@
     <Filter Include="External Libraries">
       <UniqueIdentifier>{9a24821d-9580-4fe1-9e70-591866861b84}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{628c6961-f944-4975-8f6f-604daf86a458}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TextRenderer.h">
@@ -73,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="Structures.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -150,5 +156,15 @@
     <FxCompile Include="OctreeConstantBuffer.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\Icon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PointCloudEngine.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
