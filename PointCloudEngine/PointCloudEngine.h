@@ -120,6 +120,7 @@ extern ID3D11DepthStencilState* depthStencilState;
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
 extern bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile);
 extern void SaveScreenshotToFile();
+extern void SetFullscreen(bool fullscreen);
 
 // Function declarations
 bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);

@@ -118,6 +118,12 @@ void SaveScreenshotToFile()
 	}
 }
 
+void SetFullscreen(bool fullscreen)
+{
+	hr = swapChain->SetFullscreenState(fullscreen, NULL);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->SetFullscreenState) + L" failed!");
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     // Save the executable directory path

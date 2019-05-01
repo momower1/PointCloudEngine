@@ -163,6 +163,8 @@ void Scene::Update(Timer &timer)
         openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
         openFileName.nFilterIndex = 1;
 
+		// Disable fullscreen in order to avoid issues with selecting the file
+		SetFullscreen(false);
         Input::SetMode(Mouse::MODE_ABSOLUTE);
 
         if (GetOpenFileNameW(&openFileName))
