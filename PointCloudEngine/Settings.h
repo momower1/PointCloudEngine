@@ -26,6 +26,9 @@ namespace PointCloudEngine
         int maxOctreeDepth = 16;
         float scale = 1.0f;
 
+		// Compute shader default values
+		UINT appendBufferCount = 10000000;
+
         // Input parameters default values
         float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;

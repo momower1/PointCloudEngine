@@ -61,7 +61,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     // Create general buffer description for append/consume buffer
     D3D11_BUFFER_DESC appendConsumeBufferDesc;
     ZeroMemory(&appendConsumeBufferDesc, sizeof(appendConsumeBufferDesc));
-    appendConsumeBufferDesc.ByteWidth = maxVertexBufferCount * sizeof(OctreeNodeTraversalEntry);
+    appendConsumeBufferDesc.ByteWidth = settings->appendBufferCount * sizeof(OctreeNodeTraversalEntry);
     appendConsumeBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
     appendConsumeBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
     appendConsumeBufferDesc.StructureByteStride = sizeof(OctreeNodeTraversalEntry);
@@ -73,7 +73,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     appendConsumeBufferUAVDesc.Format = DXGI_FORMAT_UNKNOWN;
     appendConsumeBufferUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
     appendConsumeBufferUAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND;
-    appendConsumeBufferUAVDesc.Buffer.NumElements = maxVertexBufferCount;
+    appendConsumeBufferUAVDesc.Buffer.NumElements = settings->appendBufferCount;
 
     // Create the first buffer and its UAV
     hr = d3d11Device->CreateBuffer(&appendConsumeBufferDesc, NULL, &firstBuffer);
@@ -101,7 +101,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
     vertexAppendBufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
     vertexAppendBufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
     vertexAppendBufferSRVDesc.Buffer.ElementWidth = sizeof(OctreeNodeTraversalEntry);
-    vertexAppendBufferSRVDesc.Buffer.NumElements = maxVertexBufferCount;
+    vertexAppendBufferSRVDesc.Buffer.NumElements = settings->appendBufferCount;
 
     hr = d3d11Device->CreateShaderResourceView(vertexAppendBuffer, &vertexAppendBufferSRVDesc, &vertexAppendBufferSRV);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(vertexAppendBufferSRV));
@@ -427,11 +427,11 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
         // Get the output append buffer structure count
         if (firstBufferIsInputConsumeBuffer)
         {
-			octreeConstantBufferData.inputCount = min(maxVertexBufferCount, GetStructureCount(secondBufferUAV));
+			octreeConstantBufferData.inputCount = min(settings->appendBufferCount, GetStructureCount(secondBufferUAV));
         }
         else
         {
-			octreeConstantBufferData.inputCount = min(maxVertexBufferCount, GetStructureCount(firstBufferUAV));
+			octreeConstantBufferData.inputCount = min(settings->appendBufferCount, GetStructureCount(firstBufferUAV));
         }
 
         // Swap the buffers
@@ -440,7 +440,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     } while (octreeConstantBufferData.inputCount > 0);
 
     // Get the actual vertex buffer count from the vertex append buffer structure counter
-    vertexBufferCount = min(maxVertexBufferCount, GetStructureCount(vertexAppendBufferUAV));
+    vertexBufferCount = min(settings->appendBufferCount, GetStructureCount(vertexAppendBufferUAV));
 
     // Unbind nodes and vertex append buffer in order to use it in the vertex shader
     d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);

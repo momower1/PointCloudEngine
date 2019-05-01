@@ -62,6 +62,10 @@ PointCloudEngine::Settings::Settings()
                 {
                     scale = std::stof(variableValue);
                 }
+				else if (variableName.compare(NAMEOF(appendBufferCount)) == 0)
+				{
+					appendBufferCount = std::stoi(variableValue);
+				}
                 else if (variableName.compare(NAMEOF(mouseSensitivity)) == 0)
                 {
                     mouseSensitivity = std::stof(variableValue);
@@ -98,6 +102,10 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;
+
+	settingsFile << L"# Compute Shader Parameters" << std::endl;
+	settingsFile << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;
+	settingsFile << std::endl;
 
     settingsFile << L"# Input Parameters" << std::endl;
     settingsFile << NAMEOF(mouseSensitivity) << L"=" << mouseSensitivity << std::endl;

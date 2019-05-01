@@ -37,7 +37,6 @@ namespace PointCloudEngine
         OctreeConstantBuffer octreeConstantBufferData;
 
         // Compute shader
-        UINT maxVertexBufferCount = 15000000;
         ID3D11Buffer *nodesBuffer = NULL;
         ID3D11Buffer *firstBuffer = NULL;
         ID3D11Buffer *secondBuffer = NULL;
