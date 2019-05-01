@@ -62,16 +62,18 @@ void PointCloudEngine::Camera::RecalculateRightUpForwardViewProjection()
     if (recalculate)
     {
         // Calculate right, up, forward
-        right = Vector3::Transform(Vector3::UnitX, rotation);
-        right.Normalize();
-        forward = Vector3::Transform(Vector3::UnitZ, rotation);
-        forward.Normalize();
-        up = forward.Cross(right);
-        up.Normalize();
+		right = Vector3::Transform(Vector3::UnitX, rotation);
+		up = Vector3::Transform(Vector3::UnitY, rotation);
+		forward = Vector3::Transform(Vector3::UnitZ, rotation);
+
+		// Normalize
+		right.Normalize();
+		forward.Normalize();
+		up.Normalize();
 
         // Calculate view projection
-        view = XMMatrixLookToLH(position, forward, up);
-        projection = XMMatrixPerspectiveFovLH(settings->fovAngleY, (float)settings->resolutionX / (float)settings->resolutionY, settings->nearZ, settings->farZ);
+		view = XMMatrixLookToLH(position, forward, up);
+		projection = XMMatrixPerspectiveFovLH(settings->fovAngleY, (float)settings->resolutionX / (float)settings->resolutionY, settings->nearZ, settings->farZ);
 
         recalculate = false;
     }
