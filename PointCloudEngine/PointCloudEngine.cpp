@@ -25,7 +25,8 @@ ID3D11Device* d3d11Device;		                // GPU
 ID3D11DeviceContext* d3d11DevCon;		        // (multi-threaded) rendering
 ID3D11RenderTargetView* renderTargetView;		// 2D texture (backbuffer) -> output merger
 ID3D11DepthStencilView* depthStencilView;
-ID3D11Texture2D* depthStencilBuffer;
+ID3D11Texture2D* depthStencilTexture;
+ID3D11ShaderResourceView* depthStencilTextureSRV;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
@@ -249,22 +250,31 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     SAFE_RELEASE(backBuffer);
 
 	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
-	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
-	depthStencilBufferDesc.Width = settings->resolutionX;
-	depthStencilBufferDesc.Height = settings->resolutionY;
-	depthStencilBufferDesc.MipLevels = 1;
-	depthStencilBufferDesc.ArraySize = 1;
-	depthStencilBufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilBufferDesc.SampleDesc.Count = settings->msaaCount;
-	depthStencilBufferDesc.SampleDesc.Quality = 0;
-	depthStencilBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthStencilBufferDesc.CPUAccessFlags = 0;
-	depthStencilBufferDesc.MiscFlags = 0;
+	D3D11_TEXTURE2D_DESC depthStencilTextureDesc;
+	depthStencilTextureDesc.Width = settings->resolutionX;
+	depthStencilTextureDesc.Height = settings->resolutionY;
+	depthStencilTextureDesc.MipLevels = 1;
+	depthStencilTextureDesc.ArraySize = 1;
+	depthStencilTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	depthStencilTextureDesc.SampleDesc.Count = settings->msaaCount;
+	depthStencilTextureDesc.SampleDesc.Quality = 0;
+	depthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	depthStencilTextureDesc.CPUAccessFlags = 0;
+	depthStencilTextureDesc.MiscFlags = 0;
 
 	// Create the depth/stencil view
-	hr = d3d11Device->CreateTexture2D(&depthStencilBufferDesc, NULL, &depthStencilBuffer);
+	hr = d3d11Device->CreateTexture2D(&depthStencilTextureDesc, NULL, &depthStencilTexture);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+	// Create the depth/stencil SRV that is needed to bind the texture to shaders
+	D3D11_SHADER_RESOURCE_VIEW_DESC depthStencilTextureSRVDesc;
+	ZeroMemory(&depthStencilTextureSRVDesc, sizeof(depthStencilTextureSRVDesc));
+	depthStencilTextureSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	depthStencilTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+
+	hr = d3d11Device->CreateShaderResourceView(depthStencilTexture, &depthStencilTextureSRVDesc, &depthStencilTextureSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(depthStencilTextureSRV));
 
     // Depth / Stencil description
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
@@ -317,11 +327,10 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     // Create Depth / Stencil View
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
     ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
-    depthStencilViewDesc.Format = depthStencilBufferDesc.Format;
+    depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
     depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
-    depthStencilViewDesc.Texture2DMS.UnusedField_NothingToDefine = 0;
 
-	hr = d3d11Device->CreateDepthStencilView(depthStencilBuffer, &depthStencilViewDesc, &depthStencilView);
+	hr = d3d11Device->CreateDepthStencilView(depthStencilTexture, &depthStencilViewDesc, &depthStencilView);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
 
 	// Describing the render state
@@ -472,6 +481,7 @@ void ReleaseObjects()
     SAFE_RELEASE(renderTargetView);
     SAFE_RELEASE(depthStencilView);
     SAFE_RELEASE(depthStencilState);
-    SAFE_RELEASE(depthStencilBuffer);
+    SAFE_RELEASE(depthStencilTexture);
+	SAFE_RELEASE(depthStencilTextureSRV)
     SAFE_RELEASE(rasterizerState);
 }
