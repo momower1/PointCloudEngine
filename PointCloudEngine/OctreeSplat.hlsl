@@ -1,6 +1,15 @@
 #include "Octree.hlsl"
 #include "OctreeConstantBuffer.hlsl"
 
+Texture2D depthStencilTexture : register(t2);
+
+SamplerState DepthStencilTextureSampler
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 VS_INPUT VS(VS_INPUT input)
 {
     return input;
@@ -117,5 +126,14 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return float4(input.color.rgb, 1);
+	// Transform position into texture space
+	float3 texturePosition = input.position.xyz / input.position.w;
+	texturePosition.x = (texturePosition.x / 2.0f) + 0.5f;
+	texturePosition.y = (texturePosition.y / -2.0f) + 0.5f;
+
+	float depth = depthStencilTexture.Sample(DepthStencilTextureSampler, texturePosition.xy);
+
+	return float4(depth, 0, 0, 1);
+
+    //return float4(input.color.rgb, 1);
 }

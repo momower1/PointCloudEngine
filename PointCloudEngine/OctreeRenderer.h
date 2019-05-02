@@ -36,6 +36,11 @@ namespace PointCloudEngine
         ID3D11Buffer* octreeConstantBuffer = NULL;
         OctreeConstantBuffer octreeConstantBufferData;
 
+		// Blending
+		ID3D11DepthStencilView *octreeDepthStencilView = NULL;
+		ID3D11Texture2D *octreeDepthStencilTexture = NULL;
+		ID3D11ShaderResourceView* octreeDepthStencilTextureSRV = NULL;
+
         // Compute shader
         ID3D11Buffer *nodesBuffer = NULL;
         ID3D11Buffer *firstBuffer = NULL;

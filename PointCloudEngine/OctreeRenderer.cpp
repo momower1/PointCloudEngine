@@ -57,6 +57,43 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 
     hr = d3d11Device->CreateShaderResourceView(nodesBuffer, &nodesBufferSRVDesc, &nodesBufferSRV);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(nodesBufferSRV));
+	
+	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
+	D3D11_TEXTURE2D_DESC octreeDepthStencilTextureDesc;
+	octreeDepthStencilTextureDesc.Width = settings->resolutionX;
+	octreeDepthStencilTextureDesc.Height = settings->resolutionY;
+	octreeDepthStencilTextureDesc.MipLevels = 1;
+	octreeDepthStencilTextureDesc.ArraySize = 1;
+	octreeDepthStencilTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	octreeDepthStencilTextureDesc.SampleDesc.Count = 1;
+	octreeDepthStencilTextureDesc.SampleDesc.Quality = 0;
+	octreeDepthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	octreeDepthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	octreeDepthStencilTextureDesc.CPUAccessFlags = 0;
+	octreeDepthStencilTextureDesc.MiscFlags = 0;
+
+	// Create the depth/stencil view
+	hr = d3d11Device->CreateTexture2D(&octreeDepthStencilTextureDesc, NULL, &octreeDepthStencilTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(octreeDepthStencilTexture));
+
+	// Create Depth / Stencil View
+	D3D11_DEPTH_STENCIL_VIEW_DESC octreeDepthStencilViewDesc;
+	ZeroMemory(&octreeDepthStencilViewDesc, sizeof(octreeDepthStencilViewDesc));
+	octreeDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	octreeDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+
+	hr = d3d11Device->CreateDepthStencilView(octreeDepthStencilTexture, &octreeDepthStencilViewDesc, &octreeDepthStencilView);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed for the " + NAMEOF(octreeDepthStencilView));
+
+	// Create a shader resource view in order to bind it to the shader
+	D3D11_SHADER_RESOURCE_VIEW_DESC octreeDepthStencilTextureSRVDesc;
+	ZeroMemory(&octreeDepthStencilTextureSRVDesc, sizeof(octreeDepthStencilTextureSRVDesc));
+	octreeDepthStencilTextureSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	octreeDepthStencilTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	octreeDepthStencilTextureSRVDesc.Texture2D.MipLevels = 1;
+
+	hr = d3d11Device->CreateShaderResourceView(octreeDepthStencilTexture, &octreeDepthStencilTextureSRVDesc, &octreeDepthStencilTextureSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(octreeDepthStencilTextureSRV));
 
     // Create general buffer description for append/consume buffer
     D3D11_BUFFER_DESC appendConsumeBufferDesc;
@@ -273,6 +310,9 @@ void OctreeRenderer::Release()
     Hierarchy::ReleaseSceneObject(text);
 
     SAFE_RELEASE(nodesBuffer);
+	SAFE_RELEASE(octreeDepthStencilView);
+	SAFE_RELEASE(octreeDepthStencilTexture);
+	SAFE_RELEASE(octreeDepthStencilTextureSRV);
     SAFE_RELEASE(firstBuffer);
     SAFE_RELEASE(secondBuffer);
     SAFE_RELEASE(vertexAppendBuffer);
@@ -476,11 +516,50 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->IASetVertexBuffers(0, 1, nullBuffer, &zero, &zero);
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
+	// TEST
+	ID3D11Texture2D* tmp;
+	D3D11_TEXTURE2D_DESC tmpDesc;
+	tmpDesc.Width = settings->resolutionX;
+	tmpDesc.Height = settings->resolutionY;
+	tmpDesc.MipLevels = 1;
+	tmpDesc.ArraySize = 1;
+	tmpDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	tmpDesc.SampleDesc.Count = settings->msaaCount;
+	tmpDesc.SampleDesc.Quality = 0;
+	tmpDesc.Usage = D3D11_USAGE_DEFAULT;
+	tmpDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	tmpDesc.CPUAccessFlags = 0;
+	tmpDesc.MiscFlags = 0;
+
+	hr = d3d11Device->CreateTexture2D(&tmpDesc, NULL, &tmp);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(tmp));
+
+	// Draw only the depth to the depth texture, don't draw any color
+	d3d11DevCon->ClearDepthStencilView(octreeDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	d3d11DevCon->CopyResource(tmp, octreeDepthStencilTexture);
+	hr = SaveDDSTextureToFile(d3d11DevCon, tmp, (executableDirectory + L"/Screenshots/depth_cleared.dds").c_str());
+
+	d3d11DevCon->OMSetRenderTargets(0, NULL, octreeDepthStencilView);
     d3d11DevCon->Draw(vertexBufferCount, 0);
 
-    // Unbind the vertex shader buffers
+	d3d11DevCon->CopyResource(tmp, octreeDepthStencilTexture);
+	hr = SaveDDSTextureToFile(d3d11DevCon, tmp, (executableDirectory + L"/Screenshots/depth_drawn.dds").c_str());
+
+	SAFE_RELEASE(tmp);
+
+	// Draw again but this time with the actual depth buffer and render target
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+
+	// Bind this depth texture to the shader
+	d3d11DevCon->PSSetShaderResources(2, 1, &octreeDepthStencilTextureSRV);
+
+	d3d11DevCon->Draw(vertexBufferCount, 0);
+
+    // Unbind the shader resources
     d3d11DevCon->VSSetShaderResources(0, 1, nullSRV);
     d3d11DevCon->VSSetShaderResources(1, 1, nullSRV);
+	d3d11DevCon->PSSetShaderResources(2, 1, nullSRV);
 }
 
 UINT PointCloudEngine::OctreeRenderer::GetStructureCount(ID3D11UnorderedAccessView *UAV)
