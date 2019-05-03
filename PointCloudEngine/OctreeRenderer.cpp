@@ -95,16 +95,6 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	hr = d3d11Device->CreateShaderResourceView(octreeDepthStencilTexture, &octreeDepthTextureSRVDesc, &octreeDepthTextureSRV);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(octreeDepthTextureSRV));
 
-	// Create a shader resource view in order to bind the stencil part of the texture to a shader
-	D3D11_SHADER_RESOURCE_VIEW_DESC octreeStencilTextureSRVDesc;
-	ZeroMemory(&octreeStencilTextureSRVDesc, sizeof(octreeStencilTextureSRVDesc));
-	octreeStencilTextureSRVDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
-	octreeStencilTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	octreeStencilTextureSRVDesc.Texture2D.MipLevels = 1;
-
-	hr = d3d11Device->CreateShaderResourceView(octreeDepthStencilTexture, &octreeStencilTextureSRVDesc, &octreeStencilTextureSRV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(octreeStencilTextureSRV));
-
 	// Create a blend state that adds all the colors of the overlapping fragments together
 	D3D11_BLEND_DESC additiveBlendStateDesc;
 	ZeroMemory(&additiveBlendStateDesc, sizeof(additiveBlendStateDesc));
@@ -119,26 +109,6 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 
 	hr = d3d11Device->CreateBlendState(&additiveBlendStateDesc, &additiveBlendState);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed for the " + NAMEOF(additiveBlendState));
-
-	// Create depth/stencil state that increments the stencil buffer for each rendered pixel
-	D3D11_DEPTH_STENCIL_DESC inrementDepthStencilStateDesc;
-	inrementDepthStencilStateDesc.DepthEnable = true;
-	inrementDepthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	inrementDepthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	inrementDepthStencilStateDesc.StencilEnable = true;
-	inrementDepthStencilStateDesc.StencilReadMask = 0xFF;
-	inrementDepthStencilStateDesc.StencilWriteMask = 0xFF;
-	inrementDepthStencilStateDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INCR;
-	inrementDepthStencilStateDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	inrementDepthStencilStateDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
-	inrementDepthStencilStateDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	inrementDepthStencilStateDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	inrementDepthStencilStateDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	inrementDepthStencilStateDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	inrementDepthStencilStateDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
-
-	hr = d3d11Device->CreateDepthStencilState(&inrementDepthStencilStateDesc, &incrementDepthStencilState);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed for the " + NAMEOF(incrementDepthStencilState));
 
     // Create general buffer description for append/consume buffer
     D3D11_BUFFER_DESC appendConsumeBufferDesc;
@@ -362,7 +332,6 @@ void OctreeRenderer::Release()
 	SAFE_RELEASE(octreeDepthStencilView);
 	SAFE_RELEASE(octreeDepthStencilTexture);
 	SAFE_RELEASE(octreeDepthTextureSRV);
-	SAFE_RELEASE(octreeStencilTextureSRV);
 	SAFE_RELEASE(additiveBlendState);
     SAFE_RELEASE(firstBuffer);
     SAFE_RELEASE(secondBuffer);
@@ -451,14 +420,14 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
 		d3d11DevCon->OMSetRenderTargets(0, NULL, octreeDepthStencilView);
 		d3d11DevCon->Draw(vertexBufferCount, 0);
 
-		// Draw again but this time with the actual depth buffer, render target and blending
+		// Clear stencil buffer, draw again but this time with the actual depth buffer, render target and blending
 		octreeConstantBufferData.blend = true;
 		d3d11DevCon->UpdateSubresource(octreeConstantBuffer, 0, NULL, &octreeConstantBufferData, 0, 0);
+		d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_STENCIL, 0, 0);
 		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 
 		// Set a different blend state
 		d3d11DevCon->OMSetBlendState(additiveBlendState, NULL, 0xffffffff);
-		d3d11DevCon->OMSetDepthStencilState(incrementDepthStencilState, 0);
 
 		// Bind this depth texture to the shader
 		d3d11DevCon->PSSetShaderResources(2, 1, &octreeDepthTextureSRV);
@@ -468,14 +437,16 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
 
 		// Reset to the default blend state
 		d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
-		d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
 
 		// Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
+		d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
 		d3d11DevCon->CSSetShader(octreeBlendingComputeShader->computeShader, 0, 0);
 		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
-		d3d11DevCon->CSSetShaderResources(0, 1, &octreeStencilTextureSRV);
+		d3d11DevCon->CSSetShaderResources(0, 1, &stencilTextureSRV);
 
 		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+
+		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 
         SAFE_RELEASE(vertexBuffer);
     }

@@ -29,6 +29,8 @@ ID3D11Texture2D* backBufferTexture;
 ID3D11UnorderedAccessView* backBufferTextureUAV;
 ID3D11DepthStencilView* depthStencilView;
 ID3D11Texture2D* depthStencilTexture;
+ID3D11ShaderResourceView* depthTextureSRV;
+ID3D11ShaderResourceView* stencilTextureSRV;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
@@ -261,38 +263,59 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	depthStencilTextureDesc.SampleDesc.Count = settings->msaaCount;
 	depthStencilTextureDesc.SampleDesc.Quality = 0;
 	depthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	depthStencilTextureDesc.CPUAccessFlags = 0;
 	depthStencilTextureDesc.MiscFlags = 0;
 
-	// Create the depth/stencil view
+	// Create the depth/stencil texture
 	hr = d3d11Device->CreateTexture2D(&depthStencilTextureDesc, NULL, &depthStencilTexture);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-    // Depth / Stencil description
-    D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+	// Create a shader resource view in order to bind the depth part of the texture to a shader
+	D3D11_SHADER_RESOURCE_VIEW_DESC depthTextureSRVDesc;
+	ZeroMemory(&depthTextureSRVDesc, sizeof(depthTextureSRVDesc));
+	depthTextureSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	depthTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	depthTextureSRVDesc.Texture2D.MipLevels = 1;
 
-    // Depth test parameters
+	hr = d3d11Device->CreateShaderResourceView(depthStencilTexture, &depthTextureSRVDesc, &depthTextureSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(depthTextureSRV));
+
+	// Create a shader resource view in order to bind the stencil part of the texture to a shader
+	D3D11_SHADER_RESOURCE_VIEW_DESC stencilTextureSRVDesc;
+	ZeroMemory(&stencilTextureSRVDesc, sizeof(stencilTextureSRVDesc));
+	stencilTextureSRVDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+	stencilTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	stencilTextureSRVDesc.Texture2D.MipLevels = 1;
+
+	hr = d3d11Device->CreateShaderResourceView(depthStencilTexture, &stencilTextureSRVDesc, &stencilTextureSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(stencilTextureSRV));
+
+	// Create Depth / Stencil View
+	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
+	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+
+	hr = d3d11Device->CreateDepthStencilView(depthStencilTexture, &depthStencilViewDesc, &depthStencilView);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
+
+    // Depth / Stencil description that increments the stencil buffer for each passed fragment
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
     depthStencilDesc.DepthEnable = true;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-    // Stencil test parameters
     depthStencilDesc.StencilEnable = true;
     depthStencilDesc.StencilReadMask = 0xFF;
     depthStencilDesc.StencilWriteMask = 0xFF;
-
-    // Stencil operations if pixel is front-facing
-    depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-    depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INCR_SAT;
+    depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR_SAT;
+    depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR_SAT;
     depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-    // Stencil operations if pixel is back-facing
     depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
     depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
 
     // Create depth stencil state
     hr = d3d11Device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
@@ -312,15 +335,6 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
     hr = d3d11Device->CreateBlendState(&blendStateDesc, &blendState);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed!");
-
-    // Create Depth / Stencil View
-    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-    ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
-    depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
-
-	hr = d3d11Device->CreateDepthStencilView(depthStencilTexture, &depthStencilViewDesc, &depthStencilView);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
 
 	// Describing the render state
 	D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -480,5 +494,7 @@ void ReleaseObjects()
     SAFE_RELEASE(depthStencilView);
     SAFE_RELEASE(depthStencilState);
     SAFE_RELEASE(depthStencilTexture);
+	SAFE_RELEASE(depthTextureSRV);
+	SAFE_RELEASE(stencilTextureSRV);
     SAFE_RELEASE(rasterizerState);
 }
