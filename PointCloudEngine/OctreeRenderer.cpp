@@ -128,8 +128,8 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	inrementDepthStencilStateDesc.StencilEnable = true;
 	inrementDepthStencilStateDesc.StencilReadMask = 0xFF;
 	inrementDepthStencilStateDesc.StencilWriteMask = 0xFF;
-	inrementDepthStencilStateDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	inrementDepthStencilStateDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	inrementDepthStencilStateDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INCR;
+	inrementDepthStencilStateDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
 	inrementDepthStencilStateDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
 	inrementDepthStencilStateDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 	inrementDepthStencilStateDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
@@ -470,9 +470,12 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
 		d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
 		d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
 
-		// TODO: Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
-		// d3d11DevCon->CSSetShaderResources(0, 1, &octreeStencilTextureSRV);
-		// in shader: Texture2D<uint2> stencilBuffer; (green channel contains the stencil, red is unused)
+		// Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
+		d3d11DevCon->CSSetShader(octreeBlendingComputeShader->computeShader, 0, 0);
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
+		d3d11DevCon->CSSetShaderResources(0, 1, &octreeStencilTextureSRV);
+
+		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
 
         SAFE_RELEASE(vertexBuffer);
     }

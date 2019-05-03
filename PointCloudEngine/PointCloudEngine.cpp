@@ -18,12 +18,15 @@ Shader* octreeSplatShader;
 Shader* octreeClusterShader;
 Shader* octreeComputeShader;
 Shader* octreeComputeVSShader;
+Shader* octreeBlendingComputeShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
 ID3D11Device* d3d11Device;		                // GPU
 ID3D11DeviceContext* d3d11DevCon;		        // (multi-threaded) rendering
 ID3D11RenderTargetView* renderTargetView;		// 2D texture (backbuffer) -> output merger
+ID3D11Texture2D* backBufferTexture;
+ID3D11UnorderedAccessView* backBufferTextureUAV;
 ID3D11DepthStencilView* depthStencilView;
 ID3D11Texture2D* depthStencilTexture;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
@@ -97,24 +100,16 @@ bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile)
 
 void SaveScreenshotToFile()
 {
-	// Get the screen buffer from the swap chain
-	ID3D11Texture2D* backBuffer;
-	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->GetBuffer) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+	// Save the texture to the hard drive
+	CreateDirectory((executableDirectory + L"/Screenshots").c_str(), NULL);
+	hr = SaveWICTextureToFile(d3d11DevCon, backBufferTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
 
 	if (SUCCEEDED(hr))
 	{
-		// Save the texture to the hard drive
-		CreateDirectory((executableDirectory + L"/Screenshots").c_str(), NULL);
-		hr = SaveWICTextureToFile(d3d11DevCon, backBuffer, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
-
-		if (SUCCEEDED(hr))
-		{
-			// Make a successful sound
-			Beep(750, 75);
-			Beep(1000, 150);
-		}
+		// Make a successful sound
+		Beep(750, 75);
+		Beep(1000, 150);
 	}
 }
 
@@ -208,26 +203,26 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 
 bool InitializeDirect3d11App(HINSTANCE hInstance)
 {
-	DXGI_MODE_DESC bufferDesc;		                                        // Describe the backbuffer
-	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));		                // Clear everything for safety
-	bufferDesc.Width = settings->resolutionX;		                        // Resolution X
-	bufferDesc.Height = settings->resolutionY;		                        // Resolution Y
-	bufferDesc.RefreshRate.Numerator = 144;		                            // Hertz
+	DXGI_MODE_DESC bufferDesc;																	// Describe the backbuffer
+	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));											// Clear everything for safety
+	bufferDesc.Width = settings->resolutionX;													// Resolution X
+	bufferDesc.Height = settings->resolutionY;													// Resolution Y
+	bufferDesc.RefreshRate.Numerator = 144;														// Hertz
 	bufferDesc.RefreshRate.Denominator = 1;
-	bufferDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;		                // Describes the display format
-	bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;		// Describes the order in which the rasterizer renders - not used since we use double buffering
-	bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;		                // Descibes how window scaling is handled
+	bufferDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;											// Describes the display format
+	bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;							// Describes the order in which the rasterizer renders - not used since we use double buffering
+	bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;											// Descibes how window scaling is handled
 
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;		                                // Describe the spaw chain
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;															// Describe the spaw chain
 	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 	swapChainDesc.BufferDesc = bufferDesc;
-	swapChainDesc.SampleDesc.Count = settings->msaaCount;		            // Multisampling -> Smooth choppiness in edges and lines
+	swapChainDesc.SampleDesc.Count = settings->msaaCount;										// Multisampling -> Smooth choppiness in edges and lines
     swapChainDesc.SampleDesc.Quality = 0;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;		    // Describing the access the cpu has to the surface of the back buffer
-	swapChainDesc.BufferCount = 1;		                                    // 1 for double buffering, 2 for triple buffering and so on
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
+	swapChainDesc.BufferCount = 1;																// 1 for double buffering, 2 for triple buffering and so on
 	swapChainDesc.OutputWindow = hwnd;
-	swapChainDesc.Windowed = settings->windowed;		                    // Fullscreen might freeze the programm -> set windowed before exit
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;		            // Let display driver decide what to do when swapping buffers
+	swapChainDesc.Windowed = settings->windowed;												// Fullscreen might freeze the programm -> set windowed before exit
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;										// Let display driver decide what to do when swapping buffers
 
     // Add flags for the creation of the device for debugging
     UINT flags = 0;
@@ -240,13 +235,21 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
 
-	ID3D11Texture2D* backBuffer;
-	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);		// Create backbuffer for the render target view
+	// Create backbuffer for the render target view
+	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
 
 	// Create render target view, will be sended to the output merger stage of the pipeline
-	hr = d3d11Device->CreateRenderTargetView(backBuffer, NULL, &renderTargetView);		// NULL -> view accesses all subresources in mipmap level 0
+	hr = d3d11Device->CreateRenderTargetView(backBufferTexture, NULL, &renderTargetView);		// NULL -> view accesses all subresources in mipmap level 0
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
-    SAFE_RELEASE(backBuffer);
+
+	// Create an unordered acces view in order to access and manipulate the texture in shaders
+	D3D11_UNORDERED_ACCESS_VIEW_DESC backBufferTextureUAVDesc;
+	ZeroMemory(&backBufferTextureUAVDesc, sizeof(backBufferTextureUAVDesc));
+	backBufferTextureUAVDesc.Format = bufferDesc.Format;
+	backBufferTextureUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+
+	hr = d3d11Device->CreateUnorderedAccessView(backBufferTexture, &backBufferTextureUAVDesc, &backBufferTextureUAV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(backBufferTextureUAV));
 
 	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
 	D3D11_TEXTURE2D_DESC depthStencilTextureDesc;
@@ -401,6 +404,7 @@ bool InitializeScene()
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeComputeShader = Shader::Create(L"Shader/OctreeCompute.hlsl", false, false, false, true, NULL, 0);
     octreeComputeVSShader = Shader::Create(L"Shader/OctreeComputeVS.hlsl", true, false, false, false, NULL, 0);
+	octreeBlendingComputeShader = Shader::Create(L"Shader/OctreeBlendingCompute.hlsl", false, false, false, true, NULL, 0);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
@@ -471,6 +475,8 @@ void ReleaseObjects()
     SAFE_RELEASE(d3d11Device);
     SAFE_RELEASE(d3d11DevCon);
     SAFE_RELEASE(renderTargetView);
+	SAFE_RELEASE(backBufferTexture);
+	SAFE_RELEASE(backBufferTextureUAV);
     SAFE_RELEASE(depthStencilView);
     SAFE_RELEASE(depthStencilState);
     SAFE_RELEASE(depthStencilTexture);

@@ -3,7 +3,7 @@
 
 Texture2D<float> octreeDepthTexture : register(t2);
 
-SamplerState DepthTextureSampler
+SamplerState PointSampler
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
@@ -129,13 +129,13 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 	if (blend)
 	{
 		// Transform from clip position into texture space
-		input.clipPosition.xyz = input.clipPosition.xyz / input.clipPosition.w;
-		float2 uv = float2(input.clipPosition.x / 2.0f, input.clipPosition.y / -2.0f) + 0.5f;
+		float3 clipPosition = input.clipPosition.xyz / input.clipPosition.w;
+		float2 uv = float2(clipPosition.x / 2.0f, clipPosition.y / -2.0f) + 0.5f;
 
-		float surfaceDepth = octreeDepthTexture.Sample(DepthTextureSampler, uv);
+		float surfaceDepth = octreeDepthTexture.Sample(PointSampler, uv);
 
 		// Discard this pixel if it is not close to the surface
-		if (abs(input.clipPosition.z - surfaceDepth) > 0.001f)
+		if (abs(clipPosition.z - surfaceDepth) > 0.0001f)
 		{
 			discard;
 		}
