@@ -25,7 +25,7 @@ namespace PointCloudEngine
 
         int viewMode = 0;
         int vertexBufferCount = 0;
-        bool useComputeShader = true;
+        bool useComputeShader = false;
 		bool useViewFrustumCulling = true;
 
         Octree *octree = NULL;
@@ -39,7 +39,9 @@ namespace PointCloudEngine
 		// Blending
 		ID3D11DepthStencilView *octreeDepthStencilView = NULL;
 		ID3D11Texture2D *octreeDepthStencilTexture = NULL;
-		ID3D11ShaderResourceView* octreeDepthStencilTextureSRV = NULL;
+		ID3D11ShaderResourceView *octreeDepthTextureSRV = NULL;
+		ID3D11ShaderResourceView *octreeStencilTextureSRV = NULL;
+		ID3D11BlendState* additiveBlendState = NULL;
 
         // Compute shader
         ID3D11Buffer *nodesBuffer = NULL;

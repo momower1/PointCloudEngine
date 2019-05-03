@@ -207,14 +207,14 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 }
 
 bool InitializeDirect3d11App(HINSTANCE hInstance)
-{    
+{
 	DXGI_MODE_DESC bufferDesc;		                                        // Describe the backbuffer
 	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));		                // Clear everything for safety
 	bufferDesc.Width = settings->resolutionX;		                        // Resolution X
 	bufferDesc.Height = settings->resolutionY;		                        // Resolution Y
 	bufferDesc.RefreshRate.Numerator = 144;		                            // Hertz
 	bufferDesc.RefreshRate.Denominator = 1;
-	bufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;		                    // Describes the display format. 32bit unsigned int for 8bit Color RGBA
+	bufferDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;		                // Describes the display format
 	bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;		// Describes the order in which the rasterizer renders - not used since we use double buffering
 	bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;		                // Descibes how window scaling is handled
 
@@ -254,11 +254,11 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	depthStencilTextureDesc.Height = settings->resolutionY;
 	depthStencilTextureDesc.MipLevels = 1;
 	depthStencilTextureDesc.ArraySize = 1;
-	depthStencilTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	depthStencilTextureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	depthStencilTextureDesc.SampleDesc.Count = settings->msaaCount;
 	depthStencilTextureDesc.SampleDesc.Quality = 0;
 	depthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	depthStencilTextureDesc.CPUAccessFlags = 0;
 	depthStencilTextureDesc.MiscFlags = 0;
 
@@ -294,7 +294,6 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     // Create depth stencil state
     hr = d3d11Device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
-    d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
 
     // Create blend state for transparency
     D3D11_BLEND_DESC blendStateDesc;
@@ -314,7 +313,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
     // Create Depth / Stencil View
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
     ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
-    depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
 
 	hr = d3d11Device->CreateDepthStencilView(depthStencilTexture, &depthStencilViewDesc, &depthStencilView);
@@ -437,10 +436,11 @@ void DrawScene()
 	// Refresh the depth/stencil view
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	// Set the blend state
-	float blendFactor[4] = { 0, 0, 0, 0 };
-	UINT sampleMask = 0xffffffff;
-	d3d11DevCon->OMSetBlendState(blendState, blendFactor, sampleMask);
+	// Set the depth / stencil state
+	d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
+
+	// Set the blend state, blend factor will become (1, 1, 1, 1) when passing NULL
+	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
 
     // Calculates view and projection matrices and sets the viewport
     camera->PrepareDraw();

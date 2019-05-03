@@ -1,9 +1,9 @@
 #include "Octree.hlsl"
 #include "OctreeConstantBuffer.hlsl"
 
-Texture2D depthStencilTexture : register(t2);
+Texture2D<float> octreeDepthTexture : register(t2);
 
-SamplerState DepthStencilTextureSampler
+SamplerState DepthTextureSampler
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
@@ -126,17 +126,16 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-	// Transform from clip position into texture space
-	input.clipPosition.xyz = input.clipPosition.xyz / input.clipPosition.w;
-	float2 uv = float2(input.clipPosition.x / 2.0f, input.clipPosition.y / -2.0f) + 0.5f;
-
-	float surfaceDepth = depthStencilTexture.Sample(DepthStencilTextureSampler, uv);
-
 	if (blend)
 	{
-		float depthOffset = abs(input.clipPosition.z - surfaceDepth);
+		// Transform from clip position into texture space
+		input.clipPosition.xyz = input.clipPosition.xyz / input.clipPosition.w;
+		float2 uv = float2(input.clipPosition.x / 2.0f, input.clipPosition.y / -2.0f) + 0.5f;
 
-		if (depthOffset > 0.001f)
+		float surfaceDepth = octreeDepthTexture.Sample(DepthTextureSampler, uv);
+
+		// Discard this pixel if it is not close to the surface
+		if (abs(input.clipPosition.z - surfaceDepth) > 0.001f)
 		{
 			discard;
 		}
