@@ -310,9 +310,6 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
     hr = d3d11Device->CreateBlendState(&blendStateDesc, &blendState);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed!");
-	float blendFactor[4] = { 0, 0, 0, 0 };
-    UINT sampleMask = 0xffffffff;
-    d3d11DevCon->OMSetBlendState(blendState, blendFactor, sampleMask);
 
     // Create Depth / Stencil View
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -439,6 +436,11 @@ void DrawScene()
 	
 	// Refresh the depth/stencil view
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	// Set the blend state
+	float blendFactor[4] = { 0, 0, 0, 0 };
+	UINT sampleMask = 0xffffffff;
+	d3d11DevCon->OMSetBlendState(blendState, blendFactor, sampleMask);
 
     // Calculates view and projection matrices and sets the viewport
     camera->PrepareDraw();

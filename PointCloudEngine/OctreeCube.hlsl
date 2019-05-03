@@ -56,46 +56,46 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
     };
 
 	// Append in such a way that the lowest possible number of vertices is used
-    element.position = mul(float4(cube[3], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[3], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[0], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[0], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[1], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[1], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[2], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[2], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[3], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[3], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[4], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[4], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[5], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[5], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[6], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[6], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[7], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[7], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[4], 1), WVP);
-    output.Append(element);
-
-    output.RestartStrip();
-
-    element.position = mul(float4(cube[2], 1), WVP);
-    output.Append(element);
-    element.position = mul(float4(cube[7], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[4], 1), WVP);
     output.Append(element);
 
     output.RestartStrip();
 
-    element.position = mul(float4(cube[1], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[2], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[6], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[7], 1), WVP);
     output.Append(element);
 
     output.RestartStrip();
 
-    element.position = mul(float4(cube[0], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[1], 1), WVP);
     output.Append(element);
-    element.position = mul(float4(cube[5], 1), WVP);
+    element.position = element.clipPosition = mul(float4(cube[6], 1), WVP);
+    output.Append(element);
+
+    output.RestartStrip();
+
+    element.position = element.clipPosition = mul(float4(cube[0], 1), WVP);
+    output.Append(element);
+    element.position = element.clipPosition = mul(float4(cube[5], 1), WVP);
     output.Append(element);
 }
 

@@ -175,7 +175,8 @@ namespace PointCloudEngine
 		// Compute shader data
 		UINT inputCount;
 
-		float padding15;
+		// Blending
+		int blend;				// Actually used like a bool
 		float padding16;
 		float padding17;
 	};

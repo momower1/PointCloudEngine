@@ -103,37 +103,44 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     element.normal = normal;
 
 	// Append the vertices in the correct order to create a billboard
-    element.position = mul(float4(worldPosition + up - right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition + up - right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition - up + right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition - up + right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition - up - right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition - up - right, 1), VP);
     output.Append(element);
 
     output.RestartStrip();
 
-    element.position = mul(float4(worldPosition + up - right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition + up - right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition + up + right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition + up + right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition - up + right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition - up + right, 1), VP);
     output.Append(element);
 }
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-	// Transform position into texture space
-	float3 texturePosition = input.position.xyz / input.position.w;
-	texturePosition.x = (texturePosition.x / 2.0f) + 0.5f;
-	texturePosition.y = (texturePosition.y / -2.0f) + 0.5f;
+	// Transform from clip position into texture space
+	input.clipPosition.xyz = input.clipPosition.xyz / input.clipPosition.w;
+	float2 uv = float2(input.clipPosition.x / 2.0f, input.clipPosition.y / -2.0f) + 0.5f;
 
-	float depth = depthStencilTexture.Sample(DepthStencilTextureSampler, texturePosition.xy);
+	float surfaceDepth = depthStencilTexture.Sample(DepthStencilTextureSampler, uv);
 
-	return float4(depth, 0, 0, 1);
+	if (blend)
+	{
+		float depthOffset = abs(input.clipPosition.z - surfaceDepth);
 
-    //return float4(input.color.rgb, 1);
+		if (depthOffset > 0.001f)
+		{
+			discard;
+		}
+	}
+
+	return float4(input.color.rgb, 1);
 }

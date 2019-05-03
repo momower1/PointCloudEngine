@@ -37,28 +37,28 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
     element.normal = float3(0, 0, 0);
 
 	// Append a line from the center to the end of each normal
-    element.position = mul(float4(input[0].position, 1), WVP);
+    element.position = element.clipPosition = mul(float4(input[0].position, 1), WVP);
     element.color = Color16ToFloat3(input[0].color0);
     output.Append(element);
     element.position = mul(float4(end[0], 1), WVP);
     output.Append(element);
     output.RestartStrip();
 
-    element.position = mul(float4(input[0].position, 1), WVP);
+    element.position = element.clipPosition = mul(float4(input[0].position, 1), WVP);
     element.color = Color16ToFloat3(input[0].color1);
     output.Append(element);
     element.position = mul(float4(end[1], 1), WVP);
     output.Append(element);
     output.RestartStrip();
 
-    element.position = mul(float4(input[0].position, 1), WVP);
+    element.position = element.clipPosition = mul(float4(input[0].position, 1), WVP);
     element.color = Color16ToFloat3(input[0].color2);
     output.Append(element);
     element.position = mul(float4(end[2], 1), WVP);
     output.Append(element);
     output.RestartStrip();
 
-    element.position = mul(float4(input[0].position, 1), WVP);
+    element.position = element.clipPosition = mul(float4(input[0].position, 1), WVP);
     element.color = Color16ToFloat3(input[0].color3);
     output.Append(element);
     element.position = mul(float4(end[3], 1), WVP);

@@ -65,6 +65,9 @@ cbuffer OctreeConstantBuffer : register(b0)
 	// Compute shader data
 	uint inputCount;
 
-	// 12 byte auto padding
+	// Blending
+	int blend;
+
+	// 8 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };	// Total: 544 bytes with constant buffer packing rules
