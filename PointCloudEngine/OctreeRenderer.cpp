@@ -433,6 +433,19 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
 		d3d11DevCon->PSSetShaderResources(2, 1, &octreeDepthTextureSRV);
 
 		// Draw again only adding the colors of the overlapping splats together
+		// Disable depth test to make sure that all the overlapping splats are blended together
+		ID3D11DepthStencilState* state;
+		D3D11_DEPTH_STENCIL_DESC desc;
+		depthStencilState->GetDesc(&desc);
+		desc.DepthEnable = false;
+
+		hr = d3d11Device->CreateDepthStencilState(&desc, &state);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
+
+		d3d11DevCon->OMSetDepthStencilState(state, 0);
+
+		SAFE_RELEASE(state);
+
 		d3d11DevCon->Draw(vertexBufferCount, 0);
 
 		// Reset to the default blend state

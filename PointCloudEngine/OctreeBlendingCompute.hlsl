@@ -16,6 +16,4 @@ void CS (uint3 id : SV_DispatchThreadID)
 
 		renderTargetTexture[id.xy] = color;
 	}
-
-	renderTargetTexture[id.xy] = float4(stencil / 255.0f, 0, 0, 1);
 }

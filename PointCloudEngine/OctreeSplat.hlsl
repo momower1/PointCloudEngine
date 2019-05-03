@@ -135,7 +135,7 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 		float surfaceDepth = octreeDepthTexture.Sample(PointSampler, uv);
 
 		// Discard this pixel if it is not close to the surface
-		if (abs(clipPosition.z - surfaceDepth) > 0.0001f)
+		if (abs(clipPosition.z - surfaceDepth) > 0.00001f)
 		{
 			discard;
 		}
