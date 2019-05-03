@@ -117,6 +117,7 @@ extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11RenderTargetView* renderTargetView;
 extern ID3D11DepthStencilView* depthStencilView;
 extern ID3D11DepthStencilState* depthStencilState;
+extern ID3D11BlendState* blendState;
 
 // Global function declarations
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
