@@ -60,40 +60,40 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(nodesBufferSRV));
 	
 	// Depth/Stencil buffer used for the blending of the splats
-	D3D11_TEXTURE2D_DESC octreeDepthStencilTextureDesc;
-	octreeDepthStencilTextureDesc.Width = settings->resolutionX;
-	octreeDepthStencilTextureDesc.Height = settings->resolutionY;
-	octreeDepthStencilTextureDesc.MipLevels = 1;
-	octreeDepthStencilTextureDesc.ArraySize = 1;
-	octreeDepthStencilTextureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-	octreeDepthStencilTextureDesc.SampleDesc.Count = 1;
-	octreeDepthStencilTextureDesc.SampleDesc.Quality = 0;
-	octreeDepthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	octreeDepthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	octreeDepthStencilTextureDesc.CPUAccessFlags = 0;
-	octreeDepthStencilTextureDesc.MiscFlags = 0;
+	D3D11_TEXTURE2D_DESC octreeDepthTextureDesc;
+	octreeDepthTextureDesc.Width = settings->resolutionX;
+	octreeDepthTextureDesc.Height = settings->resolutionY;
+	octreeDepthTextureDesc.MipLevels = 1;
+	octreeDepthTextureDesc.ArraySize = 1;
+	octreeDepthTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	octreeDepthTextureDesc.SampleDesc.Count = 1;
+	octreeDepthTextureDesc.SampleDesc.Quality = 0;
+	octreeDepthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	octreeDepthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	octreeDepthTextureDesc.CPUAccessFlags = 0;
+	octreeDepthTextureDesc.MiscFlags = 0;
 
 	// Create the depth/stencil view
-	hr = d3d11Device->CreateTexture2D(&octreeDepthStencilTextureDesc, NULL, &octreeDepthStencilTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(octreeDepthStencilTexture));
+	hr = d3d11Device->CreateTexture2D(&octreeDepthTextureDesc, NULL, &octreeDepthTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(octreeDepthTexture));
 
 	// Create Depth / Stencil View
 	D3D11_DEPTH_STENCIL_VIEW_DESC octreeDepthStencilViewDesc;
 	ZeroMemory(&octreeDepthStencilViewDesc, sizeof(octreeDepthStencilViewDesc));
-	octreeDepthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	octreeDepthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	octreeDepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
-	hr = d3d11Device->CreateDepthStencilView(octreeDepthStencilTexture, &octreeDepthStencilViewDesc, &octreeDepthStencilView);
+	hr = d3d11Device->CreateDepthStencilView(octreeDepthTexture, &octreeDepthStencilViewDesc, &octreeDepthStencilView);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed for the " + NAMEOF(octreeDepthStencilView));
 
 	// Create a shader resource view in order to bind the depth part of the texture to a shader
 	D3D11_SHADER_RESOURCE_VIEW_DESC octreeDepthTextureSRVDesc;
 	ZeroMemory(&octreeDepthTextureSRVDesc, sizeof(octreeDepthTextureSRVDesc));
-	octreeDepthTextureSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	octreeDepthTextureSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	octreeDepthTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	octreeDepthTextureSRVDesc.Texture2D.MipLevels = 1;
 
-	hr = d3d11Device->CreateShaderResourceView(octreeDepthStencilTexture, &octreeDepthTextureSRVDesc, &octreeDepthTextureSRV);
+	hr = d3d11Device->CreateShaderResourceView(octreeDepthTexture, &octreeDepthTextureSRVDesc, &octreeDepthTextureSRV);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(octreeDepthTextureSRV));
 
 	// Create a blend state that adds all the colors of the overlapping fragments together
@@ -359,7 +359,7 @@ void OctreeRenderer::Release()
 
     SAFE_RELEASE(nodesBuffer);
 	SAFE_RELEASE(octreeDepthStencilView);
-	SAFE_RELEASE(octreeDepthStencilTexture);
+	SAFE_RELEASE(octreeDepthTexture);
 	SAFE_RELEASE(octreeDepthTextureSRV);
 	SAFE_RELEASE(additiveBlendState);
 	SAFE_RELEASE(depthTestDisabledDepthStencilState);
