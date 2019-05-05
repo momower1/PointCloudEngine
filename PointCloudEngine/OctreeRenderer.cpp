@@ -463,11 +463,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     // Set the constant buffer
     d3d11DevCon->CSSetConstantBuffers(0, 1, &octreeConstantBuffer);
 
-    // This is used to unbind buffers and views from the shaders
-    ID3D11Buffer* nullBuffer[1] = { NULL };
-    ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
-    ID3D11ShaderResourceView* nullSRV[1] = { NULL };
-
     // Use compute shader to traverse the octree
     UINT zero = 0;
     d3d11DevCon->CSSetShader(octreeComputeShader->computeShader, 0, 0);
@@ -622,6 +617,11 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 
 	// Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
 	d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+
+	// Unbind shader resources
+	d3d11DevCon->PSSetShaderResources(2, 1, nullSRV);
+	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
+	d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
 
 	// Reset to the defaults
 	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);

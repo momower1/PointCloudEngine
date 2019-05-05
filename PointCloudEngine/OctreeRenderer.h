@@ -56,6 +56,11 @@ namespace PointCloudEngine
         ID3D11UnorderedAccessView *firstBufferUAV = NULL;
         ID3D11UnorderedAccessView *secondBufferUAV = NULL;
         ID3D11UnorderedAccessView *vertexAppendBufferUAV = NULL;
+
+		// This is used to unbind buffers and views from the shaders
+		ID3D11Buffer* nullBuffer[1] = { NULL };
+		ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
+		ID3D11ShaderResourceView* nullSRV[1] = { NULL };
     };
 }
 #endif
