@@ -1,6 +1,15 @@
 #include "Octree.hlsl"
 #include "OctreeConstantBuffer.hlsl"
 
+Texture2D<float> octreeDepthTexture : register(t2);
+
+SamplerState PointSampler
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 VS_INPUT VS(VS_INPUT input)
 {
     return input;
@@ -94,28 +103,50 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     element.normal = normal;
 
 	// Append the vertices in the correct order to create a billboard
-    element.position = mul(float4(worldPosition + up - right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition + up - right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition - up + right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition - up + right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition - up - right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition - up - right, 1), VP);
     output.Append(element);
 
     output.RestartStrip();
 
-    element.position = mul(float4(worldPosition + up - right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition + up - right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition + up + right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition + up + right, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(worldPosition - up + right, 1), VP);
+    element.position = element.clipPosition = mul(float4(worldPosition - up + right, 1), VP);
     output.Append(element);
 }
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
-    return float4(input.color.rgb, 1);
+	if (blend)
+	{
+		// Transform from clip position into texture space
+		float3 clipPosition = input.clipPosition.xyz / input.clipPosition.w;
+		float2 uv = float2(clipPosition.x / 2.0f, clipPosition.y / -2.0f) + 0.5f;
+
+		// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
+		float4 position = mul(float4(clipPosition.xyz, 1), WorldViewProjectionInverse);
+		position = position / position.w;
+
+		// This is the depth of the rendered surface to compare against
+		float surfaceDepth = octreeDepthTexture.Sample(PointSampler, uv);
+		float4 surfacePosition = mul(float4(clipPosition.x, clipPosition.y, surfaceDepth, 1), WorldViewProjectionInverse);
+		surfacePosition = surfacePosition / surfacePosition.w;
+
+		// Discard this pixel if it is not close to the surface
+		if (distance(position, surfacePosition) > depthEpsilon)
+		{
+			discard;
+		}
+	}
+
+	return float4(input.color.rgb, 1);
 }

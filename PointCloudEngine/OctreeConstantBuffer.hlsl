@@ -8,6 +8,8 @@ cbuffer OctreeConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (64 byte boundary)
 	float4x4 WorldInverseTranspose;
 //------------------------------------------------------------------------------ (64 byte boundary)
+	float4x4 WorldViewProjectionInverse;
+//------------------------------------------------------------------------------ (64 byte boundary)
 	float3 cameraPosition;
 	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
@@ -65,6 +67,10 @@ cbuffer OctreeConstantBuffer : register(b0)
 	// Compute shader data
 	uint inputCount;
 
-	// 12 byte auto padding
+	// Blending
+	int blend;
+	float depthEpsilon;
+
+	// 8 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-};	// Total: 544 bytes with constant buffer packing rules
+};	// Total: 608 bytes with constant buffer packing rules

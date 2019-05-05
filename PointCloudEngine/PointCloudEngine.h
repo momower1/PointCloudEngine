@@ -112,10 +112,17 @@ extern Shader* octreeSplatShader;
 extern Shader* octreeClusterShader;
 extern Shader* octreeComputeShader;
 extern Shader* octreeComputeVSShader;
+extern Shader* octreeBlendingComputeShader;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;
+extern ID3D11RenderTargetView* renderTargetView;
+extern ID3D11Texture2D* backBufferTexture;
+extern ID3D11UnorderedAccessView* backBufferTextureUAV;
+extern ID3D11DepthStencilView* depthStencilView;
+extern ID3D11ShaderResourceView* depthTextureSRV;
+extern ID3D11ShaderResourceView* stencilTextureSRV;
 extern ID3D11DepthStencilState* depthStencilState;
-extern ID3D11ShaderResourceView* depthStencilTextureSRV;
+extern ID3D11BlendState* blendState;
 
 // Global function declarations
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);

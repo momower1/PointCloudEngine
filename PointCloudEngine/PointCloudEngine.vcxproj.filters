@@ -156,6 +156,9 @@
     <FxCompile Include="OctreeConstantBuffer.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
+    <FxCompile Include="OctreeBlendingCompute.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Icon.ico">

@@ -19,12 +19,14 @@ namespace PointCloudEngine
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
-        void DrawOctree(SceneObject *sceneObject);
-        void DrawOctreeCompute(SceneObject *sceneObject);
+        void DrawOctree();
+        void DrawOctreeCompute();
+		void DrawOctreeBlended();
         UINT GetStructureCount(ID3D11UnorderedAccessView *UAV);
 
         int viewMode = 0;
         int vertexBufferCount = 0;
+		bool useBlending = true;
         bool useComputeShader = true;
 		bool useViewFrustumCulling = true;
 
@@ -35,6 +37,13 @@ namespace PointCloudEngine
         // Renderer buffer
         ID3D11Buffer* octreeConstantBuffer = NULL;
         OctreeConstantBuffer octreeConstantBufferData;
+
+		// Blending
+		ID3D11DepthStencilView *octreeDepthStencilView = NULL;
+		ID3D11Texture2D *octreeDepthTexture = NULL;
+		ID3D11ShaderResourceView *octreeDepthTextureSRV = NULL;
+		ID3D11BlendState* additiveBlendState = NULL;
+		ID3D11DepthStencilState* depthTestDisabledDepthStencilState = NULL;
 
         // Compute shader
         ID3D11Buffer *nodesBuffer = NULL;
@@ -47,6 +56,11 @@ namespace PointCloudEngine
         ID3D11UnorderedAccessView *firstBufferUAV = NULL;
         ID3D11UnorderedAccessView *secondBufferUAV = NULL;
         ID3D11UnorderedAccessView *vertexAppendBufferUAV = NULL;
+
+		// This is used to unbind buffers and views from the shaders
+		ID3D11Buffer* nullBuffer[1] = { NULL };
+		ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
+		ID3D11ShaderResourceView* nullSRV[1] = { NULL };
     };
 }
 #endif

@@ -135,6 +135,7 @@ namespace PointCloudEngine
 		Matrix View;
 		Matrix Projection;
 		Matrix WorldInverseTranspose;
+		Matrix WorldViewProjectionInverse;
 		Vector3 cameraPosition;
 		float padding0;
 		Vector3 localCameraPosition;
@@ -175,9 +176,10 @@ namespace PointCloudEngine
 		// Compute shader data
 		UINT inputCount;
 
+		// Blending
+		int blend;				// Actually used like a bool
+		float depthEpsilon;
 		float padding15;
-		float padding16;
-		float padding17;
 	};
 }
 
