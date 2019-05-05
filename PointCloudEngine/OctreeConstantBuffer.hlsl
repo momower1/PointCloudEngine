@@ -69,6 +69,7 @@ cbuffer OctreeConstantBuffer : register(b0)
 
 	// Blending
 	int blend;
+	float depthEpsilon;
 
 	// 8 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)

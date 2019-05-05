@@ -9,7 +9,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     text = Hierarchy::Create(L"OctreeRendererText");
     textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
 
-    text->transform->position = Vector3(-1.0f, -0.685f, 0);
+    text->transform->position = Vector3(-1.0f, -0.635f, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
     // Initialize constant buffer data
@@ -17,6 +17,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
 	octreeConstantBufferData.samplingRate = 0.01f;
 	octreeConstantBufferData.splatSize = 0.01f;
 	octreeConstantBufferData.level = -1;
+	octreeConstantBufferData.depthEpsilon = 0.5f;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
@@ -212,9 +213,22 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
 	octreeConstantBufferData.samplingRate = max(0.0001f, octreeConstantBufferData.samplingRate);
 
+	// Change the depth epsilon for blending
+	if (Input::GetKey(Keyboard::V))
+	{
+		octreeConstantBufferData.depthEpsilon -= dt * 0.1f;
+	}
+	else if (Input::GetKey(Keyboard::N))
+	{
+		octreeConstantBufferData.depthEpsilon += dt * 0.1f;
+	}
+
+	octreeConstantBufferData.depthEpsilon = max(0.0001f, octreeConstantBufferData.depthEpsilon);
+
     // Set the text
     textRenderer->text = useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n";
 	textRenderer->text.append(useViewFrustumCulling ? L"View Frustum Culling Enabled\n" : L"View Frustum Culling Disabled\n");
+	textRenderer->text.append(L"Blending ENABLED/DISABLED with Depth Epsilon: " + std::to_wstring(octreeConstantBufferData.depthEpsilon) + L"\n");
 
     int splatSizePixels = settings->resolutionY * octreeConstantBufferData.splatSize * octreeConstantBufferData.overlapFactor;
     textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");

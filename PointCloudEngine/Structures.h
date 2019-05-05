@@ -178,8 +178,8 @@ namespace PointCloudEngine
 
 		// Blending
 		int blend;				// Actually used like a bool
-		float padding16;
-		float padding17;
+		float depthEpsilon;
+		float padding15;
 	};
 }
 

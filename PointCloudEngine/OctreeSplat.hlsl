@@ -142,7 +142,7 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 		surfacePosition = surfacePosition / surfacePosition.w;
 
 		// Discard this pixel if it is not close to the surface
-		if (distance(position, surfacePosition) > 0.5f)
+		if (distance(position, surfacePosition) > depthEpsilon)
 		{
 			discard;
 		}
