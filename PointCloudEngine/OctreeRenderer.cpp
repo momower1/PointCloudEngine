@@ -277,6 +277,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.WorldInverseTranspose = worldInverse;
 	octreeConstantBufferData.View = camera->GetViewMatrix().Transpose();
 	octreeConstantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
+	octreeConstantBufferData.WorldViewProjectionInverse = worldViewProjectionInverse.Transpose();
 	octreeConstantBufferData.cameraPosition = cameraPosition;
 	octreeConstantBufferData.localCameraPosition = localCameraPosition;
 	octreeConstantBufferData.localViewFrustumNearTopLeft = localViewFrustum[0];

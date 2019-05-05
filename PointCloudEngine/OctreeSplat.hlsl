@@ -132,10 +132,17 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 		float3 clipPosition = input.clipPosition.xyz / input.clipPosition.w;
 		float2 uv = float2(clipPosition.x / 2.0f, clipPosition.y / -2.0f) + 0.5f;
 
+		// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
+		float4 position = mul(float4(clipPosition.xyz, 1), WorldViewProjectionInverse);
+		position = position / position.w;
+
+		// This is the depth of the rendered surface to compare against
 		float surfaceDepth = octreeDepthTexture.Sample(PointSampler, uv);
+		float4 surfacePosition = mul(float4(clipPosition.x, clipPosition.y, surfaceDepth, 1), WorldViewProjectionInverse);
+		surfacePosition = surfacePosition / surfacePosition.w;
 
 		// Discard this pixel if it is not close to the surface
-		if (abs(clipPosition.z - surfaceDepth) > 0.00001f)
+		if (distance(position, surfacePosition) > 0.5f)
 		{
 			discard;
 		}

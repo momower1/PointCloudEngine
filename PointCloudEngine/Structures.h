@@ -135,6 +135,7 @@ namespace PointCloudEngine
 		Matrix View;
 		Matrix Projection;
 		Matrix WorldInverseTranspose;
+		Matrix WorldViewProjectionInverse;
 		Vector3 cameraPosition;
 		float padding0;
 		Vector3 localCameraPosition;
