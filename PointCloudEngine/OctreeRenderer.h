@@ -19,13 +19,15 @@ namespace PointCloudEngine
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
-        void DrawOctree(SceneObject *sceneObject);
-        void DrawOctreeCompute(SceneObject *sceneObject);
+        void DrawOctree();
+        void DrawOctreeCompute();
+		void DrawOctreeBlended();
         UINT GetStructureCount(ID3D11UnorderedAccessView *UAV);
 
         int viewMode = 0;
         int vertexBufferCount = 0;
-        bool useComputeShader = false;
+		bool useBlending = true;
+        bool useComputeShader = true;
 		bool useViewFrustumCulling = true;
 
         Octree *octree = NULL;

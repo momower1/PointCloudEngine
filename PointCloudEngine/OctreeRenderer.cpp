@@ -201,6 +201,12 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 		useViewFrustumCulling = !useViewFrustumCulling;
 	}
 
+	// Toggle blending
+	if (Input::GetKeyDown(Keyboard::B))
+	{
+		useBlending = !useBlending;
+	}
+
 	// Change the sampling rate
 	if (Input::GetKey(Keyboard::Q))
 	{
@@ -227,8 +233,8 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
     // Set the text
     textRenderer->text = useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n";
-	textRenderer->text.append(useViewFrustumCulling ? L"View Frustum Culling Enabled\n" : L"View Frustum Culling Disabled\n");
-	textRenderer->text.append(L"Blending ENABLED/DISABLED with Depth Epsilon: " + std::to_wstring(octreeConstantBufferData.depthEpsilon) + L"\n");
+	textRenderer->text.append(L"View Frustum Culling " + std::wstring(useViewFrustumCulling ? L"Enabled\n" : L"Disabled\n"));
+	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled" : L"Disabled") + L" with Depth Epsilon: " + std::to_wstring(octreeConstantBufferData.depthEpsilon) + L"\n");
 
     int splatSizePixels = settings->resolutionY * octreeConstantBufferData.splatSize * octreeConstantBufferData.overlapFactor;
     textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");
@@ -329,11 +335,11 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     // Get the vertex buffer and use the specified implementation
     if (useComputeShader)
     {
-        DrawOctreeCompute(sceneObject);
+        DrawOctreeCompute();
     }
     else
     {
-        DrawOctree(sceneObject);
+        DrawOctree();
     }
 }
 
@@ -371,7 +377,7 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 	outSize = octree->rootSize;
 }
 
-void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
+void PointCloudEngine::OctreeRenderer::DrawOctree()
 {
 	// Create new buffer from the current octree traversal on the cpu
     std::vector<OctreeNodeVertex> octreeVertices = octree->GetVertices(octreeConstantBufferData, useViewFrustumCulling);
@@ -430,57 +436,20 @@ void PointCloudEngine::OctreeRenderer::DrawOctree(SceneObject *sceneObject)
         // Set primitive topology
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-		// Draw only the depth to the depth texture, don't draw any color
-		d3d11DevCon->ClearDepthStencilView(octreeDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		d3d11DevCon->OMSetRenderTargets(0, NULL, octreeDepthStencilView);
-		d3d11DevCon->Draw(vertexBufferCount, 0);
-
-		// Clear stencil buffer, draw again but this time with the actual depth buffer, render target and blending
-		octreeConstantBufferData.blend = true;
-		d3d11DevCon->UpdateSubresource(octreeConstantBuffer, 0, NULL, &octreeConstantBufferData, 0, 0);
-		d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_STENCIL, 0, 0);
-		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
-
-		// Set a different blend state
-		d3d11DevCon->OMSetBlendState(additiveBlendState, NULL, 0xffffffff);
-
-		// Bind this depth texture to the shader
-		d3d11DevCon->PSSetShaderResources(2, 1, &octreeDepthTextureSRV);
-
-		// Draw again only adding the colors of the overlapping splats together
-		// Disable depth test to make sure that all the overlapping splats are blended together
-		ID3D11DepthStencilState* state;
-		D3D11_DEPTH_STENCIL_DESC desc;
-		depthStencilState->GetDesc(&desc);
-		desc.DepthEnable = false;
-
-		hr = d3d11Device->CreateDepthStencilState(&desc, &state);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
-
-		d3d11DevCon->OMSetDepthStencilState(state, 0);
-
-		SAFE_RELEASE(state);
-
-		d3d11DevCon->Draw(vertexBufferCount, 0);
-
-		// Reset to the default blend state
-		d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
-
-		// Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
-		d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
-		d3d11DevCon->CSSetShader(octreeBlendingComputeShader->computeShader, 0, 0);
-		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
-		d3d11DevCon->CSSetShaderResources(0, 1, &stencilTextureSRV);
-
-		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
-
-		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+		if (useBlending)
+		{
+			DrawOctreeBlended();
+		}
+		else
+		{
+			d3d11DevCon->Draw(vertexBufferCount, 0);
+		}
 
         SAFE_RELEASE(vertexBuffer);
     }
 }
 
-void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObject)
+void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
 {
     // Set the constant buffer
     d3d11DevCon->CSSetConstantBuffers(0, 1, &octreeConstantBuffer);
@@ -595,11 +564,68 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute(SceneObject *sceneObjec
     d3d11DevCon->IASetVertexBuffers(0, 1, nullBuffer, &zero, &zero);
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-	d3d11DevCon->Draw(vertexBufferCount, 0);
+	if (useBlending)
+	{
+		DrawOctreeBlended();
+	}
+	else
+	{
+		d3d11DevCon->Draw(vertexBufferCount, 0);
+	}
 
     // Unbind the shader resources
     d3d11DevCon->VSSetShaderResources(0, 1, nullSRV);
     d3d11DevCon->VSSetShaderResources(1, 1, nullSRV);
+}
+
+void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
+{
+	// Before this is called all the shaders, buffers and resources have to be set already!
+	// Draw only the depth to the depth texture, don't draw any color
+	d3d11DevCon->ClearDepthStencilView(octreeDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	d3d11DevCon->OMSetRenderTargets(0, NULL, octreeDepthStencilView);
+	d3d11DevCon->Draw(vertexBufferCount, 0);
+
+	// Clear stencil buffer, draw again but this time with the actual depth buffer, render target and blending
+	octreeConstantBufferData.blend = true;
+	d3d11DevCon->UpdateSubresource(octreeConstantBuffer, 0, NULL, &octreeConstantBufferData, 0, 0);
+	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_STENCIL, 0, 0);
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+
+	// Set a different blend state
+	d3d11DevCon->OMSetBlendState(additiveBlendState, NULL, 0xffffffff);
+
+	// Bind this depth texture to the shader
+	d3d11DevCon->PSSetShaderResources(2, 1, &octreeDepthTextureSRV);
+
+	// Draw again only adding the colors of the overlapping splats together
+	// Disable depth test to make sure that all the overlapping splats are blended together
+	ID3D11DepthStencilState* state;
+	D3D11_DEPTH_STENCIL_DESC desc;
+	depthStencilState->GetDesc(&desc);
+	desc.DepthEnable = false;
+
+	hr = d3d11Device->CreateDepthStencilState(&desc, &state);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
+
+	d3d11DevCon->OMSetDepthStencilState(state, 0);
+
+	SAFE_RELEASE(state);
+
+	d3d11DevCon->Draw(vertexBufferCount, 0);
+
+	// Reset to the default blend state
+	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
+
+	// Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
+	d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
+	d3d11DevCon->CSSetShader(octreeBlendingComputeShader->computeShader, 0, 0);
+	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
+	d3d11DevCon->CSSetShaderResources(0, 1, &stencilTextureSRV);
+
+	d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 }
 
 UINT PointCloudEngine::OctreeRenderer::GetStructureCount(ID3D11UnorderedAccessView *UAV)
