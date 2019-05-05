@@ -128,6 +128,7 @@ void Scene::Update(Timer &timer)
 		textRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
         textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
 		textRenderer->text.append(L"[C] Toggle View Frustum Culling\n");
+		textRenderer->text.append(L"[B] Toggle Blending\n");
         textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
 		textRenderer->text.append(L"[F1-F6] Select camera position\n");
 		textRenderer->text.append(L"[F9] Screenshot\n");

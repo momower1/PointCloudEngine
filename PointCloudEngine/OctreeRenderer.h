@@ -43,6 +43,7 @@ namespace PointCloudEngine
 		ID3D11Texture2D *octreeDepthStencilTexture = NULL;
 		ID3D11ShaderResourceView *octreeDepthTextureSRV = NULL;
 		ID3D11BlendState* additiveBlendState = NULL;
+		ID3D11DepthStencilState* depthTestDisabledDepthStencilState = NULL;
 
         // Compute shader
         ID3D11Buffer *nodesBuffer = NULL;
