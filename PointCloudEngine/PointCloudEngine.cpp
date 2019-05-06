@@ -19,6 +19,7 @@ Shader* octreeClusterShader;
 Shader* octreeComputeShader;
 Shader* octreeComputeVSShader;
 Shader* octreeBlendingComputeShader;
+Shader* gammaCorrectionComputeShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -419,6 +420,7 @@ bool InitializeScene()
     octreeComputeShader = Shader::Create(L"Shader/OctreeCompute.hlsl", false, false, false, true, NULL, 0);
     octreeComputeVSShader = Shader::Create(L"Shader/OctreeComputeVS.hlsl", true, false, false, false, NULL, 0);
 	octreeBlendingComputeShader = Shader::Create(L"Shader/OctreeBlendingCompute.hlsl", false, false, false, true, NULL, 0);
+	gammaCorrectionComputeShader = Shader::Create(L"Shader/GammaCorrectionCompute.hlsl", false, false, false, true, NULL, 0);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
@@ -466,9 +468,34 @@ void DrawScene()
     // Draw scene
     scene.Draw();
 
-	// Present backbuffer to the screen
-	hr = swapChain->Present(1, 0);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
+	// Gamma correction is automatically applied in full screen mode, only apply it to the texture after presenting it to the screen (then screenshots will also be gamma corrected)
+	// In window mode the gamma correction has to be done before presenting it to the screen
+	BOOL fullscreen;
+	IDXGIOutput* output = NULL;
+	swapChain->GetFullscreenState(&fullscreen, &output);
+
+	// Set the compute shader that will be used for the gamma correction
+	d3d11DevCon->CSSetShader(gammaCorrectionComputeShader->computeShader, NULL, 0);
+	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
+
+	if (fullscreen)
+	{
+		// Present backbuffer to the screen
+		hr = swapChain->Present(1, 0);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
+
+		// Perform gamma correction
+		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+	}
+	else
+	{
+		// Perform gamma correction
+		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+
+		// Present backbuffer to the screen
+		hr = swapChain->Present(1, 0);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
+	}
 }
 
 void ReleaseObjects()
