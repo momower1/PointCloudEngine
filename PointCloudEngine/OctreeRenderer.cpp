@@ -445,7 +445,8 @@ void PointCloudEngine::OctreeRenderer::DrawOctree()
         // Set primitive topology
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-		if (useBlending)
+		// Only blend splats
+		if (useBlending && (viewMode == 0))
 		{
 			DrawOctreeBlended();
 		}
@@ -568,7 +569,8 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     d3d11DevCon->IASetVertexBuffers(0, 1, nullBuffer, &zero, &zero);
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-	if (useBlending)
+	// Only blend splats
+	if (useBlending && (viewMode == 0))
 	{
 		DrawOctreeBlended();
 	}
