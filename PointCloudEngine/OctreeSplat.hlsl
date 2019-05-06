@@ -10,13 +10,23 @@ SamplerState PointSampler
 	AddressV = Clamp;
 };
 
+struct GS_SPLAT_OUTPUT
+{
+	float4 position : SV_POSITION;
+	float4 positionClip : POSITION1;
+	float3 positionWorld : POSITION2;
+	float3 positionCenter : POSITION3;
+	float3 color : COLOR;
+	float radius : RADIUS;
+};
+
 VS_INPUT VS(VS_INPUT input)
 {
     return input;
 }
 
 [maxvertexcount(16)]
-void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
+void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 {
 	float3 normals[4] =
 	{
@@ -98,47 +108,60 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
     float4x4 VP = mul(View, Projection);
 
-    GS_OUTPUT element;
+    GS_SPLAT_OUTPUT element;
+	element.positionCenter = worldPosition;
     element.color = color;
-    element.normal = normal;
+	element.radius = length(up);
 
 	// Append the vertices in the correct order to create a billboard
-    element.position = element.clipPosition = mul(float4(worldPosition + up - right, 1), VP);
+	element.positionWorld = worldPosition + up - right;
+    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = element.clipPosition = mul(float4(worldPosition - up + right, 1), VP);
+	element.positionWorld = worldPosition - up + right;
+    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = element.clipPosition = mul(float4(worldPosition - up - right, 1), VP);
+	element.positionWorld = worldPosition - up - right;
+    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
     output.RestartStrip();
 
-    element.position = element.clipPosition = mul(float4(worldPosition + up - right, 1), VP);
+	element.positionWorld = worldPosition + up - right;
+    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = element.clipPosition = mul(float4(worldPosition + up + right, 1), VP);
+	element.positionWorld = worldPosition + up + right;
+    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = element.clipPosition = mul(float4(worldPosition - up + right, 1), VP);
+	element.positionWorld = worldPosition - up + right;
+    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 }
 
-float4 PS(GS_OUTPUT input) : SV_TARGET
+float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 {
+	// Make circular splats, remove this for squares
+	if (distance(input.positionWorld, input.positionCenter) > input.radius)
+	{
+		discard;
+	}
+
 	if (blend)
 	{
 		// Transform from clip position into texture space
-		float3 clipPosition = input.clipPosition.xyz / input.clipPosition.w;
-		float2 uv = float2(clipPosition.x / 2.0f, clipPosition.y / -2.0f) + 0.5f;
+		float3 positionClip = input.positionClip.xyz / input.positionClip.w;
+		float2 uv = float2(positionClip.x / 2.0f, positionClip.y / -2.0f) + 0.5f;
 
 		// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
-		float4 position = mul(float4(clipPosition.xyz, 1), WorldViewProjectionInverse);
+		float4 position = mul(float4(positionClip.xyz, 1), WorldViewProjectionInverse);
 		position = position / position.w;
 
 		// This is the depth of the rendered surface to compare against
 		float surfaceDepth = octreeDepthTexture.Sample(PointSampler, uv);
-		float4 surfacePosition = mul(float4(clipPosition.x, clipPosition.y, surfaceDepth, 1), WorldViewProjectionInverse);
+		float4 surfacePosition = mul(float4(positionClip.x, positionClip.y, surfaceDepth, 1), WorldViewProjectionInverse);
 		surfacePosition = surfacePosition / surfacePosition.w;
 
 		// Discard this pixel if it is not close to the surface

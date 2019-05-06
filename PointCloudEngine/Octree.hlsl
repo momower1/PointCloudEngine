@@ -23,8 +23,6 @@ struct VS_INPUT
 struct GS_OUTPUT
 {
     float4 position : SV_POSITION;
-	float4 clipPosition : POSITION1;
-    float3 normal : NORMAL;
     float3 color : COLOR;
 };
 

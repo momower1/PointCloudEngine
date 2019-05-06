@@ -327,7 +327,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
     // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
     // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
-	octreeConstantBufferData.overlapFactor = 1.75f;
+	octreeConstantBufferData.overlapFactor = 2.0f;
 
 	// Do not blend in the first pass
 	octreeConstantBufferData.blend = false;

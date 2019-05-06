@@ -32,8 +32,11 @@ struct VS_OUTPUT
 
 struct GS_OUTPUT
 {
-    float4 position : SV_POSITION;
-    float3 color : COLOR;
+	float4 position : SV_POSITION;
+	float3 positionWorld : POSITION2;
+	float3 positionCenter : POSITION3;
+	float3 color : COLOR;
+	float radius : RADIUS;
 };
 
 VS_OUTPUT VS(VS_INPUT input)
@@ -73,31 +76,45 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float4x4 VP = mul(View, Projection);
 
     GS_OUTPUT element;
+	element.positionCenter = input[0].position;
     element.color = input[0].color;
+	element.radius = length(up);
 
 	// Append all the vertices in the correct order to create the billboard
-    element.position = mul(float4(input[0].position + up - right, 1), VP);
+	element.positionWorld = input[0].position + up - right;
+    element.position = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(input[0].position - up + right, 1), VP);
+	element.positionWorld = input[0].position - up + right;
+    element.position = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(input[0].position - up - right, 1), VP);
+	element.positionWorld = input[0].position - up - right;
+    element.position = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
     output.RestartStrip();
 
-    element.position = mul(float4(input[0].position + up - right, 1), VP);
+	element.positionWorld = input[0].position + up - right;
+    element.position = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(input[0].position + up + right, 1), VP);
+	element.positionWorld = input[0].position + up + right;
+    element.position = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 
-    element.position = mul(float4(input[0].position - up + right, 1), VP);
+	element.positionWorld = input[0].position - up + right;
+    element.position = mul(float4(element.positionWorld, 1), VP);
     output.Append(element);
 }
 
 float4 PS(GS_OUTPUT input) : SV_TARGET
 {
+	// Make circular splats, remove this for squares
+	if (distance(input.positionWorld, input.positionCenter) > input.radius)
+	{
+		discard;
+	}
+
     return float4(input.color, 1);
 }
