@@ -66,7 +66,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
     // Billboard should face in the same direction as the normal
     float distanceToCamera = distance(cameraPosition, input[0].position);
-    float splatSizeWorld = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+	float splatSizeWorld = length(mul(float3(splatSize, 0, 0), World).xyz);
     float3 up = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, cameraRight));
     float3 right = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, up));
 
