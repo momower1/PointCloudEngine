@@ -218,7 +218,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;															// Describe the spaw chain
 	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 	swapChainDesc.BufferDesc = bufferDesc;
-	swapChainDesc.SampleDesc.Count = settings->msaaCount;										// Multisampling -> Smooth choppiness in edges and lines
+	swapChainDesc.SampleDesc.Count = 1;															// Possibly 2x, 4x 8x Multisampling -> Smooth choppiness in edges and lines
     swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
 	swapChainDesc.BufferCount = 1;																// 1 for double buffering, 2 for triple buffering and so on
@@ -260,7 +260,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	depthStencilTextureDesc.MipLevels = 1;
 	depthStencilTextureDesc.ArraySize = 1;
 	depthStencilTextureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-	depthStencilTextureDesc.SampleDesc.Count = settings->msaaCount;
+	depthStencilTextureDesc.SampleDesc.Count = 1;
 	depthStencilTextureDesc.SampleDesc.Quality = 0;
 	depthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;

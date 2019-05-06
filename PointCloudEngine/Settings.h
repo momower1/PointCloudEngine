@@ -18,7 +18,6 @@ namespace PointCloudEngine
         float farZ = 1000.0f;
         int resolutionX = 1280;
         int resolutionY = 720;
-        int msaaCount = 1;
         bool windowed = true;
 
         // Ply file parameters default values

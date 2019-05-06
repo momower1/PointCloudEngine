@@ -42,10 +42,6 @@ PointCloudEngine::Settings::Settings()
                 {
                     resolutionY = std::stoi(variableValue);
                 }
-                else if (variableName.compare(NAMEOF(msaaCount)) == 0)
-                {
-                    msaaCount = std::stoi(variableValue);
-                }
                 else if (variableName.compare(NAMEOF(windowed)) == 0)
                 {
                     windowed = std::stoi(variableValue);
@@ -93,7 +89,6 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << NAMEOF(farZ) << L"=" << farZ << std::endl;
     settingsFile << NAMEOF(resolutionX) << L"=" << resolutionX << std::endl;
     settingsFile << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
-    settingsFile << NAMEOF(msaaCount) << L"=" << msaaCount << std::endl;
     settingsFile << NAMEOF(windowed) << L"=" << windowed << std::endl;
     settingsFile << std::endl;
 
