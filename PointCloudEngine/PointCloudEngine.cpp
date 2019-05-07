@@ -227,16 +227,64 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	swapChainDesc.Windowed = settings->windowed;												// Fullscreen might freeze the programm -> set windowed before exit
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;										// Let display driver decide what to do when swapping buffers
 
-    // Add flags for the creation of the device for debugging
-    UINT flags = 0;
+	// Create a factory that is used to find out information about the available GPUs
+	IDXGIFactory* dxgiFactory = NULL;
+	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgiFactory));
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CreateDXGIFactory) + L" failed!");
+
+	// Store all the adapters and their descriptions
+	std::vector<IDXGIAdapter*> adapters;
+	std::vector<DXGI_ADAPTER_DESC> adapterDescriptions;
+	
+	// Query for all the available adapters (includes hardware and software)
+	for (UINT adapterIndex = 0; true; adapterIndex++)
+	{
+		IDXGIAdapter* adapter = NULL;
+
+		if (dxgiFactory->EnumAdapters(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+		{
+			DXGI_ADAPTER_DESC adapterDesc;
+			adapter->GetDesc(&adapterDesc);
+			adapterDescriptions.push_back(adapterDesc);
+			adapters.push_back(adapter);
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	// Find the adapter with the most available video memory (makes sure that e.g. laptop does not use integrated graphics)
+	UINT adapterWithMostDedicatedVideoMemory = 0;
+
+	for (UINT i = 1; i < adapters.size(); i++)
+	{
+		if (adapterDescriptions[i].DedicatedVideoMemory > adapterDescriptions[adapterWithMostDedicatedVideoMemory].DedicatedVideoMemory)
+		{
+			adapterWithMostDedicatedVideoMemory = i;
+		}
+	}
+
+	// Use this adapter for the device creation
+	IDXGIAdapter *adapterToUse = adapters[adapterWithMostDedicatedVideoMemory];
 
 #ifdef _DEBUG
-    flags |= D3D11_CREATE_DEVICE_DEBUG;
+    UINT flags = D3D11_CREATE_DEVICE_DEBUG;
+#else
+	UINT flags = 0;
 #endif
 
 	// Create device and swap chain
-	hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
+	hr = D3D11CreateDeviceAndSwapChain(adapterToUse, D3D_DRIVER_TYPE_UNKNOWN, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
+
+	// Release no longer needed resources
+	for (auto it = adapters.begin(); it != adapters.end(); it++)
+	{
+		SAFE_RELEASE(*it);
+	}
+
+	SAFE_RELEASE(dxgiFactory);
 
 	// Create backbuffer for the render target view
 	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);

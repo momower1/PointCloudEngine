@@ -85,7 +85,7 @@ using namespace PointCloudEngine;
 #define NAMEOF(variable) std::wstring(L#variable)
 #define ERROR_MESSAGE(message) ErrorMessageOnFail(E_FAIL, message, __FILEW__, __LINE__)
 #define ERROR_MESSAGE_ON_FAIL(hr, message) ErrorMessageOnFail(hr, message, __FILEW__, __LINE__)
-#define SAFE_RELEASE(resource) if(resource != NULL) { resource->Release(); resource = NULL; }
+#define SAFE_RELEASE(resource) if((resource) != NULL) { (resource)->Release(); (resource) = NULL; }
 
 // Template function definitions
 template<typename T> void SafeDelete(T*& pointer)
