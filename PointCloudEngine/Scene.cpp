@@ -52,15 +52,10 @@ void Scene::Update(Timer &timer)
         pointCloudRenderer->SetSplatSize(splatSize);
     }
 
-    if (Input::GetKeyDown(Keyboard::Space))
+	// Rotate the point cloud
+    if (Input::GetKey(Keyboard::Space))
     {
-        rotate = !rotate;
-    }
-
-    // Rotate the point cloud
-    if (rotate)
-    {
-        pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
+		pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
     }
 
     // Scale the point cloud by the value saved in the config file
@@ -121,7 +116,7 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"[WASD] Move Camera\n");
         textRenderer->text.append(L"[MOUSE] Rotate Camera\n");
         textRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-        textRenderer->text.append(L"[SPACE] Toggle rotation\n");
+        textRenderer->text.append(L"[SPACE] Rotate around y axis\n");
         textRenderer->text.append(L"[ENTER] Switch node view mode\n");
         textRenderer->text.append(L"[UP/DOWN] Increase/decrease splat size\n");
 		textRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
