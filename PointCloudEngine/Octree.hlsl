@@ -31,7 +31,7 @@ struct OctreeNodeTraversalEntry
 	uint index;
 	float3 position;
 	float size;
-	int parentInsideViewFrustum;
+	bool parentInsideViewFrustum;
 	int depth;
 };
 
