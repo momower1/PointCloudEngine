@@ -28,11 +28,29 @@ void Scene::Initialize()
 
 void Scene::Update(Timer &timer)
 {
+	// Screenshot on F9
+	if (Input::GetKeyDown(Keyboard::F9))
+	{
+		SaveScreenshotToFile();
+	}
+
     // Toggle help
     if (Input::GetKeyDown(Keyboard::H))
     {
         help = !help;
     }
+
+	// Toggle lighting with L
+	if (Input::GetKeyDown(Keyboard::L))
+	{
+		useLighting = !useLighting;
+	}
+
+	// Rotate the point cloud
+	if (Input::GetKey(Keyboard::Space))
+	{
+		pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
+	}
 
     // Interactively set the splat size in screen size
     if (Input::GetKey(Keyboard::Up))
@@ -46,16 +64,11 @@ void Scene::Update(Timer &timer)
 
     splatSize = min(1.0f, max(1.0f / settings->resolutionY, splatSize));
 
-    // Pass the splat size to the renderer
+    // Pass parameters to the renderer
     if (pointCloudRenderer != NULL)
     {
         pointCloudRenderer->SetSplatSize(splatSize);
-    }
-
-	// Rotate the point cloud
-    if (Input::GetKey(Keyboard::Space))
-    {
-		pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
+		pointCloudRenderer->SetLighting(useLighting, lightDirection);
     }
 
     // Scale the point cloud by the value saved in the config file
@@ -71,12 +84,6 @@ void Scene::Update(Timer &timer)
 			cameraPitch = cameraPitchYaws[i].x;
 			cameraYaw = cameraPitchYaws[i].y;
 		}
-	}
-
-	// Screenshot on F9
-	if (Input::GetKeyDown(Keyboard::F9))
-	{
-		SaveScreenshotToFile();
 	}
 
     // Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
@@ -123,6 +130,7 @@ void Scene::Update(Timer &timer)
 		textRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
         textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
 		textRenderer->text.append(L"[C] Toggle View Frustum Culling\n");
+		textRenderer->text.append(L"[L] Toggle Lighting\n");
 		textRenderer->text.append(L"[B] Toggle Blending\n");
         textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
 		textRenderer->text.append(L"[F1-F6] Select camera position\n");

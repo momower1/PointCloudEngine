@@ -63,14 +63,20 @@ cbuffer OctreeConstantBuffer : register(b0)
 	float overlapFactor;
 	int level;
 //------------------------------------------------------------------------------ (16 byte boundary)
-
-	// Compute shader data
-	uint inputCount;
-
+	// Lighting
+	bool light;
+	float3 lightDirection;
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float lightIntensity;
+	float ambient;
+	float diffuse;
+	float specular;
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float specularExponent;
 	// Blending
 	bool blend;
 	float depthEpsilon;
-
-	// 8 byte auto padding
+	// Compute shader data
+	uint inputCount;
 //------------------------------------------------------------------------------ (16 byte boundary)
-};	// Total: 608 bytes with constant buffer packing rules
+};	// Total: 640 bytes with constant buffer packing rules

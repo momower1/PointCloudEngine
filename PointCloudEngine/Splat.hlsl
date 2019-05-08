@@ -12,9 +12,19 @@ cbuffer SplatRendererConstantBuffer : register(b0)
     float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
     float splatSize;
-    // 12 bytes auto padding
+	// Lighting
+	bool light;
+	// 8 bytes auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 288 bytes with constant buffer packing rules
+	float3 lightDirection;
+	float lightIntensity;
+//------------------------------------------------------------------------------ (16 byte boundary)
+	float ambient;
+	float diffuse;
+	float specular;
+	float specularExponent;
+//------------------------------------------------------------------------------ (16 byte boundary)
+};  // Total: 320 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {

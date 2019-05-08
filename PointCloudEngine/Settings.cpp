@@ -58,6 +58,26 @@ PointCloudEngine::Settings::Settings()
                 {
                     scale = std::stof(variableValue);
                 }
+				else if (variableName.compare(NAMEOF(lightIntensity)) == 0)
+				{
+					lightIntensity = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(ambient)) == 0)
+				{
+					ambient = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(diffuse)) == 0)
+				{
+					diffuse = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(specular)) == 0)
+				{
+					specular = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(specularExponent)) == 0)
+				{
+					specularExponent = std::stof(variableValue);
+				}
 				else if (variableName.compare(NAMEOF(appendBufferCount)) == 0)
 				{
 					appendBufferCount = std::stoi(variableValue);
@@ -97,6 +117,14 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;
+
+	settingsFile << L"# Lighting Parameters" << std::endl;
+	settingsFile << NAMEOF(lightIntensity) << L"=" << lightIntensity << std::endl;
+	settingsFile << NAMEOF(ambient) << L"=" << ambient << std::endl;
+	settingsFile << NAMEOF(diffuse) << L"=" << diffuse << std::endl;
+	settingsFile << NAMEOF(specular) << L"=" << specular << std::endl;
+	settingsFile << NAMEOF(specularExponent) << L"=" << specularExponent << std::endl;
+	settingsFile << std::endl;
 
 	settingsFile << L"# Compute Shader Parameters" << std::endl;
 	settingsFile << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;

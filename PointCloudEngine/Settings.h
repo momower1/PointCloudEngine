@@ -25,6 +25,13 @@ namespace PointCloudEngine
         int maxOctreeDepth = 16;
         float scale = 1.0f;
 
+		// Lighting parameters
+		float lightIntensity = 1.0f;
+		float ambient = 0.4f;
+		float diffuse = 1.2f;
+		float specular = 0.85f;
+		float specularExponent = 10.0f;
+
 		// Compute shader default values
 		UINT appendBufferCount = 10000000;
 

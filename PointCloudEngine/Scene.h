@@ -28,10 +28,14 @@ namespace PointCloudEngine
 
         Vector2 input;
         bool help = false;
-        float splatSize = 0.01f;
         float cameraPitch = 0;
         float cameraYaw = 0;
         float cameraSpeed = 0;
+
+		// Rendering parameters that can be changed in both splat and octree renderer
+		float splatSize = 0.01f;
+		bool useLighting = true;
+		Vector3 lightDirection = Vector3(0, -0.5f, 1.0f);
 
         float timeUntilLoadFile = -1.0f;
         float timeSinceLoadFile = 0.0f;

@@ -16,6 +16,7 @@ struct GS_SPLAT_OUTPUT
 	float4 positionClip : POSITION1;
 	float3 positionWorld : POSITION2;
 	float3 positionCenter : POSITION3;
+	float3 normal : NORMAL;
 	float3 color : COLOR;
 	float radius : RADIUS;
 };
@@ -110,6 +111,7 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 
     GS_SPLAT_OUTPUT element;
 	element.positionCenter = worldPosition;
+	element.normal = worldNormal;
     element.color = color;
 	element.radius = length(up);
 
@@ -171,5 +173,22 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		}
 	}
 
-	return float4(input.color.rgb, 1);
+	if (light)
+	{
+		// Apply simple phong lighting
+		float3 lightColor = float3(1, 1, 1);
+		float3 n = normalize(input.normal);
+		float3 l = normalize(-lightDirection);
+		float3 v = normalize(cameraPosition - input.positionCenter);
+		float3 r = reflect(-l, n);
+
+		float diffuseIntensity = max(ambient, lightIntensity * diffuse * dot(n, l));
+		float specularIntensity = lightIntensity * pow(max(0, specular * dot(r, v)), specularExponent);
+
+		return float4(diffuseIntensity * input.color.rgb + specularIntensity * lightColor, 1);
+	}
+	else
+	{
+		return float4(input.color.rgb, 1);
+	}
 }

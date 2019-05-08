@@ -173,13 +173,21 @@ namespace PointCloudEngine
 		float overlapFactor;
 		int level;
 
-		// Compute shader data
-		UINT inputCount;
+		// Lighting
+		int light;					// Bool in the shader
+		Vector3 lightDirection;
+		float lightIntensity;
+		float ambient;
+		float diffuse;
+		float specular;
+		float specularExponent;
 
 		// Blending
-		int blend;				// Actually used like a bool
+		int blend;					// Bool in the shader
 		float depthEpsilon;
-		float padding15;
+
+		// Compute shader data
+		UINT inputCount;
 	};
 }
 
