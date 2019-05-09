@@ -16,7 +16,6 @@ namespace PointCloudEngine
         void Release();
 
         void SetSplatSize(const float &splatSize);
-		void SetLighting(const bool& light, const Vector3& lightDirection);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
@@ -30,16 +29,7 @@ namespace PointCloudEngine
             Vector3 cameraPosition;
             float fovAngleY;
             float splatSize;
-			float padding[2];
-
-			// Lighting
-			int light;							// Bool in shader
-			Vector3 lightDirection;
-			float lightIntensity;
-			float ambient;
-			float diffuse;
-			float specular;
-			float specularExponent;
+			float padding[3];
         };
 
         std::vector<Vertex> vertices;

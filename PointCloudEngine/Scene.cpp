@@ -22,6 +22,16 @@ void Scene::Initialize()
     text->transform->position = Vector3(-1, 1, 0.5f);
     text->transform->scale = 0.35f * Vector3::One;
 
+	// Create the constant buffer for the lighting
+	D3D11_BUFFER_DESC lightingConstantBufferDesc;
+	ZeroMemory(&lightingConstantBufferDesc, sizeof(lightingConstantBufferDesc));
+	lightingConstantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	lightingConstantBufferDesc.ByteWidth = sizeof(LightingConstantBuffer);
+	lightingConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	hr = d3d11Device->CreateBuffer(&lightingConstantBufferDesc, NULL, &lightingConstantBuffer);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
+
     // Try to load the last plyfile
     DelayedLoadFile(settings->plyfile);
 }
@@ -43,7 +53,7 @@ void Scene::Update(Timer &timer)
 	// Toggle lighting with L
 	if (Input::GetKeyDown(Keyboard::L))
 	{
-		useLighting = !useLighting;
+		lightingConstantBufferData.light = !lightingConstantBufferData.light;
 	}
 
 	// Rotate the point cloud
@@ -68,7 +78,6 @@ void Scene::Update(Timer &timer)
     if (pointCloudRenderer != NULL)
     {
         pointCloudRenderer->SetSplatSize(splatSize);
-		pointCloudRenderer->SetLighting(useLighting, lightDirection);
     }
 
     // Scale the point cloud by the value saved in the config file
@@ -191,11 +200,26 @@ void Scene::Update(Timer &timer)
 
 void Scene::Draw()
 {
+	// Set the lighting constant buffer
+	lightingConstantBufferData.lightIntensity = settings->lightIntensity;
+	lightingConstantBufferData.ambient = settings->ambient;
+	lightingConstantBufferData.diffuse = settings->diffuse;
+	lightingConstantBufferData.specular = settings->specular;
+	lightingConstantBufferData.specularExponent = settings->specularExponent;
+
+	// Update the buffer
+	d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
+
+	// Set the buffer for the pixel shader
+	d3d11DevCon->PSSetConstantBuffers(1, 1, &lightingConstantBuffer);
+
     Hierarchy::DrawAllSceneObjects();
 }
 
 void Scene::Release()
 {
+	SAFE_RELEASE(lightingConstantBuffer);
+
     Hierarchy::ReleaseAllSceneObjects();
 }
 
@@ -265,4 +289,6 @@ void PointCloudEngine::Scene::LoadFile()
 
     // Reset other properties
     splatSize = 0.01f;
+	lightingConstantBufferData.light = true;
+	lightingConstantBufferData.lightDirection = Vector3(0, -0.5f, 1.0f);
 }

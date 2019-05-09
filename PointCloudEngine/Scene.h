@@ -34,8 +34,8 @@ namespace PointCloudEngine
 
 		// Rendering parameters that can be changed in both splat and octree renderer
 		float splatSize = 0.01f;
-		bool useLighting = true;
-		Vector3 lightDirection = Vector3(0, -0.5f, 1.0f);
+		ID3D11Buffer* lightingConstantBuffer = NULL;
+		LightingConstantBuffer lightingConstantBufferData;
 
         float timeUntilLoadFile = -1.0f;
         float timeSinceLoadFile = 0.0f;

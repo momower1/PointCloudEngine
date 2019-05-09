@@ -173,7 +173,17 @@ namespace PointCloudEngine
 		float overlapFactor;
 		int level;
 
-		// Lighting
+		// Blending
+		int blend;					// Bool in the shader
+		float depthEpsilon;
+
+		// Compute shader data
+		UINT inputCount;
+		float padding15;
+	};
+
+	struct LightingConstantBuffer
+	{
 		int light;					// Bool in the shader
 		Vector3 lightDirection;
 		float lightIntensity;
@@ -181,13 +191,7 @@ namespace PointCloudEngine
 		float diffuse;
 		float specular;
 		float specularExponent;
-
-		// Blending
-		int blend;					// Bool in the shader
-		float depthEpsilon;
-
-		// Compute shader data
-		UINT inputCount;
+		float padding[3];
 	};
 }
 

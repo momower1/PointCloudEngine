@@ -75,11 +75,6 @@ void SplatRenderer::Draw(SceneObject *sceneObject)
     constantBufferData.View = camera->GetViewMatrix().Transpose();
     constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     constantBufferData.cameraPosition = camera->GetPosition();
-	constantBufferData.lightIntensity = settings->lightIntensity;
-	constantBufferData.ambient = settings->ambient;
-	constantBufferData.diffuse = settings->diffuse;
-	constantBufferData.specular = settings->specular;
-	constantBufferData.specularExponent = settings->specularExponent;
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
@@ -98,12 +93,6 @@ void SplatRenderer::Release()
 void PointCloudEngine::SplatRenderer::SetSplatSize(const float &splatSize)
 {
     constantBufferData.splatSize = splatSize;
-}
-
-void PointCloudEngine::SplatRenderer::SetLighting(const bool& light, const Vector3& lightDirection)
-{
-	constantBufferData.light = light;
-	constantBufferData.lightDirection = lightDirection;
 }
 
 void PointCloudEngine::SplatRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)

@@ -317,11 +317,6 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.localViewPlaneTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
 	octreeConstantBufferData.localViewPlaneBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
 	octreeConstantBufferData.samplingRate =settings->samplingRate;
-	octreeConstantBufferData.lightIntensity = settings->lightIntensity;
-	octreeConstantBufferData.ambient = settings->ambient;
-	octreeConstantBufferData.diffuse = settings->diffuse;
-	octreeConstantBufferData.specular = settings->specular;
-	octreeConstantBufferData.specularExponent = settings->specularExponent;
 	octreeConstantBufferData.depthEpsilon = settings->depthEpsilon;
 
     // Draw overlapping splats to make sure that continuous surfaces are drawn
@@ -379,12 +374,6 @@ void OctreeRenderer::Release()
 void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
 {
     octreeConstantBufferData.splatSize = splatSize;
-}
-
-void PointCloudEngine::OctreeRenderer::SetLighting(const bool& light, const Vector3& lightDirection)
-{
-	octreeConstantBufferData.light = light;
-	octreeConstantBufferData.lightDirection = lightDirection;
 }
 
 void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)

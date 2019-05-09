@@ -1,5 +1,6 @@
 #include "Octree.hlsl"
 #include "OctreeConstantBuffer.hlsl"
+#include "LightingConstantBuffer.hlsl"
 
 Texture2D<float> octreeDepthTexture : register(t2);
 
@@ -175,17 +176,7 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 
 	if (light)
 	{
-		// Apply simple phong lighting
-		float3 lightColor = float3(1, 1, 1);
-		float3 n = normalize(input.normal);
-		float3 l = normalize(-lightDirection);
-		float3 v = normalize(cameraPosition - input.positionCenter);
-		float3 r = reflect(-l, n);
-
-		float diffuseIntensity = max(ambient, lightIntensity * diffuse * dot(n, l));
-		float specularIntensity = lightIntensity * pow(max(0, specular * dot(r, v)), specularExponent);
-
-		return float4(diffuseIntensity * input.color.rgb + specularIntensity * lightColor, 1);
+		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
 	}
 	else
 	{

@@ -1,3 +1,5 @@
+#include "LightingConstantBuffer.hlsl"
+
 cbuffer SplatRendererConstantBuffer : register(b0)
 {
     float4x4 World;
@@ -12,19 +14,9 @@ cbuffer SplatRendererConstantBuffer : register(b0)
     float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
     float splatSize;
-	// Lighting
-	bool light;
-	// 8 bytes auto padding
+	// 12 bytes auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float3 lightDirection;
-	float lightIntensity;
-//------------------------------------------------------------------------------ (16 byte boundary)
-	float ambient;
-	float diffuse;
-	float specular;
-	float specularExponent;
-//------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 320 bytes with constant buffer packing rules
+};  // Total: 288 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {
@@ -45,6 +37,7 @@ struct GS_OUTPUT
 	float4 position : SV_POSITION;
 	float3 positionWorld : POSITION2;
 	float3 positionCenter : POSITION3;
+	float3 normal : NORMAL;
 	float3 color : COLOR;
 	float radius : RADIUS;
 };
@@ -78,7 +71,6 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
     // Billboard should face in the same direction as the normal
-    float distanceToCamera = distance(cameraPosition, input[0].position);
 	float splatSizeWorld = length(mul(float3(splatSize, 0, 0), World).xyz);
     float3 up = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, cameraRight));
     float3 right = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, up));
@@ -87,6 +79,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
     GS_OUTPUT element;
 	element.positionCenter = input[0].position;
+	element.normal = input[0].normal;
     element.color = input[0].color;
 	element.radius = length(up);
 
@@ -126,5 +119,12 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 		discard;
 	}
 
-    return float4(input.color, 1);
+	if (light)
+	{
+		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
+	}
+	else
+	{
+		return float4(input.color.rgb, 1);
+	}
 }

@@ -16,7 +16,6 @@ namespace PointCloudEngine
         void Release();
 
         void SetSplatSize(const float& splatSize);
-		void SetLighting(const bool& light, const Vector3& lightDirection);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
