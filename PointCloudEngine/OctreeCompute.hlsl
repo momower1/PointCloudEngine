@@ -165,7 +165,7 @@ void CS (uint3 id : SV_DispatchThreadID)
 		{
 			// Calculate required splat size
 			float distanceToCamera = distance(localCameraPosition, entry.position);
-			float requiredSplatSize = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+			float requiredSplatSize = splatResolution * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
 
 			// Check against required splat size and draw this vertex if it is smaller
 			if (entry.size < requiredSplatSize || childrenMask == 0)

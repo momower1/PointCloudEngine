@@ -62,23 +62,15 @@ void Scene::Update(Timer &timer)
 		pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
 	}
 
-    // Interactively set the splat size in screen size
-    if (Input::GetKey(Keyboard::Up))
-    {
-        splatSize += dt * 0.01f;
-    }
-    else if (Input::GetKey(Keyboard::Down))
-    {
-        splatSize -= dt * 0.01f;
-    }
-
-    splatSize = min(1.0f, max(1.0f / settings->resolutionY, splatSize));
-
-    // Pass parameters to the renderer
-    if (pointCloudRenderer != NULL)
-    {
-        pointCloudRenderer->SetSplatSize(splatSize);
-    }
+	// Set the sampling rate (minimal distance between two points) of the loaded point cloud
+	if (Input::GetKey(Keyboard::Q))
+	{
+		settings->samplingRate = max(0.0001f, settings->samplingRate - dt * 0.01f);
+	}
+	else if (Input::GetKey(Keyboard::E))
+	{
+		settings->samplingRate += dt * 0.01f;
+	}
 
     // Scale the point cloud by the value saved in the config file
     settings->scale = max(0.1f, settings->scale + Input::mouseScrollDelta);
@@ -134,7 +126,7 @@ void Scene::Update(Timer &timer)
         textRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
         textRenderer->text.append(L"[SPACE] Rotate around y axis\n");
         textRenderer->text.append(L"[ENTER] Switch node view mode\n");
-        textRenderer->text.append(L"[UP/DOWN] Increase/decrease splat size\n");
+        textRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
 		textRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
 		textRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
         textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
@@ -288,7 +280,6 @@ void PointCloudEngine::Scene::LoadFile()
     cameraYaw = 0;
 
     // Reset other properties
-    splatSize = 0.01f;
 	lightingConstantBufferData.light = true;
 	lightingConstantBufferData.lightDirection = Vector3(0, -0.5f, 1.0f);
 }

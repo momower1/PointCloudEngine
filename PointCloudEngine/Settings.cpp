@@ -113,7 +113,7 @@ PointCloudEngine::Settings::~Settings()
     std::wofstream settingsFile(executableDirectory + SETTINGS_FILENAME);
 
     settingsFile << L"# In order to change parameters:" << std::endl;
-    settingsFile << L"# Close the engine, edit this file and then restard the engine" << std::endl;
+    settingsFile << L"# Close the engine, edit this file and then restart the engine" << std::endl;
 
     settingsFile << L"# Rendering Parameters" << std::endl;
     settingsFile << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;

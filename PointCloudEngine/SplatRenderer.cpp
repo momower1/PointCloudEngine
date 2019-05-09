@@ -9,7 +9,6 @@ SplatRenderer::SplatRenderer(const std::wstring &plyfile)
     }
 
     // Set the default values
-    constantBufferData.splatSize = 0.01f;
     constantBufferData.fovAngleY = settings->fovAngleY;
 }
 
@@ -75,6 +74,7 @@ void SplatRenderer::Draw(SceneObject *sceneObject)
     constantBufferData.View = camera->GetViewMatrix().Transpose();
     constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     constantBufferData.cameraPosition = camera->GetPosition();
+	constantBufferData.samplingRate = settings->samplingRate;
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
@@ -88,11 +88,6 @@ void SplatRenderer::Release()
 {
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
-}
-
-void PointCloudEngine::SplatRenderer::SetSplatSize(const float &splatSize)
-{
-    constantBufferData.splatSize = splatSize;
 }
 
 void PointCloudEngine::SplatRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)

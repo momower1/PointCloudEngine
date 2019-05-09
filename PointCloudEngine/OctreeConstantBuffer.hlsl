@@ -58,8 +58,8 @@ cbuffer OctreeConstantBuffer : register(b0)
 	float3 localViewPlaneBottomNormal;
 	float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float splatSize;
 	float samplingRate;
+	float splatResolution;
 	float overlapFactor;
 	int level;
 //------------------------------------------------------------------------------ (16 byte boundary)

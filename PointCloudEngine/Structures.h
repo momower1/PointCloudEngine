@@ -168,8 +168,8 @@ namespace PointCloudEngine
 		float padding14;
 		Vector3 localViewPlaneBottomNormal;
 		float fovAngleY;
-		float splatSize;
 		float samplingRate;
+		float splatResolution;
 		float overlapFactor;
 		int level;
 

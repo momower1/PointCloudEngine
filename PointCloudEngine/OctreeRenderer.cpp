@@ -14,7 +14,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
 
     // Initialize constant buffer data
 	octreeConstantBufferData.fovAngleY = settings->fovAngleY;
-	octreeConstantBufferData.splatSize = 0.01f;
+	octreeConstantBufferData.splatResolution = 0.01f;
 	octreeConstantBufferData.level = -1;
 }
 
@@ -213,14 +213,14 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 		useBlending = !useBlending;
 	}
 
-	// Change the sampling rate
-	if (Input::GetKey(Keyboard::Q))
+	// Set splat resolution between 1 (whole screen) and 1.0f/resolutionY (one pixel)
+	if (Input::GetKey(Keyboard::Up))
 	{
-		settings->samplingRate = max(0.0001f, settings->samplingRate - dt * 0.01f);
+		octreeConstantBufferData.splatResolution = min(1.0f, octreeConstantBufferData.splatResolution + dt * 0.01f);
 	}
-	else if (Input::GetKey(Keyboard::E))
+	else if (Input::GetKey(Keyboard::Down))
 	{
-		settings->samplingRate += dt * 0.01f;
+		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
 	}
 
 	// Change the depth epsilon for blending
@@ -238,8 +238,8 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 	textRenderer->text.append(L"View Frustum Culling " + std::wstring(useViewFrustumCulling ? L"Enabled\n" : L"Disabled\n"));
 	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled" : L"Disabled") + L" with Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
 
-    int splatSizePixels = settings->resolutionY * octreeConstantBufferData.splatSize * settings->overlapFactor;
-    textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");
+    int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution * settings->overlapFactor;
+    textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
 
     if (viewMode == 0)
@@ -369,11 +369,6 @@ void OctreeRenderer::Release()
 	SAFE_RELEASE(vertexAppendBufferSRV);
     SAFE_RELEASE(vertexAppendBufferUAV);
     SAFE_RELEASE(octreeConstantBuffer);
-}
-
-void PointCloudEngine::OctreeRenderer::SetSplatSize(const float &splatSize)
-{
-    octreeConstantBufferData.splatSize = splatSize;
 }
 
 void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)

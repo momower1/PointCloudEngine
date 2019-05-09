@@ -15,7 +15,6 @@ namespace PointCloudEngine
         void Draw(SceneObject *sceneObject);
         void Release();
 
-        void SetSplatSize(const float& splatSize);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:

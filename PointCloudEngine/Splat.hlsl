@@ -13,7 +13,7 @@ cbuffer SplatRendererConstantBuffer : register(b0)
     float3 cameraPosition;
     float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
-    float splatSize;
+    float samplingRate;
 	// 12 bytes auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 288 bytes with constant buffer packing rules
@@ -71,7 +71,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
     // Billboard should face in the same direction as the normal
-	float splatSizeWorld = length(mul(float3(splatSize, 0, 0), World).xyz);
+	float splatSizeWorld = length(mul(float3(samplingRate, 0, 0), World).xyz);
     float3 up = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, cameraRight));
     float3 right = 0.5f * splatSizeWorld * normalize(cross(input[0].normal, up));
 

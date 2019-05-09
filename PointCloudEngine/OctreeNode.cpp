@@ -404,7 +404,7 @@ void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEnt
 		float distanceToCamera = Vector3::Distance(octreeConstantBufferData.localCameraPosition, entry.position);
 
 		// Scale the local space splat size by the fov and camera distance (result: size at that distance in local space)
-		float requiredSplatSize = octreeConstantBufferData.splatSize * (2.0f * tan(octreeConstantBufferData.fovAngleY / 2.0f)) * distanceToCamera;
+		float requiredSplatSize = octreeConstantBufferData.splatResolution * (2.0f * tan(octreeConstantBufferData.fovAngleY / 2.0f)) * distanceToCamera;
 
 		if ((entry.size < requiredSplatSize) || IsLeafNode())
 		{

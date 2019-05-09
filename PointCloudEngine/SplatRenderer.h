@@ -15,7 +15,6 @@ namespace PointCloudEngine
         void Draw(SceneObject *sceneObject);
         void Release();
 
-        void SetSplatSize(const float &splatSize);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:
@@ -28,7 +27,7 @@ namespace PointCloudEngine
             Matrix WorldInverseTranspose;
             Vector3 cameraPosition;
             float fovAngleY;
-            float splatSize;
+            float samplingRate;
 			float padding[3];
         };
 

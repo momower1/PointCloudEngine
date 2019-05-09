@@ -33,7 +33,6 @@ namespace PointCloudEngine
         float cameraSpeed = 0;
 
 		// Rendering parameters that can be changed in both splat and octree renderer
-		float splatSize = 0.01f;
 		ID3D11Buffer* lightingConstantBuffer = NULL;
 		LightingConstantBuffer lightingConstantBufferData;
 
