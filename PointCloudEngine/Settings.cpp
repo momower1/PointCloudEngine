@@ -54,6 +54,18 @@ PointCloudEngine::Settings::Settings()
                 {
                     maxOctreeDepth = std::stoi(variableValue);
                 }
+				else if (variableName.compare(NAMEOF(samplingRate)) == 0)
+				{
+					samplingRate = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(overlapFactor)) == 0)
+				{
+					overlapFactor = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(depthEpsilon)) == 0)
+				{
+					depthEpsilon = std::stof(variableValue);
+				}
                 else if (variableName.compare(NAMEOF(scale)) == 0)
                 {
                     scale = std::stof(variableValue);
@@ -115,6 +127,9 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << L"# Ply File Parameters" << std::endl;
     settingsFile << NAMEOF(plyfile) << L"=" << plyfile << std::endl;
     settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
+	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
+	settingsFile << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
+	settingsFile << NAMEOF(depthEpsilon) << L"=" << depthEpsilon << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;
 

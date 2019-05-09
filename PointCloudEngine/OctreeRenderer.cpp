@@ -14,10 +14,8 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
 
     // Initialize constant buffer data
 	octreeConstantBufferData.fovAngleY = settings->fovAngleY;
-	octreeConstantBufferData.samplingRate = 0.01f;
 	octreeConstantBufferData.splatSize = 0.01f;
 	octreeConstantBufferData.level = -1;
-	octreeConstantBufferData.depthEpsilon = 0.5f;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
@@ -218,35 +216,31 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 	// Change the sampling rate
 	if (Input::GetKey(Keyboard::Q))
 	{
-		octreeConstantBufferData.samplingRate -= dt * 0.01f;
+		settings->samplingRate = max(0.0001f, settings->samplingRate - dt * 0.01f);
 	}
 	else if (Input::GetKey(Keyboard::E))
 	{
-		octreeConstantBufferData.samplingRate += dt * 0.01f;
+		settings->samplingRate += dt * 0.01f;
 	}
-
-	octreeConstantBufferData.samplingRate = max(0.0001f, octreeConstantBufferData.samplingRate);
 
 	// Change the depth epsilon for blending
 	if (Input::GetKey(Keyboard::V))
 	{
-		octreeConstantBufferData.depthEpsilon -= dt * 0.1f;
+		settings->depthEpsilon = max(0.0001f, settings->depthEpsilon - dt * 0.01f);
 	}
 	else if (Input::GetKey(Keyboard::N))
 	{
-		octreeConstantBufferData.depthEpsilon += dt * 0.1f;
+		settings->depthEpsilon += dt * 0.01f;
 	}
-
-	octreeConstantBufferData.depthEpsilon = max(0.0001f, octreeConstantBufferData.depthEpsilon);
 
     // Set the text
     textRenderer->text = useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n";
 	textRenderer->text.append(L"View Frustum Culling " + std::wstring(useViewFrustumCulling ? L"Enabled\n" : L"Disabled\n"));
-	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled" : L"Disabled") + L" with Depth Epsilon: " + std::to_wstring(octreeConstantBufferData.depthEpsilon) + L"\n");
+	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled" : L"Disabled") + L" with Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
 
-    int splatSizePixels = settings->resolutionY * octreeConstantBufferData.splatSize * octreeConstantBufferData.overlapFactor;
+    int splatSizePixels = settings->resolutionY * octreeConstantBufferData.splatSize * settings->overlapFactor;
     textRenderer->text.append(L"Splat Size: " + std::to_wstring(splatSizePixels) + L" Pixel\n");
-	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(octreeConstantBufferData.samplingRate) + L"\n");
+	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
 
     if (viewMode == 0)
     {
@@ -322,17 +316,19 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.localViewPlaneRightNormal = (localViewFrustum[3] - localViewFrustum[7]).Cross(localViewFrustum[5] - localViewFrustum[7]);
 	octreeConstantBufferData.localViewPlaneTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
 	octreeConstantBufferData.localViewPlaneBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
+	octreeConstantBufferData.samplingRate =settings->samplingRate;
 	octreeConstantBufferData.lightIntensity = settings->lightIntensity;
 	octreeConstantBufferData.ambient = settings->ambient;
 	octreeConstantBufferData.diffuse = settings->diffuse;
 	octreeConstantBufferData.specular = settings->specular;
 	octreeConstantBufferData.specularExponent = settings->specularExponent;
+	octreeConstantBufferData.depthEpsilon = settings->depthEpsilon;
 
     // Draw overlapping splats to make sure that continuous surfaces are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
     // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
     // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
-	octreeConstantBufferData.overlapFactor = 2.0f;
+	octreeConstantBufferData.overlapFactor = settings->overlapFactor;
 
 	// Do not blend in the first pass
 	octreeConstantBufferData.blend = false;

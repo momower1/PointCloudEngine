@@ -23,7 +23,10 @@ namespace PointCloudEngine
         // Ply file parameters default values
         std::wstring plyfile = L"";
         int maxOctreeDepth = 16;
-        float scale = 1.0f;
+		float samplingRate = 0.01f;
+		float overlapFactor = 1.9f;
+		float depthEpsilon = 0.3f;
+		float scale = 1.0f;
 
 		// Lighting parameters
 		float lightIntensity = 1.0f;
