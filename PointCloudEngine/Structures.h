@@ -31,11 +31,11 @@ namespace PointCloudEngine
     struct ClusterNormal
     {
 		// Compact representation of a cluster normal with polar coordinates using inclination theta and azimuth phi
-		// 7 bits theta, 7 bits phi and 2 bits for the cone of the normal (largest angle to one of the normals assigned to this cluster)
+		// 6 bits theta, 6 bits phi and 4 bits for the cone of the normal (largest angle to one of the normals assigned to this cluster)
 		// The empty normal is represented with theta=0 and phi=0
-		// Theta is in [0, pi] therefore 0=0, 127=pi
-		// Phi is in [-pi, pi] therefore 0=-pi, 127=pi
-		// Cone is in [0, pi] therefore 0=0, 3=pi
+		// Theta is in [0, pi] therefore 0=0, 63=pi
+		// Phi is in [-pi, pi] therefore 0=-pi, 63=pi
+		// Cone is in [0, pi] therefore 0=0, 15=pi
 		USHORT thetaPhiCone;
 
 		ClusterNormal()
@@ -49,9 +49,9 @@ namespace PointCloudEngine
         {
 			clusterNormal.Normalize();
 
-            USHORT theta = 127.0f * (acos(clusterNormal.z) / XM_PI);
-            USHORT phi = 63.5f + 63.5f * (atan2f(clusterNormal.y, clusterNormal.x) / XM_PI);
-			USHORT cone = ceil(3.0f * min(1.0f, max(clusterCone / XM_PI, 0.0f)));
+            USHORT theta = 63.0f * (acos(clusterNormal.z) / XM_PI);
+            USHORT phi = 31.5f + 31.5f * (atan2f(clusterNormal.y, clusterNormal.x) / XM_PI);
+			USHORT cone = ceil(15.0f * min(1.0f, max(clusterCone / XM_PI, 0.0f)));
 
 			// Avoid representing the empty normal (phi can be any value for theta == 0)
 			if (theta == 0 && phi == 0)
@@ -59,15 +59,15 @@ namespace PointCloudEngine
 				phi = 63;
 			}
 
-			thetaPhiCone = theta << 9;
-			thetaPhiCone |= phi << 2;
+			thetaPhiCone = theta << 10;
+			thetaPhiCone |= phi << 4;
 			thetaPhiCone |= cone;
         }
 
         Vector3 GetVector3()
         {
-			USHORT theta = thetaPhiCone >> 9;
-			USHORT phi = (thetaPhiCone & 0x1fc) >> 2;
+			USHORT theta = thetaPhiCone >> 10;
+			USHORT phi = (thetaPhiCone & 0x3f0) >> 4;
 
 			// Check if this represents the empty normal (0, 0, 0)
 			if (theta == 0 && phi == 0)
@@ -75,15 +75,15 @@ namespace PointCloudEngine
 				return Vector3(0, 0, 0);
 			}
 
-            float t = XM_PI * (theta / 127.0f);
-            float p = XM_PI * ((phi / 63.5f) - 1.0f);
+            float t = XM_PI * (theta / 63.0f);
+            float p = XM_PI * ((phi / 31.5f) - 1.0f);
 
             return Vector3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
         }
 
 		float GetCone()
 		{
-			return XM_PI * ((thetaPhiCone & 0x3) / 3.0f);
+			return XM_PI * ((thetaPhiCone & 0xf) / 15.0f);
 		}
     };
 

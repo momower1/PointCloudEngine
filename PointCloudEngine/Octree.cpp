@@ -101,7 +101,7 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Octree
         nodesQueue.pop();
 
         // Check the node, add the vertex or add its children to the queue
-        nodes[entry.index].GetVertices(nodesQueue, octreeVertices, entry, octreeConstantBufferData);
+        nodes[entry.index].GetVertices(nodes, nodesQueue, octreeVertices, entry, octreeConstantBufferData);
     }
 
     return octreeVertices;

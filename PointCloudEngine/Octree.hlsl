@@ -60,10 +60,10 @@ struct OctreeNode
 float4 ClusterNormalToFloat4(uint thetaPhiCone)
 {
 	// XYZ stores the normal, W stores the cone angle
-	// 7 bits theta, 7 bits phi, 2 bits cone
-	uint theta = thetaPhiCone >> 9;
-	uint phi = (thetaPhiCone & 0x1fc) >> 2;
-	uint cone = thetaPhiCone & 0x3;
+	// 6 bits theta, 6 bits phi, 4 bits cone
+	uint theta = thetaPhiCone >> 10;
+	uint phi = (thetaPhiCone & 0x3f0) >> 4;
+	uint cone = thetaPhiCone & 0xf;
 
 	// Check if this represents the empty normal (0, 0, 0)
 	if (theta == 0 && phi == 0)
@@ -71,9 +71,9 @@ float4 ClusterNormalToFloat4(uint thetaPhiCone)
 		return float4(0, 0, 0, 0);
 	}
 
-	float t = PI * (theta / 127.0f);
-	float p = PI * ((phi / 63.5f) - 1.0f);
-	float c = PI * (cone / 3.0f);
+	float t = PI * (theta / 63.0f);
+	float p = PI * ((phi / 31.5f) - 1.0f);
+	float c = PI * (cone / 15.0f);
 
 	return float4(sin(t) * cos(p), sin(t) * sin(p), cos(t), c);
 }

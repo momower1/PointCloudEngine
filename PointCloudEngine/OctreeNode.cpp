@@ -94,6 +94,12 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 
     }
 
+	// Normalize the means
+	for (UINT i = 0; i < k; i++)
+	{
+		means[i].Normalize();
+	}
+
     // Initialize average colors that are calculated per cluster
 	float normalCones[4] = { 0, 0, 0, 0 };
     double averageReds[4] = { 0, 0, 0, 0 };
@@ -108,9 +114,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
         averageBlues[clusters[i]] += entry.vertices[i].color[2];
 
 		// Calculate the angle in [0, pi] between the mean normal and this vertex normal
-		float numerator = means[clusters[i]].Dot(entry.vertices[i].normal);
-		float denominator = means[clusters[i]].Length() * entry.vertices[i].normal.Length();
-		float angle = acos(numerator / denominator);
+		float angle = acos(means[clusters[i]].Dot(entry.vertices[i].normal));
 
 		// Save the maximum angle to any of the vertices in the cluster as normal cone
 		normalCones[clusters[i]] = max(normalCones[clusters[i]], angle);
@@ -262,12 +266,37 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 	}
 }
 
-void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
+void PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode>& nodes, std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
 {
 	bool traverseChildren = true;
 	bool insideViewFrustum = true;
+	bool visible = false;
 
-	// TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+	// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+	OctreeNode node = nodes[entry.index];
+	Vector3 localViewDirection = entry.position - octreeConstantBufferData.localCameraPosition;
+	localViewDirection.Normalize();
+
+	// Calculate the angle between the view direction and each normal
+	for (int i = 0; i < 4; i++)
+	{
+		ClusterNormal normal = node.properties.normals[i];
+		float angle = acos(normal.GetVector3().Dot(-localViewDirection));
+		float cone = normal.GetCone();
+
+		// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible
+		if (angle < (XM_PI / 2) + cone)
+		{
+			visible = true;
+			break;
+		}
+	}
+
+	if (!visible)
+	{
+		// The node and all of its children face away from the camera, don't draw it or traverse further
+		return;
+	}
 
 	// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
 	if (!entry.parentInsideViewFrustum)
