@@ -28,48 +28,63 @@ namespace PointCloudEngine
         }
     };
 
-    struct PolarNormal
+    struct ClusterNormal
     {
-        // Compact representation of a normal with polar coordinates using inclination theta and azimuth phi
-        // When theta=0 and phi=0 this represents an empty normal (0, 0, 0)
-        // [0, pi] therefore 0=0, 255=pi
-        byte theta;
-        // [-pi, pi] therefore 0=-pi, 255=pi
-        byte phi;
+		// Compact representation of a cluster normal with polar coordinates using inclination theta and azimuth phi
+		// 7 bits theta, 7 bits phi and 2 bits for the cone of the normal (largest angle to one of the normals assigned to this cluster)
+		// The empty normal is represented with theta=0 and phi=0
+		// Theta is in [0, pi] therefore 0=0, 127=pi
+		// Phi is in [-pi, pi] therefore 0=-pi, 127=pi
+		// Cone is in [0, pi] therefore 0=0, 3=pi
+		USHORT thetaPhiCone;
 
-        PolarNormal()
+		ClusterNormal()
         {
-            theta = 0;
-            phi = 0;
+			// Set to empty normal
+			thetaPhiCone = 0;
         }
 
-        PolarNormal(Vector3 normal)
+		// Cone is in radians from 0 to pi
+		ClusterNormal(Vector3 clusterNormal, float clusterCone)
         {
-            normal.Normalize();
+			clusterNormal.Normalize();
 
-            theta = 255.0f * (acos(normal.z) / XM_PI);
-            phi = 127.5f + 127.5f * (atan2f(normal.y, normal.x) / XM_PI);
+            USHORT theta = 127.0f * (acos(clusterNormal.z) / XM_PI);
+            USHORT phi = 63.5f + 63.5f * (atan2f(clusterNormal.y, clusterNormal.x) / XM_PI);
+			USHORT cone = ceil(3.0f * min(1.0f, max(clusterCone / XM_PI, 0.0f)));
 
-            if (theta == 0 && phi == 0)
-            {
-                // Set phi to another value than 0 to avoid representing the empty normal (0, 0, 0)
-                // This is okay since phi has no inpact on the saved normal anyways
-                phi = 128;
-            }
+			// Avoid representing the empty normal (phi can be any value for theta == 0)
+			if (theta == 0 && phi == 0)
+			{
+				phi = 63;
+			}
+
+			thetaPhiCone = theta << 9;
+			thetaPhiCone |= phi << 2;
+			thetaPhiCone |= cone;
         }
 
-        Vector3 ToVector3()
+        Vector3 GetVector3()
         {
-            if (theta == 0 && phi == 0)
-            {
-                return Vector3(0, 0, 0);
-            }
+			USHORT theta = thetaPhiCone >> 9;
+			USHORT phi = (thetaPhiCone & 0x1fc) >> 2;
 
-            float t = XM_PI * (theta / 255.0f);
-            float p = XM_PI * ((phi / 127.5f) - 1.0f);
+			// Check if this represents the empty normal (0, 0, 0)
+			if (theta == 0 && phi == 0)
+			{
+				return Vector3(0, 0, 0);
+			}
+
+            float t = XM_PI * (theta / 127.0f);
+            float p = XM_PI * ((phi / 63.5f) - 1.0f);
 
             return Vector3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
         }
+
+		float GetCone()
+		{
+			return XM_PI * ((thetaPhiCone & 0x3) / 3.0f);
+		}
     };
 
     struct Vertex
@@ -91,7 +106,7 @@ namespace PointCloudEngine
 		byte weights[3];
 
 		// The different cluster mean normals and colors in object space calculated by k-means algorithm with k=4
-		PolarNormal normals[4];
+		ClusterNormal normals[4];
 		Color16 colors[4];
 	};
 

@@ -95,6 +95,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
     }
 
     // Initialize average colors that are calculated per cluster
+	float normalCones[4] = { 0, 0, 0, 0 };
     double averageReds[4] = { 0, 0, 0, 0 };
     double averageGreens[4] = { 0, 0, 0, 0 };
     double averageBlues[4] = { 0, 0, 0, 0 };
@@ -105,6 +106,14 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
         averageReds[clusters[i]] += entry.vertices[i].color[0];
         averageGreens[clusters[i]] += entry.vertices[i].color[1];
         averageBlues[clusters[i]] += entry.vertices[i].color[2];
+
+		// Calculate the angle in [0, pi] between the mean normal and this vertex normal
+		float numerator = means[clusters[i]].Dot(entry.vertices[i].normal);
+		float denominator = means[clusters[i]].Length() * entry.vertices[i].normal.Length();
+		float angle = acos(numerator / denominator);
+
+		// Save the maximum angle to any of the vertices in the cluster as normal cone
+		normalCones[clusters[i]] = max(normalCones[clusters[i]], angle);
     }
 
 	delete[] clusters;
@@ -120,7 +129,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
             averageGreens[i] /= verticesPerMean[i];
             averageBlues[i] /= verticesPerMean[i];
 
-            properties.normals[i] = PolarNormal(means[i]);
+            properties.normals[i] = ClusterNormal(means[i], normalCones[i]);
             properties.colors[i] = Color16(averageReds[i], averageGreens[i], averageBlues[i]);
         }
     }
