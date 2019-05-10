@@ -21,6 +21,38 @@ void CS (uint3 id : SV_DispatchThreadID)
 
 		bool traverseChildren = true;
 		bool insideViewFrustum = true;
+		bool visible = false;
+
+		// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+		float3 localViewDirection = normalize(entry.position - localCameraPosition);
+
+		float4 normals[4] =
+		{
+			ClusterNormalToFloat4(node.properties.normal01 & 0xffff),
+			ClusterNormalToFloat4((node.properties.normal01 >> 16) & 0xffff),
+			ClusterNormalToFloat4(node.properties.normal23 & 0xffff),
+			ClusterNormalToFloat4((node.properties.normal23 >> 16) & 0xffff)
+		};
+
+		// Calculate the angle between the view direction and each normal
+		for (int i = 0; i < 4; i++)
+		{
+			float angle = acos(dot(normals[i].xyz, -localViewDirection));
+			float cone = normals[i].w;
+
+			// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible
+			if (angle < (PI / 2) + cone)
+			{
+				visible = true;
+				break;
+			}
+		}
+
+		if (!visible)
+		{
+			// The node and all of its children face away from the camera, don't draw it or traverse further
+			return;
+		}
 
 		// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
 		if (!entry.parentInsideViewFrustum)
