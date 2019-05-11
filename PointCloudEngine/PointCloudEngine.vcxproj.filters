@@ -156,13 +156,16 @@
     <FxCompile Include="OctreeConstantBuffer.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="OctreeBlendingCompute.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
-    <FxCompile Include="GammaCorrectionCompute.hlsl">
-      <Filter>Shader Files</Filter>
-    </FxCompile>
     <FxCompile Include="LightingConstantBuffer.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="GammaCorrection.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="ImageEffect.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="OctreeBlending.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

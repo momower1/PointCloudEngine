@@ -61,14 +61,15 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     this->PS = PS;
     this->CS = CS;
 
+	ID3DBlob* compilerErrorMessages = NULL;
     std::wstring filepath = (executableDirectory + L"/" + filename).c_str();
 
     // Compile and create the shaders from file, the shader functions have to be named VS, GS, PS and CS for this to work
     if (VS)
     {
         ID3DBlob* vertexShaderData = NULL;
-        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &vertexShaderData, 0);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the VS of " + filepath);
+        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &vertexShaderData, &compilerErrorMessages);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the VS with Compiler Errors:\n\n" + ToWstring(compilerErrorMessages));
         hr = d3d11Device->CreateVertexShader(vertexShaderData->GetBufferPointer(), vertexShaderData->GetBufferSize(), NULL, &vertexShader);
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateVertexShader) + L" failed for the VS of " + filepath);
 
@@ -85,8 +86,8 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     if (GS)
     {
         ID3DBlob* geometryShaderData = NULL;
-        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GS", "gs_5_0", 0, 0, &geometryShaderData, 0);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the GS of " + filepath);
+        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GS", "gs_5_0", 0, 0, &geometryShaderData, &compilerErrorMessages);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the GS with Compiler Errors:\n\n" + ToWstring(compilerErrorMessages));
         hr = d3d11Device->CreateGeometryShader(geometryShaderData->GetBufferPointer(), geometryShaderData->GetBufferSize(), NULL, &geometryShader);
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateGeometryShader) + L" failed for the GS of " + filepath);
         SAFE_RELEASE(geometryShaderData);
@@ -95,8 +96,8 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     if (PS)
     {
         ID3DBlob* pixelShaderData = NULL;
-        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &pixelShaderData, 0);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the PS of " + filepath);
+        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &pixelShaderData, &compilerErrorMessages);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the PS with Compiler Errors:\n\n" + ToWstring(compilerErrorMessages));
         hr = d3d11Device->CreatePixelShader(pixelShaderData->GetBufferPointer(), pixelShaderData->GetBufferSize(), NULL, &pixelShader);
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreatePixelShader) + L" failed for the PS of " + filepath);
         SAFE_RELEASE(pixelShaderData);
@@ -105,8 +106,8 @@ Shader::Shader(std::wstring filename, bool VS, bool GS, bool PS, bool CS, D3D11_
     if (CS)
     {
         ID3DBlob* computeShaderData = NULL;
-        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CS", "cs_5_0", 0, 0, &computeShaderData, 0);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the CS of " + filepath);
+        hr = D3DCompileFromFile(filepath.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CS", "cs_5_0", 0, 0, &computeShaderData, &compilerErrorMessages);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3DCompileFromFile) + L" failed for the CS with Compiler Errors:\n\n" + ToWstring(compilerErrorMessages));
         hr = d3d11Device->CreateComputeShader(computeShaderData->GetBufferPointer(), computeShaderData->GetBufferSize(), NULL, &computeShader);
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateComputeShader) + L" failed for the CS of " + filepath);
         SAFE_RELEASE(computeShaderData);
@@ -120,4 +121,18 @@ void Shader::Release()
     SAFE_RELEASE(pixelShader);
     SAFE_RELEASE(computeShader);
     SAFE_RELEASE(inputLayout);
+}
+
+std::wstring PointCloudEngine::Shader::ToWstring(ID3DBlob* compilerMessages)
+{
+	if (compilerMessages != NULL)
+	{
+		std::string tmp((char*)compilerMessages->GetBufferPointer(), compilerMessages->GetBufferSize());
+
+		SAFE_RELEASE(compilerMessages);
+
+		return std::wstring(tmp.begin(), tmp.end());
+	}
+
+	return std::wstring(L"");
 }

@@ -18,8 +18,8 @@ Shader* octreeSplatShader;
 Shader* octreeClusterShader;
 Shader* octreeComputeShader;
 Shader* octreeComputeVSShader;
-Shader* octreeBlendingComputeShader;
-Shader* gammaCorrectionComputeShader;
+Shader* octreeBlendingShader;
+Shader* gammaCorrectionShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -467,8 +467,8 @@ bool InitializeScene()
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeComputeShader = Shader::Create(L"Shader/OctreeCompute.hlsl", false, false, false, true, NULL, 0);
     octreeComputeVSShader = Shader::Create(L"Shader/OctreeComputeVS.hlsl", true, false, false, false, NULL, 0);
-	octreeBlendingComputeShader = Shader::Create(L"Shader/OctreeBlendingCompute.hlsl", false, false, false, true, NULL, 0);
-	gammaCorrectionComputeShader = Shader::Create(L"Shader/GammaCorrectionCompute.hlsl", false, false, false, true, NULL, 0);
+	octreeBlendingShader = Shader::Create(L"Shader/OctreeBlending.hlsl", true, true, true, false, NULL, 0);
+	gammaCorrectionShader = Shader::Create(L"Shader/GammaCorrection.hlsl", true, true, true, false, NULL, 0);
 
     // Load fonts
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
@@ -522,9 +522,11 @@ void DrawScene()
 	IDXGIOutput* output = NULL;
 	swapChain->GetFullscreenState(&fullscreen, &output);
 
-	// Set the compute shader that will be used for the gamma correction
-	d3d11DevCon->CSSetShader(gammaCorrectionComputeShader->computeShader, NULL, 0);
-	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
+	// Set the shader that will be used for the gamma correction
+	d3d11DevCon->VSSetShader(gammaCorrectionShader->vertexShader, NULL, 0);
+	d3d11DevCon->GSSetShader(gammaCorrectionShader->geometryShader, NULL, 0);
+	d3d11DevCon->PSSetShader(gammaCorrectionShader->pixelShader, NULL, 0);
+	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 1, &backBufferTextureUAV, NULL);
 
 	if (fullscreen)
 	{
@@ -533,17 +535,22 @@ void DrawScene()
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
 
 		// Perform gamma correction
-		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+		d3d11DevCon->Draw(1, 0);
 	}
 	else
 	{
 		// Perform gamma correction
-		d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
+		d3d11DevCon->Draw(1, 0);
 
 		// Present backbuffer to the screen
 		hr = swapChain->Present(1, 0);
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
 	}
+
+	d3d11DevCon->VSSetShader(NULL, NULL, 0);
+	d3d11DevCon->GSSetShader(NULL, NULL, 0);
+	d3d11DevCon->PSSetShader(NULL, NULL, 0);
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 }
 
 void ReleaseObjects()

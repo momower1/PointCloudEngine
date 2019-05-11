@@ -31,6 +31,8 @@ namespace PointCloudEngine
 
     private:
         static std::vector<Shader*> shaders;
+
+		std::wstring ToWstring(ID3DBlob* compilerMessages);
     };
 }
 #endif
