@@ -119,7 +119,7 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 		discard;
 	}
 
-	if (light)
+	if (useLighting)
 	{
 		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
 	}

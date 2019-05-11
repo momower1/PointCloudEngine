@@ -64,10 +64,10 @@ cbuffer OctreeConstantBuffer : register(b0)
 	int level;
 //------------------------------------------------------------------------------ (16 byte boundary)
 	// Blending
-	bool blend;
+	bool useBlending;
 	float depthEpsilon;
 	// Compute shader data
+	bool useCulling;
 	uint inputCount;
-	// 4 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };	// Total: 608 bytes with constant buffer packing rules

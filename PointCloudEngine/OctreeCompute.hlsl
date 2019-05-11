@@ -19,168 +19,171 @@ void CS (uint3 id : SV_DispatchThreadID)
 		// Get the childrenMask
 		uint childrenMask = node.properties.childrenMaskAndWeights & 0xff;
 
-		bool traverseChildren = true;
-		bool insideViewFrustum = true;
 		bool visible = false;
+		bool insideViewFrustum = true;
+		bool traverseChildren = true;
 
-		// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
-		float3 localViewDirection = normalize(entry.position - localCameraPosition);
-
-		float4 normals[4] =
+		if (useCulling)
 		{
-			ClusterNormalToFloat4(node.properties.normal01 & 0xffff),
-			ClusterNormalToFloat4((node.properties.normal01 >> 16) & 0xffff),
-			ClusterNormalToFloat4(node.properties.normal23 & 0xffff),
-			ClusterNormalToFloat4((node.properties.normal23 >> 16) & 0xffff)
-		};
+			// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+			float3 localViewDirection = normalize(entry.position - localCameraPosition);
 
-		// Calculate the angle between the view direction and each normal
-		for (int i = 0; i < 4; i++)
-		{
-			float angle = acos(dot(normals[i].xyz, -localViewDirection));
-			float cone = normals[i].w;
-
-			// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible
-			if (angle < (PI / 2) + cone)
+			float4 normals[4] =
 			{
-				visible = true;
-				break;
-			}
-		}
-
-		if (!visible)
-		{
-			// The node and all of its children face away from the camera, don't draw it or traverse further
-			return;
-		}
-
-		// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
-		if (!entry.parentInsideViewFrustum)
-		{
-			// Generate all the 6 planes of the view frustum
-			float3 viewFrustumPlanes[6][2] =
-			{
-				{ localViewFrustumNearTopLeft, localViewPlaneNearNormal },			// Near Plane
-				{ localViewFrustumFarBottomRight, localViewPlaneFarNormal },		// Far Plane
-				{ localViewFrustumNearTopLeft, localViewPlaneLeftNormal },			// Left Plane
-				{ localViewFrustumFarBottomRight, localViewPlaneRightNormal },		// Right Plane
-				{ localViewFrustumNearTopLeft, localViewPlaneTopNormal },			// Top Plane
-				{ localViewFrustumFarBottomRight, localViewPlaneBottomNormal }		// Bottom Plane
+				ClusterNormalToFloat4(node.properties.normal01 & 0xffff),
+				ClusterNormalToFloat4((node.properties.normal01 >> 16) & 0xffff),
+				ClusterNormalToFloat4(node.properties.normal23 & 0xffff),
+				ClusterNormalToFloat4((node.properties.normal23 >> 16) & 0xffff)
 			};
 
-			float extends = entry.size / 2.0f;
-
-			float3 boundingCube[8] =
+			// Calculate the angle between the view direction and each normal
+			for (int i = 0; i < 4; i++)
 			{
-				entry.position + float3(extends, extends, extends),
-				entry.position + float3(-extends, extends, extends),
-				entry.position + float3(extends, -extends, extends),
-				entry.position + float3(extends, extends, -extends),
-				entry.position + float3(-extends, -extends, extends),
-				entry.position + float3(extends, -extends, -extends),
-				entry.position + float3(-extends, extends, -extends),
-				entry.position + float3(-extends, -extends, -extends),
-			};
+				float angle = acos(dot(normals[i].xyz, -localViewDirection));
+				float cone = normals[i].w;
 
-			int outsideCount = 0;
-			int insideCount = 0;
-
-			// Check if the bounding cube is fully inside, fully outside or overlapping the view frustum
-			for (int i = 0; i < 8; i++)
-			{
-				// Check for each position if it is inside the view frustum
-				bool positionIsInside = true;
-
-				for (int j = 0; j < 6; j++)
+				// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible
+				if (angle < (PI / 2) + cone)
 				{
-					// Compute the signed distance to each of the planes
-					if (dot(boundingCube[i] - viewFrustumPlanes[j][0], viewFrustumPlanes[j][1]) > 0)
-					{
-						// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
-						positionIsInside = false;
-						break;
-					}
-				}
-
-				if (positionIsInside)
-				{
-					insideCount++;
-				}
-				else
-				{
-					outsideCount++;
+					visible = true;
+					break;
 				}
 			}
 
-			if (outsideCount == 8)
+			if (!visible)
 			{
-				// Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection, cube contains view frustum)
-				// Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
-				float3 rays[12][2] =
+				// The node and all of its children face away from the camera, don't draw it or traverse further
+				return;
+			}
+
+			// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
+			if (!entry.parentInsideViewFrustum)
+			{
+				// Generate all the 6 planes of the view frustum
+				float3 viewFrustumPlanes[6][2] =
 				{
-					{ localViewFrustumNearTopRight, localViewFrustumNearTopLeft },
-					{ localViewFrustumNearBottomRight, localViewFrustumNearBottomLeft },
-					{ localViewFrustumNearBottomLeft, localViewFrustumNearTopLeft },
-					{ localViewFrustumNearBottomRight, localViewFrustumNearTopRight },
-					{ localViewFrustumFarTopRight, localViewFrustumFarTopLeft },
-					{ localViewFrustumFarBottomRight, localViewFrustumFarBottomLeft },
-					{ localViewFrustumFarBottomLeft, localViewFrustumFarTopLeft },
-					{ localViewFrustumFarBottomRight, localViewFrustumFarTopRight },
-					{ localViewFrustumNearTopLeft, localViewFrustumFarTopLeft },
-					{ localViewFrustumNearTopRight, localViewFrustumFarTopRight },
-					{ localViewFrustumNearBottomLeft, localViewFrustumFarBottomLeft },
-					{ localViewFrustumNearBottomRight, localViewFrustumFarBottomRight }
+					{ localViewFrustumNearTopLeft, localViewPlaneNearNormal },			// Near Plane
+					{ localViewFrustumFarBottomRight, localViewPlaneFarNormal },		// Far Plane
+					{ localViewFrustumNearTopLeft, localViewPlaneLeftNormal },			// Left Plane
+					{ localViewFrustumFarBottomRight, localViewPlaneRightNormal },		// Right Plane
+					{ localViewFrustumNearTopLeft, localViewPlaneTopNormal },			// Top Plane
+					{ localViewFrustumFarBottomRight, localViewPlaneBottomNormal }		// Bottom Plane
 				};
 
-				// Create a sphere that encloses the bounding cube to test against
-				bool intersects = false;
-				float3 c = entry.position;
-				float r = length(float3(extends, extends, extends));
+				float extends = entry.size / 2.0f;
 
-				for (int i = 0; i < 12; i++)
+				float3 boundingCube[8] =
 				{
-					float3 o = rays[i][0];
-					float3 v = rays[i][1] - rays[i][0];
+					entry.position + float3(extends, extends, extends),
+					entry.position + float3(-extends, extends, extends),
+					entry.position + float3(extends, -extends, extends),
+					entry.position + float3(extends, extends, -extends),
+					entry.position + float3(-extends, -extends, extends),
+					entry.position + float3(extends, -extends, -extends),
+					entry.position + float3(-extends, extends, -extends),
+					entry.position + float3(-extends, -extends, -extends),
+				};
 
-					// Store the length of the frustum line and normalize it
-					float l = length(v);
-					v /= l;
+				int outsideCount = 0;
+				int insideCount = 0;
 
-					// Calculate the factor under the square root
-					float3 oMinusC = o - c;
-					float vDotOMinusC = dot(v, oMinusC);
-					float f = vDotOMinusC * vDotOMinusC - (oMinusC.x * oMinusC.x + oMinusC.y * oMinusC.y + oMinusC.z * oMinusC.z - r * r);
+				// Check if the bounding cube is fully inside, fully outside or overlapping the view frustum
+				for (int i = 0; i < 8; i++)
+				{
+					// Check for each position if it is inside the view frustum
+					bool positionIsInside = true;
 
-					if (f > 0)
+					for (int j = 0; j < 6; j++)
 					{
-						// Intersecting the sphere at two points, calculate whether this point is on the line of the view frustum
-						float s = sqrt(f);
-						float d1 = -vDotOMinusC + s;
-						float d2 = -vDotOMinusC - s;
-
-						if ((d1 >= 0 && d1 <= l) || (d2 >= 0 && d2 <= l))
+						// Compute the signed distance to each of the planes
+						if (dot(boundingCube[i] - viewFrustumPlanes[j][0], viewFrustumPlanes[j][1]) > 0)
 						{
-							// Interecting, check children again
-							insideViewFrustum = false;
-							intersects = true;
+							// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
+							positionIsInside = false;
 							break;
 						}
 					}
+
+					if (positionIsInside)
+					{
+						insideCount++;
+					}
+					else
+					{
+						outsideCount++;
+					}
 				}
 
-				if (!intersects)
+				if (outsideCount == 8)
 				{
-					// The whole cube is outside, don't add it or any of its children
-					return;
-				}
-			}
-			else if (insideCount != 0 && outsideCount != 0)
-			{
-				// Some positions are outside and some are inside the view frustum, check the children again
-				insideViewFrustum = false;
-			}
+					// Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection, cube contains view frustum)
+					// Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
+					float3 rays[12][2] =
+					{
+						{ localViewFrustumNearTopRight, localViewFrustumNearTopLeft },
+						{ localViewFrustumNearBottomRight, localViewFrustumNearBottomLeft },
+						{ localViewFrustumNearBottomLeft, localViewFrustumNearTopLeft },
+						{ localViewFrustumNearBottomRight, localViewFrustumNearTopRight },
+						{ localViewFrustumFarTopRight, localViewFrustumFarTopLeft },
+						{ localViewFrustumFarBottomRight, localViewFrustumFarBottomLeft },
+						{ localViewFrustumFarBottomLeft, localViewFrustumFarTopLeft },
+						{ localViewFrustumFarBottomRight, localViewFrustumFarTopRight },
+						{ localViewFrustumNearTopLeft, localViewFrustumFarTopLeft },
+						{ localViewFrustumNearTopRight, localViewFrustumFarTopRight },
+						{ localViewFrustumNearBottomLeft, localViewFrustumFarBottomLeft },
+						{ localViewFrustumNearBottomRight, localViewFrustumFarBottomRight }
+					};
 
-			// Otherwise the cube is fully inside the view frustum as assumed
+					// Create a sphere that encloses the bounding cube to test against
+					bool intersects = false;
+					float3 c = entry.position;
+					float r = length(float3(extends, extends, extends));
+
+					for (int i = 0; i < 12; i++)
+					{
+						float3 o = rays[i][0];
+						float3 v = rays[i][1] - rays[i][0];
+
+						// Store the length of the frustum line and normalize it
+						float l = length(v);
+						v /= l;
+
+						// Calculate the factor under the square root
+						float3 oMinusC = o - c;
+						float vDotOMinusC = dot(v, oMinusC);
+						float f = vDotOMinusC * vDotOMinusC - (oMinusC.x * oMinusC.x + oMinusC.y * oMinusC.y + oMinusC.z * oMinusC.z - r * r);
+
+						if (f > 0)
+						{
+							// Intersecting the sphere at two points, calculate whether this point is on the line of the view frustum
+							float s = sqrt(f);
+							float d1 = -vDotOMinusC + s;
+							float d2 = -vDotOMinusC - s;
+
+							if ((d1 >= 0 && d1 <= l) || (d2 >= 0 && d2 <= l))
+							{
+								// Interecting, check children again
+								insideViewFrustum = false;
+								intersects = true;
+								break;
+							}
+						}
+					}
+
+					if (!intersects)
+					{
+						// The whole cube is outside, don't add it or any of its children
+						return;
+					}
+				}
+				else if (insideCount != 0 && outsideCount != 0)
+				{
+					// Some positions are outside and some are inside the view frustum, check the children again
+					insideViewFrustum = false;
+				}
+
+				// Otherwise the cube is fully inside the view frustum as assumed
+			}
 		}
 
 		// Check if only to return the vertices at the given level

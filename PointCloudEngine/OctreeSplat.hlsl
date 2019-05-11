@@ -155,7 +155,7 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		discard;
 	}
 
-	if (blend)
+	if (useBlending)
 	{
 		// Transform from clip position into texture space
 		float3 positionClip = input.positionClip.xyz / input.positionClip.w;
@@ -177,7 +177,7 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		}
 	}
 
-	if (light)
+	if (useLighting)
 	{
 		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
 	}

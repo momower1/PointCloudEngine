@@ -189,17 +189,17 @@ namespace PointCloudEngine
 		int level;
 
 		// Blending
-		int blend;					// Bool in the shader
+		int useBlending;			// Bool in the shader
 		float depthEpsilon;
 
 		// Compute shader data
+		int useCulling;				// Bool in the shader
 		UINT inputCount;
-		float padding15;
 	};
 
 	struct LightingConstantBuffer
 	{
-		int light;					// Bool in the shader
+		int useLighting;			// Bool in the shader
 		Vector3 lightDirection;
 		float lightIntensity;
 		float ambient;

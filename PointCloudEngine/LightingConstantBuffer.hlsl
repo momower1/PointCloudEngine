@@ -1,6 +1,6 @@
 cbuffer LightingConstantBuffer : register(b1)
 {
-	bool light;
+	bool useLighting;
 	float3 lightDirection;
 //------------------------------------------------------------------------------ (16 byte boundary)
 	float lightIntensity;

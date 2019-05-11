@@ -53,7 +53,7 @@ void Scene::Update(Timer &timer)
 	// Toggle lighting with L
 	if (Input::GetKeyDown(Keyboard::L))
 	{
-		lightingConstantBufferData.light = !lightingConstantBufferData.light;
+		lightingConstantBufferData.useLighting = !lightingConstantBufferData.useLighting;
 	}
 
 	// Rotate the point cloud
@@ -130,7 +130,7 @@ void Scene::Update(Timer &timer)
 		textRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
 		textRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
         textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
-		textRenderer->text.append(L"[C] Toggle View Frustum Culling\n");
+		textRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
 		textRenderer->text.append(L"[L] Toggle Lighting\n");
 		textRenderer->text.append(L"[B] Toggle Blending\n");
         textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
@@ -280,6 +280,6 @@ void PointCloudEngine::Scene::LoadFile()
     cameraYaw = 0;
 
     // Reset other properties
-	lightingConstantBufferData.light = true;
+	lightingConstantBufferData.useLighting = true;
 	lightingConstantBufferData.lightDirection = Vector3(0, -0.5f, 1.0f);
 }
