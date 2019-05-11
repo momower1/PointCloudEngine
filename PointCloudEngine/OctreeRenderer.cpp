@@ -603,22 +603,27 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	// Also the stencil values are incremented by one for each overlapping splat per pixel
 	d3d11DevCon->Draw(vertexBufferCount, 0);
 
-	// Remove the depth stencil view from the render target in order to make it accessable by the compute shader
-	d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
-	d3d11DevCon->CSSetShader(octreeBlendingComputeShader->computeShader, 0, 0);
-	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &backBufferTextureUAV, NULL);
-	d3d11DevCon->CSSetShaderResources(0, 1, &stencilTextureSRV);
-
-	// Use compute shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
-	d3d11DevCon->Dispatch(settings->resolutionX, settings->resolutionY, 1);
-
 	// Unbind shader resources
 	d3d11DevCon->PSSetShaderResources(2, 1, nullSRV);
-	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
-	d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
+
+	// Remove the depth stencil view from the render target in order to make it accessable by the pixel shader (also set the back buffer UAV)
+	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 1, &backBufferTextureUAV, NULL);
+	d3d11DevCon->VSSetShader(octreeBlendingShader->vertexShader, NULL, 0);
+	d3d11DevCon->GSSetShader(octreeBlendingShader->geometryShader, NULL, 0);
+	d3d11DevCon->PSSetShader(octreeBlendingShader->pixelShader, NULL, 0);
+	d3d11DevCon->PSSetShaderResources(0, 1, &stencilTextureSRV);
+
+	// Use pixel shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
+	d3d11DevCon->Draw(1, 0);
+
+	// Unbind shader resources
+	d3d11DevCon->VSSetShader(NULL, NULL, 0);
+	d3d11DevCon->GSSetShader(NULL, NULL, 0);
+	d3d11DevCon->PSSetShader(NULL, NULL, 0);
+	d3d11DevCon->PSSetShaderResources(0, 1, nullSRV);
 
 	// Reset to the defaults
-	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(1, &renderTargetView, depthStencilView, 1, 1, nullUAV, NULL);
 	d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
 	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
 }
