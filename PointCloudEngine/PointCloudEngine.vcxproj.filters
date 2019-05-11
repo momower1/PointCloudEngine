@@ -159,10 +159,10 @@
     <FxCompile Include="OctreeBlendingCompute.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="GammaCorrectionCompute.hlsl">
+    <FxCompile Include="LightingConstantBuffer.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="LightingConstantBuffer.hlsl">
+    <FxCompile Include="GammaCorrection.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

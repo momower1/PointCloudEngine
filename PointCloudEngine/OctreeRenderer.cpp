@@ -16,6 +16,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
 	octreeConstantBufferData.fovAngleY = settings->fovAngleY;
 	octreeConstantBufferData.splatResolution = 0.01f;
 	octreeConstantBufferData.level = -1;
+	octreeConstantBufferData.useCulling = true;
 }
 
 void OctreeRenderer::Initialize(SceneObject *sceneObject)
