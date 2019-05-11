@@ -9,10 +9,10 @@ struct VS_INPUT
 	uint weight0 : WEIGHT0;
 	uint weight1 : WEIGHT1;
 	uint weight2 : WEIGHT2;
-    uint2 normal0 : NORMAL0;
-    uint2 normal1 : NORMAL1;
-    uint2 normal2 : NORMAL2;
-    uint2 normal3 : NORMAL3;
+    uint normal0 : NORMAL0;
+    uint normal1 : NORMAL1;
+    uint normal2 : NORMAL2;
+    uint normal3 : NORMAL3;
     uint color0 : COLOR0;
     uint color1 : COLOR1;
     uint color2 : COLOR2;
@@ -57,23 +57,25 @@ struct OctreeNode
     OctreeNodeProperties properties;
 };
 
-float3 PolarNormalToFloat3(uint theta, uint phi)
+float4 ClusterNormalToFloat4(uint thetaPhiCone)
 {
-    // Theta and phi are in range [0, 255]
-    if (theta == 0 && phi == 0)
-    {
-        return float3(0, 0, 0);
-    }
+	// XYZ stores the normal, W stores the cone angle
+	// 6 bits theta, 6 bits phi, 4 bits cone
+	uint theta = thetaPhiCone >> 10;
+	uint phi = (thetaPhiCone & 0x3f0) >> 4;
+	uint cone = thetaPhiCone & 0xf;
 
-    float t = PI * (theta / 255.0f);
-    float p = PI * ((phi / 127.5f) - 1.0f);
+	// Check if this represents the empty normal (0, 0, 0)
+	if (theta == 0 && phi == 0)
+	{
+		return float4(0, 0, 0, 0);
+	}
 
-    return float3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
-}
+	float t = PI * (theta / 63.0f);
+	float p = PI * ((phi / 31.5f) - 1.0f);
+	float c = PI * (cone / 15.0f);
 
-float3 PolarNormalToFloat3(uint2 polarNormal)
-{
-    return PolarNormalToFloat3(polarNormal.x, polarNormal.y);
+	return float4(sin(t) * cos(p), sin(t) * sin(p), cos(t), c);
 }
 
 float3 Color16ToFloat3(uint color)

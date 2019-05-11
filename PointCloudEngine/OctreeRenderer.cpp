@@ -201,10 +201,10 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         useComputeShader = !useComputeShader;
     }
 
-	// Toggle view frustum culling
+	// Toggle view frustum and visibility culling
 	if (Input::GetKeyDown(Keyboard::C))
 	{
-		useViewFrustumCulling = !useViewFrustumCulling;
+		octreeConstantBufferData.useCulling = !octreeConstantBufferData.useCulling;
 	}
 
 	// Toggle blending
@@ -235,7 +235,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 
     // Set the text
     textRenderer->text = useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n";
-	textRenderer->text.append(L"View Frustum Culling " + std::wstring(useViewFrustumCulling ? L"Enabled\n" : L"Disabled\n"));
+	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"Enabled\n" : L"Disabled\n"));
 	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled" : L"Disabled") + L" with Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
 
     int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution * settings->overlapFactor;
@@ -326,7 +326,7 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.overlapFactor = settings->overlapFactor;
 
 	// Do not blend in the first pass
-	octreeConstantBufferData.blend = false;
+	octreeConstantBufferData.useBlending = false;
 
     // Update the hlsl file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(octreeConstantBuffer, 0, NULL, &octreeConstantBufferData, 0, 0);
@@ -380,7 +380,7 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 void PointCloudEngine::OctreeRenderer::DrawOctree()
 {
 	// Create new buffer from the current octree traversal on the cpu
-    std::vector<OctreeNodeVertex> octreeVertices = octree->GetVertices(octreeConstantBufferData, useViewFrustumCulling);
+    std::vector<OctreeNodeVertex> octreeVertices = octree->GetVertices(octreeConstantBufferData);
 
     vertexBufferCount = octreeVertices.size();
 
@@ -466,7 +466,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
 	rootEntry.index = 0;
 	rootEntry.position = octree->rootPosition;
 	rootEntry.size = octree->rootSize;
-	rootEntry.parentInsideViewFrustum = !useViewFrustumCulling;
+	rootEntry.parentInsideViewFrustum = false;
 	rootEntry.depth = 0;
 
 	D3D11_BOX rootEntryBox;
@@ -584,7 +584,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	d3d11DevCon->Draw(vertexBufferCount, 0);
 
 	// Clear stencil buffer, draw again but this time with the actual depth buffer, render target and blending
-	octreeConstantBufferData.blend = true;
+	octreeConstantBufferData.useBlending = true;
 	d3d11DevCon->UpdateSubresource(octreeConstantBuffer, 0, NULL, &octreeConstantBufferData, 0, 0);
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_STENCIL, 0, 0);
 	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);

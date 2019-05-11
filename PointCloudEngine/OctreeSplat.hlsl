@@ -32,10 +32,10 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 {
 	float3 normals[4] =
 	{
-		PolarNormalToFloat3(input[0].normal0),
-		PolarNormalToFloat3(input[0].normal1),
-		PolarNormalToFloat3(input[0].normal2),
-		PolarNormalToFloat3(input[0].normal3)
+		ClusterNormalToFloat4(input[0].normal0).xyz,
+		ClusterNormalToFloat4(input[0].normal1).xyz,
+		ClusterNormalToFloat4(input[0].normal2).xyz,
+		ClusterNormalToFloat4(input[0].normal3).xyz
 	};
 
 	float3 colors[4] =
@@ -78,70 +78,73 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 		}
 	}
 
-	normal /= visibilityFactorSum;
-	color /= visibilityFactorSum;
+	if (visibilityFactorSum > 0)
+	{
+		normal /= visibilityFactorSum;
+		color /= visibilityFactorSum;
 
-    /*
+		/*
 
-        1,4__5
-        |\   |
-        | \  |
-        |  \ |
-        |___\|
-        3    2,6
+			1,4__5
+			|\   |
+			| \  |
+			|  \ |
+			|___\|
+			3    2,6
 
-    */
+		*/
 
-    float3 worldPosition = mul(float4(input[0].position, 1), World);
-    float3 worldNormal = normalize(mul(float4(normal, 0), WorldInverseTranspose));
+		float3 worldPosition = mul(float4(input[0].position, 1), World);
+		float3 worldNormal = normalize(mul(float4(normal, 0), WorldInverseTranspose));
 
-    float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
-    float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
-    float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+		float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+		float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
+		float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
-    // Billboard should face in the same direction as the normal
-	// Also the size should not go below the sampling rate in order to avoid holes
-    float distanceToCamera = distance(cameraPosition, worldPosition);
-    float samplingRateWorld = length(mul(float3(samplingRate, 0, 0), World).xyz);
-	float splatResolutionWorld = overlapFactor * splatResolution * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
-	float splatSizeWorld = max(samplingRateWorld, splatResolutionWorld);
-    float3 up = 0.5f * splatSizeWorld * normalize(cross(worldNormal, cameraRight));
-    float3 right = 0.5f * splatSizeWorld * normalize(cross(worldNormal, up));
+		// Billboard should face in the same direction as the normal
+		// Also the size should not go below the sampling rate in order to avoid holes
+		float distanceToCamera = distance(cameraPosition, worldPosition);
+		float samplingRateWorld = length(mul(float3(samplingRate, 0, 0), World).xyz);
+		float splatResolutionWorld = overlapFactor * splatResolution * (2.0f * tan(fovAngleY / 2.0f)) * distanceToCamera;
+		float splatSizeWorld = max(samplingRateWorld, splatResolutionWorld);
+		float3 up = 0.5f * splatSizeWorld * normalize(cross(worldNormal, cameraRight));
+		float3 right = 0.5f * splatSizeWorld * normalize(cross(worldNormal, up));
 
-    float4x4 VP = mul(View, Projection);
+		float4x4 VP = mul(View, Projection);
 
-    GS_SPLAT_OUTPUT element;
-	element.positionCenter = worldPosition;
-	element.normal = worldNormal;
-    element.color = color;
-	element.radius = length(up);
+		GS_SPLAT_OUTPUT element;
+		element.positionCenter = worldPosition;
+		element.normal = worldNormal;
+		element.color = color;
+		element.radius = length(up);
 
-	// Append the vertices in the correct order to create a billboard
-	element.positionWorld = worldPosition + up - right;
-    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+		// Append the vertices in the correct order to create a billboard
+		element.positionWorld = worldPosition + up - right;
+		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+		output.Append(element);
 
-	element.positionWorld = worldPosition - up + right;
-    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+		element.positionWorld = worldPosition - up + right;
+		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+		output.Append(element);
 
-	element.positionWorld = worldPosition - up - right;
-    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+		element.positionWorld = worldPosition - up - right;
+		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+		output.Append(element);
 
-    output.RestartStrip();
+		output.RestartStrip();
 
-	element.positionWorld = worldPosition + up - right;
-    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+		element.positionWorld = worldPosition + up - right;
+		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+		output.Append(element);
 
-	element.positionWorld = worldPosition + up + right;
-    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+		element.positionWorld = worldPosition + up + right;
+		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+		output.Append(element);
 
-	element.positionWorld = worldPosition - up + right;
-    element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+		element.positionWorld = worldPosition - up + right;
+		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+		output.Append(element);
+	}
 }
 
 float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
@@ -152,7 +155,7 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		discard;
 	}
 
-	if (blend)
+	if (useBlending)
 	{
 		// Transform from clip position into texture space
 		float3 positionClip = input.positionClip.xyz / input.positionClip.w;
@@ -174,7 +177,7 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		}
 	}
 
-	if (light)
+	if (useLighting)
 	{
 		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
 	}

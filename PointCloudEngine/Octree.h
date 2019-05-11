@@ -11,7 +11,7 @@ namespace PointCloudEngine
     public:
         Octree(const std::wstring &plyfile);
 
-        std::vector<OctreeNodeVertex> GetVertices(const OctreeConstantBuffer &octreeConstantBufferData, const bool &viewFrustumCulling) const;
+        std::vector<OctreeNodeVertex> GetVertices(const OctreeConstantBuffer &octreeConstantBufferData) const;
         bool LoadFromOctreeFile();
         void SaveToOctreeFile();
 

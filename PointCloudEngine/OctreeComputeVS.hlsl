@@ -18,10 +18,10 @@ VS_INPUT VS(uint vertexID : SV_VERTEXID)
 	input.weight0 = (p.childrenMaskAndWeights >> 8) & 0xff;
 	input.weight1 = (p.childrenMaskAndWeights >> 16) & 0xff;
 	input.weight2 = (p.childrenMaskAndWeights >> 24) & 0xff;
-    input.normal0 = uint2(p.normal01 & 0xff, (p.normal01 >> 8) & 0xff);
-    input.normal1 = uint2((p.normal01 >> 16) & 0xff, (p.normal01 >> 24) & 0xff);
-	input.normal2 = uint2(p.normal23 & 0xff, (p.normal23 >> 8) & 0xff);
-	input.normal3 = uint2((p.normal23 >> 16) & 0xff, (p.normal23 >> 24) & 0xff);
+    input.normal0 = p.normal01 & 0xffff;
+    input.normal1 = (p.normal01 >> 16) & 0xffff;
+	input.normal2 = p.normal23 & 0xffff;
+	input.normal3 = (p.normal23 >> 16) & 0xffff;
     input.color0 = p.color01 & 0xffff;
     input.color1 = p.color01 >> 16;
 	input.color2 = p.color23 & 0xffff;

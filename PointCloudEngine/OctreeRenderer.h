@@ -27,7 +27,6 @@ namespace PointCloudEngine
         int vertexBufferCount = 0;
 		bool useBlending = true;
         bool useComputeShader = true;
-		bool useViewFrustumCulling = true;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;

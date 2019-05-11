@@ -94,7 +94,14 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 
     }
 
+	// Normalize the means
+	for (UINT i = 0; i < k; i++)
+	{
+		means[i].Normalize();
+	}
+
     // Initialize average colors that are calculated per cluster
+	float normalCones[4] = { 0, 0, 0, 0 };
     double averageReds[4] = { 0, 0, 0, 0 };
     double averageGreens[4] = { 0, 0, 0, 0 };
     double averageBlues[4] = { 0, 0, 0, 0 };
@@ -105,6 +112,12 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
         averageReds[clusters[i]] += entry.vertices[i].color[0];
         averageGreens[clusters[i]] += entry.vertices[i].color[1];
         averageBlues[clusters[i]] += entry.vertices[i].color[2];
+
+		// Calculate the angle in [0, pi] between the mean normal and this vertex normal
+		float angle = acos(means[clusters[i]].Dot(entry.vertices[i].normal));
+
+		// Save the maximum angle to any of the vertices in the cluster as normal cone
+		normalCones[clusters[i]] = max(normalCones[clusters[i]], angle);
     }
 
 	delete[] clusters;
@@ -120,7 +133,7 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
             averageGreens[i] /= verticesPerMean[i];
             averageBlues[i] /= verticesPerMean[i];
 
-            properties.normals[i] = PolarNormal(means[i]);
+            properties.normals[i] = ClusterNormal(means[i], normalCones[i]);
             properties.colors[i] = Color16(averageReds[i], averageGreens[i], averageBlues[i]);
         }
     }
@@ -253,139 +266,167 @@ PointCloudEngine::OctreeNode::OctreeNode(std::queue<OctreeNodeCreationEntry> &no
 	}
 }
 
-void PointCloudEngine::OctreeNode::GetVertices(std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
+void PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode>& nodes, std::queue<OctreeNodeTraversalEntry> &nodesQueue, std::vector<OctreeNodeVertex> &octreeVertices, const OctreeNodeTraversalEntry &entry, const OctreeConstantBuffer &octreeConstantBufferData) const
 {
-	bool traverseChildren = true;
+	bool visible = false;
 	bool insideViewFrustum = true;
+	bool traverseChildren = true;
 
-	// TODO: Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
-
-	// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
-	if (!entry.parentInsideViewFrustum)
+	if (octreeConstantBufferData.useCulling)
 	{
-		// Generate all the 6 planes of the view frustum
-		Plane viewFrustumPlanes[6] =
+		// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+		OctreeNode node = nodes[entry.index];
+		Vector3 localViewDirection = entry.position - octreeConstantBufferData.localCameraPosition;
+		localViewDirection.Normalize();
+
+		// Calculate the angle between the view direction and each normal
+		for (int i = 0; i < 4; i++)
 		{
-			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneNearNormal),			// Near Plane
-			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneFarNormal),		// Far Plane
-			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneLeftNormal),			// Left Plane
-			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneRightNormal),		// Right Plane
-			Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneTopNormal),			// Top Plane
-			Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneBottomNormal)		// Bottom Plane
-		};
+			ClusterNormal normal = node.properties.normals[i];
+			float angle = acos(normal.GetVector3().Dot(-localViewDirection));
+			float cone = normal.GetCone();
 
-		float extends = entry.size / 2.0f;
-
-		Vector3 boundingCube[8] =
-		{
-			entry.position + Vector3(extends, extends, extends),
-			entry.position + Vector3(-extends, extends, extends),
-			entry.position + Vector3(extends, -extends, extends),
-			entry.position + Vector3(extends, extends, -extends),
-			entry.position + Vector3(-extends, -extends, extends),
-			entry.position + Vector3(extends, -extends, -extends),
-			entry.position + Vector3(-extends, extends, -extends),
-			entry.position + Vector3(-extends, -extends, -extends),
-		};
-
-		int outsideCount = 0;
-		int insideCount = 0;
-
-		// Check if the bounding cube is fully inside, fully outside or overlapping the view frustum
-		for (int i = 0; i < 8; i++)
-		{
-			// Check for each position if it is inside the view frustum
-			bool positionIsInside = true;
-
-			for (int j = 0; j < 6; j++)
+			// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible
+			if (angle < (XM_PI / 2) + cone)
 			{
-				// Compute the signed distance to each of the planes
-				if (viewFrustumPlanes[j].DotCoordinate(boundingCube[i]) > 0)
-				{
-					// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
-					positionIsInside = false;
-					break;
-				}
-			}
-
-			if (positionIsInside)
-			{
-				insideCount++;
-			}
-			else
-			{
-				outsideCount++;
+				visible = true;
+				break;
 			}
 		}
 
-		if (outsideCount == 8)
+		if (!visible)
 		{
-			// Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection, cube contains view frustum)
-			// Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
-			Vector3 rays[12][2] =
+			// The node and all of its children face away from the camera, don't draw it or traverse further
+			return;
+		}
+
+		// View frustum culling, check if this node is fully inside the view frustum only when the parent isn't (the children of a node are always inside the view frustum then the node itself is inside it)
+		if (!entry.parentInsideViewFrustum)
+		{
+			// Generate all the 6 planes of the view frustum
+			Plane viewFrustumPlanes[6] =
 			{
-				{ octreeConstantBufferData.localViewFrustumNearTopRight, octreeConstantBufferData.localViewFrustumNearTopLeft },
-				{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumNearBottomLeft },
-				{ octreeConstantBufferData.localViewFrustumNearBottomLeft, octreeConstantBufferData.localViewFrustumNearTopLeft },
-				{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumNearTopRight },
-				{ octreeConstantBufferData.localViewFrustumFarTopRight, octreeConstantBufferData.localViewFrustumFarTopLeft },
-				{ octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarBottomLeft },
-				{ octreeConstantBufferData.localViewFrustumFarBottomLeft, octreeConstantBufferData.localViewFrustumFarTopLeft },
-				{ octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarTopRight },
-				{ octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumFarTopLeft },
-				{ octreeConstantBufferData.localViewFrustumNearTopRight, octreeConstantBufferData.localViewFrustumFarTopRight },
-				{ octreeConstantBufferData.localViewFrustumNearBottomLeft, octreeConstantBufferData.localViewFrustumFarBottomLeft },
-				{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumFarBottomRight }
+				Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneNearNormal),			// Near Plane
+				Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneFarNormal),		// Far Plane
+				Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneLeftNormal),			// Left Plane
+				Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneRightNormal),		// Right Plane
+				Plane(octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewPlaneTopNormal),			// Top Plane
+				Plane(octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewPlaneBottomNormal)		// Bottom Plane
 			};
 
-			// Create a sphere that encloses the bounding cube to test against
-			bool intersects = false;
-			Vector3 c = entry.position;
-			float r = Vector3(extends, extends, extends).Length();
+			float extends = entry.size / 2.0f;
 
-			for (int i = 0; i < 12; i++)
+			Vector3 boundingCube[8] =
 			{
-				Vector3 o = rays[i][0];
-				Vector3 v = rays[i][1] - rays[i][0];
+				entry.position + Vector3(extends, extends, extends),
+				entry.position + Vector3(-extends, extends, extends),
+				entry.position + Vector3(extends, -extends, extends),
+				entry.position + Vector3(extends, extends, -extends),
+				entry.position + Vector3(-extends, -extends, extends),
+				entry.position + Vector3(extends, -extends, -extends),
+				entry.position + Vector3(-extends, extends, -extends),
+				entry.position + Vector3(-extends, -extends, -extends),
+			};
 
-				// Store the length of the frustum line and normalize it
-				float l = v.Length();
-				v /= l;
+			int outsideCount = 0;
+			int insideCount = 0;
 
-				// Calculate the factor under the square root
-				float vDotOMinusC = v.Dot(o - c);
-				float f = vDotOMinusC * vDotOMinusC - ((o - c).LengthSquared() - r * r);
+			// Check if the bounding cube is fully inside, fully outside or overlapping the view frustum
+			for (int i = 0; i < 8; i++)
+			{
+				// Check for each position if it is inside the view frustum
+				bool positionIsInside = true;
 
-				if (f > 0)
+				for (int j = 0; j < 6; j++)
 				{
-					// Intersecting the sphere at two points, calculate whether this point is on the line of the view frustum
-					float s = sqrt(f);
-					float d1 = -vDotOMinusC + s;
-					float d2 = -vDotOMinusC - s;
-
-					if ((d1 >= 0 && d1 <= l) || (d2 >= 0 && d2 <= l))
+					// Compute the signed distance to each of the planes
+					if (viewFrustumPlanes[j].DotCoordinate(boundingCube[i]) > 0)
 					{
-						// Interecting, check children again
-						insideViewFrustum = false;
-						intersects = true;
+						// The position cannot be fully inside the view frustum when it is on the wrong side of one of the 6 planes
+						positionIsInside = false;
 						break;
 					}
 				}
+
+				if (positionIsInside)
+				{
+					insideCount++;
+				}
+				else
+				{
+					outsideCount++;
+				}
 			}
 
-			if (!intersects)
+			if (outsideCount == 8)
 			{
-				// The whole cube is outside, don't add it or any of its children
-				return;
-			}
-		}
-		else if (insideCount != 0 && outsideCount != 0)
-		{
-			// Some positions are outside and some are inside the view frustum, check the children again
-			insideViewFrustum = false;
-		}
+				// Handle the case that the bounding cube positions are not inside the view frustum but it is still overlapping (e.g. edge only intersection, cube contains view frustum)
+				// Do ray sphere intersection for all the 12 view frustum rays against the sphere representation of the bounding cube (radius is half the diagonal)
+				Vector3 rays[12][2] =
+				{
+					{ octreeConstantBufferData.localViewFrustumNearTopRight, octreeConstantBufferData.localViewFrustumNearTopLeft },
+					{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumNearBottomLeft },
+					{ octreeConstantBufferData.localViewFrustumNearBottomLeft, octreeConstantBufferData.localViewFrustumNearTopLeft },
+					{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumNearTopRight },
+					{ octreeConstantBufferData.localViewFrustumFarTopRight, octreeConstantBufferData.localViewFrustumFarTopLeft },
+					{ octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarBottomLeft },
+					{ octreeConstantBufferData.localViewFrustumFarBottomLeft, octreeConstantBufferData.localViewFrustumFarTopLeft },
+					{ octreeConstantBufferData.localViewFrustumFarBottomRight, octreeConstantBufferData.localViewFrustumFarTopRight },
+					{ octreeConstantBufferData.localViewFrustumNearTopLeft, octreeConstantBufferData.localViewFrustumFarTopLeft },
+					{ octreeConstantBufferData.localViewFrustumNearTopRight, octreeConstantBufferData.localViewFrustumFarTopRight },
+					{ octreeConstantBufferData.localViewFrustumNearBottomLeft, octreeConstantBufferData.localViewFrustumFarBottomLeft },
+					{ octreeConstantBufferData.localViewFrustumNearBottomRight, octreeConstantBufferData.localViewFrustumFarBottomRight }
+				};
 
-		// Otherwise the cube is fully inside the view frustum as assumed
+				// Create a sphere that encloses the bounding cube to test against
+				bool intersects = false;
+				Vector3 c = entry.position;
+				float r = Vector3(extends, extends, extends).Length();
+
+				for (int i = 0; i < 12; i++)
+				{
+					Vector3 o = rays[i][0];
+					Vector3 v = rays[i][1] - rays[i][0];
+
+					// Store the length of the frustum line and normalize it
+					float l = v.Length();
+					v /= l;
+
+					// Calculate the factor under the square root
+					float vDotOMinusC = v.Dot(o - c);
+					float f = vDotOMinusC * vDotOMinusC - ((o - c).LengthSquared() - r * r);
+
+					if (f > 0)
+					{
+						// Intersecting the sphere at two points, calculate whether this point is on the line of the view frustum
+						float s = sqrt(f);
+						float d1 = -vDotOMinusC + s;
+						float d2 = -vDotOMinusC - s;
+
+						if ((d1 >= 0 && d1 <= l) || (d2 >= 0 && d2 <= l))
+						{
+							// Interecting, check children again
+							insideViewFrustum = false;
+							intersects = true;
+							break;
+						}
+					}
+				}
+
+				if (!intersects)
+				{
+					// The whole cube is outside, don't add it or any of its children
+					return;
+				}
+			}
+			else if (insideCount != 0 && outsideCount != 0)
+			{
+				// Some positions are outside and some are inside the view frustum, check the children again
+				insideViewFrustum = false;
+			}
+
+			// Otherwise the cube is fully inside the view frustum as assumed
+		}
 	}
 
 	// Check if only to return the vertices at the given level

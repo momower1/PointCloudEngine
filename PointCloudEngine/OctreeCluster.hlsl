@@ -27,10 +27,10 @@ void GS(point VS_INPUT input[1], inout LineStream<GS_OUTPUT> output)
 	// Store all of the end vertices for the normals here for readability
     float3 end[] =
     {
-        input[0].position + extend * (weights[0] / maxWeight) * PolarNormalToFloat3(input[0].normal0),
-        input[0].position + extend * (weights[1] / maxWeight) * PolarNormalToFloat3(input[0].normal1),
-        input[0].position + extend * (weights[2] / maxWeight) * PolarNormalToFloat3(input[0].normal2),
-        input[0].position + extend * (weights[3] / maxWeight) * PolarNormalToFloat3(input[0].normal3),
+        input[0].position + extend * (weights[0] / maxWeight) * ClusterNormalToFloat4(input[0].normal0).xyz,
+        input[0].position + extend * (weights[1] / maxWeight) * ClusterNormalToFloat4(input[0].normal1).xyz,
+        input[0].position + extend * (weights[2] / maxWeight) * ClusterNormalToFloat4(input[0].normal2).xyz,
+        input[0].position + extend * (weights[3] / maxWeight) * ClusterNormalToFloat4(input[0].normal3).xyz,
     };
 
     GS_OUTPUT element;
