@@ -132,22 +132,22 @@ void Scene::Update(Timer &timer)
     if (help)
     {
         helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
-        helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-        helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-        helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-        helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
-        helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
-        helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
-		helpTextRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
-        helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
+		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
+		helpTextRenderer->text.append(L"[N/V] Increase/decrease blending depth epsilon\n");
+		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
 		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
+		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
+		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
+		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
+		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
+        helpTextRenderer->text.append(L"[WASD] Move Camera\n");
 		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
 		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-        helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
 		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-        helpTextRenderer->text.append(L"[ESC] Quit application\n");
+        helpTextRenderer->text.append(L"[ESC] Quit\n");
     }
 
 	// FPS counter

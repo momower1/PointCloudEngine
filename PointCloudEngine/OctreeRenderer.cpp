@@ -235,27 +235,15 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 	}
 
     // Set the text
-    textRenderer->text = useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n";
-	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"Enabled\n" : L"Disabled\n"));
-	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled" : L"Disabled") + L" with Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
+	textRenderer->text = std::wstring(L"View Mode: ") + ((viewMode == 0) ? L"Splats\n" : ((viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
+	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
 
     int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution * settings->overlapFactor;
-    textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-
-    if (viewMode == 0)
-    {
-        textRenderer->text.append(L"Node View Mode: Splats\n");
-    }
-    else if (viewMode == 1)
-    {
-        textRenderer->text.append(L"Node View Mode: Bounding Cubes\n");
-    }
-    else if (viewMode == 2)
-    {
-        textRenderer->text.append(L"Node View Mode: Normal Clusters\n");
-    }
-
+	textRenderer->text.append(L"Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
+	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
+	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"Enabled, " : L"Disabled, "));
+	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"Enabled\n" : L"Disabled\n"));
     textRenderer->text.append(L"Octree Level: ");
     textRenderer->text.append((octreeConstantBufferData.level < 0) ? L"AUTO" : std::to_wstring(octreeConstantBufferData.level));
     textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferCount));
