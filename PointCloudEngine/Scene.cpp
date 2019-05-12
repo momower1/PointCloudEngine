@@ -2,25 +2,38 @@
 
 void Scene::Initialize()
 {
-    // Create and load the point cloud
+    // Create the object for the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
 
+	// Create startup text
+	TextRenderer* startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
+	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .ply point cloud files by generating an octree.\nYou can change parameters (resolution, ...) in the settings file.\n\n\nPress [O] to open a .ply file.\nOnly x,y,z,nx,ny,nz,red,green,blue format is supported.";
+	startupText = Hierarchy::Create(L"Startup Text");
+	startupText->AddComponent(startupTextRenderer);
+	startupText->transform->scale = Vector3(0.25, 0.35, 1);
+	startupText->transform->position = Vector3(-0.95f, 0.4f, 0.5f);
+
     // Create loading text and hide it
-    TextRenderer *loadingTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+    TextRenderer *loadingTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
     loadingTextRenderer->text = L"Loading...";
     loadingText = Hierarchy::Create(L"Loading Text");
     loadingText->AddComponent(loadingTextRenderer);
     loadingText->transform->scale = Vector3::Zero;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
-    // Create text renderer to display properties
-    textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-    text = Hierarchy::Create(L"Text");
-    text->AddComponent(textRenderer);
+    // Create text renderer to display properties, hide it first
+    helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+    helpText = Hierarchy::Create(L"Help Text");
+    helpText->AddComponent(helpTextRenderer);
+    helpText->transform->position = Vector3(-1, 1, 0.5f);
+	helpText->transform->scale = Vector3::Zero;
 
-    // Transforms
-    text->transform->position = Vector3(-1, 1, 0.5f);
-    text->transform->scale = 0.35f * Vector3::One;
+	// Create fps text in top right corner
+	fpsTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	fpsText = Hierarchy::Create(L"FPS Text");
+	fpsText->AddComponent(fpsTextRenderer);
+	fpsText->transform->position = Vector3(0.825f, 1, 0.5f);
+	fpsText->transform->scale = 0.35f * Vector3::One;
 
 	// Create the constant buffer for the lighting
 	D3D11_BUFFER_DESC lightingConstantBufferDesc;
@@ -113,35 +126,32 @@ void Scene::Update(Timer &timer)
     // Move camera with WASD keys
     camera->TranslateRUF(cameraSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, cameraSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 
-    // FPS counter
-    textRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps\n";
+	helpTextRenderer->text = L"[H] Toggle help\n";
 
     // Show help / controls
     if (help)
     {
-        textRenderer->text.append(L"[H] Toggle help\n");
-        textRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
-        textRenderer->text.append(L"[WASD] Move Camera\n");
-        textRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-        textRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-        textRenderer->text.append(L"[SPACE] Rotate around y axis\n");
-        textRenderer->text.append(L"[ENTER] Switch node view mode\n");
-        textRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
-		textRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
-		textRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
-        textRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
-		textRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
-		textRenderer->text.append(L"[L] Toggle Lighting\n");
-		textRenderer->text.append(L"[B] Toggle Blending\n");
-        textRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
-		textRenderer->text.append(L"[F1-F6] Select camera position\n");
-		textRenderer->text.append(L"[F9] Screenshot\n");
-        textRenderer->text.append(L"[ESC] Quit application\n");
+        helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
+        helpTextRenderer->text.append(L"[WASD] Move Camera\n");
+        helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
+        helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
+        helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+        helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
+        helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
+		helpTextRenderer->text.append(L"[Q/E] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[V/N] Increase/decrease blending depth epsilon\n");
+        helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU computation\n");
+		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
+		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
+		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
+        helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
+		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[F9] Screenshot\n");
+        helpTextRenderer->text.append(L"[ESC] Quit application\n");
     }
-    else
-    {
-        textRenderer->text.append(L"Press [H] to show help");
-    }
+
+	// FPS counter
+	fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
 
     // Check if there is a file that should be loaded delayed
     if (timeUntilLoadFile > 0)
@@ -226,8 +236,11 @@ void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
         timeUntilLoadFile = 0.1f;
         settings->plyfile = filepath;
 
+		// Hide the startup text
+		startupText->transform->scale = Vector3::Zero;
+
         // Show huge loading text
-        loadingText->transform->scale = 1.5f * Vector3::One;
+        loadingText->transform->scale = Vector3::One;
     }
 }
 
@@ -247,7 +260,7 @@ void PointCloudEngine::Scene::LoadFile()
     }
     catch (std::exception e)
     {
-		ERROR_MESSAGE(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!");
+		ERROR_MESSAGE(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nYou can use e.g. MeshLab to generate the required format.");
 
         // Set the pointer to NULL because the creation of the object failed
         pointCloudRenderer = NULL;
@@ -270,6 +283,9 @@ void PointCloudEngine::Scene::LoadFile()
     // Hide loading text
     loadingText->transform->scale = Vector3::Zero;
     timeSinceLoadFile = 0;
+
+	// Show the fps and help text
+	helpText->transform->scale = 0.35f * Vector3::One;
 
     // Reset point cloud
     pointCloud->transform->position = Vector3::Zero;

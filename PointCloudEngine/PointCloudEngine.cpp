@@ -471,6 +471,7 @@ bool InitializeScene()
 	gammaCorrectionShader = Shader::Create(L"Shader/GammaCorrection.hlsl", true, true, true, false, NULL, 0);
 
     // Load fonts
+	TextRenderer::CreateSpriteFont(L"Arial", L"Assets/Arial.spritefont");
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
     TextRenderer::CreateSpriteFont(L"Times New Roman", L"Assets/Times New Roman.spritefont");
 
