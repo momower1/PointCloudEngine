@@ -106,7 +106,8 @@
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
-xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
+xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -137,7 +138,8 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
-xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
+xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -172,7 +174,8 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
-xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
+xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -207,7 +210,8 @@ xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
-xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"</Command>
+xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
