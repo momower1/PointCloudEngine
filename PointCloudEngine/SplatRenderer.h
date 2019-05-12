@@ -15,6 +15,7 @@ namespace PointCloudEngine
         void Draw(SceneObject *sceneObject);
         void Release();
 
+		void SetLighting(const bool& useLighting);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 
     private:

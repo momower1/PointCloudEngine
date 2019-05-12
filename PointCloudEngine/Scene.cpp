@@ -67,6 +67,7 @@ void Scene::Update(Timer &timer)
 	if (Input::GetKeyDown(Keyboard::L))
 	{
 		lightingConstantBufferData.useLighting = !lightingConstantBufferData.useLighting;
+		pointCloudRenderer->SetLighting(lightingConstantBufferData.useLighting);
 	}
 
 	// Rotate the point cloud

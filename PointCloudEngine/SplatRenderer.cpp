@@ -90,6 +90,11 @@ void SplatRenderer::Release()
     SAFE_RELEASE(constantBuffer);
 }
 
+void PointCloudEngine::SplatRenderer::SetLighting(const bool& useLighting)
+{
+	// Nothing to do here
+}
+
 void PointCloudEngine::SplatRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
     outPosition = Vector3::Zero;
