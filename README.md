@@ -1,3 +1,5 @@
+![Screenshot](https://lh4.googleusercontent.com/jqYd12Qn7Tz3pUkvr52mYfEJj0sThHIGqy_Sa1n6Lng_J7GcqW2EUZrqeht6lbBU4a8t9qS-FskpX12QTdlh=w1365-h937-rw)
+
 ## Features
 - PointCloudEngine loads and renders point cloud datasets and generates an octree for level-of-detail
 - Supports .ply files with _x,y,z,nx,ny,nz,red,green,blue_ format only (you can use e.g. [MeshLab](http://www.meshlab.net/) to export to this format)
