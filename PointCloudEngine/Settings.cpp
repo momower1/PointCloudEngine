@@ -112,8 +112,8 @@ PointCloudEngine::Settings::~Settings()
     // Save values as lines with "variableName=variableValue" to file with comments
     std::wofstream settingsFile(executableDirectory + SETTINGS_FILENAME);
 
-    settingsFile << L"# In order to change parameters:" << std::endl;
-    settingsFile << L"# Close the engine, edit this file and then restart the engine" << std::endl;
+	settingsFile << L"# Parameters only apply when restarting the engine!" << std::endl;
+	settingsFile << std::endl;
 
     settingsFile << L"# Rendering Parameters" << std::endl;
     settingsFile << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
@@ -125,6 +125,7 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << std::endl;
 
     settingsFile << L"# Ply File Parameters" << std::endl;
+	settingsFile << L"# Delete old .octree files when changing the " << NAMEOF(maxOctreeDepth) << std::endl;
     settingsFile << NAMEOF(plyfile) << L"=" << plyfile << std::endl;
     settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
 	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
@@ -142,6 +143,7 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << std::endl;
 
 	settingsFile << L"# Compute Shader Parameters" << std::endl;
+	settingsFile << L"# Increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
 	settingsFile << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;
 	settingsFile << std::endl;
 

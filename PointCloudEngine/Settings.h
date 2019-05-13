@@ -36,7 +36,7 @@ namespace PointCloudEngine
 		float specularExponent = 10.0f;
 
 		// Compute shader default values
-		UINT appendBufferCount = 10000000;
+		UINT appendBufferCount = 6000000;
 
         // Input parameters default values
         float mouseSensitivity = 0.005f;
