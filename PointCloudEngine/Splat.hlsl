@@ -121,7 +121,7 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
 
 	if (useLighting)
 	{
-		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
+		return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb), 1);
 	}
 	else
 	{

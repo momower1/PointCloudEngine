@@ -103,7 +103,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	additiveBlendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 	additiveBlendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 	additiveBlendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	additiveBlendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	additiveBlendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
 	additiveBlendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	additiveBlendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
@@ -224,23 +224,23 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
 	}
 
-	// Change the depth epsilon for blending
+	// Change the blend factor
 	if (Input::GetKey(Keyboard::V))
 	{
-		settings->depthEpsilon = max(0.0001f, settings->depthEpsilon - dt * 0.01f);
+		settings->blendFactor = max(0, settings->blendFactor - dt * 0.1f);
 	}
 	else if (Input::GetKey(Keyboard::N))
 	{
-		settings->depthEpsilon += dt * 0.01f;
+		settings->blendFactor += dt * 0.1f;
 	}
 
     // Set the text
 	textRenderer->text = std::wstring(L"View Mode: ") + ((viewMode == 0) ? L"Splats\n" : ((viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
 	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
 
-    int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution * settings->overlapFactor;
+    int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-	textRenderer->text.append(L"Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
+	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
 	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
 	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"On, " : L"Off, "));
 	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"On, " : L"Off, "));
@@ -307,9 +307,9 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.localViewPlaneTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
 	octreeConstantBufferData.localViewPlaneBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
 	octreeConstantBufferData.samplingRate =settings->samplingRate;
-	octreeConstantBufferData.depthEpsilon = settings->depthEpsilon;
+	octreeConstantBufferData.blendFactor = settings->blendFactor;
 
-    // Draw overlapping splats to make sure that continuous surfaces are drawn
+    // Draw overlapping splats to make sure that continuous surfaces without holes are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
     // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
     // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats
@@ -593,7 +593,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	// Disable depth test to make sure that all the overlapping splats are blended together
 	d3d11DevCon->OMSetDepthStencilState(depthTestDisabledDepthStencilState, 0);
 
-	// Draw again only adding the colors of the overlapping splats together
+	// Draw again only adding the colors and weights of the overlapping splats together
 	// Also the stencil values are incremented by one for each overlapping splat per pixel
 	d3d11DevCon->Draw(vertexBufferCount, 0);
 
@@ -607,7 +607,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	d3d11DevCon->PSSetShader(octreeBlendingShader->pixelShader, NULL, 0);
 	d3d11DevCon->PSSetShaderResources(0, 1, &stencilTextureSRV);
 
-	// Use pixel shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
+	// Use pixel shader to divide the color sum by the weight sum of overlapping splats in each pixel, also remove background color
 	d3d11DevCon->Draw(1, 0);
 
 	// Unbind shader resources

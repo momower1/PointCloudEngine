@@ -134,8 +134,8 @@ void Scene::Update(Timer &timer)
     {
         helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
 		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blending depth epsilon\n");
 		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
 		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
 		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
 		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");

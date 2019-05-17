@@ -22,6 +22,11 @@ struct GS_SPLAT_OUTPUT
 	float radius : RADIUS;
 };
 
+float Gaussian(float x, float o)
+{
+	return (1.0f / (o * sqrt(2 * 3.14159265359))) * pow(2.71828182846, -((x * x) / (2 * o * o)));
+}
+
 VS_INPUT VS(VS_INPUT input)
 {
     return input;
@@ -149,10 +154,26 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 
 float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 {
+	// This is the final pixel color with or without lighting
+	float3 color;
+
+	// Use this factor to make circular splats and to calculate the blending weight
+	float factor = distance(input.positionWorld, input.positionCenter) / input.radius;
+
 	// Make circular splats, remove this for squares
-	if (distance(input.positionWorld, input.positionCenter) > input.radius)
+	if (factor > 1)
 	{
 		discard;
+	}
+
+	// Calculate the final pixel color
+	if (useLighting)
+	{
+		color = PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
+	}
+	else
+	{
+		color = input.color.rgb;
 	}
 
 	if (useBlending)
@@ -170,19 +191,20 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		float4 surfacePosition = mul(float4(positionClip.x, positionClip.y, surfaceDepth, 1), WorldViewProjectionInverse);
 		surfacePosition = surfacePosition / surfacePosition.w;
 
-		// Discard this pixel if it is not close to the surface
-		if (distance(position, surfacePosition) > depthEpsilon)
+		// Discard this pixel if it is not close enough to the surface
+		// Use the splat radius as cutoff, a constant value does not work because the distances between the splats become larger with the splat radius
+		if (distance(position, surfacePosition) > blendFactor * input.radius)
 		{
 			discard;
 		}
+
+		// Blending weight should be 1 in the center and close to 0 at the edge (0 at the edge introduces artifacts)
+		// This weight is blended additively into the alpha channel of the render target and therefore stores the sum of all weights
+		float weight = Gaussian(1.2f * factor, 0.4f);
+
+		// Blend the weighted color and the weight additively together
+		return float4(weight * color, weight);
 	}
 
-	if (useLighting)
-	{
-		return PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb);
-	}
-	else
-	{
-		return float4(input.color.rgb, 1);
-	}
+	return float4(color, 1);
 }

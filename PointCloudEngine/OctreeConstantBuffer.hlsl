@@ -65,7 +65,7 @@ cbuffer OctreeConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (16 byte boundary)
 	// Blending
 	bool useBlending;
-	float depthEpsilon;
+	float blendFactor;
 	// Compute shader data
 	bool useCulling;
 	uint inputCount;
