@@ -64,7 +64,7 @@ PointCloudEngine::Settings::Settings()
 				}
 				else if (variableName.compare(NAMEOF(depthEpsilon)) == 0)
 				{
-					depthEpsilon = std::stof(variableValue);
+					blendFactor = std::stof(variableValue);
 				}
                 else if (variableName.compare(NAMEOF(scale)) == 0)
                 {
@@ -130,7 +130,7 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
 	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
 	settingsFile << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
-	settingsFile << NAMEOF(depthEpsilon) << L"=" << depthEpsilon << std::endl;
+	settingsFile << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;
 

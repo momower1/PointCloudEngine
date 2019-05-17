@@ -224,23 +224,23 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
 	}
 
-	// Change the depth epsilon for blending
+	// Change the blend factor
 	if (Input::GetKey(Keyboard::V))
 	{
-		settings->depthEpsilon = max(0.0001f, settings->depthEpsilon - dt * 0.01f);
+		settings->blendFactor = max(0, settings->blendFactor - dt * 0.1f);
 	}
 	else if (Input::GetKey(Keyboard::N))
 	{
-		settings->depthEpsilon += dt * 0.01f;
+		settings->blendFactor += dt * 0.1f;
 	}
 
     // Set the text
 	textRenderer->text = std::wstring(L"View Mode: ") + ((viewMode == 0) ? L"Splats\n" : ((viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
 	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
 
-    int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution * settings->overlapFactor;
+    int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-	textRenderer->text.append(L"Depth Epsilon: " + std::to_wstring(settings->depthEpsilon) + L"\n");
+	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
 	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
 	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"On, " : L"Off, "));
 	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"On, " : L"Off, "));
@@ -307,9 +307,9 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.localViewPlaneTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
 	octreeConstantBufferData.localViewPlaneBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
 	octreeConstantBufferData.samplingRate =settings->samplingRate;
-	octreeConstantBufferData.depthEpsilon = settings->depthEpsilon;
+	octreeConstantBufferData.blendFactor = settings->blendFactor;
 
-    // Draw overlapping splats to make sure that continuous surfaces are drawn
+    // Draw overlapping splats to make sure that continuous surfaces without holes are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
     // 1.0f = Orthogonal splats to the camera are as large as the pixel area they should fill and do not overlap
     // 2.0f = Orthogonal splats to the camera are twice as large and overlap with all their surrounding splats

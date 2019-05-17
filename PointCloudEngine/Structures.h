@@ -190,7 +190,7 @@ namespace PointCloudEngine
 
 		// Blending
 		int useBlending;			// Bool in the shader
-		float depthEpsilon;
+		float blendFactor;
 
 		// Compute shader data
 		int useCulling;				// Bool in the shader

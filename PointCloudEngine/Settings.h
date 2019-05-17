@@ -24,8 +24,8 @@ namespace PointCloudEngine
         std::wstring plyfile = L"";
         int maxOctreeDepth = 16;
 		float samplingRate = 0.01f;
-		float overlapFactor = 1.9f;
-		float depthEpsilon = 0.3f;
+		float overlapFactor = 2.0f;
+		float blendFactor = 2.0f;
 		float scale = 1.0f;
 
 		// Lighting parameters
