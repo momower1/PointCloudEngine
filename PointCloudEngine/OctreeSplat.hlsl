@@ -22,6 +22,11 @@ struct GS_SPLAT_OUTPUT
 	float radius : RADIUS;
 };
 
+float Gaussian(float x, float o)
+{
+	return (1.0f / (o * sqrt(2 * 3.14159265359))) * pow(2.71828182846, -((x * x) / (2 * o * o)));
+}
+
 VS_INPUT VS(VS_INPUT input)
 {
     return input;
@@ -193,9 +198,9 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 			discard;
 		}
 
-		// Blending weight should be 1 in the center and 0.01f at the edge (0 at the edge introduces artifacts)
+		// Blending weight should be 1 in the center and close to 0 at the edge (0 at the edge introduces artifacts)
 		// This weight is blended additively into the alpha channel of the render target and therefore stores the sum of all weights
-		float weight = 0.01f + 0.99f * pow(1.0f - factor, 2);
+		float weight = Gaussian(1.2f * factor, 0.4f);
 
 		// Blend the weighted color and the weight additively together
 		return float4(weight * color, weight);
