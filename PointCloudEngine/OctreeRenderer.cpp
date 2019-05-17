@@ -103,7 +103,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	additiveBlendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 	additiveBlendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 	additiveBlendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	additiveBlendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	additiveBlendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
 	additiveBlendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	additiveBlendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
@@ -593,7 +593,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	// Disable depth test to make sure that all the overlapping splats are blended together
 	d3d11DevCon->OMSetDepthStencilState(depthTestDisabledDepthStencilState, 0);
 
-	// Draw again only adding the colors of the overlapping splats together
+	// Draw again only adding the colors and weights of the overlapping splats together
 	// Also the stencil values are incremented by one for each overlapping splat per pixel
 	d3d11DevCon->Draw(vertexBufferCount, 0);
 
@@ -607,7 +607,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	d3d11DevCon->PSSetShader(octreeBlendingShader->pixelShader, NULL, 0);
 	d3d11DevCon->PSSetShaderResources(0, 1, &stencilTextureSRV);
 
-	// Use pixel shader to divide the color sum by the count of overlapping splats in each pixel, also remove background color
+	// Use pixel shader to divide the color sum by the weight sum of overlapping splats in each pixel, also remove background color
 	d3d11DevCon->Draw(1, 0);
 
 	// Unbind shader resources

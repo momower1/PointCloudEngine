@@ -149,8 +149,10 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 
 float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 {
+	float factor = distance(input.positionWorld, input.positionCenter) / input.radius;
+
 	// Make circular splats, remove this for squares
-	if (distance(input.positionWorld, input.positionCenter) > input.radius)
+	if (factor > 1)
 	{
 		discard;
 	}
@@ -174,6 +176,19 @@ float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 		if (distance(position, surfacePosition) > depthEpsilon)
 		{
 			discard;
+		}
+
+		// Weight should be 1 in the center and 0.01f at the edge (0 at the edge introduces artifacts)
+		// This weight is blended additively into the alpha channel of the render target and therefore stores the sum of all weights
+		float weight = 0.01f + 0.99f * pow(1.0f - factor, 2);
+
+		if (useLighting)
+		{
+			return float4(weight * PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb).rgb, weight);
+		}
+		else
+		{
+			return float4(weight * input.color.rgb, weight);
 		}
 	}
 
