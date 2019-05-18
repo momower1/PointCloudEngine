@@ -79,11 +79,11 @@ void Scene::Update(Timer &timer)
 	// Set the sampling rate (minimal distance between two points) of the loaded point cloud
 	if (Input::GetKey(Keyboard::Q))
 	{
-		settings->samplingRate = max(0.0001f, settings->samplingRate - dt * 0.01f);
+		settings->samplingRate = max(0, settings->samplingRate - dt * 0.001f * inputSpeed);
 	}
 	else if (Input::GetKey(Keyboard::E))
 	{
-		settings->samplingRate += dt * 0.01f;
+		settings->samplingRate += dt * 0.001f * inputSpeed;
 	}
 
     // Scale the point cloud by the value saved in the config file
@@ -114,18 +114,18 @@ void Scene::Update(Timer &timer)
         timeSinceLoadFile += dt;
     }
 
-    // Speed up camera when pressing shift
+    // Increase input speed when pressing shift
     if (Input::GetKey(Keyboard::LeftShift))
     {
-        cameraSpeed += 20 * dt;
+        inputSpeed += 20 * dt;
     }
     else
     {
-        cameraSpeed = 3;
+        inputSpeed = 3;
     }
 
     // Move camera with WASD keys
-    camera->TranslateRUF(cameraSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, cameraSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
+    camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 
 	helpTextRenderer->text = L"[H] Toggle help\n";
 
@@ -136,6 +136,7 @@ void Scene::Update(Timer &timer)
 		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
 		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
 		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
+		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
 		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
 		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
 		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");

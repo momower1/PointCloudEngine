@@ -227,11 +227,11 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
 	// Change the blend factor
 	if (Input::GetKey(Keyboard::V))
 	{
-		settings->blendFactor = max(0, settings->blendFactor - dt * 0.1f);
+		settings->blendFactor = max(0, settings->blendFactor - dt * 0.5f);
 	}
 	else if (Input::GetKey(Keyboard::N))
 	{
-		settings->blendFactor += dt * 0.1f;
+		settings->blendFactor += dt * 0.5f;
 	}
 
     // Set the text

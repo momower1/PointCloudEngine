@@ -33,7 +33,9 @@ namespace PointCloudEngine
         bool help = false;
         float cameraPitch = 0;
         float cameraYaw = 0;
-        float cameraSpeed = 0;
+
+		// Speed up WASD, Q/E, V/N and so on for faster movement and parameter tweaking
+        float inputSpeed = 0;
 
 		// Rendering parameters that can be changed in both splat and octree renderer
 		ID3D11Buffer* lightingConstantBuffer = NULL;

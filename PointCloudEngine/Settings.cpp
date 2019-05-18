@@ -62,7 +62,7 @@ PointCloudEngine::Settings::Settings()
 				{
 					overlapFactor = std::stof(variableValue);
 				}
-				else if (variableName.compare(NAMEOF(depthEpsilon)) == 0)
+				else if (variableName.compare(NAMEOF(blendFactor)) == 0)
 				{
 					blendFactor = std::stof(variableValue);
 				}
