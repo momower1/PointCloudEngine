@@ -279,12 +279,17 @@ void PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode>& no
 		Vector3 localViewDirection = entry.position - octreeConstantBufferData.localCameraPosition;
 		localViewDirection.Normalize();
 
-		// Calculate the angle between the view direction and each normal
+		// Calculate the angle between the view direction, camera forward vector and each normal
 		for (int i = 0; i < 4; i++)
 		{
-			ClusterNormal normal = node.properties.normals[i];
-			float angle = acos(normal.GetVector3().Dot(-localViewDirection));
-			float cone = normal.GetCone();
+			ClusterNormal clusterNormal = node.properties.normals[i];
+			Vector3 normal = clusterNormal.GetVector3();
+			float cone = clusterNormal.GetCone();
+
+			// Also check against the camera forward vector since the node position can yield a heavily different view direction
+			float firstAngle = acos(normal.Dot(-localViewDirection));
+			float secondAngle = acos(normal.Dot(octreeConstantBufferData.localViewPlaneNearNormal));
+			float angle = min(firstAngle, secondAngle);
 
 			// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible
 			if (angle < (XM_PI / 2) + cone)

@@ -36,10 +36,12 @@ void CS (uint3 id : SV_DispatchThreadID)
 				ClusterNormalToFloat4((node.properties.normal23 >> 16) & 0xffff)
 			};
 
-			// Calculate the angle between the view direction and each normal
+			// Calculate the angle between the view direction, camera forward vector and each normal
 			for (int i = 0; i < 4; i++)
 			{
-				float angle = acos(dot(normals[i].xyz, -localViewDirection));
+				float firstAngle = acos(dot(normals[i].xyz, -localViewDirection));
+				float secondAngle = acos(dot(normals[i].xyz, localViewPlaneNearNormal));
+				float angle = min(firstAngle, secondAngle);
 				float cone = normals[i].w;
 
 				// At the edge of the cone the angle can be up to pi/2 larger for the node to be still visible

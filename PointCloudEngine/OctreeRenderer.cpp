@@ -306,6 +306,12 @@ void OctreeRenderer::Draw(SceneObject *sceneObject)
 	octreeConstantBufferData.localViewPlaneRightNormal = (localViewFrustum[3] - localViewFrustum[7]).Cross(localViewFrustum[5] - localViewFrustum[7]);
 	octreeConstantBufferData.localViewPlaneTopNormal = (localViewFrustum[4] - localViewFrustum[0]).Cross(localViewFrustum[1] - localViewFrustum[0]);
 	octreeConstantBufferData.localViewPlaneBottomNormal = (localViewFrustum[3] - localViewFrustum[2]).Cross(localViewFrustum[6] - localViewFrustum[2]);
+	octreeConstantBufferData.localViewPlaneNearNormal.Normalize();
+	octreeConstantBufferData.localViewPlaneFarNormal.Normalize();
+	octreeConstantBufferData.localViewPlaneLeftNormal.Normalize();
+	octreeConstantBufferData.localViewPlaneRightNormal.Normalize();
+	octreeConstantBufferData.localViewPlaneTopNormal.Normalize();
+	octreeConstantBufferData.localViewPlaneBottomNormal.Normalize();
 	octreeConstantBufferData.samplingRate =settings->samplingRate;
 	octreeConstantBufferData.blendFactor = settings->blendFactor;
 
