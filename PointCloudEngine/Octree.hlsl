@@ -75,7 +75,9 @@ float4 ClusterNormalToFloat4(uint thetaPhiCone)
 	float p = PI * ((phi / 31.5f) - 1.0f);
 	float c = PI * (cone / 15.0f);
 
-	return float4(sin(t) * cos(p), sin(t) * sin(p), cos(t), c);
+	float3 normal = normalize(float3(sin(t) * cos(p), sin(t) * sin(p), cos(t)));
+
+	return float4(normal, c);
 }
 
 float3 Color16ToFloat3(uint color)

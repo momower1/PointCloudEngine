@@ -51,7 +51,7 @@ namespace PointCloudEngine
 
             USHORT theta = 63.0f * (acos(clusterNormal.z) / XM_PI);
             USHORT phi = 31.5f + 31.5f * (atan2f(clusterNormal.y, clusterNormal.x) / XM_PI);
-			USHORT cone = ceil(15.0f * min(1.0f, max(clusterCone / XM_PI, 0.0f)));
+			USHORT cone = max(0, min(15, ceil(15.0f * (clusterCone / XM_PI))));
 
 			// Avoid representing the empty normal (phi can be any value for theta == 0)
 			if (theta == 0 && phi == 0)
@@ -78,7 +78,10 @@ namespace PointCloudEngine
             float t = XM_PI * (theta / 63.0f);
             float p = XM_PI * ((phi / 31.5f) - 1.0f);
 
-            return Vector3(sin(t) * cos(p), sin(t) * sin(p), cos(t));
+			Vector3 normal(sin(t) * cos(p), sin(t) * sin(p), cos(t));
+			normal.Normalize();
+
+            return normal;
         }
 
 		float GetCone()
