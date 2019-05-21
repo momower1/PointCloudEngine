@@ -30,7 +30,7 @@
 - Settings are not stored seperately for each loaded file
 - Octree files larger than ~4GB are not supported by the engine, lower the maxOctreeDepth parameter in the settings file to generate a smaller file
 - When changing the maxOctreeDepth parameter in the settings.txt file you have to delete the old .octree files in the Octrees folder in order to generate a new octree. Otherwise the engine will just load the old file with the old octree depth.
-- Examples for .ply files are attached in [Releases](https://github.com/momower1/PointCloudEngine/releases)
+- Downloadable .ply file examples: [Stanford Dragon](https://github.com/momower1/PointCloudEngine/releases/download/05_07/stanford_dragon_xyz_rgba_normals.ply), [Test Environment](https://github.com/momower1/PointCloudEngine/releases/download/05_07/tests_xyz_rgba_normals.ply)
 
 ## Example for supported .ply file
 ```
