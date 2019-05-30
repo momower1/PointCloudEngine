@@ -7,7 +7,7 @@
   - Bounding Cubes: inspect size and position of the octree nodes, the color is the average color of all the points assigned to this node
   - Normal Clusters: inspect color and weight of the four normal clusters that were computed for each node with the k-means algorithm
 - GPU octree traversal using a compute shader
-- View Frustum Culling and Visibility Culling
+- View Frustum Culling and Backface Culling
 - Blending the colors of overlapping splats
 - Octree level selection
 - Phong Lighting

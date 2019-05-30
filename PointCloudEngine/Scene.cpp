@@ -138,7 +138,7 @@ void Scene::Update(Timer &timer)
 		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
 		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
 		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
-		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Visibility Culling\n");
+		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
 		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
 		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
 		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");

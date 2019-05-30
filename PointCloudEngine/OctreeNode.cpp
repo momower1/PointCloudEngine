@@ -274,7 +274,7 @@ void PointCloudEngine::OctreeNode::GetVertices(const std::vector<OctreeNode>& no
 
 	if (octreeConstantBufferData.useCulling)
 	{
-		// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+		// Backface culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
 		OctreeNode node = nodes[entry.index];
 		Vector3 localViewDirection = entry.position - octreeConstantBufferData.localCameraPosition;
 		localViewDirection.Normalize();

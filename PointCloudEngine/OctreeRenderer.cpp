@@ -202,7 +202,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
         useComputeShader = !useComputeShader;
     }
 
-	// Toggle view frustum and visibility culling
+	// Toggle view frustum and backface culling
 	if (Input::GetKeyDown(Keyboard::C))
 	{
 		octreeConstantBufferData.useCulling = !octreeConstantBufferData.useCulling;

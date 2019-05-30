@@ -25,7 +25,7 @@ void CS (uint3 id : SV_DispatchThreadID)
 
 		if (useCulling)
 		{
-			// Visibility culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
+			// Backface culling by comparing the maximum angle (normal cone) from the mean to all normals in the cluster against the view direction
 			float3 localViewDirection = normalize(entry.position - localCameraPosition);
 
 			float4 normals[4] =
