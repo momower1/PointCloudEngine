@@ -190,7 +190,7 @@ void OctreeRenderer::Update()
 		octreeConstantBufferData.level++;
     }
 
-    // Toggle draw splats
+    // Toggle view mode
     if (Input::GetKeyDown(Keyboard::Enter))
     {
         viewMode = (viewMode + 1) % 3;
@@ -208,12 +208,6 @@ void OctreeRenderer::Update()
 		octreeConstantBufferData.useCulling = !octreeConstantBufferData.useCulling;
 	}
 
-	// Toggle blending
-	if (Input::GetKeyDown(Keyboard::B))
-	{
-		useBlending = !useBlending;
-	}
-
 	// Set splat resolution between 1 (whole screen) and 1.0f/resolutionY (one pixel)
 	if (Input::GetKey(Keyboard::Up))
 	{
@@ -222,16 +216,6 @@ void OctreeRenderer::Update()
 	else if (Input::GetKey(Keyboard::Down))
 	{
 		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
-	}
-
-	// Change the blend factor
-	if (Input::GetKey(Keyboard::V))
-	{
-		settings->blendFactor = max(0, settings->blendFactor - dt * 0.5f);
-	}
-	else if (Input::GetKey(Keyboard::N))
-	{
-		settings->blendFactor += dt * 0.5f;
 	}
 
     // Set the text
@@ -243,8 +227,8 @@ void OctreeRenderer::Update()
 	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
 	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
 	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Blending " + std::wstring(useBlending ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Lighting " + std::wstring(useLighting ? L"On\n" : L"Off\n"));
+	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
+	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
     textRenderer->text.append(L"Octree Level: ");
     textRenderer->text.append((octreeConstantBufferData.level < 0) ? L"AUTO" : std::to_wstring(octreeConstantBufferData.level));
     textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferCount));
@@ -367,11 +351,6 @@ void OctreeRenderer::Release()
     SAFE_RELEASE(octreeConstantBuffer);
 }
 
-void PointCloudEngine::OctreeRenderer::SetLighting(const bool& useLighting)
-{
-	this->useLighting = useLighting;
-}
-
 void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
 	outPosition = octree->rootPosition;
@@ -443,7 +422,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctree()
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		// Only blend splats
-		if (useBlending && (viewMode == 0))
+		if (settings->useBlending && (viewMode == 0))
 		{
 			DrawOctreeBlended();
 		}
@@ -567,7 +546,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	// Only blend splats
-	if (useBlending && (viewMode == 0))
+	if (settings->useBlending && (viewMode == 0))
 	{
 		DrawOctreeBlended();
 	}

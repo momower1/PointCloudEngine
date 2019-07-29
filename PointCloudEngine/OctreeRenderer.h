@@ -15,7 +15,6 @@ namespace PointCloudEngine
         void Draw();
         void Release();
 
-		void SetLighting(const bool& useLighting);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
 
@@ -27,8 +26,6 @@ namespace PointCloudEngine
 
         int viewMode = 0;
         int vertexBufferCount = 0;
-		bool useBlending = true;
-		bool useLighting = true;
         bool useComputeShader = true;
 
         Octree *octree = NULL;

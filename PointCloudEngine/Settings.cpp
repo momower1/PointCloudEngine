@@ -54,14 +54,14 @@ PointCloudEngine::Settings::Settings()
 				{
 					samplingRate = std::stof(variableValue);
 				}
-				else if (variableName.compare(NAMEOF(blendFactor)) == 0)
-				{
-					blendFactor = std::stof(variableValue);
-				}
                 else if (variableName.compare(NAMEOF(scale)) == 0)
                 {
                     scale = std::stof(variableValue);
                 }
+				else if (variableName.compare(NAMEOF(useLighting)) == 0)
+				{
+					useLighting = std::stoi(variableValue);
+				}
 				else if (variableName.compare(NAMEOF(lightIntensity)) == 0)
 				{
 					lightIntensity = std::stof(variableValue);
@@ -81,6 +81,14 @@ PointCloudEngine::Settings::Settings()
 				else if (variableName.compare(NAMEOF(specularExponent)) == 0)
 				{
 					specularExponent = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(useBlending)) == 0)
+				{
+					useBlending = std::stoi(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(blendFactor)) == 0)
+				{
+					blendFactor = std::stof(variableValue);
 				}
 				else if (variableName.compare(NAMEOF(useOctree)) == 0)
 				{
@@ -132,16 +140,21 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# Delete old .octree files when changing the " << NAMEOF(maxOctreeDepth) << std::endl;
     settingsFile << NAMEOF(plyfile) << L"=" << plyfile << std::endl;
 	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
-	settingsFile << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;
 
 	settingsFile << L"# Lighting Parameters" << std::endl;
+	settingsFile << NAMEOF(useLighting) << L"=" << useLighting << std::endl;
 	settingsFile << NAMEOF(lightIntensity) << L"=" << lightIntensity << std::endl;
 	settingsFile << NAMEOF(ambient) << L"=" << ambient << std::endl;
 	settingsFile << NAMEOF(diffuse) << L"=" << diffuse << std::endl;
 	settingsFile << NAMEOF(specular) << L"=" << specular << std::endl;
 	settingsFile << NAMEOF(specularExponent) << L"=" << specularExponent << std::endl;
+	settingsFile << std::endl;
+
+	settingsFile << L"# Blending Parameters" << std::endl;
+	settingsFile << NAMEOF(useBlending) << L"=" << useBlending << std::endl;
+	settingsFile << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;

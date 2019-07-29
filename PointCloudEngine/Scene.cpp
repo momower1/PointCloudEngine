@@ -66,8 +66,7 @@ void Scene::Update(Timer &timer)
 	// Toggle lighting with L
 	if (Input::GetKeyDown(Keyboard::L))
 	{
-		lightingConstantBufferData.useLighting = !lightingConstantBufferData.useLighting;
-		pointCloudRenderer->SetLighting(lightingConstantBufferData.useLighting);
+		settings->useLighting = !settings->useLighting;
 	}
 
 	// Rotate the point cloud
@@ -84,6 +83,22 @@ void Scene::Update(Timer &timer)
 	else if (Input::GetKey(Keyboard::E))
 	{
 		settings->samplingRate += dt * 0.001f * inputSpeed;
+	}
+
+	// Toggle blending
+	if (Input::GetKeyDown(Keyboard::B))
+	{
+		settings->useBlending = !settings->useBlending;
+	}
+
+	// Change the blend factor
+	if (Input::GetKey(Keyboard::V))
+	{
+		settings->blendFactor = max(0, settings->blendFactor - dt * 0.5f);
+	}
+	else if (Input::GetKey(Keyboard::N))
+	{
+		settings->blendFactor += dt * 0.5f;
 	}
 
     // Scale the point cloud by the value saved in the config file
@@ -213,6 +228,7 @@ void Scene::Update(Timer &timer)
 void Scene::Draw()
 {
 	// Set the lighting constant buffer
+	lightingConstantBufferData.useLighting = settings->useLighting;
 	lightingConstantBufferData.lightIntensity = settings->lightIntensity;
 	lightingConstantBufferData.ambient = settings->ambient;
 	lightingConstantBufferData.diffuse = settings->diffuse;

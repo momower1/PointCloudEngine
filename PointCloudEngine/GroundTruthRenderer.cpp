@@ -90,11 +90,6 @@ void GroundTruthRenderer::Release()
     SAFE_RELEASE(constantBuffer);
 }
 
-void PointCloudEngine::GroundTruthRenderer::SetLighting(const bool& useLighting)
-{
-	// Nothing to do here
-}
-
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
 	// Calculate center and size of the bounding cube that fully encloses the point cloud

@@ -23,15 +23,19 @@ namespace PointCloudEngine
         // Ply file parameters default values
         std::wstring plyfile = L"";
 		float samplingRate = 0.01f;
-		float blendFactor = 2.0f;
 		float scale = 1.0f;
 
 		// Lighting parameters
+		bool useLighting = true;
 		float lightIntensity = 1.0f;
 		float ambient = 0.4f;
 		float diffuse = 1.2f;
 		float specular = 0.85f;
 		float specularExponent = 10.0f;
+
+		// Blending parameters
+		bool useBlending = true;
+		float blendFactor = 2.0f;
 
 		// Octree parameters
 		bool useOctree = false;
