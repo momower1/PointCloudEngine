@@ -1,6 +1,6 @@
-#include "SplatRenderer.h"
+#include "GroundTruthRenderer.h"
 
-SplatRenderer::SplatRenderer(const std::wstring &plyfile)
+GroundTruthRenderer::GroundTruthRenderer(const std::wstring &plyfile)
 {
     // Try to load the file
     if (!LoadPlyFile(vertices, plyfile))
@@ -12,7 +12,7 @@ SplatRenderer::SplatRenderer(const std::wstring &plyfile)
     constantBufferData.fovAngleY = settings->fovAngleY;
 }
 
-void SplatRenderer::Initialize()
+void GroundTruthRenderer::Initialize()
 {
     // Create a vertex buffer description
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -36,7 +36,7 @@ void SplatRenderer::Initialize()
     D3D11_BUFFER_DESC cbDescWVP;
     ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
     cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
-    cbDescWVP.ByteWidth = sizeof(SplatRendererConstantBuffer);
+    cbDescWVP.ByteWidth = sizeof(GroundTruthRendererConstantBuffer);
     cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbDescWVP.CPUAccessFlags = 0;
     cbDescWVP.MiscFlags = 0;
@@ -45,12 +45,12 @@ void SplatRenderer::Initialize()
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
 }
 
-void SplatRenderer::Update()
+void GroundTruthRenderer::Update()
 {
     
 }
 
-void SplatRenderer::Draw()
+void GroundTruthRenderer::Draw()
 {
     // Set the shaders
     d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -84,24 +84,39 @@ void SplatRenderer::Draw()
     d3d11DevCon->Draw(vertices.size(), 0);
 }
 
-void SplatRenderer::Release()
+void GroundTruthRenderer::Release()
 {
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
 }
 
-void PointCloudEngine::SplatRenderer::SetLighting(const bool& useLighting)
+void PointCloudEngine::GroundTruthRenderer::SetLighting(const bool& useLighting)
 {
 	// Nothing to do here
 }
 
-void PointCloudEngine::SplatRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
+void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
-    outPosition = Vector3::Zero;
-    outSize = settings->scale;
+	// Calculate center and size of the bounding cube that fully encloses the point cloud
+	Vector3 minPosition = vertices.front().position;
+	Vector3 maxPosition = minPosition;
+
+	for (auto it = vertices.begin(); it != vertices.end(); it++)
+	{
+		Vertex v = *it;
+
+		minPosition = Vector3::Min(minPosition, v.position);
+		maxPosition = Vector3::Max(maxPosition, v.position);
+	}
+
+	// Compute the root node position and size, will be used to compute all the other node positions and sizes at runtime
+	Vector3 diagonal = maxPosition - minPosition;
+
+    outPosition = minPosition + 0.5f * diagonal;
+    outSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 }
 
-void PointCloudEngine::SplatRenderer::RemoveComponentFromSceneObject()
+void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
 }

@@ -1,15 +1,15 @@
-#ifndef SPLATRENDERER_H
-#define SPLATRENDERER_H
+#ifndef GROUNDTRUTHRENDERER_H
+#define GROUNDTRUTHRENDERER_H
 
 #pragma once
 #include "PointCloudEngine.h"
 
 namespace PointCloudEngine
 {
-    class SplatRenderer : public Component, public IRenderer
+    class GroundTruthRenderer : public Component, public IRenderer
     {
     public:
-        SplatRenderer(const std::wstring &plyfile);
+        GroundTruthRenderer(const std::wstring &plyfile);
         void Initialize();
         void Update();
         void Draw();
@@ -21,7 +21,7 @@ namespace PointCloudEngine
 
     private:
         // Same constant buffer as in effect file, keep packing rules in mind
-        struct SplatRendererConstantBuffer
+        struct GroundTruthRendererConstantBuffer
         {
             Matrix World;
             Matrix View;
@@ -34,7 +34,7 @@ namespace PointCloudEngine
         };
 
         std::vector<Vertex> vertices;
-        SplatRendererConstantBuffer constantBufferData;
+        GroundTruthRendererConstantBuffer constantBufferData;
 
         // Vertex buffer
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data

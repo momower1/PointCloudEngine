@@ -263,7 +263,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <ClCompile Include="OctreeNode.cpp" />
     <ClCompile Include="PointCloudEngine.cpp" />
     <ClCompile Include="OctreeRenderer.cpp" />
-    <ClCompile Include="SplatRenderer.cpp" />
+    <ClCompile Include="GroundTruthRenderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Hierarchy.cpp" />
     <ClCompile Include="SceneObject.cpp" />
@@ -282,7 +282,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <ClInclude Include="Octree.h" />
     <ClInclude Include="OctreeNode.h" />
     <ClInclude Include="OctreeRenderer.h" />
-    <ClInclude Include="SplatRenderer.h" />
+    <ClInclude Include="GroundTruthRenderer.h" />
     <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="PointCloudEngine.h" />

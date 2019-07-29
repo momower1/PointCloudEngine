@@ -26,7 +26,7 @@ PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
 
 		// Compute the root node position and size, will be used to compute all the other node positions and sizes at runtime
         Vector3 diagonal = maxPosition - minPosition;
-        rootPosition = minPosition + 0.5f * (diagonal);
+        rootPosition = minPosition + 0.5f * diagonal;
         rootSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
 		// Stores the indices in the nodes array of the children of a node

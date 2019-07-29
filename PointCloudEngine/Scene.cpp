@@ -272,7 +272,7 @@ void PointCloudEngine::Scene::LoadFile()
 		}
 		else
 		{
-			pointCloudRenderer = new SplatRenderer(settings->plyfile);
+			pointCloudRenderer = new GroundTruthRenderer(settings->plyfile);
 		}
 
     }

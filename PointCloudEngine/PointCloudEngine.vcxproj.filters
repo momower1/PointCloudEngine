@@ -59,9 +59,6 @@
     <ClInclude Include="Octree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SplatRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OctreeRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -79,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GroundTruthRenderer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -115,9 +115,6 @@
     <ClCompile Include="Octree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SplatRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OctreeRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -125,6 +122,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GroundTruthRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

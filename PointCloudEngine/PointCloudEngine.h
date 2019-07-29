@@ -53,7 +53,7 @@ namespace PointCloudEngine
     class Shader;
     class Transform;
     class TextRenderer;
-    class SplatRenderer;
+    class GroundTruthRenderer;
     class OctreeRenderer;
     class Settings;
     class Camera;
@@ -77,7 +77,7 @@ using namespace PointCloudEngine;
 #include "OctreeNode.h"
 #include "Octree.h"
 #include "TextRenderer.h"
-#include "SplatRenderer.h"
+#include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
 #include "Scene.h"
 
