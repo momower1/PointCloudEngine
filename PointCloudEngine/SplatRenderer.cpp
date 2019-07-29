@@ -12,7 +12,7 @@ SplatRenderer::SplatRenderer(const std::wstring &plyfile)
     constantBufferData.fovAngleY = settings->fovAngleY;
 }
 
-void SplatRenderer::Initialize(SceneObject *sceneObject)
+void SplatRenderer::Initialize()
 {
     // Create a vertex buffer description
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -45,12 +45,12 @@ void SplatRenderer::Initialize(SceneObject *sceneObject)
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
 }
 
-void SplatRenderer::Update(SceneObject *sceneObject)
+void SplatRenderer::Update()
 {
     
 }
 
-void SplatRenderer::Draw(SceneObject *sceneObject)
+void SplatRenderer::Draw()
 {
     // Set the shaders
     d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -99,4 +99,9 @@ void PointCloudEngine::SplatRenderer::GetBoundingCubePositionAndSize(Vector3 &ou
 {
     outPosition = Vector3::Zero;
     outSize = settings->scale;
+}
+
+void PointCloudEngine::SplatRenderer::RemoveComponentFromSceneObject()
+{
+	sceneObject->RemoveComponent(this);
 }

@@ -124,6 +124,13 @@ void Scene::Update(Timer &timer)
         inputSpeed = 3;
     }
 
+	// Switch between the two renderers at runtime
+	if (Input::GetKeyDown(Keyboard::R))
+	{
+		settings->useOctree = !settings->useOctree;
+		DelayedLoadFile(settings->plyfile);
+	}
+
     // Move camera with WASD keys
     camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 
@@ -133,6 +140,7 @@ void Scene::Update(Timer &timer)
     if (help)
     {
         helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
+		helpTextRenderer->text.append(L"[R] Switch between ground truth and octree renderer\n");
 		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
 		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
 		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
@@ -251,14 +259,22 @@ void PointCloudEngine::Scene::LoadFile()
     // Release resources before loading
     if (pointCloudRenderer != NULL)
     {
-        pointCloud->RemoveComponent(pointCloudRenderer);
+		pointCloudRenderer->RemoveComponentFromSceneObject();
         SetWindowTextW(hwnd, L"PointCloudEngine");
     }
 
     try
     {
-        // Try to build the octree from the points (takes a long time)
-        pointCloudRenderer = new RENDERER(settings->plyfile);
+		if (settings->useOctree)
+		{
+			// Try to build the octree from the points (takes a long time)
+			pointCloudRenderer = new OctreeRenderer(settings->plyfile);
+		}
+		else
+		{
+			pointCloudRenderer = new SplatRenderer(settings->plyfile);
+		}
+
     }
     catch (std::exception e)
     {

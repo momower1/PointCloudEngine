@@ -15,9 +15,9 @@ namespace PointCloudEngine
         static void ReleaseAllSpriteFonts();
 
         TextRenderer (SpriteFont *spritefont, bool worldSpace);
-        void Initialize(SceneObject *sceneObject);
-        void Update(SceneObject *sceneObject);
-        void Draw (SceneObject *sceneObject);
+        void Initialize();
+        void Update();
+        void Draw ();
         void Release();
 
         bool worldSpace = false;

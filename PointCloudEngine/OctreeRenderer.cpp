@@ -19,7 +19,7 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
 	octreeConstantBufferData.useCulling = true;
 }
 
-void OctreeRenderer::Initialize(SceneObject *sceneObject)
+void OctreeRenderer::Initialize()
 {
     // Create the constant buffer
     D3D11_BUFFER_DESC octreeConstantBufferDesc;
@@ -178,7 +178,7 @@ void OctreeRenderer::Initialize(SceneObject *sceneObject)
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(structureCountBuffer));
 }
 
-void OctreeRenderer::Update(SceneObject *sceneObject)
+void OctreeRenderer::Update()
 {
     // Select octree level with arrow keys (level -1 means that the level will be ignored)
     if (Input::GetKeyDown(Keyboard::Left) && (octreeConstantBufferData.level > -1))
@@ -250,7 +250,7 @@ void OctreeRenderer::Update(SceneObject *sceneObject)
     textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferCount));
 }
 
-void OctreeRenderer::Draw(SceneObject *sceneObject)
+void OctreeRenderer::Draw()
 {
     // Transform the camera position into local space and save it in the constant buffers
     Matrix world = sceneObject->transform->worldMatrix;
@@ -376,6 +376,11 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 {
 	outPosition = octree->rootPosition;
 	outSize = octree->rootSize;
+}
+
+void PointCloudEngine::OctreeRenderer::RemoveComponentFromSceneObject()
+{
+	sceneObject->RemoveComponent(this);
 }
 
 void PointCloudEngine::OctreeRenderer::DrawOctree()

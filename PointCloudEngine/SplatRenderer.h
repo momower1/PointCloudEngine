@@ -10,13 +10,14 @@ namespace PointCloudEngine
     {
     public:
         SplatRenderer(const std::wstring &plyfile);
-        void Initialize(SceneObject *sceneObject);
-        void Update(SceneObject *sceneObject);
-        void Draw(SceneObject *sceneObject);
+        void Initialize();
+        void Update();
+        void Draw();
         void Release();
 
 		void SetLighting(const bool& useLighting);
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
+		void RemoveComponentFromSceneObject();
 
     private:
         // Same constant buffer as in effect file, keep packing rules in mind

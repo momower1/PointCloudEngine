@@ -10,11 +10,9 @@ namespace PointCloudEngine
     class Component
     {
     public:
-        // Pass the scene object that this component is attached to
-        // Especially shared components don't know which object they are attached to
-        virtual void Initialize (SceneObject *sceneObject) = 0;
-        virtual void Update (SceneObject *sceneObject) = 0;
-        virtual void Draw (SceneObject *sceneObject) = 0;
+        virtual void Initialize () = 0;
+        virtual void Update () = 0;
+        virtual void Draw () = 0;
         virtual void Release () = 0;
 
         // If this component is shared it should not be deleted if the game object is deleted
@@ -22,6 +20,9 @@ namespace PointCloudEngine
 
         // Used to automatically initialize the component e.g. when it is created at runtime
         bool initialized = false;
+
+		// The scene object that this component is attached to
+		SceneObject* sceneObject = NULL;
     };
 }
 #endif

@@ -1,8 +1,6 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#define RENDERER OctreeRenderer
-
 #pragma once
 #include "PointCloudEngine.h"
 
@@ -27,7 +25,7 @@ namespace PointCloudEngine
         SceneObject *pointCloud = NULL;
 		TextRenderer *fpsTextRenderer = NULL;
         TextRenderer *helpTextRenderer = NULL;
-        RENDERER *pointCloudRenderer = NULL;
+        IRenderer *pointCloudRenderer = NULL;
 
         Vector2 input;
         bool help = false;

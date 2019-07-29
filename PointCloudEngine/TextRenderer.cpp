@@ -32,7 +32,7 @@ TextRenderer::TextRenderer(SpriteFont *spriteFont, bool worldSpace)
     spriteFont->SetDefaultCharacter('?');
 }
 
-void TextRenderer::Initialize(SceneObject *sceneObject)
+void TextRenderer::Initialize()
 {
     // Create the constant buffer
     D3D11_BUFFER_DESC constantBufferTextDesc;
@@ -47,7 +47,7 @@ void TextRenderer::Initialize(SceneObject *sceneObject)
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBufferText));
 }
 
-void TextRenderer::Update(SceneObject *sceneObject)
+void TextRenderer::Update()
 {
     // Create vertex buffer if the text changed
     if (text != oldText)
@@ -103,7 +103,7 @@ void TextRenderer::Update(SceneObject *sceneObject)
     }
 }
 
-void TextRenderer::Draw(SceneObject *sceneObject)
+void TextRenderer::Draw()
 {
     // Set the shaders
     d3d11DevCon->VSSetShader(textShader->vertexShader, 0, 0);

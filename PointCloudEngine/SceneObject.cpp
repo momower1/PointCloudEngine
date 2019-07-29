@@ -75,11 +75,12 @@ void SceneObject::Update()
         // Initialize the component if necessary
         if (!component->initialized)
         {
-            component->Initialize(this);
+			component->sceneObject = this;
+            component->Initialize();
             component->initialized = true;
         }
 
-        component->Update(this);
+        component->Update();
     }
 }
 
@@ -87,7 +88,7 @@ void SceneObject::Draw()
 {
     for (auto it = components.begin(); it != components.end(); it++)
     {
-        (*it)->Draw(this);
+        (*it)->Draw();
     }
 }
 

@@ -22,9 +22,7 @@ namespace PointCloudEngine
 
         // Ply file parameters default values
         std::wstring plyfile = L"";
-        int maxOctreeDepth = 16;
 		float samplingRate = 0.01f;
-		float overlapFactor = 2.0f;
 		float blendFactor = 2.0f;
 		float scale = 1.0f;
 
@@ -35,7 +33,10 @@ namespace PointCloudEngine
 		float specular = 0.85f;
 		float specularExponent = 10.0f;
 
-		// Compute shader default values
+		// Octree parameters
+		bool useOctree = false;
+		int maxOctreeDepth = 16;
+		float overlapFactor = 2.0f;
 		UINT appendBufferCount = 6000000;
 
         // Input parameters default values

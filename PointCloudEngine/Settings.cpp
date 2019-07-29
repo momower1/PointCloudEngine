@@ -50,17 +50,9 @@ PointCloudEngine::Settings::Settings()
                 {
                     plyfile = variableValue;
                 }
-                else if (variableName.compare(NAMEOF(maxOctreeDepth)) == 0)
-                {
-                    maxOctreeDepth = std::stoi(variableValue);
-                }
 				else if (variableName.compare(NAMEOF(samplingRate)) == 0)
 				{
 					samplingRate = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(overlapFactor)) == 0)
-				{
-					overlapFactor = std::stof(variableValue);
 				}
 				else if (variableName.compare(NAMEOF(blendFactor)) == 0)
 				{
@@ -89,6 +81,18 @@ PointCloudEngine::Settings::Settings()
 				else if (variableName.compare(NAMEOF(specularExponent)) == 0)
 				{
 					specularExponent = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(useOctree)) == 0)
+				{
+					useOctree = std::stoi(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(maxOctreeDepth)) == 0)
+				{
+					maxOctreeDepth = std::stoi(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(overlapFactor)) == 0)
+				{
+					overlapFactor = std::stof(variableValue);
 				}
 				else if (variableName.compare(NAMEOF(appendBufferCount)) == 0)
 				{
@@ -127,9 +131,7 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << L"# Ply File Parameters" << std::endl;
 	settingsFile << L"# Delete old .octree files when changing the " << NAMEOF(maxOctreeDepth) << std::endl;
     settingsFile << NAMEOF(plyfile) << L"=" << plyfile << std::endl;
-    settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
 	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
-	settingsFile << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
 	settingsFile << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;
@@ -142,8 +144,10 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << NAMEOF(specularExponent) << L"=" << specularExponent << std::endl;
 	settingsFile << std::endl;
 
-	settingsFile << L"# Compute Shader Parameters" << std::endl;
-	settingsFile << L"# Increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
+	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
+	settingsFile << NAMEOF(useOctree) << L"=" << useOctree << std::endl;
+	settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
+	settingsFile << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
 	settingsFile << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;
 	settingsFile << std::endl;
 
