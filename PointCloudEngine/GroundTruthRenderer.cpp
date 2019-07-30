@@ -80,12 +80,6 @@ void GroundTruthRenderer::Initialize()
 
 void GroundTruthRenderer::Update()
 {
-	// Toggle help
-	if (Input::GetKeyDown(Keyboard::H))
-	{
-		help = !help;
-	}
-
 	// Select density of the point cloud with arrow keys
 	if (Input::GetKey(Keyboard::Right))
 	{
@@ -99,7 +93,7 @@ void GroundTruthRenderer::Update()
 	helpTextRenderer->text = L"[H] Toggle help\n";
 
 	// Show help / controls
-	if (help)
+	if (settings->help)
 	{
 		helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
 		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");

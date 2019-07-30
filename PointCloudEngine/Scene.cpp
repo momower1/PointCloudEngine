@@ -44,6 +44,12 @@ void Scene::Initialize()
 
 void Scene::Update(Timer &timer)
 {
+	// Toggle help
+	if (Input::GetKeyDown(Keyboard::H))
+	{
+		settings->help = !settings->help;
+	}
+
 	// Screenshot on F9
 	if (Input::GetKeyDown(Keyboard::F9))
 	{

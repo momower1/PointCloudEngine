@@ -19,9 +19,6 @@ namespace PointCloudEngine
 		void RemoveComponentFromSceneObject();
 
     private:
-
-		bool help = false;
-
 		SceneObject* text = NULL;
 		SceneObject* helpText = NULL;
 		TextRenderer* textRenderer = NULL;

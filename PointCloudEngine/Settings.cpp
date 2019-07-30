@@ -46,6 +46,10 @@ PointCloudEngine::Settings::Settings()
                 {
                     windowed = std::stoi(variableValue);
                 }
+				else if (variableName.compare(NAMEOF(help)) == 0)
+				{
+					help = std::stoi(variableValue);
+				}
                 else if (variableName.compare(NAMEOF(plyfile)) == 0)
                 {
                     plyfile = variableValue;
@@ -138,6 +142,7 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << NAMEOF(resolutionX) << L"=" << resolutionX << std::endl;
     settingsFile << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
     settingsFile << NAMEOF(windowed) << L"=" << windowed << std::endl;
+	settingsFile << NAMEOF(help) << L"=" << help << std::endl;
     settingsFile << std::endl;
 
     settingsFile << L"# Ply File Parameters" << std::endl;

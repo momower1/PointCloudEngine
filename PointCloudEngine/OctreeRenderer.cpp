@@ -187,12 +187,6 @@ void OctreeRenderer::Initialize()
 
 void OctreeRenderer::Update()
 {
-	// Toggle help
-	if (Input::GetKeyDown(Keyboard::H))
-	{
-		help = !help;
-	}
-
     // Select octree level with arrow keys (level -1 means that the level will be ignored)
     if (Input::GetKeyDown(Keyboard::Left) && (octreeConstantBufferData.level > -1))
     {
@@ -234,7 +228,7 @@ void OctreeRenderer::Update()
 	helpTextRenderer->text = L"[H] Toggle help\n";
 
 	// Show help / controls
-	if (help)
+	if (settings->help)
 	{
 		helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
 		helpTextRenderer->text.append(L"[R] Switch to ground truth renderer\n");
