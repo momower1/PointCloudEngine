@@ -168,6 +168,9 @@
     <FxCompile Include="OctreeBlending.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
+    <FxCompile Include="SplatBlending.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Icon.ico">

@@ -1,4 +1,4 @@
-#include "LightingConstantBuffer.hlsl"
+#include "SplatBlending.hlsl"
 
 cbuffer SplatRendererConstantBuffer : register(b0)
 {
@@ -10,13 +10,17 @@ cbuffer SplatRendererConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (64 byte boundary)
     float4x4 WorldInverseTranspose;
 //------------------------------------------------------------------------------ (64 byte boundary)
+	float4x4 WorldViewProjectionInverse;
+//------------------------------------------------------------------------------ (64 byte boundary)
     float3 cameraPosition;
     float fovAngleY;
 //------------------------------------------------------------------------------ (16 byte boundary)
     float samplingRate;
-	// 12 bytes auto padding
+	float blendFactor;
+	bool useBlending;
+	// 4 bytes auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 288 bytes with constant buffer packing rules
+};  // Total: 352 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {
@@ -32,16 +36,6 @@ struct VS_OUTPUT
     float3 color : COLOR;
 };
 
-struct GS_OUTPUT
-{
-	float4 position : SV_POSITION;
-	float3 positionWorld : POSITION2;
-	float3 positionCenter : POSITION3;
-	float3 normal : NORMAL;
-	float3 color : COLOR;
-	float radius : RADIUS;
-};
-
 VS_OUTPUT VS(VS_INPUT input)
 {
     VS_OUTPUT output;
@@ -53,19 +47,8 @@ VS_OUTPUT VS(VS_INPUT input)
 }
 
 [maxvertexcount(6)]
-void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
+void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 {
-    /*
-
-        1,4__5
-        |\   |
-        | \  |
-        |  \ |
-        |___\|
-        3    2,6
-
-    */
-
     float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
     float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
     float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
@@ -77,54 +60,10 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
     float4x4 VP = mul(View, Projection);
 
-    GS_OUTPUT element;
-	element.positionCenter = input[0].position;
-	element.normal = input[0].normal;
-    element.color = input[0].color;
-	element.radius = length(up);
-
-	// Append all the vertices in the correct order to create the billboard
-	element.positionWorld = input[0].position + up - right;
-    element.position = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
-
-	element.positionWorld = input[0].position - up + right;
-    element.position = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
-
-	element.positionWorld = input[0].position - up - right;
-    element.position = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
-
-    output.RestartStrip();
-
-	element.positionWorld = input[0].position + up - right;
-    element.position = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
-
-	element.positionWorld = input[0].position + up + right;
-    element.position = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
-
-	element.positionWorld = input[0].position - up + right;
-    element.position = mul(float4(element.positionWorld, 1), VP);
-    output.Append(element);
+	SplatBlendingGS(input[0].position, input[0].normal, input[0].color, up, right, VP, output);
 }
 
-float4 PS(GS_OUTPUT input) : SV_TARGET
+float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 {
-	// Make circular splats, remove this for squares
-	if (distance(input.positionWorld, input.positionCenter) > input.radius)
-	{
-		discard;
-	}
-
-	if (useLighting)
-	{
-		return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color.rgb), 1);
-	}
-	else
-	{
-		return float4(input.color.rgb, 1);
-	}
+	return SplatBlendingPS(useLighting, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
 }

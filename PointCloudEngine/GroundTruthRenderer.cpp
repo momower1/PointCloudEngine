@@ -66,15 +66,15 @@ void GroundTruthRenderer::Initialize()
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
     // Create the constant buffer for WVP
-    D3D11_BUFFER_DESC cbDescWVP;
-    ZeroMemory(&cbDescWVP, sizeof(cbDescWVP));
-    cbDescWVP.Usage = D3D11_USAGE_DEFAULT;
-    cbDescWVP.ByteWidth = sizeof(GroundTruthRendererConstantBuffer);
-    cbDescWVP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbDescWVP.CPUAccessFlags = 0;
-    cbDescWVP.MiscFlags = 0;
+    D3D11_BUFFER_DESC constantBufferDesc;
+    ZeroMemory(&constantBufferDesc, sizeof(constantBufferDesc));
+	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	constantBufferDesc.ByteWidth = sizeof(GroundTruthRendererConstantBuffer);
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.CPUAccessFlags = 0;
+	constantBufferDesc.MiscFlags = 0;
 
-    hr = d3d11Device->CreateBuffer(&cbDescWVP, NULL, &constantBuffer);
+    hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
 }
 
@@ -142,11 +142,14 @@ void GroundTruthRenderer::Draw()
 
     // Set shader constant buffer variables
     constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+	constantBufferData.View = camera->GetViewMatrix().Transpose();
+	constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
-    constantBufferData.View = camera->GetViewMatrix().Transpose();
-    constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
+	constantBufferData.WorldViewProjectionInverse = (constantBufferData.World * constantBufferData.View * constantBufferData.Projection).Invert();
     constantBufferData.cameraPosition = camera->GetPosition();
 	constantBufferData.samplingRate = settings->samplingRate;
+	constantBufferData.blendFactor = settings->blendFactor;
+	constantBufferData.useBlending = false;
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);

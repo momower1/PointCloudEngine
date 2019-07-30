@@ -34,10 +34,13 @@ namespace PointCloudEngine
             Matrix View;
             Matrix Projection;
             Matrix WorldInverseTranspose;
+			Matrix WorldViewProjectionInverse;
             Vector3 cameraPosition;
             float fovAngleY;
             float samplingRate;
-			float padding[3];
+			float blendFactor;
+			int useBlending;
+			float padding;
         };
 
         std::vector<Vertex> vertices;
