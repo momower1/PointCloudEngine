@@ -145,7 +145,7 @@ void GroundTruthRenderer::Draw()
 	constantBufferData.View = camera->GetViewMatrix().Transpose();
 	constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
-	constantBufferData.WorldViewProjectionInverse = (constantBufferData.World * constantBufferData.View * constantBufferData.Projection).Invert();
+	constantBufferData.WorldViewProjectionInverse = (sceneObject->transform->worldMatrix * camera->GetViewMatrix() * camera->GetProjectionMatrix()).Invert().Transpose();
     constantBufferData.cameraPosition = camera->GetPosition();
 	constantBufferData.samplingRate = settings->samplingRate;
 	constantBufferData.blendFactor = settings->blendFactor;
