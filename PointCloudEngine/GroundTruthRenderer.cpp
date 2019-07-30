@@ -153,13 +153,21 @@ void GroundTruthRenderer::Draw()
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
-    d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
-    d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
+	d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
+	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
+	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
 
 	// Only draw a portion of the point cloud to simulate the selected density
-	UINT drawCount = vertices.size() * settings->density;
+	UINT vertexCount = vertices.size() * settings->density;
 
-    d3d11DevCon->Draw(drawCount, 0);
+	if (settings->useBlending)
+	{
+		DrawBlended(vertexCount, constantBuffer, &constantBufferData, constantBufferData.useBlending);
+	}
+	else
+	{
+		d3d11DevCon->Draw(vertexCount, 0);
+	}
 }
 
 void GroundTruthRenderer::Release()

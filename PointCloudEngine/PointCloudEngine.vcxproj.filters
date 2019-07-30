@@ -165,10 +165,10 @@
     <FxCompile Include="ImageEffect.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="OctreeBlending.hlsl">
+    <FxCompile Include="SplatBlending.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
-    <FxCompile Include="SplatBlending.hlsl">
+    <FxCompile Include="Blending.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

@@ -1,6 +1,6 @@
 #include "LightingConstantBuffer.hlsl"
 
-Texture2D<float> octreeDepthTexture : register(t0);
+Texture2D<float> blendingDepthTexture : register(t0);
 
 struct GS_SPLAT_OUTPUT
 {
@@ -107,12 +107,12 @@ float4 SplatBlendingPS(bool useLighting, bool useBlending, float3 cameraPosition
 		position = position / position.w;
 
 		// This is the depth of the rendered surface to compare against
-		float surfaceDepth = octreeDepthTexture.Sample(PointSampler, uv);
+		float surfaceDepth = blendingDepthTexture.Sample(PointSampler, uv);
 		float4 surfacePosition = mul(float4(positionClip.x, positionClip.y, surfaceDepth, 1), WVPI);
 		surfacePosition = surfacePosition / surfacePosition.w;
 
 		// Discard this pixel if it is not close enough to the surface
-		// Use the splat radius as cutoff, a constant value does not work because the distances between the splats become larger with the splat radius
+		// Use the splat radius as cutoff, a constant value does not work for octree nodes because the distances between the splats become larger with the splat radius
 		if (distance(position, surfacePosition) > blendFactor * input.radius)
 		{
 			discard;

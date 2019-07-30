@@ -18,7 +18,7 @@ Shader* octreeSplatShader;
 Shader* octreeClusterShader;
 Shader* octreeComputeShader;
 Shader* octreeComputeVSShader;
-Shader* octreeBlendingShader;
+Shader* blendingShader;
 Shader* gammaCorrectionShader;
 
 // DirectX11 interface objects
@@ -34,6 +34,18 @@ ID3D11ShaderResourceView* depthTextureSRV;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
+
+// For splat blending
+ID3D11Texture2D* blendingDepthTexture;
+ID3D11DepthStencilView* blendingDepthView;
+ID3D11ShaderResourceView* blendingDepthTextureSRV;
+ID3D11BlendState* additiveBlendState;
+ID3D11DepthStencilState* disabledDepthStencilState;
+
+// This is used to unbind buffers and views from the shaders
+ID3D11Buffer* nullBuffer[1] = { NULL };
+ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
+ID3D11ShaderResourceView* nullSRV[1] = { NULL };
 
 void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line)
 {
@@ -119,6 +131,55 @@ void SetFullscreen(bool fullscreen)
 {
 	hr = swapChain->SetFullscreenState(fullscreen, NULL);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->SetFullscreenState) + L" failed!");
+}
+
+void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending)
+{
+	// Draw with blending
+	// Before this is called all the shaders, buffers and resources have to be set already!
+	// Draw only the depth to the depth texture, don't draw any color
+	d3d11DevCon->ClearDepthStencilView(blendingDepthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	d3d11DevCon->OMSetRenderTargets(0, NULL, blendingDepthView);
+	d3d11DevCon->Draw(vertexCount, 0);
+
+	// Draw again but this time with the actual depth buffer, render target and blending
+	useBlending = true;
+	d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, constantBufferData, 0, 0);
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+
+	// Set a different blend state
+	d3d11DevCon->OMSetBlendState(additiveBlendState, NULL, 0xffffffff);
+
+	// Bind this depth texture to the shader
+	d3d11DevCon->PSSetShaderResources(0, 1, &blendingDepthTextureSRV);
+
+	// Disable depth test to make sure that all the overlapping splats are blended together
+	d3d11DevCon->OMSetDepthStencilState(disabledDepthStencilState, 0);
+
+	// Draw again only adding the colors and weights of the overlapping splats together
+	d3d11DevCon->Draw(vertexCount, 0);
+
+	// Unbind shader resources
+	d3d11DevCon->PSSetShaderResources(0, 1, nullSRV);
+
+	// Remove the depth stencil view from the render target in order to make it accessable by the pixel shader (also set the back buffer UAV)
+	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 1, &backBufferTextureUAV, NULL);
+	d3d11DevCon->VSSetShader(blendingShader->vertexShader, NULL, 0);
+	d3d11DevCon->GSSetShader(blendingShader->geometryShader, NULL, 0);
+	d3d11DevCon->PSSetShader(blendingShader->pixelShader, NULL, 0);
+
+	// Use pixel shader to divide the color sum by the weight sum of overlapping splats in each pixel, also remove background color
+	d3d11DevCon->Draw(1, 0);
+
+	// Unbind shader resources
+	d3d11DevCon->VSSetShader(NULL, NULL, 0);
+	d3d11DevCon->GSSetShader(NULL, NULL, 0);
+	d3d11DevCon->PSSetShader(NULL, NULL, 0);
+
+	// Reset to the defaults
+	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(1, &renderTargetView, depthStencilView, 1, 1, nullUAV, NULL);
+	d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
+	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -394,6 +455,40 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	// Bind the rasterizer render state
 	d3d11DevCon->RSSetState(rasterizerState);
 
+	// Create resources for blending starting with a second depth buffer
+	hr = d3d11Device->CreateTexture2D(&depthStencilTextureDesc, NULL, &blendingDepthTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(blendingDepthTexture));
+
+	// Create view for the blending depth buffer
+	hr = d3d11Device->CreateDepthStencilView(blendingDepthTexture, &depthStencilViewDesc, &blendingDepthView);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed for the " + NAMEOF(blendingDepthView));
+
+	// Create a shader resource view in order to bind the depth to a shader
+	hr = d3d11Device->CreateShaderResourceView(blendingDepthTexture, &depthTextureSRVDesc, &blendingDepthTextureSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(blendingDepthTextureSRV));
+
+	// Create a blend state that adds all the colors of the overlapping fragments together
+	D3D11_BLEND_DESC additiveBlendStateDesc;
+	ZeroMemory(&additiveBlendStateDesc, sizeof(additiveBlendStateDesc));
+	additiveBlendStateDesc.RenderTarget[0].BlendEnable = true;
+	additiveBlendStateDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	additiveBlendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	additiveBlendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	additiveBlendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	additiveBlendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	additiveBlendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	additiveBlendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	hr = d3d11Device->CreateBlendState(&additiveBlendStateDesc, &additiveBlendState);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed for the " + NAMEOF(additiveBlendState));
+
+	// Create a depth/stencil state with disabled depth testing for blending
+	D3D11_DEPTH_STENCIL_DESC disabledDepthStencilStateDesc = depthStencilDesc;
+	disabledDepthStencilStateDesc.DepthEnable = false;
+
+	hr = d3d11Device->CreateDepthStencilState(&disabledDepthStencilStateDesc, &disabledDepthStencilState);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed for the " + NAMEOF(disabledDepthStencilState));
+
 	return true;
 }
 
@@ -456,7 +551,7 @@ bool InitializeScene()
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeComputeShader = Shader::Create(L"Shader/OctreeCompute.hlsl", false, false, false, true, NULL, 0);
     octreeComputeVSShader = Shader::Create(L"Shader/OctreeComputeVS.hlsl", true, false, false, false, NULL, 0);
-	octreeBlendingShader = Shader::Create(L"Shader/OctreeBlending.hlsl", true, true, true, false, NULL, 0);
+	blendingShader = Shader::Create(L"Shader/Blending.hlsl", true, true, true, false, NULL, 0);
 	gammaCorrectionShader = Shader::Create(L"Shader/GammaCorrection.hlsl", true, true, true, false, NULL, 0);
 
     // Load fonts
@@ -568,4 +663,11 @@ void ReleaseObjects()
     SAFE_RELEASE(depthStencilTexture);
 	SAFE_RELEASE(depthTextureSRV);
     SAFE_RELEASE(rasterizerState);
+
+	// Release resources for blending
+	SAFE_RELEASE(blendingDepthTexture);
+	SAFE_RELEASE(blendingDepthView);
+	SAFE_RELEASE(blendingDepthTextureSRV);
+	SAFE_RELEASE(additiveBlendState);
+	SAFE_RELEASE(disabledDepthStencilState);
 }

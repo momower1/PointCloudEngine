@@ -222,7 +222,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <FxCompile Include="GammaCorrection.hlsl" />
     <FxCompile Include="ImageEffect.hlsl" />
     <FxCompile Include="LightingConstantBuffer.hlsl" />
-    <FxCompile Include="OctreeBlending.hlsl" />
+    <FxCompile Include="Blending.hlsl" />
     <FxCompile Include="OctreeCluster.hlsl" />
     <FxCompile Include="OctreeCompute.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>

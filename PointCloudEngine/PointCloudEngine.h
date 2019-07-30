@@ -112,7 +112,7 @@ extern Shader* octreeSplatShader;
 extern Shader* octreeClusterShader;
 extern Shader* octreeComputeShader;
 extern Shader* octreeComputeVSShader;
-extern Shader* octreeBlendingShader;
+extern Shader* blendingShader;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11RenderTargetView* renderTargetView;
@@ -122,12 +122,16 @@ extern ID3D11DepthStencilView* depthStencilView;
 extern ID3D11ShaderResourceView* depthTextureSRV;
 extern ID3D11DepthStencilState* depthStencilState;
 extern ID3D11BlendState* blendState;
+extern ID3D11Buffer* nullBuffer[1];
+extern ID3D11UnorderedAccessView* nullUAV[1];
+extern ID3D11ShaderResourceView* nullSRV[1];
 
 // Global function declarations
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
 extern bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile);
 extern void SaveScreenshotToFile();
 extern void SetFullscreen(bool fullscreen);
+extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending);
 
 // Function declarations
 bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);
@@ -138,4 +142,5 @@ void ReleaseObjects();
 bool InitializeScene();
 void UpdateScene();
 void DrawScene();
+
 #endif
