@@ -8,6 +8,25 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &plyfile)
         throw std::exception("Could not load .ply file!");
     }
 
+	// Randomly shuffle the vertices in order to be able to easily select the density
+	std::random_shuffle(vertices.begin(), vertices.end());
+
+	// Calculate center and size of the bounding cube that fully encloses the point cloud
+	Vector3 minPosition = vertices.front().position;
+	Vector3 maxPosition = minPosition;
+
+	for (auto it = vertices.begin(); it != vertices.end(); it++)
+	{
+		Vertex v = *it;
+
+		minPosition = Vector3::Min(minPosition, v.position);
+		maxPosition = Vector3::Max(maxPosition, v.position);
+	}
+
+	Vector3 diagonal = maxPosition - minPosition;
+	boundingCubePosition = minPosition + 0.5f * diagonal;
+	boundingCubeSize = max(max(diagonal.x, diagonal.y), diagonal.z);
+
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
 }
@@ -47,7 +66,15 @@ void GroundTruthRenderer::Initialize()
 
 void GroundTruthRenderer::Update()
 {
-    
+	// Select density of the point cloud with arrow keys
+	if (Input::GetKey(Keyboard::Right))
+	{
+		settings->density = min(1.0f, settings->density + 0.25f * dt);
+	}
+	else if (Input::GetKey(Keyboard::Left))
+	{
+		settings->density = max(0, settings->density - 0.25f * dt);
+	}
 }
 
 void GroundTruthRenderer::Draw()
@@ -81,7 +108,10 @@ void GroundTruthRenderer::Draw()
     d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
     d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 
-    d3d11DevCon->Draw(vertices.size(), 0);
+	// Only draw a portion of the point cloud to simulate the selected density
+	UINT drawCount = vertices.size() * settings->density;
+
+    d3d11DevCon->Draw(drawCount, 0);
 }
 
 void GroundTruthRenderer::Release()
@@ -92,23 +122,8 @@ void GroundTruthRenderer::Release()
 
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
-	// Calculate center and size of the bounding cube that fully encloses the point cloud
-	Vector3 minPosition = vertices.front().position;
-	Vector3 maxPosition = minPosition;
-
-	for (auto it = vertices.begin(); it != vertices.end(); it++)
-	{
-		Vertex v = *it;
-
-		minPosition = Vector3::Min(minPosition, v.position);
-		maxPosition = Vector3::Max(maxPosition, v.position);
-	}
-
-	// Compute the root node position and size, will be used to compute all the other node positions and sizes at runtime
-	Vector3 diagonal = maxPosition - minPosition;
-
-    outPosition = minPosition + 0.5f * diagonal;
-    outSize = max(max(diagonal.x, diagonal.y), diagonal.z);
+	outPosition = boundingCubePosition;
+	outSize = boundingCubeSize;
 }
 
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()

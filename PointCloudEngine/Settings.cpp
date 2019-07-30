@@ -90,6 +90,10 @@ PointCloudEngine::Settings::Settings()
 				{
 					blendFactor = std::stof(variableValue);
 				}
+				else if (variableName.compare(NAMEOF(density)) == 0)
+				{
+					density = std::stof(variableValue);
+				}
 				else if (variableName.compare(NAMEOF(useOctree)) == 0)
 				{
 					useOctree = std::stoi(variableValue);
@@ -155,6 +159,10 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# Blending Parameters" << std::endl;
 	settingsFile << NAMEOF(useBlending) << L"=" << useBlending << std::endl;
 	settingsFile << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
+	settingsFile << std::endl;
+
+	settingsFile << L"# Ground Truth Parameters" << std::endl;
+	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;

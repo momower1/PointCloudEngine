@@ -37,6 +37,9 @@ namespace PointCloudEngine
 		bool useBlending = true;
 		float blendFactor = 2.0f;
 
+		// Ground truth parameters
+		float density = 1.0f;
+
 		// Octree parameters
 		bool useOctree = false;
 		int maxOctreeDepth = 16;

@@ -19,6 +19,10 @@ namespace PointCloudEngine
 		void RemoveComponentFromSceneObject();
 
     private:
+
+		Vector3 boundingCubePosition;
+		float boundingCubeSize;
+
         // Same constant buffer as in effect file, keep packing rules in mind
         struct GroundTruthRendererConstantBuffer
         {
