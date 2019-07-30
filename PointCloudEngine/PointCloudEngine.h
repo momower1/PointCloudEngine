@@ -120,7 +120,6 @@ extern ID3D11Texture2D* backBufferTexture;
 extern ID3D11UnorderedAccessView* backBufferTextureUAV;
 extern ID3D11DepthStencilView* depthStencilView;
 extern ID3D11ShaderResourceView* depthTextureSRV;
-extern ID3D11ShaderResourceView* stencilTextureSRV;
 extern ID3D11DepthStencilState* depthStencilState;
 extern ID3D11BlendState* blendState;
 

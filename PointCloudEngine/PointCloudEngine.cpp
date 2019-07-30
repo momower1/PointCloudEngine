@@ -31,7 +31,6 @@ ID3D11UnorderedAccessView* backBufferTextureUAV;
 ID3D11DepthStencilView* depthStencilView;
 ID3D11Texture2D* depthStencilTexture;
 ID3D11ShaderResourceView* depthTextureSRV;
-ID3D11ShaderResourceView* stencilTextureSRV;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
@@ -308,7 +307,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	depthStencilTextureDesc.Height = settings->resolutionY;
 	depthStencilTextureDesc.MipLevels = 1;
 	depthStencilTextureDesc.ArraySize = 1;
-	depthStencilTextureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	depthStencilTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	depthStencilTextureDesc.SampleDesc.Count = 1;
 	depthStencilTextureDesc.SampleDesc.Quality = 0;
 	depthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -323,38 +322,28 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	// Create a shader resource view in order to bind the depth part of the texture to a shader
 	D3D11_SHADER_RESOURCE_VIEW_DESC depthTextureSRVDesc;
 	ZeroMemory(&depthTextureSRVDesc, sizeof(depthTextureSRVDesc));
-	depthTextureSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	depthTextureSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	depthTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	depthTextureSRVDesc.Texture2D.MipLevels = 1;
 
 	hr = d3d11Device->CreateShaderResourceView(depthStencilTexture, &depthTextureSRVDesc, &depthTextureSRV);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(depthTextureSRV));
 
-	// Create a shader resource view in order to bind the stencil part of the texture to a shader
-	D3D11_SHADER_RESOURCE_VIEW_DESC stencilTextureSRVDesc;
-	ZeroMemory(&stencilTextureSRVDesc, sizeof(stencilTextureSRVDesc));
-	stencilTextureSRVDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
-	stencilTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	stencilTextureSRVDesc.Texture2D.MipLevels = 1;
-
-	hr = d3d11Device->CreateShaderResourceView(depthStencilTexture, &stencilTextureSRVDesc, &stencilTextureSRV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(stencilTextureSRV));
-
 	// Create Depth / Stencil View
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
-	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 	hr = d3d11Device->CreateDepthStencilView(depthStencilTexture, &depthStencilViewDesc, &depthStencilView);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
 
-    // Depth / Stencil description that increments the stencil buffer for each passed fragment
+    // Depth / Stencil description with disabled incremental stencil buffer
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
     depthStencilDesc.DepthEnable = true;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-    depthStencilDesc.StencilEnable = true;
+    depthStencilDesc.StencilEnable = false;
     depthStencilDesc.StencilReadMask = 0xFF;
     depthStencilDesc.StencilWriteMask = 0xFF;
     depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INCR_SAT;
@@ -499,7 +488,7 @@ void DrawScene()
     d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);	// 1 since there is only 1 view
 
 	// Clear out backbuffer to the updated color
-	float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
 	d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
 	
 	// Refresh the depth/stencil view
@@ -578,6 +567,5 @@ void ReleaseObjects()
     SAFE_RELEASE(depthStencilState);
     SAFE_RELEASE(depthStencilTexture);
 	SAFE_RELEASE(depthTextureSRV);
-	SAFE_RELEASE(stencilTextureSRV);
     SAFE_RELEASE(rasterizerState);
 }

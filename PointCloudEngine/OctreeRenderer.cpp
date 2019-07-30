@@ -618,7 +618,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	d3d11DevCon->OMSetBlendState(additiveBlendState, NULL, 0xffffffff);
 
 	// Bind this depth texture to the shader
-	d3d11DevCon->PSSetShaderResources(2, 1, &octreeDepthTextureSRV);
+	d3d11DevCon->PSSetShaderResources(0, 1, &octreeDepthTextureSRV);
 
 	// Disable depth test to make sure that all the overlapping splats are blended together
 	d3d11DevCon->OMSetDepthStencilState(depthTestDisabledDepthStencilState, 0);
@@ -628,14 +628,13 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	d3d11DevCon->Draw(vertexBufferCount, 0);
 
 	// Unbind shader resources
-	d3d11DevCon->PSSetShaderResources(2, 1, nullSRV);
+	d3d11DevCon->PSSetShaderResources(0, 1, nullSRV);
 
 	// Remove the depth stencil view from the render target in order to make it accessable by the pixel shader (also set the back buffer UAV)
 	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 1, &backBufferTextureUAV, NULL);
 	d3d11DevCon->VSSetShader(octreeBlendingShader->vertexShader, NULL, 0);
 	d3d11DevCon->GSSetShader(octreeBlendingShader->geometryShader, NULL, 0);
 	d3d11DevCon->PSSetShader(octreeBlendingShader->pixelShader, NULL, 0);
-	d3d11DevCon->PSSetShaderResources(0, 1, &stencilTextureSRV);
 
 	// Use pixel shader to divide the color sum by the weight sum of overlapping splats in each pixel, also remove background color
 	d3d11DevCon->Draw(1, 0);
@@ -644,7 +643,6 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeBlended()
 	d3d11DevCon->VSSetShader(NULL, NULL, 0);
 	d3d11DevCon->GSSetShader(NULL, NULL, 0);
 	d3d11DevCon->PSSetShader(NULL, NULL, 0);
-	d3d11DevCon->PSSetShaderResources(0, 1, nullSRV);
 
 	// Reset to the defaults
 	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(1, &renderTargetView, depthStencilView, 1, 1, nullUAV, NULL);

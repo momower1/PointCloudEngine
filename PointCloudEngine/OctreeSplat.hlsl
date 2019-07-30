@@ -2,7 +2,7 @@
 #include "OctreeConstantBuffer.hlsl"
 #include "LightingConstantBuffer.hlsl"
 
-Texture2D<float> octreeDepthTexture : register(t2);
+Texture2D<float> octreeDepthTexture : register(t0);
 
 SamplerState PointSampler
 {
