@@ -27,10 +27,13 @@ namespace PointCloudEngine
         int viewMode = 0;
         int vertexBufferCount = 0;
         bool useComputeShader = true;
+		bool help = false;
 
         Octree *octree = NULL;
         SceneObject *text = NULL;
+		SceneObject* helpText = NULL;
         TextRenderer *textRenderer = NULL;
+		TextRenderer* helpTextRenderer = NULL;
 
         // Renderer buffer
         ID3D11Buffer* octreeConstantBuffer = NULL;

@@ -27,6 +27,20 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &plyfile)
 	boundingCubePosition = minPosition + 0.5f * diagonal;
 	boundingCubeSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
+	// Create text renderer to display the controls
+	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	helpText = Hierarchy::Create(L"Help Text");
+	helpText->AddComponent(helpTextRenderer);
+	helpText->transform->position = Vector3(-1, 1, 0.5f);
+	helpText->transform->scale = 0.35f * Vector3::One;
+
+	// Text for showing properties
+	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	text = Hierarchy::Create(L"GroundTruthRendererText");
+	text->AddComponent(textRenderer);
+	text->transform->position = Vector3(-1.0f, -0.635f, 0);
+	text->transform->scale = 0.35f * Vector3::One;
+
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
 }
@@ -66,6 +80,12 @@ void GroundTruthRenderer::Initialize()
 
 void GroundTruthRenderer::Update()
 {
+	// Toggle help
+	if (Input::GetKeyDown(Keyboard::H))
+	{
+		help = !help;
+	}
+
 	// Select density of the point cloud with arrow keys
 	if (Input::GetKey(Keyboard::Right))
 	{
@@ -75,6 +95,37 @@ void GroundTruthRenderer::Update()
 	{
 		settings->density = max(0, settings->density - 0.25f * dt);
 	}
+
+	helpTextRenderer->text = L"[H] Toggle help\n";
+
+	// Show help / controls
+	if (help)
+	{
+		helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
+		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");
+		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
+		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
+		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
+		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
+		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
+		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
+		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
+		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
+		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
+		helpTextRenderer->text.append(L"[F9] Screenshot\n");
+		helpTextRenderer->text.append(L"[ESC] Quit\n");
+	}
+
+	// Set the text
+	textRenderer->text = std::wstring(L"View Mode: TODO\n");
+	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
+	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
+	textRenderer->text.append(L"Point Density: " + std::to_wstring((UINT)(settings->density * 100)) + L"%\n");
+	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On\n" : L"Off\n"));
+	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
 }
 
 void GroundTruthRenderer::Draw()
@@ -116,6 +167,9 @@ void GroundTruthRenderer::Draw()
 
 void GroundTruthRenderer::Release()
 {
+	Hierarchy::ReleaseSceneObject(text);
+	Hierarchy::ReleaseSceneObject(helpText);
+
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
 }

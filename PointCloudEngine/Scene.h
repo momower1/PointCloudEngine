@@ -19,16 +19,13 @@ namespace PointCloudEngine
         void LoadFile();
 
 		SceneObject* fpsText = NULL;
-        SceneObject *helpText = NULL;
 		SceneObject *startupText = NULL;
         SceneObject *loadingText = NULL;
         SceneObject *pointCloud = NULL;
 		TextRenderer *fpsTextRenderer = NULL;
-        TextRenderer *helpTextRenderer = NULL;
         IRenderer *pointCloudRenderer = NULL;
 
         Vector2 input;
-        bool help = false;
         float cameraPitch = 0;
         float cameraYaw = 0;
 

@@ -5,10 +5,17 @@ OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
     // Create the octree, throws exception on fail
     octree = new Octree(plyfile);
 
-    // Text for showing properties
-    text = Hierarchy::Create(L"OctreeRendererText");
-    textRenderer = text->AddComponent(new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false));
+	// Create text renderer to display the controls
+	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	helpText = Hierarchy::Create(L"Help Text");
+	helpText->AddComponent(helpTextRenderer);
+	helpText->transform->position = Vector3(-1, 1, 0.5f);
+	helpText->transform->scale = 0.35f * Vector3::One;
 
+    // Text for showing properties
+	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+    text = Hierarchy::Create(L"OctreeRendererText");
+    text->AddComponent(textRenderer);
     text->transform->position = Vector3(-1.0f, -0.635f, 0);
     text->transform->scale = 0.35f * Vector3::One;
 
@@ -180,6 +187,12 @@ void OctreeRenderer::Initialize()
 
 void OctreeRenderer::Update()
 {
+	// Toggle help
+	if (Input::GetKeyDown(Keyboard::H))
+	{
+		help = !help;
+	}
+
     // Select octree level with arrow keys (level -1 means that the level will be ignored)
     if (Input::GetKeyDown(Keyboard::Left) && (octreeConstantBufferData.level > -1))
     {
@@ -216,6 +229,32 @@ void OctreeRenderer::Update()
 	else if (Input::GetKey(Keyboard::Down))
 	{
 		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
+	}
+
+	helpTextRenderer->text = L"[H] Toggle help\n";
+
+	// Show help / controls
+	if (help)
+	{
+		helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
+		helpTextRenderer->text.append(L"[R] Switch to ground truth renderer\n");
+		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
+		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
+		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
+		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
+		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
+		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
+		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
+		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
+		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
+		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
+		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
+		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
+		helpTextRenderer->text.append(L"[F9] Screenshot\n");
+		helpTextRenderer->text.append(L"[ESC] Quit\n");
 	}
 
     // Set the text
@@ -332,6 +371,7 @@ void OctreeRenderer::Release()
     SafeDelete(octree);
 
     Hierarchy::ReleaseSceneObject(text);
+	Hierarchy::ReleaseSceneObject(helpText);
 
     SAFE_RELEASE(nodesBuffer);
 	SAFE_RELEASE(octreeDepthStencilView);

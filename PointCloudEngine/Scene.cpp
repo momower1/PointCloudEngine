@@ -21,13 +21,6 @@ void Scene::Initialize()
     loadingText->transform->scale = Vector3::Zero;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
-    // Create text renderer to display properties, hide it first
-    helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-    helpText = Hierarchy::Create(L"Help Text");
-    helpText->AddComponent(helpTextRenderer);
-    helpText->transform->position = Vector3(-1, 1, 0.5f);
-	helpText->transform->scale = Vector3::Zero;
-
 	// Create fps text in top right corner
 	fpsTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
 	fpsText = Hierarchy::Create(L"FPS Text");
@@ -56,12 +49,6 @@ void Scene::Update(Timer &timer)
 	{
 		SaveScreenshotToFile();
 	}
-
-    // Toggle help
-    if (Input::GetKeyDown(Keyboard::H))
-    {
-        help = !help;
-    }
 
 	// Toggle lighting with L
 	if (Input::GetKeyDown(Keyboard::L))
@@ -148,32 +135,6 @@ void Scene::Update(Timer &timer)
 
     // Move camera with WASD keys
     camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
-
-	helpTextRenderer->text = L"[H] Toggle help\n";
-
-    // Show help / controls
-    if (help)
-    {
-        helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
-		helpTextRenderer->text.append(L"[R] Switch between ground truth and octree renderer\n");
-		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
-		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
-		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
-		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
-		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
-		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
-		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
-		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-        helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
-		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-        helpTextRenderer->text.append(L"[ESC] Quit\n");
-    }
 
 	// FPS counter
 	fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
@@ -303,7 +264,7 @@ void PointCloudEngine::Scene::LoadFile()
     if (pointCloudRenderer != NULL)
     {
         pointCloud->AddComponent(pointCloudRenderer);
-        SetWindowTextW(hwnd, (settings->plyfile + L" - PointCloudEngine").c_str());
+        SetWindowTextW(hwnd, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->plyfile).c_str());
 
         // Set camera position in front of the object
         Vector3 boundingBoxPosition;
@@ -317,9 +278,6 @@ void PointCloudEngine::Scene::LoadFile()
     // Hide loading text
     loadingText->transform->scale = Vector3::Zero;
     timeSinceLoadFile = 0;
-
-	// Show the fps and help text
-	helpText->transform->scale = 0.35f * Vector3::One;
 
     // Reset point cloud
     pointCloud->transform->position = Vector3::Zero;

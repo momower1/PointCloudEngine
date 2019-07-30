@@ -20,6 +20,13 @@ namespace PointCloudEngine
 
     private:
 
+		bool help = false;
+
+		SceneObject* text = NULL;
+		SceneObject* helpText = NULL;
+		TextRenderer* textRenderer = NULL;
+		TextRenderer* helpTextRenderer = NULL;
+
 		Vector3 boundingCubePosition;
 		float boundingCubeSize;
 
