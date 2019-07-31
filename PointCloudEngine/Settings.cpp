@@ -4,7 +4,7 @@
 
 PointCloudEngine::Settings::Settings()
 {
-    // Check if the config file exists that stores the last plyfile path
+    // Check if the config file exists that stores the last pointcloudFile path
     std::wifstream settingsFile(executableDirectory + SETTINGS_FILENAME);
 
     if (settingsFile.is_open())
@@ -50,9 +50,9 @@ PointCloudEngine::Settings::Settings()
 				{
 					help = std::stoi(variableValue);
 				}
-                else if (variableName.compare(NAMEOF(plyfile)) == 0)
+                else if (variableName.compare(NAMEOF(pointcloudFile)) == 0)
                 {
-                    plyfile = variableValue;
+                    pointcloudFile = variableValue;
                 }
 				else if (variableName.compare(NAMEOF(samplingRate)) == 0)
 				{
@@ -145,9 +145,9 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << NAMEOF(help) << L"=" << help << std::endl;
     settingsFile << std::endl;
 
-    settingsFile << L"# Ply File Parameters" << std::endl;
+    settingsFile << L"# Pointcloud File Parameters" << std::endl;
 	settingsFile << L"# Delete old .octree files when changing the " << NAMEOF(maxOctreeDepth) << std::endl;
-    settingsFile << NAMEOF(plyfile) << L"=" << plyfile << std::endl;
+    settingsFile << NAMEOF(pointcloudFile) << L"=" << pointcloudFile << std::endl;
 	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
     settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
     settingsFile << std::endl;

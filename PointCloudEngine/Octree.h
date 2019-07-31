@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class Octree
     {
     public:
-        Octree(const std::wstring &plyfile);
+        Octree(const std::wstring &pointcloudFile);
 
         std::vector<OctreeNodeVertex> GetVertices(const OctreeConstantBuffer &octreeConstantBufferData) const;
         bool LoadFromOctreeFile();

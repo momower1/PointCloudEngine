@@ -270,7 +270,6 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
-    <ClCompile Include="tinyply.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -292,7 +291,6 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Structures.h" />
-    <ClInclude Include="tinyply.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>

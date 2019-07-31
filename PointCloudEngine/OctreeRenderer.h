@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class OctreeRenderer : public Component, public IRenderer
     {
     public:
-        OctreeRenderer(const std::wstring &plyfile);
+        OctreeRenderer(const std::wstring &pointcloudFile);
         void Initialize();
         void Update();
         void Draw();

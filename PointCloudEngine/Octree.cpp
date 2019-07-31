@@ -1,15 +1,15 @@
 #include "Octree.h"
 
-PointCloudEngine::Octree::Octree(const std::wstring &plyfile)
+PointCloudEngine::Octree::Octree(const std::wstring &pointcloudFile)
 {
     if (!LoadFromOctreeFile())
     {
-        // Try to load .ply file here
+        // Try to load .pointcloud file here
         std::vector<Vertex> vertices;
 
-        if (!LoadPlyFile(vertices, plyfile))
+        if (!LoadPointcloudFile(vertices, pointcloudFile))
         {
-            throw std::exception("Could not load .ply file!");
+            throw std::exception("Could not load .pointcloud file!");
         }
 
         // Calculate center and size of the root node
@@ -110,8 +110,8 @@ std::vector<OctreeNodeVertex> PointCloudEngine::Octree::GetVertices(const Octree
 bool PointCloudEngine::Octree::LoadFromOctreeFile()
 {
     // Try to load a previously saved octree file first before recreating the whole octree (saves a lot of time)
-    std::wstring filename = settings->plyfile.substr(settings->plyfile.find_last_of(L"\\/") + 1, settings->plyfile.length());
-    filename = filename.substr(0, filename.length() - 4);
+    std::wstring filename = settings->pointcloudFile.substr(settings->pointcloudFile.find_last_of(L"\\/") + 1, settings->pointcloudFile.length());
+    filename = filename.substr(0, filename.length() - 11);
     octreeFilepath = executableDirectory + L"/Octrees/" + filename + L".octree";
 
     // Try to load the octree from a file

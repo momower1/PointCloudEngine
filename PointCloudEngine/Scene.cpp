@@ -7,7 +7,7 @@ void Scene::Initialize()
 
 	// Create startup text
 	TextRenderer* startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
-	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .ply point cloud files by generating an octree.\nYou can change parameters (resolution, ...) in the settings file.\n\n\nPress [O] to open a .ply file.\nOnly x,y,z,nx,ny,nz,red,green,blue format is supported.";
+	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files by generating an octree.\nYou can convert .ply files with the PlyToPointcloud.exe!\nYou can change parameters (resolution, ...) in the settings file.\n\n\nPress [O] to open a .pointcloud file.\nOnly x,y,z,nx,ny,nz,red,green,blue format is supported.";
 	startupText = Hierarchy::Create(L"Startup Text");
 	startupText->AddComponent(startupTextRenderer);
 	startupText->transform->scale = Vector3(0.25, 0.35, 1);
@@ -38,8 +38,8 @@ void Scene::Initialize()
 	hr = d3d11Device->CreateBuffer(&lightingConstantBufferDesc, NULL, &lightingConstantBuffer);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
 
-    // Try to load the last plyfile
-    DelayedLoadFile(settings->plyfile);
+    // Try to load the last pointcloudFile
+    DelayedLoadFile(settings->pointcloudFile);
 }
 
 void Scene::Update(Timer &timer)
@@ -136,7 +136,7 @@ void Scene::Update(Timer &timer)
 	if (Input::GetKeyDown(Keyboard::R))
 	{
 		settings->useOctree = !settings->useOctree;
-		DelayedLoadFile(settings->plyfile);
+		DelayedLoadFile(settings->pointcloudFile);
 	}
 
     // Move camera with WASD keys
@@ -163,7 +163,7 @@ void Scene::Update(Timer &timer)
         ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
         openFileName.lStructSize = sizeof(OPENFILENAMEW);
         openFileName.hwndOwner = hwnd;
-        openFileName.lpstrFilter = L"Ply Files\0*.ply\0\0";
+        openFileName.lpstrFilter = L"Pointcloud Files\0*.pointcloud\0\0";
         openFileName.lpstrFile = filename;
         openFileName.lpstrFile[0] = L'\0';
         openFileName.nMaxFile = MAX_PATH;
@@ -227,7 +227,7 @@ void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
     {
         // Load after some delay
         timeUntilLoadFile = 0.1f;
-        settings->plyfile = filepath;
+        settings->pointcloudFile = filepath;
 
 		// Hide the startup text
 		startupText->transform->scale = Vector3::Zero;
@@ -251,17 +251,17 @@ void PointCloudEngine::Scene::LoadFile()
 		if (settings->useOctree)
 		{
 			// Try to build the octree from the points (takes a long time)
-			pointCloudRenderer = new OctreeRenderer(settings->plyfile);
+			pointCloudRenderer = new OctreeRenderer(settings->pointcloudFile);
 		}
 		else
 		{
-			pointCloudRenderer = new GroundTruthRenderer(settings->plyfile);
+			pointCloudRenderer = new GroundTruthRenderer(settings->pointcloudFile);
 		}
 
     }
     catch (std::exception e)
     {
-		ERROR_MESSAGE(L"Could not open " + settings->plyfile + L"\nOnly .ply files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nYou can use e.g. MeshLab to generate the required format.");
+		ERROR_MESSAGE(L"Could not open " + settings->pointcloudFile + L"\nOnly .pointcloud files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nUse e.g. MeshLab and Ply2Pointcloud.exe to convert .ply files to the required format.");
 
         // Set the pointer to NULL because the creation of the object failed
         pointCloudRenderer = NULL;
@@ -270,7 +270,7 @@ void PointCloudEngine::Scene::LoadFile()
     if (pointCloudRenderer != NULL)
     {
         pointCloud->AddComponent(pointCloudRenderer);
-        SetWindowTextW(hwnd, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->plyfile).c_str());
+        SetWindowTextW(hwnd, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
 
         // Set camera position in front of the object
         Vector3 boundingBoxPosition;

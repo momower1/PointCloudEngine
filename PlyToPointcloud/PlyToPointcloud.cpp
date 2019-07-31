@@ -17,7 +17,7 @@ struct Vertex
 	unsigned char color[3];
 };
 
-int PlyToPointcloud(const std::string& plyfile)
+void PlyToPointcloud(const std::string& plyfile)
 {
 	std::cout << "Converting \"" << plyfile << "\" to .pointcloud file format...";
 
@@ -76,14 +76,12 @@ int PlyToPointcloud(const std::string& plyfile)
 	catch (const std::exception& e)
 	{
 		std::cout << "ERROR" << std::endl;
-		return S_FALSE;
 	}
 
 	std::cout << "DONE" << std::endl;
-	return S_OK;
 }
 
-int PointcloudToPly(std::string pointcloudfile)
+void PointcloudToPly(std::string pointcloudfile)
 {
 	std::cout << "Converting \"" << pointcloudfile << "\" to .ply file format...";
 
@@ -133,11 +131,9 @@ int PointcloudToPly(std::string pointcloudfile)
 	catch (const std::exception& e)
 	{
 		std::cout << "ERROR" << std::endl;
-		return S_FALSE;
 	}
 
 	std::cout << "DONE" << std::endl;
-	return S_OK;
 }
 
 int main(int argc, char* argv[])
@@ -156,11 +152,11 @@ int main(int argc, char* argv[])
 
 		if (filetype.compare("ply") == 0 || filetype.compare("PLY") == 0)
 		{
-			return PlyToPointcloud(filename);
+			PlyToPointcloud(filename);
 		}
 		else if (filetype.compare("pointcloud") == 0 || filetype.compare("POINTCLOUD") == 0)
 		{
-			return PointcloudToPly(filename);
+			PointcloudToPly(filename);
 		}
 		else
 		{

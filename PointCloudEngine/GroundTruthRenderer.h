@@ -9,7 +9,7 @@ namespace PointCloudEngine
     class GroundTruthRenderer : public Component, public IRenderer
     {
     public:
-        GroundTruthRenderer(const std::wstring &plyfile);
+        GroundTruthRenderer(const std::wstring &pointcloudFile);
         void Initialize();
         void Update();
         void Draw();

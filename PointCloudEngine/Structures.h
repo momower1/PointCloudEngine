@@ -92,7 +92,7 @@ namespace PointCloudEngine
 
     struct Vertex
     {
-        // Stores the .ply file vertices
+        // Stores the .pointcloud file vertices
         Vector3 position;
         Vector3 normal;
         byte color[3];

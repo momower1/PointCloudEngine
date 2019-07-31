@@ -21,8 +21,8 @@ namespace PointCloudEngine
         bool windowed = true;
 		bool help = false;
 
-        // Ply file parameters default values
-        std::wstring plyfile = L"";
+        // Pointcloud file parameters default values
+        std::wstring pointcloudFile = L"";
 		float samplingRate = 0.01f;
 		float scale = 1.0f;
 

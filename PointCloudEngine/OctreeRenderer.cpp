@@ -1,9 +1,9 @@
 #include "OctreeRenderer.h"
 
-OctreeRenderer::OctreeRenderer(const std::wstring &plyfile)
+OctreeRenderer::OctreeRenderer(const std::wstring &pointcloudFile)
 {
     // Create the octree, throws exception on fail
-    octree = new Octree(plyfile);
+    octree = new Octree(pointcloudFile);
 
 	// Create text renderer to display the controls
 	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
@@ -170,7 +170,7 @@ void OctreeRenderer::Update()
 	// Show help / controls
 	if (settings->help)
 	{
-		helpTextRenderer->text.append(L"[O] Open .ply file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
+		helpTextRenderer->text.append(L"[O] Open .pointcloud file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
 		helpTextRenderer->text.append(L"[R] Switch to ground truth renderer\n");
 		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
 		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");

@@ -63,46 +63,22 @@ void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int
 	}
 }
 
-bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile)
+bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &pointcloudFile)
 {
     try
     {
-        // Load ply file
-        std::ifstream ss(plyfile, std::ios::binary);
+		// Try to load the point cloud from the file
+		// This file has a header with the length of the array
+		// Then the position, normal and 8bit rgb color of each vertex is stored in binary data
+		std::ifstream file(pointcloudFile, std::ios::in | std::ios::binary);
 
-        tinyply::PlyFile file;
-        file.parse_header(ss);
+		// Load the size of the vertices vector
+		UINT vertexCount;
+		file.read((char*)&vertexCount, sizeof(UINT));
 
-        // Tinyply untyped byte buffers for properties
-        std::shared_ptr<tinyply::PlyData> rawPositions, rawNormals, rawColors;
-
-        // Hardcoded properties and elements
-        rawPositions = file.request_properties_from_element("vertex", { "x", "y", "z" });
-        rawNormals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" });
-        rawColors = file.request_properties_from_element("vertex", { "red", "green", "blue" });
-
-        // Read the file
-        file.read(ss);
-
-        // Create vertices
-        size_t count = rawPositions->count;
-        size_t stridePositions = rawPositions->buffer.size_bytes() / count;
-        size_t strideNormals = rawNormals->buffer.size_bytes() / count;
-        size_t strideColors = rawColors->buffer.size_bytes() / count;
-
-        // When this trows an std::bad_alloc exception, the memory requirement is large -> build with x64
-        vertices = std::vector<Vertex>(count);
-
-        // Fill each vertex with its data
-        for (int i = 0; i < count; i++)
-        {
-            std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
-            std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
-            std::memcpy(&vertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
-
-            // Make sure that the normals are normalized
-            vertices[i].normal.Normalize();
-        }
+		// Read the binary data directly into the vertices vector
+		vertices = std::vector<Vertex>(vertexCount);
+		file.read((char*)vertices.data(), vertexCount * sizeof(Vertex));
     }
     catch (const std::exception &e)
     {

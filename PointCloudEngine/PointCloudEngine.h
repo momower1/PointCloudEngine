@@ -21,9 +21,6 @@
 #include <math.h>
 #include <wincodec.h>
 
-// Tinyply
-#include "tinyply.h"
-
 // DirectX Toolkit
 #include "CommonStates.h"
 #include "DDSTextureLoader.h"
@@ -128,7 +125,7 @@ extern ID3D11ShaderResourceView* nullSRV[1];
 
 // Global function declarations
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
-extern bool LoadPlyFile(std::vector<Vertex> &vertices, const std::wstring &plyfile);
+extern bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &pointcloudFile);
 extern void SaveScreenshotToFile();
 extern void SetFullscreen(bool fullscreen);
 extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending);
