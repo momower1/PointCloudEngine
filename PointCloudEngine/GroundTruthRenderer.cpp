@@ -8,9 +8,6 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
         throw std::exception("Could not load .pointcloud file!");
     }
 
-	// Randomly shuffle the vertices in order to be able to easily select the density
-	std::random_shuffle(vertices.begin(), vertices.end());
-
 	// Calculate center and size of the bounding cube that fully encloses the point cloud
 	Vector3 minPosition = vertices.front().position;
 	Vector3 maxPosition = minPosition;
@@ -158,6 +155,7 @@ void GroundTruthRenderer::Draw()
 	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
 
 	// Only draw a portion of the point cloud to simulate the selected density
+	// This requires the vertex indices to be distributed randomly (pointcloud files provide this feature)
 	UINT vertexCount = vertices.size() * settings->density;
 
 	if (settings->useBlending)

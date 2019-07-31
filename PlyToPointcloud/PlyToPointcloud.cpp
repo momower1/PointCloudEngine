@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <d3d11.h>
 #include <SimpleMath.h>
 #include "tinyply.h"
@@ -59,6 +60,9 @@ void PlyToPointcloud(const std::string& plyfile)
 			// Make sure that the normals are normalized
 			vertices[i].normal.Normalize();
 		}
+
+		// Randomly shuffle the vertices in order to be able to easily select the density by looking at the first k entries (used in GroundTruthRenderer)
+		std::random_shuffle(vertices.begin(), vertices.end());
 
 		// Write the .pointcloud file
 		std::ofstream pointcloudFile(plyfile.substr(0, plyfile.length() - 3) + "pointcloud", std::ios::out | std::ios::binary);
