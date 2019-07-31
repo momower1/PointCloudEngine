@@ -115,8 +115,9 @@ void GroundTruthRenderer::Update()
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
 	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
 	textRenderer->text.append(L"Point Density: " + std::to_wstring((UINT)(settings->density * 100)) + L"%\n");
-	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On\n" : L"Off\n"));
+	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
 	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
+	textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
 }
 
 void GroundTruthRenderer::Draw()
