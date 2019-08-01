@@ -92,7 +92,7 @@ void GroundTruthRenderer::Update()
 	// Show help / controls
 	if (settings->help)
 	{
-		helpTextRenderer->text.append(L"[O] Open .pointcloud file with (x,y,z,nx,ny,nz,red,green,blue) format\n");
+		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
 		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");
 		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
 		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");

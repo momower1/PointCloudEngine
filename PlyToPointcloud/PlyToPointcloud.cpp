@@ -143,7 +143,8 @@ void PointcloudToPly(std::string pointcloudfile)
 int main(int argc, char* argv[])
 {
 	std::cout << "This program converts between .ply and .pointcloud file format!" << std::endl;
-	std::cout << "Only ply files with x,y,z,nx,ny,nz,red,green,blue format are supported!" << std::endl;
+	std::cout << "Only ply files with (x,y,z,nx,ny,nz,red,green,blue) format are supported!" << std::endl;
+	std::cout << "You can generate this ply format by exporting files with e.g. MeshLab." << std::endl;
 	std::cout << "Drag and drop .ply files to generate the corresponding .pointcloud files." << std::endl;
 	std::cout << "Drag and drop .pointcloud files to generate the original .ply file." << std::endl << std::endl;
 
