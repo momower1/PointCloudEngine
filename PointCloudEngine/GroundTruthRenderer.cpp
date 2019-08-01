@@ -35,7 +35,7 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
 	text = Hierarchy::Create(L"GroundTruthRendererText");
 	text->AddComponent(textRenderer);
-	text->transform->position = Vector3(-1.0f, -0.635f, 0);
+	text->transform->position = Vector3(-1.0f, -0.685f, 0);
 	text->transform->scale = 0.35f * Vector3::One;
 
     // Set the default values
@@ -80,11 +80,17 @@ void GroundTruthRenderer::Update()
 	// Select density of the point cloud with arrow keys
 	if (Input::GetKey(Keyboard::Right))
 	{
-		settings->density = min(1.0f, settings->density + 0.25f * dt);
+		settings->density = min(1.0f, settings->density + 0.15f * dt);
 	}
 	else if (Input::GetKey(Keyboard::Left))
 	{
-		settings->density = max(0, settings->density - 0.25f * dt);
+		settings->density = max(0, settings->density - 0.15f * dt);
+	}
+
+	// Select view mode
+	if (Input::GetKeyDown(Keyboard::Enter))
+	{
+		viewMode = (viewMode + 1) % 2;
 	}
 
 	helpTextRenderer->text = L"[H] Toggle help\n";
@@ -111,10 +117,10 @@ void GroundTruthRenderer::Update()
 	}
 
 	// Set the text
-	textRenderer->text = std::wstring(L"View Mode: TODO\n");
+	textRenderer->text = std::wstring(L"View Mode: " + std::wstring(viewMode == 0 ? L"Splats\n" : L"Points\n"));
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
 	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-	textRenderer->text.append(L"Point Density: " + std::to_wstring((UINT)(settings->density * 100)) + L"%\n");
+	textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
 	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
 	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
 	textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
@@ -122,10 +128,20 @@ void GroundTruthRenderer::Update()
 
 void GroundTruthRenderer::Draw()
 {
-    // Set the shaders
-    d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
-    d3d11DevCon->GSSetShader(splatShader->geometryShader, 0, 0);
-    d3d11DevCon->PSSetShader(splatShader->pixelShader, 0, 0);
+	if (viewMode == 0)
+	{
+		// Set the splat shaders
+		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
+		d3d11DevCon->GSSetShader(splatShader->geometryShader, 0, 0);
+		d3d11DevCon->PSSetShader(splatShader->pixelShader, 0, 0);
+	}
+	else if (viewMode == 1)
+	{
+		// Set the point shaders
+		d3d11DevCon->VSSetShader(pointShader->vertexShader, 0, 0);
+		d3d11DevCon->GSSetShader(pointShader->geometryShader, 0, 0);
+		d3d11DevCon->PSSetShader(pointShader->pixelShader, 0, 0);
+	}
 
     // Set the Input (Vertex) Layout
     d3d11DevCon->IASetInputLayout(splatShader->inputLayout);
@@ -159,7 +175,7 @@ void GroundTruthRenderer::Draw()
 	// This requires the vertex indices to be distributed randomly (pointcloud files provide this feature)
 	UINT vertexCount = vertices.size() * settings->density;
 
-	if (settings->useBlending)
+	if ((viewMode == 0) &&  settings->useBlending)
 	{
 		DrawBlended(vertexCount, constantBuffer, &constantBufferData, constantBufferData.useBlending);
 	}

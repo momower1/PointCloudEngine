@@ -104,6 +104,7 @@ extern Settings* settings;
 extern Camera* camera;
 extern Shader* textShader;
 extern Shader* splatShader;
+extern Shader* pointShader;
 extern Shader* octreeCubeShader;
 extern Shader* octreeSplatShader;
 extern Shader* octreeClusterShader;

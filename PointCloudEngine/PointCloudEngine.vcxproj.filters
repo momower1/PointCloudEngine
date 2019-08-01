@@ -165,6 +165,12 @@
     <FxCompile Include="Blending.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
+    <FxCompile Include="GroundTruth.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="Point.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Icon.ico">

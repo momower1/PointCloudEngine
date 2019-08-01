@@ -13,6 +13,7 @@ Settings* settings;
 Camera* camera;
 Shader* textShader;
 Shader* splatShader;
+Shader* pointShader;
 Shader* octreeCubeShader;
 Shader* octreeSplatShader;
 Shader* octreeClusterShader;
@@ -522,6 +523,7 @@ bool InitializeScene()
     // Compile the shared shaders
     textShader = Shader::Create(L"Shader/Text.hlsl", true, true, true, false, Shader::textLayout, 3);
     splatShader = Shader::Create(L"Shader/Splat.hlsl", true, true, true, false, Shader::splatLayout, 3);
+	pointShader = Shader::Create(L"Shader/Point.hlsl", true, true, true, false, Shader::splatLayout, 3);
     octreeCubeShader = Shader::Create(L"Shader/OctreeCube.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeSplatShader = Shader::Create(L"Shader/OctreeSplat.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 14);
