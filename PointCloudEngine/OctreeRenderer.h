@@ -23,7 +23,6 @@ namespace PointCloudEngine
         void DrawOctreeCompute();
         UINT GetStructureCount(ID3D11UnorderedAccessView *UAV);
 
-        int viewMode = 0;
         int vertexBufferCount = 0;
         bool useComputeShader = true;
 

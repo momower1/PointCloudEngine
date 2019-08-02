@@ -50,6 +50,10 @@ PointCloudEngine::Settings::Settings()
 				{
 					help = std::stoi(variableValue);
 				}
+				else if (variableName.compare(NAMEOF(viewMode)) == 0)
+				{
+					viewMode = std::stoi(variableValue);
+				}
                 else if (variableName.compare(NAMEOF(pointcloudFile)) == 0)
                 {
                     pointcloudFile = variableValue;
@@ -98,6 +102,10 @@ PointCloudEngine::Settings::Settings()
 				{
 					density = std::stof(variableValue);
 				}
+				else if (variableName.compare(NAMEOF(sparseSamplingRate)) == 0)
+				{
+					sparseSamplingRate = std::stof(variableValue);
+				}
 				else if (variableName.compare(NAMEOF(useOctree)) == 0)
 				{
 					useOctree = std::stoi(variableValue);
@@ -143,6 +151,7 @@ PointCloudEngine::Settings::~Settings()
     settingsFile << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
     settingsFile << NAMEOF(windowed) << L"=" << windowed << std::endl;
 	settingsFile << NAMEOF(help) << L"=" << help << std::endl;
+	settingsFile << NAMEOF(viewMode) << L"=" << viewMode << std::endl;
     settingsFile << std::endl;
 
     settingsFile << L"# Pointcloud File Parameters" << std::endl;
@@ -168,6 +177,7 @@ PointCloudEngine::Settings::~Settings()
 
 	settingsFile << L"# Ground Truth Parameters" << std::endl;
 	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
+	settingsFile << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;

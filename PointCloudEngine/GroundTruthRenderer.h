@@ -26,7 +26,6 @@ namespace PointCloudEngine
 
 		Vector3 boundingCubePosition;
 		float boundingCubeSize;
-		UINT viewMode = 0;
 
         // Same constant buffer as in effect file, keep packing rules in mind
         struct GroundTruthRendererConstantBuffer

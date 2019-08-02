@@ -56,6 +56,12 @@ void Scene::Update(Timer &timer)
 		SaveScreenshotToFile();
 	}
 
+	// Toggle view mode depending on the renderer
+	if (Input::GetKeyDown(Keyboard::Enter))
+	{
+		settings->viewMode = (settings->viewMode + 1) % (settings->useOctree ? 3 : 4);
+	}
+
 	// Toggle lighting with L
 	if (Input::GetKeyDown(Keyboard::L))
 	{
@@ -71,11 +77,25 @@ void Scene::Update(Timer &timer)
 	// Set the sampling rate (minimal distance between two points) of the loaded point cloud
 	if (Input::GetKey(Keyboard::Q))
 	{
-		settings->samplingRate = max(0, settings->samplingRate - dt * 0.001f * inputSpeed);
+		if (!settings->useOctree && (settings->viewMode == 1 || settings->viewMode == 3))
+		{
+			settings->sparseSamplingRate = max(0, settings->sparseSamplingRate - dt * 0.001f * inputSpeed);
+		}
+		else
+		{
+			settings->samplingRate = max(0, settings->samplingRate - dt * 0.001f * inputSpeed);
+		}
 	}
 	else if (Input::GetKey(Keyboard::E))
 	{
-		settings->samplingRate += dt * 0.001f * inputSpeed;
+		if (!settings->useOctree && (settings->viewMode == 1 || settings->viewMode == 3))
+		{
+			settings->sparseSamplingRate += dt * 0.001f * inputSpeed;
+		}
+		else
+		{
+			settings->samplingRate += dt * 0.001f * inputSpeed;
+		}
 	}
 
 	// Toggle blending

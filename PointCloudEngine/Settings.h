@@ -20,6 +20,7 @@ namespace PointCloudEngine
         int resolutionY = 720;
         bool windowed = true;
 		bool help = false;
+		int viewMode = 0;
 
         // Pointcloud file parameters default values
         std::wstring pointcloudFile = L"";
@@ -40,6 +41,7 @@ namespace PointCloudEngine
 
 		// Ground truth parameters
 		float density = 1.0f;
+		float sparseSamplingRate = 0.01f;
 
 		// Octree parameters
 		bool useOctree = false;

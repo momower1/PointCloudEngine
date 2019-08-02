@@ -137,12 +137,6 @@ void OctreeRenderer::Update()
 		octreeConstantBufferData.level++;
     }
 
-    // Toggle view mode
-    if (Input::GetKeyDown(Keyboard::Enter))
-    {
-        viewMode = (viewMode + 1) % 3;
-    }
-
 	// Toggle CPU / GPU octree traversal
     if (Input::GetKeyDown(Keyboard::Back))
     {
@@ -192,7 +186,7 @@ void OctreeRenderer::Update()
 	}
 
     // Set the text
-	textRenderer->text = std::wstring(L"View Mode: ") + ((viewMode == 0) ? L"Splats\n" : ((viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
+	textRenderer->text = std::wstring(L"View Mode: ") + ((settings->viewMode == 0) ? L"Splats\n" : ((settings->viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
 	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
 
     int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
@@ -360,19 +354,19 @@ void PointCloudEngine::OctreeRenderer::DrawOctree()
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
         // Set the shaders
-        if (viewMode == 0)
+        if (settings->viewMode == 0)
         {
             d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
         }
-        else if (viewMode == 1)
+        else if (settings->viewMode == 1)
         {
             d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
         }
-        else if (viewMode == 2)
+        else if (settings->viewMode == 2)
         {
             d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
@@ -391,7 +385,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctree()
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		// Only blend splats
-		if (settings->useBlending && (viewMode == 0))
+		if (settings->useBlending && (settings->viewMode == 0))
 		{
 			DrawBlended(vertexBufferCount, octreeConstantBuffer, &octreeConstantBufferData, octreeConstantBufferData.useBlending);
 		}
@@ -489,17 +483,17 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     // Set the shaders, only the vertex shader is different from the CPU implementation
     d3d11DevCon->VSSetShader(octreeComputeVSShader->vertexShader, 0, 0);
 
-    if (viewMode == 0)
+    if (settings->viewMode == 0)
     {
         d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
         d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
     }
-    else if (viewMode == 1)
+    else if (settings->viewMode == 1)
     {
         d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
         d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
     }
-    else if (viewMode == 2)
+    else if (settings->viewMode == 2)
     {
         d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
         d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
@@ -515,7 +509,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	// Only blend splats
-	if (settings->useBlending && (viewMode == 0))
+	if (settings->useBlending && (settings->viewMode == 0))
 	{
 		DrawBlended(vertexBufferCount, octreeConstantBuffer, &octreeConstantBufferData, octreeConstantBufferData.useBlending);
 	}

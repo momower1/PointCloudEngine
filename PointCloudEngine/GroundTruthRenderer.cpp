@@ -35,7 +35,6 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
 	text = Hierarchy::Create(L"GroundTruthRendererText");
 	text->AddComponent(textRenderer);
-	text->transform->position = Vector3(-1.0f, -0.685f, 0);
 	text->transform->scale = 0.35f * Vector3::One;
 
     // Set the default values
@@ -87,12 +86,6 @@ void GroundTruthRenderer::Update()
 		settings->density = max(0, settings->density - 0.15f * dt);
 	}
 
-	// Select view mode
-	if (Input::GetKeyDown(Keyboard::Enter))
-	{
-		viewMode = (viewMode + 1) % 2;
-	}
-
 	helpTextRenderer->text = L"[H] Toggle help\n";
 
 	// Show help / controls
@@ -117,25 +110,57 @@ void GroundTruthRenderer::Update()
 	}
 
 	// Set the text
-	textRenderer->text = std::wstring(L"View Mode: " + std::wstring(viewMode == 0 ? L"Splats\n" : L"Points\n"));
-	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-	textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
-	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-	textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
+	if (settings->viewMode % 2 == 0)
+	{
+		text->transform->position = Vector3(-1.0f, -0.735f, 0);
+
+		if (settings->viewMode == 0)
+		{
+			textRenderer->text = std::wstring(L"View Mode: Splats\n");
+		}
+		else
+		{
+			textRenderer->text = std::wstring(L"View Mode: Points\n");
+		}
+
+		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
+		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
+		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
+		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
+		textRenderer->text.append(L"Vertex Count: " + std::to_wstring(vertices.size()) + L"\n");
+	}
+	else
+	{
+		text->transform->position = Vector3(-1.0f, -0.685f, 0);
+
+		if (settings->viewMode == 1)
+		{
+			textRenderer->text = std::wstring(L"View Mode: Sparse Splats\n");
+		}
+		else
+		{
+			textRenderer->text = std::wstring(L"View Mode: Sparse Points\n");
+		}
+
+		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->sparseSamplingRate) + L"\n");
+		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
+		textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
+		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
+		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
+		textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
+	}
 }
 
 void GroundTruthRenderer::Draw()
 {
-	if (viewMode == 0)
+	if (settings->viewMode < 2)
 	{
 		// Set the splat shaders
 		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
 		d3d11DevCon->GSSetShader(splatShader->geometryShader, 0, 0);
 		d3d11DevCon->PSSetShader(splatShader->pixelShader, 0, 0);
 	}
-	else if (viewMode == 1)
+	else
 	{
 		// Set the point shaders
 		d3d11DevCon->VSSetShader(pointShader->vertexShader, 0, 0);
@@ -161,9 +186,25 @@ void GroundTruthRenderer::Draw()
     constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
 	constantBufferData.WorldViewProjectionInverse = (sceneObject->transform->worldMatrix * camera->GetViewMatrix() * camera->GetProjectionMatrix()).Invert().Transpose();
     constantBufferData.cameraPosition = camera->GetPosition();
-	constantBufferData.samplingRate = settings->samplingRate;
 	constantBufferData.blendFactor = settings->blendFactor;
 	constantBufferData.useBlending = false;
+
+	// The amount of points that will be drawn
+	UINT vertexCount = vertices.size();
+
+	// Set different sampling rates based on the view mode
+	if (settings->viewMode == 0 || settings->viewMode == 2)
+	{
+		constantBufferData.samplingRate = settings->samplingRate;
+	}
+	else
+	{
+		constantBufferData.samplingRate = settings->sparseSamplingRate;
+
+		// Only draw a portion of the point cloud to simulate the selected density
+		// This requires the vertex indices to be distributed randomly (pointcloud files provide this feature)
+		vertexCount *= settings->density;
+	}
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
@@ -171,11 +212,7 @@ void GroundTruthRenderer::Draw()
 	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
 
-	// Only draw a portion of the point cloud to simulate the selected density
-	// This requires the vertex indices to be distributed randomly (pointcloud files provide this feature)
-	UINT vertexCount = vertices.size() * settings->density;
-
-	if ((viewMode == 0) &&  settings->useBlending)
+	if ((settings->viewMode < 2) && settings->useBlending)
 	{
 		DrawBlended(vertexCount, constantBuffer, &constantBufferData, constantBufferData.useBlending);
 	}
