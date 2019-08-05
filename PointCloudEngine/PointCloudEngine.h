@@ -77,6 +77,7 @@ using namespace PointCloudEngine;
 #include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
 #include "Scene.h"
+#include "HDF5File.h"
 
 // Preprocessor macros
 #define NAMEOF(variable) std::wstring(L#variable)
