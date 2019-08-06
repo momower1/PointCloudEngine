@@ -97,7 +97,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -129,7 +129,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -165,7 +165,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -201,7 +201,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>

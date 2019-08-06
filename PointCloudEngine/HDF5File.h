@@ -5,6 +5,7 @@
 
 #pragma once
 #include "hdf5.h"
+#include "hdf5_hl.h"
 #include "PointCloudEngine.h"
 
 class HDF5File
