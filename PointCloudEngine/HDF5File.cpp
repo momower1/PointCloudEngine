@@ -24,89 +24,106 @@ void HDF5File::SaveTexture2DToDataset(std::wstring name, ID3D11Texture2D* textur
 
 void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture)
 {
-	ID3D11Texture2D* tmpTexture = NULL;
+	ID3D11Texture2D* inputTexture = NULL;
+	ID3D11Texture2D* outputTexture = NULL;
+	ID3D11Texture2D* readableTexture = NULL;
+	ID3D11RenderTargetView* outputTextureRTV = NULL;
+	ID3D11ShaderResourceView* inputTextureSRV = NULL;
 
 	// Get the texture description
-	D3D11_TEXTURE2D_DESC tmpTextureDesc;
-	texture->GetDesc(&tmpTextureDesc);
+	D3D11_TEXTURE2D_DESC inputTextureDesc;
+	texture->GetDesc(&inputTextureDesc);
 
-	if (tmpTextureDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
-	{
-		ERROR_MESSAGE(NAMEOF(SaveTexture2DToDataset) + L" only supports DXGI_FORMAT_R16G16B16A16_FLOAT!");
-		return;
-	}
+	// Change the bind flag to make it possible to access the texture in a shader
+	inputTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-	// Change the description to unsigned 16bit RGBA format and CPU readable
-	tmpTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_UINT;
-	tmpTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	tmpTextureDesc.Usage = D3D11_USAGE_STAGING;
-	tmpTextureDesc.BindFlags = 0;
-
-	// Create a temporary texure with that format
-	hr = d3d11Device->CreateTexture2D(&tmpTextureDesc, NULL, &tmpTexture);
+	// Create the input texture
+	hr = d3d11Device->CreateTexture2D(&inputTextureDesc, NULL, &inputTexture);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-	// Copy the content of the actual texture to the temporary texture and convert the format
-	d3d11DevCon->CopyResource(tmpTexture, texture);
+	// Create a shader resource view for the input texture
+	D3D11_SHADER_RESOURCE_VIEW_DESC inputTextureSRVDesc;
+	ZeroMemory(&inputTextureSRVDesc, sizeof(inputTextureSRVDesc));
+	inputTextureSRVDesc.Format = inputTextureDesc.Format;
+	inputTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	inputTextureSRVDesc.Texture2D.MipLevels = 1;
+
+	hr = d3d11Device->CreateShaderResourceView(inputTexture, &inputTextureSRVDesc, &inputTextureSRV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(inputTexture));
+
+	// Copy the content to the input texture
+	d3d11DevCon->CopyResource(inputTexture, texture);
+
+	// Change the output description to unsigned 8bit RGBA format and render target
+	D3D11_TEXTURE2D_DESC outputTextureDesc = inputTextureDesc;
+	outputTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	outputTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+	outputTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	outputTextureDesc.CPUAccessFlags = 0;
+
+	// Create a temporary texure with that format
+	hr = d3d11Device->CreateTexture2D(&outputTextureDesc, NULL, &outputTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+	// Create render target view for this texture
+	hr = d3d11Device->CreateRenderTargetView(outputTexture, NULL, &outputTextureRTV);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
+
+	// Set the shader and resources that will be used for the texture conversion
+	d3d11DevCon->VSSetShader(textureConversionShader->vertexShader, NULL, 0);
+	d3d11DevCon->GSSetShader(textureConversionShader->geometryShader, NULL, 0);
+	d3d11DevCon->PSSetShader(textureConversionShader->pixelShader, NULL, 0);
+	d3d11DevCon->PSSetShaderResources(0, 1, &inputTextureSRV);
+	d3d11DevCon->OMSetRenderTargets(1, &outputTextureRTV, NULL);
+
+	// Perform texture conversion (also converts back to linear color space from gamma space)
+	d3d11DevCon->Draw(1, 0);
+
+	d3d11DevCon->VSSetShader(NULL, NULL, 0);
+	d3d11DevCon->GSSetShader(NULL, NULL, 0);
+	d3d11DevCon->PSSetShader(NULL, NULL, 0);
+	d3d11DevCon->PSSetShaderResources(0, 1, nullSRV);
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+
+	// Change the output description to unsigned 8bit RGBA format, render target and CPU readable
+	D3D11_TEXTURE2D_DESC readableTextureDesc = outputTextureDesc;
+	readableTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	readableTextureDesc.Usage = D3D11_USAGE_STAGING;
+	readableTextureDesc.BindFlags = 0;
+
+	// Create a temporary CPU readable texure with that format
+	hr = d3d11Device->CreateTexture2D(&readableTextureDesc, NULL, &readableTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+	// Copy the data from the output texture to the readable texture
+	d3d11DevCon->CopyResource(readableTexture, outputTexture);
 
 	// Read the raw texture data
 	D3D11_MAPPED_SUBRESOURCE subresource;
-	d3d11DevCon->Map(tmpTexture, 0, D3D11_MAP_READ, 0, &subresource);
+	d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &subresource);
 
 	// Copy the 16bit RGBA data to the vector buffer
 	std::vector<BYTE> buffer;
 
-	////for (UINT i = 0; i < subresource.DepthPitch / 2; i++)
-	////{
-	////	if ((i + 1) % 4 != 0)
-	////	{
-	////		USHORT data = ((USHORT*)subresource.pData)[i];
-	////		buffer.push_back(255 * ((float)data / USHORT_MAX));
-	////	}
-	////}
-
-	USHORT* data = (USHORT*)subresource.pData;
-
-	for (UINT y = 0; y < tmpTextureDesc.Height; y++)
+	// Ignore alpha component
+	for (UINT i = 0; i < subresource.DepthPitch; i++)
 	{
-		for (UINT x = 0; x < tmpTextureDesc.Width; x++)
+		if ((i + 1) % 4 != 0)
 		{
-			UINT index = 4 * (y * tmpTextureDesc.Width + x);
-
-			float r = 4 * data[index];
-			float g = 4 * data[index + 1];
-			float b = 4 * data[index + 2];
-
-			buffer.push_back(255 * (r / USHORT_MAX));
-			buffer.push_back(255 * (g / USHORT_MAX));
-			buffer.push_back(255 * (b / USHORT_MAX));
+			buffer.push_back(((BYTE*)subresource.pData)[i]);
 		}
 	}
 
-	// Unmap and release the texture
-	d3d11DevCon->Unmap(tmpTexture, 0);
-	SAFE_RELEASE(tmpTexture);
+	// Unmap the texture
+	d3d11DevCon->Unmap(readableTexture, 0);
+	
+	// Release the resources
+	SAFE_RELEASE(inputTexture);
+	SAFE_RELEASE(outputTexture);
+	SAFE_RELEASE(readableTexture);
+	SAFE_RELEASE(outputTextureRTV);
+	SAFE_RELEASE(inputTextureSRV);
 
-	status = H5IMmake_image_24bit(fileID, name.c_str(), (hsize_t)tmpTextureDesc.Width, (hsize_t)tmpTextureDesc.Height, "INTERLACE_PIXEL", buffer.data());
-
-	//// Save in a 3d array
-	//hsize_t dimensions[] =
-	//{
-	//	tmpTextureDesc.Width,
-	//	tmpTextureDesc.Height,
-	//	4
-	//};
-
-	//// Define the dimensions of the dataset
-	//hid_t dataspaceID = H5Screate_simple(4, dimensions, NULL);
-
-	//// Create the dataset
-	//hid_t datasetID = H5Dcreate(fileID, "/texture", H5T_NATIVE_USHORT, dataspaceID, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-	//// Write the data
-	//status = H5Dwrite(datasetID, H5T_NATIVE_USHORT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer.data());
-
-	//// Close dataspace and dataset
-	//status = H5Dclose(datasetID);
-	//status = H5Sclose(dataspaceID);
+	// Create an image in the hdf5 file
+	status = H5IMmake_image_24bit(fileID, name.c_str(), (hsize_t)inputTextureDesc.Width, (hsize_t)inputTextureDesc.Height, "INTERLACE_PIXEL", buffer.data());
 }

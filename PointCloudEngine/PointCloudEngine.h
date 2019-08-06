@@ -112,6 +112,7 @@ extern Shader* octreeClusterShader;
 extern Shader* octreeComputeShader;
 extern Shader* octreeComputeVSShader;
 extern Shader* blendingShader;
+extern Shader* textureConversionShader;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;
 extern ID3D11RenderTargetView* renderTargetView;
