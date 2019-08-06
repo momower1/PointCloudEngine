@@ -15,8 +15,10 @@ public:
 	HDF5File(std::string filename);
 	~HDF5File();
 
-	void SaveTexture2DToDataset(std::wstring name, ID3D11Texture2D* texture);
-	void SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture);
+	void AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture);
+	void AddColorTextureDataset(std::string name, ID3D11Texture2D* texture);
+	void AddDepthTextureDataset(std::wstring name, ID3D11Texture2D* texture);
+	void AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture);
 
 private:
 	hid_t fileID;

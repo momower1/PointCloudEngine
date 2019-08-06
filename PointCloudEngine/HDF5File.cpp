@@ -17,13 +17,16 @@ HDF5File::~HDF5File()
 	status = H5Fclose(fileID);
 }
 
-void HDF5File::SaveTexture2DToDataset(std::wstring name, ID3D11Texture2D* texture)
+void HDF5File::AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture)
 {
-	SaveTexture2DToDataset(std::string(name.begin(), name.end()), texture);
+	AddColorTextureDataset(std::string(name.begin(), name.end()), texture);
 }
 
-void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture)
+void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture)
 {
+	// 1. Convert the gamma space 16bit floating point RGBA texture into a linear space 8bit RGBA texture
+	// 2. Make it readable by the CPU and copy only the RGB content to a buffer (skip alpha)
+	// 3. Use the HDF5 high level API to create an image dataset from this buffer
 	ID3D11Texture2D* inputTexture = NULL;
 	ID3D11Texture2D* outputTexture = NULL;
 	ID3D11Texture2D* readableTexture = NULL;
@@ -33,6 +36,12 @@ void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture
 	// Get the texture description
 	D3D11_TEXTURE2D_DESC inputTextureDesc;
 	texture->GetDesc(&inputTextureDesc);
+
+	if (inputTextureDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+	{
+		ERROR_MESSAGE(NAMEOF(AddColorTextureDataset) + L" only supports textures with DXGI_FORMAT_R16G16B16A16_FLOAT format!");
+		return;
+	}
 
 	// Change the bind flag to make it possible to access the texture in a shader
 	inputTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -79,6 +88,7 @@ void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture
 	// Perform texture conversion (also converts back to linear color space from gamma space)
 	d3d11DevCon->Draw(1, 0);
 
+	// Reset shaders, resources and render target
 	d3d11DevCon->VSSetShader(NULL, NULL, 0);
 	d3d11DevCon->GSSetShader(NULL, NULL, 0);
 	d3d11DevCon->PSSetShader(NULL, NULL, 0);
@@ -102,7 +112,7 @@ void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture
 	D3D11_MAPPED_SUBRESOURCE subresource;
 	d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &subresource);
 
-	// Copy the 16bit RGBA data to the vector buffer
+	// Copy the 8bit RGB data to the vector buffer
 	std::vector<BYTE> buffer;
 
 	// Ignore alpha component
@@ -116,7 +126,7 @@ void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture
 
 	// Unmap the texture
 	d3d11DevCon->Unmap(readableTexture, 0);
-	
+
 	// Release the resources
 	SAFE_RELEASE(inputTexture);
 	SAFE_RELEASE(outputTexture);
@@ -124,6 +134,67 @@ void HDF5File::SaveTexture2DToDataset(std::string name, ID3D11Texture2D* texture
 	SAFE_RELEASE(outputTextureRTV);
 	SAFE_RELEASE(inputTextureSRV);
 
-	// Create an image in the hdf5 file
+	// Create an image in the hdf5 file (24bit = R8G8B8)
 	status = H5IMmake_image_24bit(fileID, name.c_str(), (hsize_t)inputTextureDesc.Width, (hsize_t)inputTextureDesc.Height, "INTERLACE_PIXEL", buffer.data());
+}
+
+void HDF5File::AddDepthTextureDataset(std::wstring name, ID3D11Texture2D* texture)
+{
+	AddDepthTextureDataset(std::string(name.begin(), name.end()), texture);
+}
+
+void HDF5File::AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture)
+{
+	ID3D11Texture2D* readableTexture = NULL;
+
+	// Get the texture description
+	D3D11_TEXTURE2D_DESC textureDesc;
+	texture->GetDesc(&textureDesc);
+
+	if (textureDesc.Format != DXGI_FORMAT_R32_TYPELESS)
+	{
+		ERROR_MESSAGE(NAMEOF(AddDepthTextureDataset) + L" only supports textures with DXGI_FORMAT_R32_TYPELESS format!");
+		return;
+	}
+
+	// Change the description to make the texture CPU readable
+	textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	textureDesc.Usage = D3D11_USAGE_STAGING;
+	textureDesc.BindFlags = 0;
+
+	// Create a readable temporary texture
+	hr = d3d11Device->CreateTexture2D(&textureDesc, NULL, &readableTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+	// Copy the content of the original texture
+	d3d11DevCon->CopyResource(readableTexture, texture);
+
+	// Read the raw texture data
+	D3D11_MAPPED_SUBRESOURCE subresource;
+	d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &subresource);
+
+	// Save in a HDF5 2D array
+	hsize_t dimensions[] =
+	{
+		textureDesc.Height,
+		textureDesc.Width
+	};
+
+	// Define the dimensions of the dataset
+	hid_t dataspaceID = H5Screate_simple(2, dimensions, NULL);
+
+	// Create the dataset
+	hid_t datasetID = H5Dcreate(fileID, name.c_str(), H5T_NATIVE_FLOAT, dataspaceID, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	// Write the data
+	status = H5Dwrite(datasetID, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, subresource.pData);
+
+	// Close dataspace and dataset
+	status = H5Dclose(datasetID);
+	status = H5Sclose(dataspaceID);
+
+	// Unmap the texture
+	d3d11DevCon->Unmap(readableTexture, 0);
+
+	SAFE_RELEASE(readableTexture);
 }
