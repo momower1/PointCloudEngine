@@ -15,8 +15,8 @@ public:
 	HDF5File(std::string filename);
 	~HDF5File();
 
-	void AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture);
-	void AddColorTextureDataset(std::string name, ID3D11Texture2D* texture);
+	void AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture, bool gammaSpace);
+	void AddColorTextureDataset(std::string name, ID3D11Texture2D* texture, bool gammaSpace);
 	void AddDepthTextureDataset(std::wstring name, ID3D11Texture2D* texture);
 	void AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture);
 

@@ -106,7 +106,7 @@ void SaveScreenshotToFile()
 
 	// TEST SAVE AS HDF5
 	HDF5File hdf5file(executableDirectory + L"/Screenshots/test.hdf5");
-	hdf5file.AddColorTextureDataset(L"/color", backBufferTexture);
+	hdf5file.AddColorTextureDataset(L"/color", backBufferTexture, true);
 	hdf5file.AddDepthTextureDataset(L"/depth", depthStencilTexture);
 }
 

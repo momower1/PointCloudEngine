@@ -17,15 +17,15 @@ HDF5File::~HDF5File()
 	status = H5Fclose(fileID);
 }
 
-void HDF5File::AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture)
+void HDF5File::AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture, bool gammaSpace)
 {
-	AddColorTextureDataset(std::string(name.begin(), name.end()), texture);
+	AddColorTextureDataset(std::string(name.begin(), name.end()), texture, gammaSpace);
 }
 
-void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture)
+void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture, bool gammaSpace)
 {
-	// 1. Convert the gamma space 16bit floating point RGBA texture into a linear space 8bit RGBA texture
-	// 2. Make it readable by the CPU and copy only the RGB content to a buffer (skip alpha)
+	// 1. Convert the input RGBA texture into a 32bit RGBA texture
+	// 2. Make it readable by the CPU and convert only the RGB content to a 8bit buffer (skip alpha)
 	// 3. Use the HDF5 high level API to create an image dataset from this buffer
 	ID3D11Texture2D* inputTexture = NULL;
 	ID3D11Texture2D* outputTexture = NULL;
@@ -36,12 +36,6 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	// Get the texture description
 	D3D11_TEXTURE2D_DESC inputTextureDesc;
 	texture->GetDesc(&inputTextureDesc);
-
-	if (inputTextureDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
-	{
-		ERROR_MESSAGE(NAMEOF(AddColorTextureDataset) + L" only supports textures with DXGI_FORMAT_R16G16B16A16_FLOAT format!");
-		return;
-	}
 
 	// Change the bind flag to make it possible to access the texture in a shader
 	inputTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -63,9 +57,9 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	// Copy the content to the input texture
 	d3d11DevCon->CopyResource(inputTexture, texture);
 
-	// Change the output description to unsigned 8bit RGBA format and render target
+	// Change the output description to unsigned 32bit RGBA format and render target
 	D3D11_TEXTURE2D_DESC outputTextureDesc = inputTextureDesc;
-	outputTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	outputTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	outputTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
 	outputTextureDesc.Usage = D3D11_USAGE_DEFAULT;
 	outputTextureDesc.CPUAccessFlags = 0;
@@ -85,7 +79,7 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	d3d11DevCon->PSSetShaderResources(0, 1, &inputTextureSRV);
 	d3d11DevCon->OMSetRenderTargets(1, &outputTextureRTV, NULL);
 
-	// Perform texture conversion (also converts back to linear color space from gamma space)
+	// Perform texture conversion
 	d3d11DevCon->Draw(1, 0);
 
 	// Reset shaders, resources and render target
@@ -112,15 +106,23 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	D3D11_MAPPED_SUBRESOURCE subresource;
 	d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &subresource);
 
-	// Copy the 8bit RGB data to the vector buffer
+	// Create a vector for the 8bit RGB data
 	std::vector<BYTE> buffer;
 
-	// Ignore alpha component
-	for (UINT i = 0; i < subresource.DepthPitch; i++)
+	// Convert from 32bit float to 8bit and ignore alpha component
+	for (UINT i = 0; i < subresource.DepthPitch / 4; i++)
 	{
 		if ((i + 1) % 4 != 0)
 		{
-			buffer.push_back(((BYTE*)subresource.pData)[i]);
+			float f = ((float*)subresource.pData)[i];
+
+			// Convert from gamma space to linear space if needed
+			if (gammaSpace)
+			{
+				f = std::pow(f, 1.0f / 2.2f);
+			}
+
+			buffer.push_back(f * 255);
 		}
 	}
 
