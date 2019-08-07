@@ -4,7 +4,7 @@
 #define H5_BUILT_AS_DYNAMIC_LIB
 
 #pragma once
-#include "hdf5.h"
+#include "H5Cpp.h"
 #include "hdf5_hl.h"
 #include "PointCloudEngine.h"
 
@@ -21,8 +21,7 @@ public:
 	void AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture);
 
 private:
-	hid_t fileID;
-	herr_t status;
+	H5::H5File* file = NULL;
 };
 
 #endif

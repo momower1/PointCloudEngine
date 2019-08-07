@@ -2,19 +2,17 @@
 
 HDF5File::HDF5File(std::wstring filename)
 {
-	fileID = H5Fcreate(std::string(filename.begin(), filename.end()).c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	status = 0;
+	file = new H5::H5File(std::string(filename.begin(), filename.end()).c_str(), H5F_ACC_TRUNC);
 }
 
 HDF5File::HDF5File(std::string filename)
 {
-	fileID = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	status = 0;
+	file = new H5::H5File(filename.c_str(), H5F_ACC_TRUNC);
 }
 
 HDF5File::~HDF5File()
 {
-	status = H5Fclose(fileID);
+	delete file;
 }
 
 void HDF5File::AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture, bool gammaSpace)
@@ -136,8 +134,11 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	SAFE_RELEASE(outputTextureRTV);
 	SAFE_RELEASE(inputTextureSRV);
 
+	// TODO: Compress like below using a custom R8G8B8 3D array
+	// https://support.hdfgroup.org/HDF5/doc/ADGuide/ImageSpec.html
+
 	// Create an image in the hdf5 file (24bit = R8G8B8)
-	status = H5IMmake_image_24bit(fileID, name.c_str(), (hsize_t)inputTextureDesc.Width, (hsize_t)inputTextureDesc.Height, "INTERLACE_PIXEL", buffer.data());
+	//H5IMmake_image_24bit(file->getId(), name.c_str(), (hsize_t)inputTextureDesc.Width, (hsize_t)inputTextureDesc.Height, "INTERLACE_PIXEL", buffer.data());
 }
 
 void HDF5File::AddDepthTextureDataset(std::wstring name, ID3D11Texture2D* texture)
@@ -183,7 +184,7 @@ void HDF5File::AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture
 	};
 
 	// Define the dimensions of the dataset
-	hid_t dataspaceID = H5Screate_simple(2, dimensions, NULL);
+	H5::DataSpace dataspace(2, dimensions);
 
 	// Chunk the data in order to use compression
 	hsize_t chunkDimensions[] =
@@ -192,32 +193,27 @@ void HDF5File::AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture
 		20
 	};
 
-	// Create a chunk property to set up the compression
-	hid_t listID = H5Pcreate(H5P_DATASET_CREATE);
-	status = H5Pset_chunk(listID, 2, chunkDimensions);
-
-	// Set ZLIB deflate compression
-	status = H5Pset_deflate(listID, 6);
+	// Create a chunk property to set up the ZLIB deflate compression
+	H5::DSetCreatPropList proplist;
+	proplist.setChunk(2, chunkDimensions);
+	proplist.setDeflate(6);
 
 	// Create the dataset
-	hid_t datasetID = H5Dcreate(fileID, name.c_str(), H5T_NATIVE_FLOAT, dataspaceID, H5P_DEFAULT, listID, H5P_DEFAULT);
+	H5::DataSet dataset = file->createDataSet(name.c_str(), H5::PredType::NATIVE_FLOAT, dataspace, proplist);
 
-	// Create a class attribute so that this data is interpreted as an image
-	const char* attribute = "IMAGE\0";
-	hsize_t attributeDimension = 6;
-	hid_t attributeDataspaceID = H5Screate_simple(1, &attributeDimension, NULL);
-	hid_t attributeID = H5Acreate(datasetID, "test", H5T_STD_I8BE, attributeDataspaceID, H5P_DEFAULT, H5P_DEFAULT);
-	status = H5Awrite(attributeID, H5T_STD_I8BE, attribute);
+	// Create attributes so that this data is interpreted as an image
+	H5::DataSpace attributeDataspace(H5S_SCALAR);
+	H5::StrType classType(H5::PredType::C_S1, 5);
+	H5::Attribute classAttribute = dataset.createAttribute("CLASS", classType, attributeDataspace);
+	classAttribute.write(classType, std::string("IMAGE"));
+
+	H5::StrType versionType(H5::PredType::C_S1, 3);
+	H5::Attribute versionAttribute = dataset.createAttribute("IMAGE_VERSION", versionType, attributeDataspace);
+	versionAttribute.write(versionType, std::string("1.2"));
 
 	// Write the data
-	status = H5Dwrite(datasetID, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, subresource.pData);
-
-	// Close dataspace and dataset
-	status = H5Aclose(attributeID);
-	status = H5Pclose(listID);
-	status = H5Dclose(datasetID);
-	status = H5Sclose(dataspaceID);
-
+	dataset.write(subresource.pData, H5::PredType::NATIVE_FLOAT);
+	
 	// Unmap the texture
 	d3d11DevCon->Unmap(readableTexture, 0);
 
