@@ -185,13 +185,36 @@ void HDF5File::AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture
 	// Define the dimensions of the dataset
 	hid_t dataspaceID = H5Screate_simple(2, dimensions, NULL);
 
+	// Chunk the data in order to use compression
+	hsize_t chunkDimensions[] =
+	{
+		20,
+		20
+	};
+
+	// Create a chunk property to set up the compression
+	hid_t listID = H5Pcreate(H5P_DATASET_CREATE);
+	status = H5Pset_chunk(listID, 2, chunkDimensions);
+
+	// Set ZLIB deflate compression
+	status = H5Pset_deflate(listID, 6);
+
 	// Create the dataset
-	hid_t datasetID = H5Dcreate(fileID, name.c_str(), H5T_NATIVE_FLOAT, dataspaceID, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	hid_t datasetID = H5Dcreate(fileID, name.c_str(), H5T_NATIVE_FLOAT, dataspaceID, H5P_DEFAULT, listID, H5P_DEFAULT);
+
+	// Create a class attribute so that this data is interpreted as an image
+	const char* attribute = "IMAGE\0";
+	hsize_t attributeDimension = 6;
+	hid_t attributeDataspaceID = H5Screate_simple(1, &attributeDimension, NULL);
+	hid_t attributeID = H5Acreate(datasetID, "test", H5T_STD_I8BE, attributeDataspaceID, H5P_DEFAULT, H5P_DEFAULT);
+	status = H5Awrite(attributeID, H5T_STD_I8BE, attribute);
 
 	// Write the data
 	status = H5Dwrite(datasetID, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, subresource.pData);
 
 	// Close dataspace and dataset
+	status = H5Aclose(attributeID);
+	status = H5Pclose(listID);
 	status = H5Dclose(datasetID);
 	status = H5Sclose(dataspaceID);
 
