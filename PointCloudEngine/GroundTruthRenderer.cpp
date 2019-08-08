@@ -86,6 +86,21 @@ void GroundTruthRenderer::Update()
 		settings->density = max(0, settings->density - 0.15f * dt);
 	}
 
+	// Save HDF5 file
+	if (Input::GetKeyDown(Keyboard::F10))
+	{
+		// Create a directory for the HDF5 files
+		CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
+
+		// Create and save the file
+		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
+		H5::Group group1 = hdf5file.CreateGroup(L"/group1");
+		H5::Group group2 = hdf5file.CreateGroup(L"/group2");
+
+		hdf5file.AddColorTextureDataset(group1, L"color", backBufferTexture, 1.0f / 2.2f);
+		hdf5file.AddDepthTextureDataset(group2, L"depth", depthStencilTexture);
+	}
+
 	helpTextRenderer->text = L"[H] Toggle help\n";
 
 	// Show help / controls
@@ -100,6 +115,7 @@ void GroundTruthRenderer::Update()
 		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
 		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
 		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[F10] Generate HDF5 Dataset\n");
 		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
 		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
 		helpTextRenderer->text.append(L"[WASD] Move Camera\n");

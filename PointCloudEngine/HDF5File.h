@@ -14,10 +14,13 @@ public:
 	HDF5File(std::string filename);
 	~HDF5File();
 
-	void AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
-	void AddColorTextureDataset(std::string name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
-	void AddDepthTextureDataset(std::wstring name, ID3D11Texture2D* texture);
-	void AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture);
+	H5::Group CreateGroup(std::wstring name);
+	H5::Group CreateGroup(std::string name);
+
+	void AddColorTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
+	void AddColorTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
+	void AddDepthTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture);
+	void AddDepthTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture);
 
 private:
 	H5::H5File* file = NULL;

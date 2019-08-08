@@ -103,11 +103,6 @@ void SaveScreenshotToFile()
 		Beep(750, 75);
 		Beep(1000, 150);
 	}
-
-	// TEST SAVE AS HDF5
-	HDF5File hdf5file(executableDirectory + L"/Screenshots/test.hdf5");
-	hdf5file.AddColorTextureDataset(L"/color", backBufferTexture, 1.0f / 2.2f);
-	hdf5file.AddDepthTextureDataset(L"/depth", depthStencilTexture);
 }
 
 void SetFullscreen(bool fullscreen)

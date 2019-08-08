@@ -15,12 +15,22 @@ HDF5File::~HDF5File()
 	delete file;
 }
 
-void HDF5File::AddColorTextureDataset(std::wstring name, ID3D11Texture2D* texture, float gammaCorrection)
+H5::Group HDF5File::CreateGroup(std::wstring name)
 {
-	AddColorTextureDataset(std::string(name.begin(), name.end()), texture, gammaCorrection);
+	return file->createGroup(std::string(name.begin(), name.end()));
 }
 
-void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture, float gammaCorrection)
+H5::Group HDF5File::CreateGroup(std::string name)
+{
+	return file->createGroup(name);
+}
+
+void HDF5File::AddColorTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection)
+{
+	AddColorTextureDataset(group, std::string(name.begin(), name.end()), texture, gammaCorrection);
+}
+
+void HDF5File::AddColorTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture, float gammaCorrection)
 {
 	// 1. Convert the input RGBA texture into a 32bit RGBA texture
 	// 2. Make it readable by the CPU and convert only the RGB content to a 8bit buffer (skip alpha)
@@ -136,7 +146,7 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 32, 32, 3 });
 
 	// Create the dataset
-	H5::DataSet dataSet = file->createDataSet(name.c_str(), H5::PredType::STD_U8BE, dataSpace, propList);
+	H5::DataSet dataSet = group.createDataSet(name.c_str(), H5::PredType::STD_U8BE, dataSpace, propList);
 
 	// Create attributes so that this data is interpreted as an image
 	SetImageAttributes(dataSet);
@@ -145,12 +155,12 @@ void HDF5File::AddColorTextureDataset(std::string name, ID3D11Texture2D* texture
 	dataSet.write(buffer.data(), H5::PredType::STD_U8BE);
 }
 
-void HDF5File::AddDepthTextureDataset(std::wstring name, ID3D11Texture2D* texture)
+void HDF5File::AddDepthTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture)
 {
-	AddDepthTextureDataset(std::string(name.begin(), name.end()), texture);
+	AddDepthTextureDataset(group, std::string(name.begin(), name.end()), texture);
 }
 
-void HDF5File::AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture)
+void HDF5File::AddDepthTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture)
 {
 	ID3D11Texture2D* readableTexture = NULL;
 
@@ -187,7 +197,7 @@ void HDF5File::AddDepthTextureDataset(std::string name, ID3D11Texture2D* texture
 	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 32, 32 });
 
 	// Create the dataset
-	H5::DataSet dataSet = file->createDataSet(name.c_str(), H5::PredType::NATIVE_FLOAT, dataSpace, propList);
+	H5::DataSet dataSet = group.createDataSet(name.c_str(), H5::PredType::NATIVE_FLOAT, dataSpace, propList);
 
 	// Create attributes so that this data is interpreted as an image
 	SetImageAttributes(dataSet);
