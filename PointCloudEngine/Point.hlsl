@@ -25,7 +25,11 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 
 float4 PS(GS_POINT_OUTPUT input) : SV_TARGET
 {
-	if (useLighting)
+	if (normal)
+	{
+		return float4(0.5f * (input.normal + 1), 1);
+	}
+	else if (useLighting)
 	{
 		return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color), 1);
 	}

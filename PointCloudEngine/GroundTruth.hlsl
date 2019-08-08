@@ -1,4 +1,4 @@
-cbuffer SplatRendererConstantBuffer : register(b0)
+cbuffer GroundTruthRendererConstantBuffer : register(b0)
 {
     float4x4 World;
 //------------------------------------------------------------------------------ (64 byte boundary)
@@ -16,7 +16,7 @@ cbuffer SplatRendererConstantBuffer : register(b0)
     float samplingRate;
 	float blendFactor;
 	bool useBlending;
-	// 4 bytes auto padding
+	bool normal;
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 352 bytes with constant buffer packing rules
 

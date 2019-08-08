@@ -26,6 +26,7 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
+	constantBufferData.normal = false;
 }
 
 void GroundTruthRenderer::Initialize()
@@ -89,12 +90,12 @@ void GroundTruthRenderer::Update()
 		Vector3 center = boundingCubePosition * sceneObject->transform->scale;
 		float r = Vector3::Distance(camera->GetPosition(), center);
 
-		std::wstring datasetNames[4][2] =
+		std::wstring datasetNames[4][3] =
 		{
-			{ L"SplatsColor", L"SplatsDepth" },
-			{ L"SparseSplatsColor", L"SparseSplatsDepth" },
-			{ L"PointsColor", L"PointsDepth" },
-			{ L"SparsePointsColor", L"SparsePointsDepth" }
+			{ L"SplatsColor", L"SplatsNormal", L"SplatsDepth" },
+			{ L"SplatsSparseColor", L"SplatsSparseNormal", L"SplatsSparseDepth" },
+			{ L"PointsColor", L"PointsNormal", L"PointsDepth" },
+			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseDepth" }
 		};
 
 		for (float theta = 0; theta < XM_PI; theta += 0.5f)
@@ -110,27 +111,31 @@ void GroundTruthRenderer::Update()
 				// Calculates view and projection matrices and sets the viewport
 				camera->PrepareDraw();
 
+				// Draw and present in every view mode
 				for (UINT i = 0; i < 4; i++)
 				{
-					// Draw and present in every view mode
 					settings->viewMode = i;
 
+					// Draw and save the color texture
 					HDF5Draw();
-
 					hdf5file.AddColorTextureDataset(group, datasetNames[i][0], backBufferTexture);
 
+					// Draw and save normal texture
+					constantBufferData.normal = true;
+					HDF5Draw();
+					constantBufferData.normal = false;
+					hdf5file.AddColorTextureDataset(group, datasetNames[i][1], backBufferTexture);
+
+					// Draw depth again without blending (depth buffer is cleared when using blending)
 					if (i < 2 && settings->useBlending)
 					{
-						// Depth buffer is cleared when using blending
-						// Disable blending and draw again
 						settings->useBlending = false;
-						
 						HDF5Draw();
-
 						settings->useBlending = true;
 					}
 
-					hdf5file.AddDepthTextureDataset(group, datasetNames[i][1], depthStencilTexture);
+					// Save depth texture
+					hdf5file.AddDepthTextureDataset(group, datasetNames[i][2], depthStencilTexture);
 				}
 			}
 		}

@@ -37,7 +37,7 @@ namespace PointCloudEngine
             float samplingRate;
 			float blendFactor;
 			int useBlending;
-			float padding;
+			int normal;
         };
 
         std::vector<Vertex> vertices;
