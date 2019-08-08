@@ -81,11 +81,30 @@ void GroundTruthRenderer::Update()
 
 		// Create and save the file
 		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
-		H5::Group group1 = hdf5file.CreateGroup(L"/group1");
-		H5::Group group2 = hdf5file.CreateGroup(L"/group2");
 
-		hdf5file.AddColorTextureDataset(group1, L"color", backBufferTexture, 1.0f / 2.2f);
-		hdf5file.AddDepthTextureDataset(group2, L"depth", depthStencilTexture);
+		for (UINT i = 0; i < 10; i++)
+		{
+			H5::Group group = hdf5file.CreateGroup(std::to_wstring(i));
+
+			// Clear the render target
+			float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
+			d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
+
+			// Clear the depth/stencil view
+			d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+			camera->TranslateRUF(0.1f * i, 0, 0);
+
+			// Calculates view and projection matrices and sets the viewport
+			camera->PrepareDraw();
+
+			Draw();
+
+			swapChain->Present(1, 0);
+
+			hdf5file.AddColorTextureDataset(group, L"color", backBufferTexture);
+			hdf5file.AddDepthTextureDataset(group, L"depth", depthStencilTexture);
+		}
 	}
 }
 
