@@ -16,6 +16,8 @@ namespace PointCloudEngine
         void Release();
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
+		void SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer);
+		void SetText(Transform* textTransform, TextRenderer* textRenderer);
 		void RemoveComponentFromSceneObject();
 
     private:
@@ -27,10 +29,6 @@ namespace PointCloudEngine
         bool useComputeShader = true;
 
         Octree *octree = NULL;
-        SceneObject *text = NULL;
-		SceneObject* helpText = NULL;
-        TextRenderer *textRenderer = NULL;
-		TextRenderer* helpTextRenderer = NULL;
 
         // Renderer buffer
         ID3D11Buffer* octreeConstantBuffer = NULL;

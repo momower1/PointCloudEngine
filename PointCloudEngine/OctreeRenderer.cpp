@@ -5,20 +5,6 @@ OctreeRenderer::OctreeRenderer(const std::wstring &pointcloudFile)
     // Create the octree, throws exception on fail
     octree = new Octree(pointcloudFile);
 
-	// Create text renderer to display the controls
-	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	helpText = Hierarchy::Create(L"Help Text");
-	helpText->AddComponent(helpTextRenderer);
-	helpText->transform->position = Vector3(-1, 1, 0.5f);
-	helpText->transform->scale = 0.35f * Vector3::One;
-
-    // Text for showing properties
-	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-    text = Hierarchy::Create(L"OctreeRendererText");
-    text->AddComponent(textRenderer);
-    text->transform->position = Vector3(-1.0f, -0.635f, 0);
-    text->transform->scale = 0.35f * Vector3::One;
-
     // Initialize constant buffer data
 	octreeConstantBufferData.fovAngleY = settings->fovAngleY;
 	octreeConstantBufferData.splatResolution = 0.01f;
@@ -158,47 +144,6 @@ void OctreeRenderer::Update()
 	{
 		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
 	}
-
-	helpTextRenderer->text = L"[H] Toggle help\n";
-
-	// Show help / controls
-	if (settings->help)
-	{
-		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
-		helpTextRenderer->text.append(L"[R] Switch to ground truth renderer\n");
-		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
-		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
-		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
-		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
-		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
-		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
-		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
-		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
-		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-		helpTextRenderer->text.append(L"[ESC] Quit\n");
-	}
-
-    // Set the text
-	textRenderer->text = std::wstring(L"View Mode: ") + ((settings->viewMode == 0) ? L"Splats\n" : ((settings->viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
-	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
-
-    int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
-	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
-	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-    textRenderer->text.append(L"Octree Level: ");
-    textRenderer->text.append((octreeConstantBufferData.level < 0) ? L"AUTO" : std::to_wstring(octreeConstantBufferData.level));
-    textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferCount));
 }
 
 void OctreeRenderer::Draw()
@@ -298,9 +243,6 @@ void OctreeRenderer::Release()
 {
     SafeDelete(octree);
 
-    Hierarchy::ReleaseSceneObject(text);
-	Hierarchy::ReleaseSceneObject(helpText);
-
     SAFE_RELEASE(nodesBuffer);
     SAFE_RELEASE(firstBuffer);
     SAFE_RELEASE(secondBuffer);
@@ -318,6 +260,54 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 {
 	outPosition = octree->rootPosition;
 	outSize = octree->rootSize;
+}
+
+void PointCloudEngine::OctreeRenderer::SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer)
+{
+	helpTextTransform->position = Vector3(-1, 1, 0.5f);
+	helpTextRenderer->text = L"[H] Toggle help\n";
+
+	if (settings->help)
+	{
+		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
+		helpTextRenderer->text.append(L"[T] Toggle text visibility\n");
+		helpTextRenderer->text.append(L"[R] Switch to ground truth renderer\n");
+		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
+		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
+		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
+		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
+		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
+		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
+		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
+		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
+		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
+		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
+		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
+		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
+		helpTextRenderer->text.append(L"[F9] Screenshot\n");
+		helpTextRenderer->text.append(L"[ESC] Quit\n");
+	}
+}
+
+void PointCloudEngine::OctreeRenderer::SetText(Transform* textTransform, TextRenderer* textRenderer)
+{
+	textTransform->position = Vector3(-1.0f, -0.635f, 0);
+	textRenderer->text = std::wstring(L"View Mode: ") + ((settings->viewMode == 0) ? L"Splats\n" : ((settings->viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
+	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
+
+	int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
+	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
+	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
+	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
+	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"On, " : L"Off, "));
+	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
+	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
+	textRenderer->text.append(L"Octree Level: ");
+	textRenderer->text.append((octreeConstantBufferData.level < 0) ? L"AUTO" : std::to_wstring(octreeConstantBufferData.level));
+	textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferCount));
 }
 
 void PointCloudEngine::OctreeRenderer::RemoveComponentFromSceneObject()

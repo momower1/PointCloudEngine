@@ -21,6 +21,9 @@ namespace PointCloudEngine
         // Used to automatically initialize the component e.g. when it is created at runtime
         bool initialized = false;
 
+		// Disabled components won't be updated or drawn
+		bool enabled = true;
+
 		// The scene object that this component is attached to
 		SceneObject* sceneObject = NULL;
     };

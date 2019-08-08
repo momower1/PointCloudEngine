@@ -80,7 +80,10 @@ void SceneObject::Update()
             component->initialized = true;
         }
 
-        component->Update();
+		if (component->enabled)
+		{
+			component->Update();
+		}
     }
 }
 
@@ -88,7 +91,12 @@ void SceneObject::Draw()
 {
     for (auto it = components.begin(); it != components.end(); it++)
     {
-        (*it)->Draw();
+		Component *component = *it;
+
+		if (component->enabled)
+		{
+			component->Draw();
+		}
     }
 }
 

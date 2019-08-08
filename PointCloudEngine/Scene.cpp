@@ -5,6 +5,27 @@ void Scene::Initialize()
     // Create the object for the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
 
+	// Create text renderer to display the controls
+	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	helpText = Hierarchy::Create(L"Help Text");
+	helpText->AddComponent(helpTextRenderer);
+	helpText->transform->position = Vector3(-1, 1, 0.5f);
+	helpText->transform->scale = 0.35f * Vector3::One;
+
+	// Text for showing properties
+	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	text = Hierarchy::Create(L"OctreeRendererText");
+	text->AddComponent(textRenderer);
+	text->transform->position = Vector3(-1.0f, -0.635f, 0);
+	text->transform->scale = 0.35f * Vector3::One;
+
+	// Create fps text in top right corner
+	fpsTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	fpsText = Hierarchy::Create(L"FPS Text");
+	fpsText->AddComponent(fpsTextRenderer);
+	fpsText->transform->position = Vector3(0.825f, 1, 0.5f);
+	fpsText->transform->scale = 0.35f * Vector3::One;
+
 	// Create startup text
 	TextRenderer* startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
 	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files by generating an octree.\nYou can convert .ply files with the PlyToPointcloud.exe!\nYou can change parameters (resolution, ...) in the settings file.\n\n\nPress [O] to open a .pointcloud file.\nOnly x,y,z,nx,ny,nz,red,green,blue format is supported.";
@@ -20,13 +41,6 @@ void Scene::Initialize()
     loadingText->AddComponent(loadingTextRenderer);
     loadingText->transform->scale = Vector3::Zero;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
-
-	// Create fps text in top right corner
-	fpsTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	fpsText = Hierarchy::Create(L"FPS Text");
-	fpsText->AddComponent(fpsTextRenderer);
-	fpsText->transform->position = Vector3(0.825f, 1, 0.5f);
-	fpsText->transform->scale = 0.35f * Vector3::One;
 
 	// Create the constant buffer for the lighting
 	D3D11_BUFFER_DESC lightingConstantBufferDesc;
@@ -48,6 +62,14 @@ void Scene::Update(Timer &timer)
 	if (Input::GetKeyDown(Keyboard::H))
 	{
 		settings->help = !settings->help;
+	}
+
+	// Toggle text visibility
+	if (Input::GetKeyDown(Keyboard::T))
+	{
+		textRenderer->enabled = !textRenderer->enabled;
+		helpTextRenderer->enabled = !helpTextRenderer->enabled;
+		fpsTextRenderer->enabled = !fpsTextRenderer->enabled;
 	}
 
 	// Screenshot on F9
@@ -164,6 +186,13 @@ void Scene::Update(Timer &timer)
 
 	// FPS counter
 	fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
+
+	// Set the other text
+	if (pointCloudRenderer != NULL)
+	{
+		pointCloudRenderer->SetText(text->transform, textRenderer);
+		pointCloudRenderer->SetHelpText(helpText->transform, helpTextRenderer);
+	}
 
     // Check if there is a file that should be loaded delayed
     if (timeUntilLoadFile > 0)

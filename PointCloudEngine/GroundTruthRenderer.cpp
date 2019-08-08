@@ -24,19 +24,6 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 	boundingCubePosition = minPosition + 0.5f * diagonal;
 	boundingCubeSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
-	// Create text renderer to display the controls
-	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	helpText = Hierarchy::Create(L"Help Text");
-	helpText->AddComponent(helpTextRenderer);
-	helpText->transform->position = Vector3(-1, 1, 0.5f);
-	helpText->transform->scale = 0.35f * Vector3::One;
-
-	// Text for showing properties
-	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	text = Hierarchy::Create(L"GroundTruthRendererText");
-	text->AddComponent(textRenderer);
-	text->transform->scale = 0.35f * Vector3::One;
-
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
 }
@@ -99,71 +86,6 @@ void GroundTruthRenderer::Update()
 
 		hdf5file.AddColorTextureDataset(group1, L"color", backBufferTexture, 1.0f / 2.2f);
 		hdf5file.AddDepthTextureDataset(group2, L"depth", depthStencilTexture);
-	}
-
-	helpTextRenderer->text = L"[H] Toggle help\n";
-
-	// Show help / controls
-	if (settings->help)
-	{
-		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
-		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");
-		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
-		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
-		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
-		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
-		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[F10] Generate HDF5 Dataset\n");
-		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
-		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-		helpTextRenderer->text.append(L"[ESC] Quit\n");
-	}
-
-	// Set the text
-	if (settings->viewMode % 2 == 0)
-	{
-		text->transform->position = Vector3(-1.0f, -0.735f, 0);
-
-		if (settings->viewMode == 0)
-		{
-			textRenderer->text = std::wstring(L"View Mode: Splats\n");
-		}
-		else
-		{
-			textRenderer->text = std::wstring(L"View Mode: Points\n");
-		}
-
-		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-		textRenderer->text.append(L"Vertex Count: " + std::to_wstring(vertices.size()) + L"\n");
-	}
-	else
-	{
-		text->transform->position = Vector3(-1.0f, -0.685f, 0);
-
-		if (settings->viewMode == 1)
-		{
-			textRenderer->text = std::wstring(L"View Mode: Sparse Splats\n");
-		}
-		else
-		{
-			textRenderer->text = std::wstring(L"View Mode: Sparse Points\n");
-		}
-
-		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->sparseSamplingRate) + L"\n");
-		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-		textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
-		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-		textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
 	}
 }
 
@@ -240,9 +162,6 @@ void GroundTruthRenderer::Draw()
 
 void GroundTruthRenderer::Release()
 {
-	Hierarchy::ReleaseSceneObject(text);
-	Hierarchy::ReleaseSceneObject(helpText);
-
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
 }
@@ -251,6 +170,77 @@ void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vecto
 {
 	outPosition = boundingCubePosition;
 	outSize = boundingCubeSize;
+}
+
+void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer)
+{
+	helpTextTransform->position = Vector3(-1, 1, 0.5f);
+	helpTextRenderer->text = L"[H] Toggle help\n";
+
+	if (settings->help)
+	{
+		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
+		helpTextRenderer->text.append(L"[T] Toggle text visibility\n");
+		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");
+		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
+		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
+		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
+		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
+		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
+		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
+		helpTextRenderer->text.append(L"[F10] Generate HDF5 Dataset\n");
+		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
+		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
+		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
+		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
+		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
+		helpTextRenderer->text.append(L"[F9] Screenshot\n");
+		helpTextRenderer->text.append(L"[ESC] Quit\n");
+	}
+}
+
+void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, TextRenderer* textRenderer)
+{
+	if (settings->viewMode % 2 == 0)
+	{
+		textTransform->position = Vector3(-1.0f, -0.735f, 0);
+
+		if (settings->viewMode == 0)
+		{
+			textRenderer->text = std::wstring(L"View Mode: Splats\n");
+		}
+		else
+		{
+			textRenderer->text = std::wstring(L"View Mode: Points\n");
+		}
+
+		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
+		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
+		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
+		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
+		textRenderer->text.append(L"Vertex Count: " + std::to_wstring(vertices.size()) + L"\n");
+	}
+	else
+	{
+		textTransform->position = Vector3(-1.0f, -0.685f, 0);
+
+		if (settings->viewMode == 1)
+		{
+			textRenderer->text = std::wstring(L"View Mode: Sparse Splats\n");
+		}
+		else
+		{
+			textRenderer->text = std::wstring(L"View Mode: Sparse Points\n");
+		}
+
+		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->sparseSamplingRate) + L"\n");
+		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
+		textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
+		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
+		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
+		textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
+	}
 }
 
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
