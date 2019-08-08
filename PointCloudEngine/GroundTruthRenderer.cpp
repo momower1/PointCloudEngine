@@ -86,8 +86,8 @@ void GroundTruthRenderer::Update()
 		Vector3 startPosition = camera->GetPosition();
 		Matrix startRotation = camera->GetRotationMatrix();
 
-		float r = Vector3::Distance(camera->GetPosition(), sceneObject->transform->position);
 		Vector3 center = boundingCubePosition * sceneObject->transform->scale;
+		float r = Vector3::Distance(camera->GetPosition(), center);
 
 		std::wstring datasetNames[4][2] =
 		{
