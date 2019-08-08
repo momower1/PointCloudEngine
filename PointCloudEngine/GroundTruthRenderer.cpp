@@ -82,11 +82,20 @@ void GroundTruthRenderer::Update()
 		// Create and save the file
 		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
 
+		int startViewMode = settings->viewMode;
 		Vector3 startPosition = camera->GetPosition();
 		Matrix startRotation = camera->GetRotationMatrix();
 
 		float r = Vector3::Distance(camera->GetPosition(), sceneObject->transform->position);
 		Vector3 center = boundingCubePosition * sceneObject->transform->scale;
+
+		std::wstring datasetNames[4][2] =
+		{
+			{ L"SplatsColor", L"SplatsDepth" },
+			{ L"SparseSplatsColor", L"SparseSplatsDepth" },
+			{ L"PointsColor", L"PointsDepth" },
+			{ L"SparsePointsColor", L"SparsePointsDepth" }
+		};
 
 		for (float theta = 0; theta < XM_PI; theta += 0.5f)
 		{
@@ -94,30 +103,42 @@ void GroundTruthRenderer::Update()
 			{
 				H5::Group group = hdf5file.CreateGroup(std::to_wstring(theta) + L"," + std::to_wstring(phi));
 
-				// Clear the render target
-				float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
-				d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
-
-				// Clear the depth/stencil view
-				d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
+				// Rotate around and look at the center
 				camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
 				camera->LookAt(center);
 
 				// Calculates view and projection matrices and sets the viewport
 				camera->PrepareDraw();
 
-				Draw();
+				for (UINT i = 0; i < 4; i++)
+				{
+					// Draw and present in every view mode
+					settings->viewMode = i;
 
-				swapChain->Present(1, 0);
+					HDF5Draw();
 
-				hdf5file.AddColorTextureDataset(group, L"color", backBufferTexture);
-				hdf5file.AddDepthTextureDataset(group, L"depth", depthStencilTexture);
+					hdf5file.AddColorTextureDataset(group, datasetNames[i][0], backBufferTexture);
+
+					if (i < 2 && settings->useBlending)
+					{
+						// Depth buffer is cleared when using blending
+						// Disable blending and draw again
+						settings->useBlending = false;
+						
+						HDF5Draw();
+
+						settings->useBlending = true;
+					}
+
+					hdf5file.AddDepthTextureDataset(group, datasetNames[i][1], depthStencilTexture);
+				}
 			}
 		}
 
+		// Reset properties
 		camera->SetPosition(startPosition);
 		camera->SetRotationMatrix(startRotation);
+		settings->viewMode = startViewMode;
 	}
 }
 
@@ -278,4 +299,20 @@ void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, Te
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
+}
+
+void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
+{
+	// Clear the render target
+	float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
+	d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
+
+	// Clear the depth/stencil view
+	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	// Draw
+	Draw();
+
+	// Present the result to the screen
+	swapChain->Present(1, 0);
 }

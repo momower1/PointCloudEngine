@@ -46,6 +46,8 @@ namespace PointCloudEngine
         // Vertex buffer
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
         ID3D11Buffer* constantBuffer;
+
+		void HDF5Draw();
     };
 }
 #endif
