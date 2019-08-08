@@ -82,29 +82,42 @@ void GroundTruthRenderer::Update()
 		// Create and save the file
 		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
 
-		for (UINT i = 0; i < 10; i++)
+		Vector3 startPosition = camera->GetPosition();
+		Matrix startRotation = camera->GetRotationMatrix();
+
+		float r = Vector3::Distance(camera->GetPosition(), sceneObject->transform->position);
+		Vector3 center = boundingCubePosition * sceneObject->transform->scale;
+
+		for (float theta = 0; theta < XM_PI; theta += 0.5f)
 		{
-			H5::Group group = hdf5file.CreateGroup(std::to_wstring(i));
+			for (float phi = 0; phi < 2 * XM_PI; phi += 0.5f)
+			{
+				H5::Group group = hdf5file.CreateGroup(std::to_wstring(theta) + L"," + std::to_wstring(phi));
 
-			// Clear the render target
-			float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
-			d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
+				// Clear the render target
+				float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
+				d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
 
-			// Clear the depth/stencil view
-			d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+				// Clear the depth/stencil view
+				d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-			camera->TranslateRUF(0.1f * i, 0, 0);
+				camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
+				camera->LookAt(center);
 
-			// Calculates view and projection matrices and sets the viewport
-			camera->PrepareDraw();
+				// Calculates view and projection matrices and sets the viewport
+				camera->PrepareDraw();
 
-			Draw();
+				Draw();
 
-			swapChain->Present(1, 0);
+				swapChain->Present(1, 0);
 
-			hdf5file.AddColorTextureDataset(group, L"color", backBufferTexture);
-			hdf5file.AddDepthTextureDataset(group, L"depth", depthStencilTexture);
+				hdf5file.AddColorTextureDataset(group, L"color", backBufferTexture);
+				hdf5file.AddDepthTextureDataset(group, L"depth", depthStencilTexture);
+			}
 		}
+
+		camera->SetPosition(startPosition);
+		camera->SetRotationMatrix(startRotation);
 	}
 }
 

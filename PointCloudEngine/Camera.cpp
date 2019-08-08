@@ -34,7 +34,16 @@ void PointCloudEngine::Camera::Rotate(float x, float y, float z)
 
 void PointCloudEngine::Camera::LookAt(Vector3 targetPosition)
 {
-    rotation = Matrix::CreateLookAt(position, targetPosition, Vector3::Up);
+	// Create the corresponding camera view matrix
+	view = XMMatrixLookAtLH(position, targetPosition, Vector3::UnitY);
+
+	// Decompose it
+	XMVECTOR outScale, outTranslation, outRotation;
+	XMMatrixDecompose(&outScale, &outRotation, &outTranslation, view);
+
+	// Only get the actual rotation matrix
+	rotation = Matrix::CreateFromQuaternion(outRotation).Invert();
+
     recalculate = true;
 }
 
