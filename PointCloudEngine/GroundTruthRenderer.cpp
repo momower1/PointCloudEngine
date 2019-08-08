@@ -74,7 +74,7 @@ void GroundTruthRenderer::Update()
 	}
 
 	// Save HDF5 file
-	if (Input::GetKeyDown(Keyboard::F10))
+	if (Input::GetKeyDown(Keyboard::F8))
 	{
 		// Create a directory for the HDF5 files
 		CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
@@ -242,7 +242,7 @@ void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTrans
 		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
 		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
 		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[F10] Generate HDF5 Dataset\n");
+		helpTextRenderer->text.append(L"[F8] Generate HDF5 Dataset\n");
 		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
 		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
 		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
