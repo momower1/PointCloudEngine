@@ -42,6 +42,7 @@ namespace PointCloudEngine
 		// Ground truth parameters
 		float density = 1.0f;
 		float sparseSamplingRate = 0.01f;
+		float stepSizeHDF5 = 0.5f;
 
 		// Octree parameters
 		bool useOctree = false;

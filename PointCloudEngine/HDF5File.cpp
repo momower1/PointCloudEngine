@@ -143,7 +143,7 @@ void HDF5File::AddColorTextureDataset(H5::Group group, std::string name, ID3D11T
 	H5::DataSpace dataSpace = CreateDataspace({ readableTextureDesc.Height, readableTextureDesc.Width, 3 });
 
 	// Create a property list to set up the chunking and ZLIB deflate compression
-	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 32, 32, 3 });
+	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 64, 64, 3 });
 
 	// Create the dataset
 	H5::DataSet dataSet = group.createDataSet(name.c_str(), H5::PredType::STD_U8BE, dataSpace, propList);
@@ -194,7 +194,7 @@ void HDF5File::AddDepthTextureDataset(H5::Group group, std::string name, ID3D11T
 	H5::DataSpace dataSpace = CreateDataspace({ textureDesc.Height, textureDesc.Width });
 
 	// Create a property list to set up the chunking and ZLIB deflate compression
-	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 32, 32 });
+	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 64, 64 });
 
 	// Create the dataset
 	H5::DataSet dataSet = group.createDataSet(name.c_str(), H5::PredType::NATIVE_FLOAT, dataSpace, propList);

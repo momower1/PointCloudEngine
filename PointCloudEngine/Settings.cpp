@@ -106,6 +106,10 @@ PointCloudEngine::Settings::Settings()
 				{
 					sparseSamplingRate = std::stof(variableValue);
 				}
+				else if (variableName.compare(NAMEOF(stepSizeHDF5)) == 0)
+				{
+					stepSizeHDF5 = std::stof(variableValue);
+				}
 				else if (variableName.compare(NAMEOF(useOctree)) == 0)
 				{
 					useOctree = std::stoi(variableValue);
@@ -178,6 +182,7 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# Ground Truth Parameters" << std::endl;
 	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
 	settingsFile << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
+	settingsFile << NAMEOF(stepSizeHDF5) << L"=" << stepSizeHDF5 << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
