@@ -10,11 +10,19 @@
 
 using namespace DirectX::SimpleMath;
 
-struct Vertex
+struct PlyVertex
 {
 	// Stores the .ply file vertices
 	Vector3 position;
 	Vector3 normal;
+	unsigned char color[3];
+};
+
+struct PointcloudVertex
+{
+	// Stores the .pointcloud vertices
+	Vector3 position;
+	char normal[3];
 	unsigned char color[3];
 };
 
@@ -48,31 +56,45 @@ void PlyToPointcloud(const std::string& plyfile)
 		size_t strideColors = rawColors->buffer.size_bytes() / count;
 
 		// When this trows an std::bad_alloc exception, the memory requirement is large -> build with x64
-		std::vector<Vertex> vertices(count);
+		std::vector<PlyVertex> plyVertices(count);
 
 		// Fill each vertex with its data
 		for (int i = 0; i < count; i++)
 		{
-			std::memcpy(&vertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
-			std::memcpy(&vertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
-			std::memcpy(&vertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
+			std::memcpy(&plyVertices[i].position, rawPositions->buffer.get() + i * stridePositions, stridePositions);
+			std::memcpy(&plyVertices[i].normal, rawNormals->buffer.get() + i * strideNormals, strideNormals);
+			std::memcpy(&plyVertices[i].color, rawColors->buffer.get() + i * strideColors, strideColors);
 
 			// Make sure that the normals are normalized
-			vertices[i].normal.Normalize();
+			plyVertices[i].normal.Normalize();
 		}
 
 		// Randomly shuffle the vertices in order to be able to easily select the density by looking at the first k entries (used in GroundTruthRenderer)
-		std::random_shuffle(vertices.begin(), vertices.end());
+		std::random_shuffle(plyVertices.begin(), plyVertices.end());
+
+		// Convert into .pointcloud vertices (smaller size due to normal quantization)
+		std::vector<PointcloudVertex> pointcloudVertices(count);
+
+		for (UINT i = 0; i < count; i++)
+		{
+			pointcloudVertices[i].position = plyVertices[i].position;
+			pointcloudVertices[i].normal[0] = 127 * plyVertices[i].normal.x;
+			pointcloudVertices[i].normal[1] = 127 * plyVertices[i].normal.y;
+			pointcloudVertices[i].normal[2] = 127 * plyVertices[i].normal.z;
+			pointcloudVertices[i].color[0] = plyVertices[i].color[0];
+			pointcloudVertices[i].color[1] = plyVertices[i].color[1];
+			pointcloudVertices[i].color[2] = plyVertices[i].color[2];
+		}
 
 		// Write the .pointcloud file
 		std::ofstream pointcloudFile(plyfile.substr(0, plyfile.length() - 3) + "pointcloud", std::ios::out | std::ios::binary);
 
 		// Write the size of the vector
-		UINT vertexCount = vertices.size();
+		UINT vertexCount = pointcloudVertices.size();
 		pointcloudFile.write((char*)&vertexCount, sizeof(UINT));
 
 		// Write the vertices data in binary format
-		pointcloudFile.write((char*)vertices.data(), vertexCount * sizeof(Vertex));
+		pointcloudFile.write((char*)pointcloudVertices.data(), vertexCount * sizeof(PointcloudVertex));
 
 		pointcloudFile.flush();
 		pointcloudFile.close();
@@ -99,8 +121,22 @@ void PointcloudToPly(std::string pointcloudfile)
 		file.read((char*)&vertexCount, sizeof(UINT));
 
 		// Read the binary data directly into the vertices vector
-		std::vector<Vertex> vertices(vertexCount);
-		file.read((char*)vertices.data(), vertexCount * sizeof(Vertex));
+		std::vector<PointcloudVertex> pointcloudVertices(vertexCount);
+		file.read((char*)pointcloudVertices.data(), vertexCount * sizeof(PointcloudVertex));
+
+		// Convert to .ply vertices
+		std::vector<PlyVertex> plyVertices(vertexCount);
+
+		for (UINT i = 0; i < vertexCount; i++)
+		{
+			plyVertices[i].position = pointcloudVertices[i].position;
+			plyVertices[i].normal.x = pointcloudVertices[i].normal[0] / 127.0f;
+			plyVertices[i].normal.y = pointcloudVertices[i].normal[1] / 127.0f;
+			plyVertices[i].normal.z = pointcloudVertices[i].normal[2] / 127.0f;
+			plyVertices[i].color[0] = pointcloudVertices[i].color[0];
+			plyVertices[i].color[1] = pointcloudVertices[i].color[1];
+			plyVertices[i].color[2] = pointcloudVertices[i].color[2];
+		}
 
 		// Write the .ply file
 		std::ofstream plyfile(pointcloudfile.substr(0, pointcloudfile.length() - 10) + "ply", std::ios::out | std::ios::binary);
@@ -124,9 +160,9 @@ void PointcloudToPly(std::string pointcloudfile)
 		// Write the vertices data in binary format
 		for (int i = 0; i < vertexCount; i++)
 		{
-			plyfile.write((char*)&vertices[i].position, sizeof(Vector3));
-			plyfile.write((char*)&vertices[i].normal, sizeof(Vector3));
-			plyfile.write((char*)&vertices[i].color, 3 * sizeof(char));
+			plyfile.write((char*)&plyVertices[i].position, sizeof(Vector3));
+			plyfile.write((char*)&plyVertices[i].normal, sizeof(Vector3));
+			plyfile.write((char*)&plyVertices[i].color, 3 * sizeof(char));
 		}
 
 		plyfile.flush();

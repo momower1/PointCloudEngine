@@ -69,9 +69,17 @@ bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &point
 {
     try
     {
+		struct PointcloudVertex
+		{
+			// Stores the .pointcloud vertices
+			Vector3 position;
+			char normal[3];
+			unsigned char color[3];
+		};
+
 		// Try to load the point cloud from the file
 		// This file has a header with the length of the array
-		// Then the position, normal and 8bit rgb color of each vertex is stored in binary data
+		// Then the position, 8bit normal and 8bit rgb color of each vertex is stored in binary data
 		std::ifstream file(pointcloudFile, std::ios::in | std::ios::binary);
 
 		// Load the size of the vertices vector
@@ -79,8 +87,22 @@ bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &point
 		file.read((char*)&vertexCount, sizeof(UINT));
 
 		// Read the binary data directly into the vertices vector
+		std::vector<PointcloudVertex> pointcloudVertices = std::vector<PointcloudVertex>(vertexCount);
+		file.read((char*)pointcloudVertices.data(), vertexCount * sizeof(PointcloudVertex));
+
+		// Convert to the required vertex format
 		vertices = std::vector<Vertex>(vertexCount);
-		file.read((char*)vertices.data(), vertexCount * sizeof(Vertex));
+
+		for (UINT i = 0; i < vertexCount; i++)
+		{
+			vertices[i].position = pointcloudVertices[i].position;
+			vertices[i].normal.x = pointcloudVertices[i].normal[0] / 127.0f;
+			vertices[i].normal.y = pointcloudVertices[i].normal[1] / 127.0f;
+			vertices[i].normal.z = pointcloudVertices[i].normal[2] / 127.0f;
+			vertices[i].color[0] = pointcloudVertices[i].color[0];
+			vertices[i].color[1] = pointcloudVertices[i].color[1];
+			vertices[i].color[2] = pointcloudVertices[i].color[2];
+		}
     }
     catch (const std::exception &e)
     {

@@ -27,6 +27,8 @@ namespace PointCloudEngine
 		TextRenderer* textRenderer = NULL;
 		TextRenderer* helpTextRenderer = NULL;
 		TextRenderer *fpsTextRenderer = NULL;
+		TextRenderer* startupTextRenderer = NULL;
+		TextRenderer* loadingTextRenderer = NULL;
         IRenderer *pointCloudRenderer = NULL;
 
         Vector2 input;

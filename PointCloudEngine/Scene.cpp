@@ -7,6 +7,7 @@ void Scene::Initialize()
 
 	// Create text renderer to display the controls
 	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	helpTextRenderer->enabled = false;
 	helpText = Hierarchy::Create(L"Help Text");
 	helpText->AddComponent(helpTextRenderer);
 	helpText->transform->position = Vector3(-1, 1, 0.5f);
@@ -14,6 +15,7 @@ void Scene::Initialize()
 
 	// Text for showing properties
 	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	textRenderer->enabled = false;
 	text = Hierarchy::Create(L"OctreeRendererText");
 	text->AddComponent(textRenderer);
 	text->transform->position = Vector3(-1.0f, -0.635f, 0);
@@ -21,13 +23,14 @@ void Scene::Initialize()
 
 	// Create fps text in top right corner
 	fpsTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
+	fpsTextRenderer->enabled = false;
 	fpsText = Hierarchy::Create(L"FPS Text");
 	fpsText->AddComponent(fpsTextRenderer);
 	fpsText->transform->position = Vector3(0.825f, 1, 0.5f);
 	fpsText->transform->scale = 0.35f * Vector3::One;
 
 	// Create startup text
-	TextRenderer* startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
+	startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
 	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files by generating an octree.\nYou can convert .ply files with the PlyToPointcloud.exe!\nYou can change parameters (resolution, ...) in the settings file.\n\n\nPress [O] to open a .pointcloud file.\nOnly x,y,z,nx,ny,nz,red,green,blue format is supported.";
 	startupText = Hierarchy::Create(L"Startup Text");
 	startupText->AddComponent(startupTextRenderer);
@@ -35,11 +38,12 @@ void Scene::Initialize()
 	startupText->transform->position = Vector3(-0.95f, 0.4f, 0.5f);
 
     // Create loading text and hide it
-    TextRenderer *loadingTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
+    loadingTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
+	loadingTextRenderer->enabled = false;
     loadingTextRenderer->text = L"Loading...";
     loadingText = Hierarchy::Create(L"Loading Text");
     loadingText->AddComponent(loadingTextRenderer);
-    loadingText->transform->scale = Vector3::Zero;
+	loadingText->transform->scale = Vector3::One;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
 	// Create the constant buffer for the lighting
@@ -279,10 +283,10 @@ void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
         settings->pointcloudFile = filepath;
 
 		// Hide the startup text
-		startupText->transform->scale = Vector3::Zero;
+		startupTextRenderer->enabled = false;
 
         // Show huge loading text
-        loadingText->transform->scale = Vector3::One;
+		loadingTextRenderer->enabled = true;
     }
 }
 
@@ -331,8 +335,13 @@ void PointCloudEngine::Scene::LoadFile()
     }
 
     // Hide loading text
-    loadingText->transform->scale = Vector3::Zero;
+	loadingTextRenderer->enabled = false;
     timeSinceLoadFile = 0;
+
+	// Show the other text
+	helpTextRenderer->enabled = true;
+	fpsTextRenderer->enabled = true;
+	textRenderer->enabled = true;
 
     // Reset point cloud
     pointCloud->transform->position = Vector3::Zero;
