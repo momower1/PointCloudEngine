@@ -74,7 +74,10 @@ void PlyToPointcloud(const std::string& plyfile)
 
 		// Convert into .pointcloud vertices (smaller size due to normal quantization)
 		std::vector<PointcloudVertex> pointcloudVertices(count);
+		Vector3 minPosition = plyVertices.front().position;
+		Vector3 maxPosition = minPosition;
 
+		// Also calculate center and size of the bounding cube that fully encloses the point cloud
 		for (UINT i = 0; i < count; i++)
 		{
 			pointcloudVertices[i].position = plyVertices[i].position;
@@ -84,10 +87,23 @@ void PlyToPointcloud(const std::string& plyfile)
 			pointcloudVertices[i].color[0] = plyVertices[i].color[0];
 			pointcloudVertices[i].color[1] = plyVertices[i].color[1];
 			pointcloudVertices[i].color[2] = plyVertices[i].color[2];
+
+			minPosition = Vector3::Min(minPosition, plyVertices[i].position);
+			maxPosition = Vector3::Max(maxPosition, plyVertices[i].position);
 		}
+
+		Vector3 diagonal = maxPosition - minPosition;
+		Vector3 boundingCubePosition = minPosition + 0.5f * diagonal;
+		float boundingCubeSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
 		// Write the .pointcloud file
 		std::ofstream pointcloudFile(plyfile.substr(0, plyfile.length() - 3) + "pointcloud", std::ios::out | std::ios::binary);
+
+		// Write the bounding cube position
+		pointcloudFile.write((char*)&boundingCubePosition, sizeof(Vector3));
+
+		// Write the bounding cube size
+		pointcloudFile.write((char*)&boundingCubeSize, sizeof(float));
 
 		// Write the size of the vector
 		UINT vertexCount = pointcloudVertices.size();
@@ -115,6 +131,9 @@ void PointcloudToPly(std::string pointcloudfile)
 	{
 		// Try to load the point cloud from the file
 		std::ifstream file(pointcloudfile, std::ios::in | std::ios::binary);
+
+		// Ignore the bounding cube position and size
+		file.ignore(sizeof(Vector3) + sizeof(float));
 
 		// Load the size of the vertices vector
 		UINT vertexCount;
@@ -180,7 +199,18 @@ int main(int argc, char* argv[])
 {
 	std::cout << "This program converts between .ply and .pointcloud file format!" << std::endl;
 	std::cout << "Only ply files with (x,y,z,nx,ny,nz,red,green,blue) format are supported!" << std::endl;
-	std::cout << "You can generate this ply format by exporting files with e.g. MeshLab." << std::endl;
+	std::cout << "You can generate this ply format by exporting files with e.g. MeshLab." << std::endl << std::endl;
+	
+	std::cout << "The .pointcloud file format stores the following binary data:" << std::endl;
+	std::cout << "\tVector3 - position of the bounding cube" << std::endl;
+	std::cout << "\tfloat - size of the bounding cube" << std::endl;
+	std::cout << "\tuint - length of the vertex array" << std::endl;
+	std::cout << "\tvector - list of vertices" << std::endl;
+	std::cout << "Each vertex consists of:" << std::endl;
+	std::cout << "\tVector3 - position" << std::endl;
+	std::cout << "\tchar[3] - normalized normal" << std::endl;
+	std::cout << "\tuchar[3] - rgb color" << std::endl << std::endl;
+	
 	std::cout << "Drag and drop .ply files to generate the corresponding .pointcloud files." << std::endl;
 	std::cout << "Drag and drop .pointcloud files to generate the original .ply file." << std::endl << std::endl;
 

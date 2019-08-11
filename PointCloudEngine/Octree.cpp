@@ -7,27 +7,10 @@ PointCloudEngine::Octree::Octree(const std::wstring &pointcloudFile)
         // Try to load .pointcloud file here
         std::vector<Vertex> vertices;
 
-        if (!LoadPointcloudFile(vertices, pointcloudFile))
+        if (!LoadPointcloudFile(vertices, rootPosition, rootSize, pointcloudFile))
         {
             throw std::exception("Could not load .pointcloud file!");
         }
-
-        // Calculate center and size of the root node
-        Vector3 minPosition = vertices.front().position;
-        Vector3 maxPosition = minPosition;
-
-        for (auto it = vertices.begin(); it != vertices.end(); it++)
-        {
-            Vertex v = *it;
-
-            minPosition = Vector3::Min(minPosition, v.position);
-            maxPosition = Vector3::Max(maxPosition, v.position);
-        }
-
-		// Compute the root node position and size, will be used to compute all the other node positions and sizes at runtime
-        Vector3 diagonal = maxPosition - minPosition;
-        rootPosition = minPosition + 0.5f * diagonal;
-        rootSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
 		// Stores the indices in the nodes array of the children of a node
 		// Will only be used while creating the octree (for simplicity)

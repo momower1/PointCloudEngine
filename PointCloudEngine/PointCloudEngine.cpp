@@ -65,10 +65,10 @@ void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int
 	}
 }
 
-bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &pointcloudFile)
+bool LoadPointcloudFile(std::vector<Vertex>& outVertices, Vector3& outBoundingCubePosition, float& outBoundingCubeSize, const std::wstring& pointcloudFile)
 {
-    try
-    {
+	try
+	{
 		struct PointcloudVertex
 		{
 			// Stores the .pointcloud vertices
@@ -78,9 +78,13 @@ bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &point
 		};
 
 		// Try to load the point cloud from the file
-		// This file has a header with the length of the array
+		// This file has a header with the bounding cube position and size followed by the length of the vertex array
 		// Then the position, 8bit normal and 8bit rgb color of each vertex is stored in binary data
 		std::ifstream file(pointcloudFile, std::ios::in | std::ios::binary);
+
+		// Load the bounding cube position and size
+		file.read((char*)&outBoundingCubePosition, sizeof(Vector3));
+		file.read((char*)&outBoundingCubeSize, sizeof(float));
 
 		// Load the size of the vertices vector
 		UINT vertexCount;
@@ -91,25 +95,25 @@ bool LoadPointcloudFile(std::vector<Vertex> &vertices, const std::wstring &point
 		file.read((char*)pointcloudVertices.data(), vertexCount * sizeof(PointcloudVertex));
 
 		// Convert to the required vertex format
-		vertices = std::vector<Vertex>(vertexCount);
+		outVertices = std::vector<Vertex>(vertexCount);
 
 		for (UINT i = 0; i < vertexCount; i++)
 		{
-			vertices[i].position = pointcloudVertices[i].position;
-			vertices[i].normal.x = pointcloudVertices[i].normal[0] / 127.0f;
-			vertices[i].normal.y = pointcloudVertices[i].normal[1] / 127.0f;
-			vertices[i].normal.z = pointcloudVertices[i].normal[2] / 127.0f;
-			vertices[i].color[0] = pointcloudVertices[i].color[0];
-			vertices[i].color[1] = pointcloudVertices[i].color[1];
-			vertices[i].color[2] = pointcloudVertices[i].color[2];
+			outVertices[i].position = pointcloudVertices[i].position;
+			outVertices[i].normal.x = pointcloudVertices[i].normal[0] / 127.0f;
+			outVertices[i].normal.y = pointcloudVertices[i].normal[1] / 127.0f;
+			outVertices[i].normal.z = pointcloudVertices[i].normal[2] / 127.0f;
+			outVertices[i].color[0] = pointcloudVertices[i].color[0];
+			outVertices[i].color[1] = pointcloudVertices[i].color[1];
+			outVertices[i].color[2] = pointcloudVertices[i].color[2];
 		}
-    }
-    catch (const std::exception &e)
-    {
-        return false;
-    }
+	}
+	catch (const std::exception& e)
+	{
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
 void SaveScreenshotToFile()

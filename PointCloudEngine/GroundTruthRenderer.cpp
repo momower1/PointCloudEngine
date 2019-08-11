@@ -3,26 +3,10 @@
 GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 {
     // Try to load the file
-    if (!LoadPointcloudFile(vertices, pointcloudFile))
+    if (!LoadPointcloudFile(vertices, boundingCubePosition, boundingCubeSize, pointcloudFile))
     {
         throw std::exception("Could not load .pointcloud file!");
     }
-
-	// Calculate center and size of the bounding cube that fully encloses the point cloud
-	Vector3 minPosition = vertices.front().position;
-	Vector3 maxPosition = minPosition;
-
-	for (auto it = vertices.begin(); it != vertices.end(); it++)
-	{
-		Vertex v = *it;
-
-		minPosition = Vector3::Min(minPosition, v.position);
-		maxPosition = Vector3::Max(maxPosition, v.position);
-	}
-
-	Vector3 diagonal = maxPosition - minPosition;
-	boundingCubePosition = minPosition + 0.5f * diagonal;
-	boundingCubeSize = max(max(diagonal.x, diagonal.y), diagonal.z);
 
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
@@ -319,5 +303,5 @@ void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
 	Draw();
 
 	// Present the result to the screen
-	swapChain->Present(1, 0);
+	swapChain->Present(0, 0);
 }
