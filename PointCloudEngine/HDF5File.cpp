@@ -124,6 +124,10 @@ void HDF5File::AddColorTextureDataset(H5::Group group, std::string name, ID3D11T
 		{
 			float f = ((float*)subresource.pData)[i];
 
+			// Make sure that the value is in the desired range
+			// It can be slightly out of range for floating point render targets
+			f = max(min(1.0f, f), 0);
+
 			// Perform gamma correction and add to buffer
 			buffer.push_back(std::pow(f, gammaCorrection) * 255);
 		}
