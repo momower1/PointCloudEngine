@@ -69,32 +69,40 @@ void PlyToPointcloud(const std::string& plyfile)
 			plyVertices[i].normal.Normalize();
 		}
 
-		// Randomly shuffle the vertices in order to be able to easily select the density by looking at the first k entries (used in GroundTruthRenderer)
-		std::random_shuffle(plyVertices.begin(), plyVertices.end());
-
 		// Convert into .pointcloud vertices (smaller size due to normal quantization)
-		std::vector<PointcloudVertex> pointcloudVertices(count);
+		std::vector<PointcloudVertex> pointcloudVertices;
 		Vector3 minPosition = plyVertices.front().position;
 		Vector3 maxPosition = minPosition;
 
 		// Also calculate center and size of the bounding cube that fully encloses the point cloud
 		for (UINT i = 0; i < count; i++)
 		{
-			pointcloudVertices[i].position = plyVertices[i].position;
-			pointcloudVertices[i].normal[0] = 127 * plyVertices[i].normal.x;
-			pointcloudVertices[i].normal[1] = 127 * plyVertices[i].normal.y;
-			pointcloudVertices[i].normal[2] = 127 * plyVertices[i].normal.z;
-			pointcloudVertices[i].color[0] = plyVertices[i].color[0];
-			pointcloudVertices[i].color[1] = plyVertices[i].color[1];
-			pointcloudVertices[i].color[2] = plyVertices[i].color[2];
+			// Only add vertices with a non zero normal
+			if (plyVertices[i].normal.LengthSquared() > 0.5f)
+			{
+				PointcloudVertex pointcloudVertex;
 
-			minPosition = Vector3::Min(minPosition, plyVertices[i].position);
-			maxPosition = Vector3::Max(maxPosition, plyVertices[i].position);
+				pointcloudVertex.position = plyVertices[i].position;
+				pointcloudVertex.normal[0] = 127 * plyVertices[i].normal.x;
+				pointcloudVertex.normal[1] = 127 * plyVertices[i].normal.y;
+				pointcloudVertex.normal[2] = 127 * plyVertices[i].normal.z;
+				pointcloudVertex.color[0] = plyVertices[i].color[0];
+				pointcloudVertex.color[1] = plyVertices[i].color[1];
+				pointcloudVertex.color[2] = plyVertices[i].color[2];
+
+				pointcloudVertices.push_back(pointcloudVertex);
+
+				minPosition = Vector3::Min(minPosition, pointcloudVertex.position);
+				maxPosition = Vector3::Max(maxPosition, pointcloudVertex.position);
+			}
 		}
 
 		Vector3 diagonal = maxPosition - minPosition;
 		Vector3 boundingCubePosition = minPosition + 0.5f * diagonal;
 		float boundingCubeSize = max(max(diagonal.x, diagonal.y), diagonal.z);
+
+		// Randomly shuffle the vertices in order to be able to easily select the density by looking at the first k entries (used in GroundTruthRenderer)
+		std::random_shuffle(pointcloudVertices.begin(), pointcloudVertices.end());
 
 		// Write the .pointcloud file
 		std::ofstream pointcloudFile(plyfile.substr(0, plyfile.length() - 3) + "pointcloud", std::ios::out | std::ios::binary);
