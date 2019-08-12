@@ -82,9 +82,11 @@ void GroundTruthRenderer::Update()
 			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseDepth" }
 		};
 
-		for (float theta = settings->stepSizeHDF5 / 2; theta < XM_PI; theta += settings->stepSizeHDF5 / 2)
+		float h = settings->stepSize;
+
+		for (float theta = settings->minTheta + h / 2; theta < settings->maxTheta; theta += h / 2)
 		{
-			for (float phi = settings->stepSizeHDF5; phi < 2 * XM_PI; phi += settings->stepSizeHDF5)
+			for (float phi = settings->minPhi + h; phi < settings->maxPhi; phi += h)
 			{
 				H5::Group group = hdf5file.CreateGroup(std::to_wstring(theta) + L"," + std::to_wstring(phi));
 

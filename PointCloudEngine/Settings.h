@@ -42,7 +42,13 @@ namespace PointCloudEngine
 		// Ground truth parameters
 		float density = 1.0f;
 		float sparseSamplingRate = 0.01f;
-		float stepSizeHDF5 = 0.5f;
+
+		// HDF5 dataset generation parameters
+		float stepSize = 0.5f;
+		float minTheta = 0;
+		float maxTheta = XM_PI;
+		float minPhi = 0;
+		float maxPhi = 2 * XM_PI;
 
 		// Octree parameters
 		bool useOctree = false;

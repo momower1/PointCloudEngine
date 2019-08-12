@@ -106,9 +106,25 @@ PointCloudEngine::Settings::Settings()
 				{
 					sparseSamplingRate = std::stof(variableValue);
 				}
-				else if (variableName.compare(NAMEOF(stepSizeHDF5)) == 0)
+				else if (variableName.compare(NAMEOF(stepSize)) == 0)
 				{
-					stepSizeHDF5 = std::stof(variableValue);
+					stepSize = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(minTheta)) == 0)
+				{
+					minTheta = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(maxTheta)) == 0)
+				{
+					maxTheta = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(minPhi)) == 0)
+				{
+					minPhi = std::stof(variableValue);
+				}
+				else if (variableName.compare(NAMEOF(maxPhi)) == 0)
+				{
+					maxPhi = std::stof(variableValue);
 				}
 				else if (variableName.compare(NAMEOF(useOctree)) == 0)
 				{
@@ -182,7 +198,14 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# Ground Truth Parameters" << std::endl;
 	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
 	settingsFile << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
-	settingsFile << NAMEOF(stepSizeHDF5) << L"=" << stepSizeHDF5 << std::endl;
+	settingsFile << std::endl;
+
+	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;
+	settingsFile << NAMEOF(stepSize) << L"=" << stepSize << std::endl;
+	settingsFile << NAMEOF(minTheta) << L"=" << minTheta << std::endl;
+	settingsFile << NAMEOF(maxTheta) << L"=" << maxTheta << std::endl;
+	settingsFile << NAMEOF(minPhi) << L"=" << minPhi << std::endl;
+	settingsFile << NAMEOF(maxPhi) << L"=" << maxPhi << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
