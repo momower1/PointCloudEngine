@@ -36,7 +36,7 @@
 ```
 ply
 format ascii 1.0
-element vertex 18
+element vertex 3
 property float x
 property float y
 property float z
@@ -48,21 +48,6 @@ property uchar green
 property uchar blue
 end_header
 1 0 0 1 0 0 255 0 0
-1 0 0 -1 0 0 255 0 0
-1 0 0 0 1 0 255 0 0
-1 0 0 0 -1 0 255 0 0
-1 0 0 0 0 1 255 0 0
-1 0 0 0 0 -1 255 0 0
-0 1 0 1 0 0 0 255 0
-0 1 0 -1 0 0 0 255 0
 0 1 0 0 1 0 0 255 0
-0 1 0 0 -1 0 0 255 0
-0 1 0 0 0 1 0 255 0
-0 1 0 0 0 -1 0 255 0
-0 0 1 1 0 0 0 0 255
-0 0 1 -1 0 0 0 0 255
-0 0 1 0 1 0 0 0 255
-0 0 1 0 -1 0 0 0 255
 0 0 1 0 0 1 0 0 255
-0 0 1 0 0 -1 0 0 255
 ```
