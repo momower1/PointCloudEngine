@@ -82,13 +82,18 @@ void GroundTruthRenderer::Update()
 			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseDepth" }
 		};
 
+		UINT counter = 0;
 		float h = settings->stepSize;
 
 		for (float theta = settings->minTheta + h / 2; theta < settings->maxTheta; theta += h / 2)
 		{
 			for (float phi = settings->minPhi + h; phi < settings->maxPhi; phi += h)
 			{
-				H5::Group group = hdf5file.CreateGroup(std::to_wstring(theta) + L"," + std::to_wstring(phi));
+				// Save the viewports in numbered groups with leading zeros
+				std::stringstream groupNameStream;
+				groupNameStream << std::setw(4) << std::setfill('0') << counter++;
+
+				H5::Group group = hdf5file.CreateGroup(groupNameStream.str());
 
 				// Rotate around and look at the center
 				camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
