@@ -5,7 +5,7 @@
 - [PlyToPointcloud](https://github.com/momower1/PointCloudEngine/wiki/PlyToPointcloud) tool for converting .ply files with _x,y,z,nx,ny,nz,red,green,blue_ format into the required .pointcloud format
 
 ## Getting Started
-- Install DirectX11 and [HDF5](https://www.hdfgroup.org/downloads/hdf5)
+- Install DirectX11 and [HDF5](https://www.hdfgroup.org/downloads/hdf5) (optional)
 - Download and extract the latest Windows release from [Releases](https://github.com/momower1/PointCloudEngine/releases)
 - Drag and drop your .ply files onto PlyToPointcloud.exe
 - Adjust the settings.txt file (optional)

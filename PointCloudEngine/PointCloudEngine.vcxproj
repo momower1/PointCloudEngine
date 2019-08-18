@@ -107,7 +107,11 @@
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\szip.dll" "$(OutDir)szip.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -139,7 +143,11 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\szip.dll" "$(OutDir)szip.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -175,7 +183,11 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\szip.dll" "$(OutDir)szip.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -211,7 +223,11 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\szip.dll" "$(OutDir)szip.dll"
+copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
