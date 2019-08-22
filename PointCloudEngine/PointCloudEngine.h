@@ -2,6 +2,9 @@
 #define POINTCLOUDENGINE_H
 
 #pragma once
+// Pytorch
+#include <torch/script.h>
+
 #include <windows.h>
 #include <windowsx.h>
 #include <d3d11.h>
