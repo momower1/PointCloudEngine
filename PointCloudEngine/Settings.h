@@ -29,6 +29,7 @@ namespace PointCloudEngine
 
 		// Lighting parameters
 		bool useLighting = true;
+		Vector3 lightDirection = Vector3(0, -0.5f, 1.0f);
 		float lightIntensity = 1.0f;
 		float ambient = 0.4f;
 		float diffuse = 1.2f;
@@ -59,6 +60,10 @@ namespace PointCloudEngine
         // Input parameters default values
         float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;
+
+	private:
+		std::wstring ToString(Vector3 v);
+		Vector3 ToVector3(std::wstring s);
     };
 }
 

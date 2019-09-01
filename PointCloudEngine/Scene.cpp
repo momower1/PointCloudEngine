@@ -353,5 +353,5 @@ void PointCloudEngine::Scene::LoadFile()
 
     // Reset other properties
 	lightingConstantBufferData.useLighting = true;
-	lightingConstantBufferData.lightDirection = Vector3(0, -0.5f, 1.0f);
+	lightingConstantBufferData.lightDirection = settings->lightDirection;
 }

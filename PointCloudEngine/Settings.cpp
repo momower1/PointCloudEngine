@@ -70,6 +70,10 @@ PointCloudEngine::Settings::Settings()
 				{
 					useLighting = std::stoi(variableValue);
 				}
+				else if (variableName.compare(NAMEOF(lightDirection)) == 0)
+				{
+					lightDirection = ToVector3(variableValue);
+				}
 				else if (variableName.compare(NAMEOF(lightIntensity)) == 0)
 				{
 					lightIntensity = std::stof(variableValue);
@@ -183,6 +187,7 @@ PointCloudEngine::Settings::~Settings()
 
 	settingsFile << L"# Lighting Parameters" << std::endl;
 	settingsFile << NAMEOF(useLighting) << L"=" << useLighting << std::endl;
+	settingsFile << NAMEOF(lightDirection) << L"=" << ToString(lightDirection) << std::endl;
 	settingsFile << NAMEOF(lightIntensity) << L"=" << lightIntensity << std::endl;
 	settingsFile << NAMEOF(ambient) << L"=" << ambient << std::endl;
 	settingsFile << NAMEOF(diffuse) << L"=" << diffuse << std::endl;
@@ -222,4 +227,23 @@ PointCloudEngine::Settings::~Settings()
 
     settingsFile.flush();
     settingsFile.close();
+}
+
+std::wstring PointCloudEngine::Settings::ToString(Vector3 v)
+{
+	return L"(" + std::to_wstring(v.x) + L"," + std::to_wstring(v.y) + L"," + std::to_wstring(v.z) + L")";
+}
+
+Vector3 PointCloudEngine::Settings::ToVector3(std::wstring s)
+{
+	// Remove brackets
+	s = s.substr(1, s.length() - 1);
+
+	// Parse the string into seperate x,y,z strings
+	std::wstring x = s.substr(0, s.find(L','));
+	s = s.substr(x.length() + 1, s.length());
+	std::wstring y = s.substr(0, s.find(L','));
+	std::wstring z = s.substr(y.length() + 1, s.length());
+	
+	return Vector3(std::stof(x), std::stof(y), std::stof(z));
 }
