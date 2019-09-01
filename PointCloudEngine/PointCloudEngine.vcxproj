@@ -290,6 +290,7 @@ copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="TextureConversion.hlsl" />
+    <FxCompile Include="Waypoint.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -313,6 +314,7 @@ copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="WaypointRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -336,6 +338,7 @@ copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="WaypointRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DirectXTK\DirectXTK_Desktop_2019.vcxproj">

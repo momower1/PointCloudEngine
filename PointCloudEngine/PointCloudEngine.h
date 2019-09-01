@@ -39,6 +39,7 @@ using namespace PointCloudEngine;
 #include "TextRenderer.h"
 #include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
+#include "WaypointRenderer.h"
 #include "Scene.h"
 #include "HDF5File.h"
 
@@ -69,6 +70,7 @@ extern Camera* camera;
 extern Shader* textShader;
 extern Shader* splatShader;
 extern Shader* pointShader;
+extern Shader* waypointShader;
 extern Shader* octreeCubeShader;
 extern Shader* octreeSplatShader;
 extern Shader* octreeClusterShader;

@@ -19,6 +19,7 @@ namespace PointCloudEngine
         static D3D11_INPUT_ELEMENT_DESC textLayout[];
         static D3D11_INPUT_ELEMENT_DESC splatLayout[];
         static D3D11_INPUT_ELEMENT_DESC octreeLayout[];
+		static D3D11_INPUT_ELEMENT_DESC waypointLayout[];
 
         bool VS, PS, GS, CS;
 

@@ -4,6 +4,7 @@ void Scene::Initialize()
 {
     // Create the object for the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
+	pointCloud->AddComponent(new WaypointRenderer());
 
 	// Create text renderer to display the controls
 	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
