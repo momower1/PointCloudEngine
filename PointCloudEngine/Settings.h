@@ -61,7 +61,6 @@ namespace PointCloudEngine
         float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;
 
-	private:
 		std::wstring ToString(Vector3 v);
 		Vector3 ToVector3(std::wstring s);
     };
