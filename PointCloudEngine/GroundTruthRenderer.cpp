@@ -67,6 +67,25 @@ void GroundTruthRenderer::Update()
 		// Create and save the file
 		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
 
+		// Add attributes storing the settings
+		hdf5file.AddStringAttribute(NAMEOF(settings->pointcloudFile), settings->pointcloudFile);
+		hdf5file.AddStringAttribute(NAMEOF(settings->samplingRate), std::to_wstring(settings->samplingRate));
+		hdf5file.AddStringAttribute(NAMEOF(settings->scale), std::to_wstring(settings->scale));
+		hdf5file.AddStringAttribute(NAMEOF(settings->useLighting), std::to_wstring(settings->useLighting));
+		hdf5file.AddStringAttribute(NAMEOF(settings->lightIntensity), std::to_wstring(settings->lightIntensity));
+		hdf5file.AddStringAttribute(NAMEOF(settings->ambient), std::to_wstring(settings->ambient));
+		hdf5file.AddStringAttribute(NAMEOF(settings->diffuse), std::to_wstring(settings->diffuse));
+		hdf5file.AddStringAttribute(NAMEOF(settings->specular), std::to_wstring(settings->specular));
+		hdf5file.AddStringAttribute(NAMEOF(settings->specularExponent), std::to_wstring(settings->specularExponent));
+		hdf5file.AddStringAttribute(NAMEOF(settings->blendFactor), std::to_wstring(settings->blendFactor));
+		hdf5file.AddStringAttribute(NAMEOF(settings->density), std::to_wstring(settings->density));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sparseSamplingRate), std::to_wstring(settings->sparseSamplingRate));
+		hdf5file.AddStringAttribute(NAMEOF(settings->stepSize), std::to_wstring(settings->stepSize));
+		hdf5file.AddStringAttribute(NAMEOF(settings->minTheta), std::to_wstring(settings->minTheta));
+		hdf5file.AddStringAttribute(NAMEOF(settings->maxTheta), std::to_wstring(settings->maxTheta));
+		hdf5file.AddStringAttribute(NAMEOF(settings->minPhi), std::to_wstring(settings->minPhi));
+		hdf5file.AddStringAttribute(NAMEOF(settings->maxPhi), std::to_wstring(settings->maxPhi));
+
 		int startViewMode = settings->viewMode;
 		Vector3 startPosition = camera->GetPosition();
 		Matrix startRotation = camera->GetRotationMatrix();
@@ -91,7 +110,7 @@ void GroundTruthRenderer::Update()
 			{
 				// Save the viewports in numbered groups with leading zeros
 				std::stringstream groupNameStream;
-				groupNameStream << std::setw(4) << std::setfill('0') << counter++;
+				groupNameStream << std::setw(5) << std::setfill('0') << counter++;
 
 				H5::Group group = hdf5file.CreateGroup(groupNameStream.str());
 

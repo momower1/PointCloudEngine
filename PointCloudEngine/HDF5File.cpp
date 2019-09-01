@@ -215,6 +215,11 @@ void HDF5File::AddDepthTextureDataset(H5::Group group, std::string name, ID3D11T
 	SAFE_RELEASE(readableTexture);
 }
 
+void HDF5File::AddStringAttribute(std::wstring name, std::wstring value)
+{
+	AddStringAttribute(file, name, value);
+}
+
 H5::DataSpace HDF5File::CreateDataspace(std::initializer_list<hsize_t> dimensions)
 {
 	return H5::DataSpace(dimensions.size(), dimensions.begin());
@@ -229,22 +234,23 @@ H5::DSetCreatPropList HDF5File::CreateDeflateCompressionPropList(std::initialize
 	return propList;
 }
 
-void HDF5File::SetImageAttributes(H5::DataSet dataSet)
+void HDF5File::AddStringAttribute(H5::H5Object* object, std::wstring name, std::wstring value)
+{
+	AddStringAttribute(object, std::string(name.begin(), name.end()), std::string(value.begin(), value.end()));
+}
+
+void HDF5File::AddStringAttribute(H5::H5Object* object, std::string name, std::string value)
 {
 	H5::DataSpace attributeDataspace(H5S_SCALAR);
-	H5::StrType classType(H5::PredType::C_S1, 5);
-	H5::Attribute classAttribute = dataSet.createAttribute("CLASS", classType, attributeDataspace);
-	classAttribute.write(classType, std::string("IMAGE"));
+	H5::StrType attributeType(H5::PredType::C_S1, value.length());
+	H5::Attribute attribute = object->createAttribute(name, attributeType, attributeDataspace);
+	attribute.write(attributeType, value);
+}
 
-	H5::StrType versionType(H5::PredType::C_S1, 3);
-	H5::Attribute versionAttribute = dataSet.createAttribute("IMAGE_VERSION", versionType, attributeDataspace);
-	versionAttribute.write(versionType, std::string("1.2"));
-
-	H5::StrType subclassType(H5::PredType::C_S1, 15);
-	H5::Attribute subclassAttribute = dataSet.createAttribute("IMAGE_SUBCLASS", subclassType, attributeDataspace);
-	subclassAttribute.write(subclassType, std::string("IMAGE_TRUECOLOR"));
-
-	H5::StrType interlaceType(H5::PredType::C_S1, 15);
-	H5::Attribute interlaceAttribute = dataSet.createAttribute("INTERLACE_MODE", interlaceType, attributeDataspace);
-	interlaceAttribute.write(interlaceType, std::string("INTERLACE_PIXEL"));
+void HDF5File::SetImageAttributes(H5::DataSet dataSet)
+{
+	AddStringAttribute(&dataSet, L"CLASS", L"IMAGE");
+	AddStringAttribute(&dataSet, L"IMAGE_VERSION", L"1.2");
+	AddStringAttribute(&dataSet, L"IMAGE_SUBCLASS", L"IMAGE_TRUECOLOR");
+	AddStringAttribute(&dataSet, L"INTERLACE_MODE", L"INTERLACE_PIXEL");
 }
