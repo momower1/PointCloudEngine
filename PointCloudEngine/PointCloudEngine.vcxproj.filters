@@ -80,6 +80,9 @@
     <ClInclude Include="HDF5File.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PrecompiledHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">
@@ -125,6 +128,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HDF5File.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrecompiledHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
