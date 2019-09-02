@@ -16,19 +16,6 @@ void PointCloudEngine::WaypointRenderer::Initialize()
 
 void PointCloudEngine::WaypointRenderer::Update()
 {
-	if (Input::GetKeyDown(Keyboard::Insert))
-	{
-		waypointPositions.push_back(camera->GetPosition());
-		waypointForwards.push_back(camera->GetForward());
-		UpdateVertexBuffer();
-	}
-
-	if (Input::GetKeyDown(Keyboard::Delete) && waypointPositions.size() > 0)
-	{
-		waypointPositions.pop_back();
-		waypointForwards.pop_back();
-		UpdateVertexBuffer();
-	}
 }
 
 void PointCloudEngine::WaypointRenderer::Draw()
@@ -62,16 +49,52 @@ void PointCloudEngine::WaypointRenderer::Release()
 	SAFE_RELEASE(constantBuffer);
 }
 
+bool PointCloudEngine::WaypointRenderer::LerpWaypoints(float t, Vector3& outPosition, Matrix& outRotation)
+{
+	if (waypointSize > 0)
+	{
+		float lerpFactor = t - (UINT)t;
+		UINT current = (UINT)t % waypointSize;
+		UINT next = (current + 1) % waypointSize;
+		outPosition = Vector3::Lerp(waypointPositions[current], waypointPositions[next], lerpFactor);
+		outRotation = Matrix::Lerp(waypointRotations[current], waypointRotations[next], lerpFactor);
+	}
+
+	// Returns whether the interpolated output is in the first roundtrip or not
+	return t < waypointSize;
+}
+
+void PointCloudEngine::WaypointRenderer::AddWaypoint(Vector3 position, Matrix rotation, Vector3 forward)
+{
+	waypointSize++;
+	waypointPositions.push_back(position);
+	waypointRotations.push_back(rotation);
+	waypointForwards.push_back(forward);
+	UpdateVertexBuffer();
+}
+
+void PointCloudEngine::WaypointRenderer::RemoveWaypoint()
+{
+	if (waypointPositions.size() > 0)
+	{
+		waypointSize--;
+		waypointPositions.pop_back();
+		waypointRotations.pop_back();
+		waypointForwards.pop_back();
+		UpdateVertexBuffer();
+	}
+}
+
 void PointCloudEngine::WaypointRenderer::UpdateVertexBuffer()
 {
 	SAFE_RELEASE(vertexBuffer);
 
-	if (waypointPositions.size() > 0)
+	if (waypointSize > 0)
 	{
 		waypointVertices.clear();
 
 		// Create a connected line list from the waypoint data
-		for (UINT i = 0; i < waypointPositions.size(); i++)
+		for (UINT i = 0; i < waypointSize; i++)
 		{
 			WaypointVertex point, forward;
 			point.position = waypointPositions[i];
@@ -81,13 +104,13 @@ void PointCloudEngine::WaypointRenderer::UpdateVertexBuffer()
 			waypointVertices.push_back(point);
 			waypointVertices.push_back(forward);
 
-			WaypointVertex next;
-			UINT nextIndex = (i + 1) % waypointPositions.size();
-			next.position = waypointPositions[nextIndex];
-			next.color = point.color = (nextIndex == 0) ? Vector3(1, 1, 0) : Vector3(1, 0, 0);
+			WaypointVertex to;
+			UINT nextIndex = (i + 1) % waypointSize;
+			to.position = waypointPositions[nextIndex];
+			to.color = point.color = (nextIndex == 0) ? Vector3(1, 1, 0) : Vector3(1, 0, 0);
 
 			waypointVertices.push_back(point);
-			waypointVertices.push_back(next);
+			waypointVertices.push_back(to);
 		}
 
 		// Create a vertex buffer description

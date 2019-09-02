@@ -280,7 +280,9 @@ void PointCloudEngine::OctreeRenderer::SetHelpText(Transform* helpTextTransform,
 		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
 		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
 		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
-		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[INSERT] Add camera waypoint\n");
+		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
+		helpTextRenderer->text.append(L"[SPACE] Preview camera trackshot\n");
 		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
 		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
 		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");

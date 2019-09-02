@@ -4,7 +4,8 @@ void Scene::Initialize()
 {
     // Create the object for the point cloud
     pointCloud = Hierarchy::Create(L"PointCloud");
-	pointCloud->AddComponent(new WaypointRenderer());
+	waypointRenderer = new WaypointRenderer();
+	pointCloud->AddComponent(waypointRenderer);
 
 	// Create text renderer to display the controls
 	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
@@ -95,10 +96,30 @@ void Scene::Update(Timer &timer)
 		settings->useLighting = !settings->useLighting;
 	}
 
-	// Rotate the point cloud
+	// Insert a waypoint
+	if (Input::GetKeyDown(Keyboard::Insert))
+	{
+		Vector2 pitchYaw(cameraPitch, cameraYaw);
+		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
+	}
+
+	// Remove a waypoint
+	if (Input::GetKeyDown(Keyboard::Delete))
+	{
+		waypointRenderer->RemoveWaypoint();
+	}
+
+	// Camera tracking shot using the waypoints
 	if (Input::GetKey(Keyboard::Space))
 	{
-		pointCloud->transform->rotation *= Quaternion::CreateFromYawPitchRoll(dt / 2, 0, 0);
+		Vector3 newCameraPosition;
+		Matrix newCameraRotation;
+
+		waypointRenderer->LerpWaypoints(waypointTime, newCameraPosition, newCameraRotation);
+		waypointTime += dt;
+
+		camera->SetPosition(newCameraPosition);
+		camera->SetRotationMatrix(newCameraRotation);
 	}
 
 	// Set the sampling rate (minimal distance between two points) of the loaded point cloud
@@ -156,13 +177,16 @@ void Scene::Update(Timer &timer)
 		}
 	}
 
-    // Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
-    if (timeSinceLoadFile > 0.1f)
+    if (timeSinceLoadFile > 0.1f && !Input::GetKey(Keyboard::Space))
     {
+		// Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
         cameraYaw += Input::mouseDelta.x;
         cameraPitch += Input::mouseDelta.y;
         cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
         camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+
+		// Move camera with WASD keys
+		camera->TranslateRUF(inputSpeed* dt* (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed* dt* (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
     }
     else
     {
@@ -185,9 +209,6 @@ void Scene::Update(Timer &timer)
 		settings->useOctree = !settings->useOctree;
 		DelayedLoadFile(settings->pointcloudFile);
 	}
-
-    // Move camera with WASD keys
-    camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 
 	// FPS counter
 	fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";

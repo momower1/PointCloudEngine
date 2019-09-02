@@ -256,7 +256,9 @@ void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTrans
 		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
 		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
 		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
-		helpTextRenderer->text.append(L"[SPACE] Rotate around y axis\n");
+		helpTextRenderer->text.append(L"[INSERT] Add camera waypoint\n");
+		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
+		helpTextRenderer->text.append(L"[SPACE] Preview camera trackshot\n");
 		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
 		helpTextRenderer->text.append(L"[F8] Generate HDF5 Dataset\n");
 		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");

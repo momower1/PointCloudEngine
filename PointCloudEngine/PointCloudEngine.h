@@ -15,6 +15,7 @@ namespace PointCloudEngine
     class TextRenderer;
     class GroundTruthRenderer;
     class OctreeRenderer;
+	class WaypointRenderer;
     class Settings;
     class Camera;
     class Octree;

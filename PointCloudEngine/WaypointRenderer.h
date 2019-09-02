@@ -14,6 +14,10 @@ namespace PointCloudEngine
         void Draw();
         void Release();
 
+		bool LerpWaypoints(float t, Vector3& outPosition, Matrix& outRotation);
+		void AddWaypoint(Vector3 position, Matrix rotation, Vector3 forward);
+		void RemoveWaypoint();
+
     private:
 		struct WaypointVertex
 		{
@@ -27,7 +31,9 @@ namespace PointCloudEngine
             Matrix Projection;
         };
 
+		UINT waypointSize = 0;
 		std::vector<Vector3> waypointPositions;
+		std::vector<Matrix> waypointRotations;
 		std::vector<Vector3> waypointForwards;
 
         std::vector<WaypointVertex> waypointVertices;
