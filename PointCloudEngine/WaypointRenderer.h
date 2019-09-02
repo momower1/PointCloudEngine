@@ -15,6 +15,12 @@ namespace PointCloudEngine
         void Release();
 
     private:
+		struct WaypointVertex
+		{
+			Vector3 position;
+			Vector3 color;
+		};
+		
 		struct WaypointRendererConstantBuffer
         {
             Matrix View;
@@ -24,7 +30,7 @@ namespace PointCloudEngine
 		std::vector<Vector3> waypointPositions;
 		std::vector<Vector3> waypointForwards;
 
-        std::vector<Vector3> vertices;
+        std::vector<WaypointVertex> waypointVertices;
         WaypointRendererConstantBuffer constantBufferData;
 
         ID3D11Buffer* vertexBuffer = NULL;

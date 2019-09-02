@@ -552,7 +552,7 @@ bool InitializeScene()
     textShader = Shader::Create(L"Shader/Text.hlsl", true, true, true, false, Shader::textLayout, 3);
     splatShader = Shader::Create(L"Shader/Splat.hlsl", true, true, true, false, Shader::splatLayout, 3);
 	pointShader = Shader::Create(L"Shader/Point.hlsl", true, true, true, false, Shader::splatLayout, 3);
-	waypointShader = Shader::Create(L"Shader/Waypoint.hlsl", true, false, true, false, Shader::waypointLayout, 1);
+	waypointShader = Shader::Create(L"Shader/Waypoint.hlsl", true, false, true, false, Shader::waypointLayout, 2);
     octreeCubeShader = Shader::Create(L"Shader/OctreeCube.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeSplatShader = Shader::Create(L"Shader/OctreeSplat.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 14);
