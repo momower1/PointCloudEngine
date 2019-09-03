@@ -98,7 +98,7 @@ void PointCloudEngine::WaypointRenderer::UpdateVertexBuffer()
 		{
 			WaypointVertex point, forward;
 			point.position = waypointPositions[i];
-			forward.position = waypointPositions[i] + (1.0f / settings->scale) * waypointForwards[i];
+			forward.position = waypointPositions[i] + 0.05f * settings->scale * waypointForwards[i];
 			point.color = forward.color = Vector3(0, 0, 1);
 
 			waypointVertices.push_back(point);
