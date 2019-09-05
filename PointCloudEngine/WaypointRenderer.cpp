@@ -1,8 +1,30 @@
 #include "PrecompiledHeader.h"
 #include "WaypointRenderer.h"
 
+#define WAYPOINTS_FILENAME L"/.waypoints"
+
 void PointCloudEngine::WaypointRenderer::Initialize()
 {
+	// Load the stored waypoints from a file
+	std::ifstream file(executableDirectory + WAYPOINTS_FILENAME, std::ios::in | std::ios::binary);
+
+	if (file.is_open())
+	{
+		// Read the count of the waypoints
+		file.read((char*)&waypointSize, sizeof(UINT));
+
+		// Reserve memory
+		waypointPositions.resize(waypointSize);
+		waypointRotations.resize(waypointSize);
+		waypointForwards.resize(waypointSize);
+
+		// Read the waypoints into the vectors
+		file.read((char*)waypointPositions.data(), sizeof(Vector3) * waypointSize);
+		file.read((char*)waypointRotations.data(), sizeof(Matrix) * waypointSize);
+		file.read((char*)waypointForwards.data(), sizeof(Vector3) * waypointSize);
+		UpdateVertexBuffer();
+	}
+
 	// Create the constant buffer
 	D3D11_BUFFER_DESC constantBufferDesc;
 	ZeroMemory(&constantBufferDesc, sizeof(constantBufferDesc));
@@ -45,6 +67,17 @@ void PointCloudEngine::WaypointRenderer::Draw()
 
 void PointCloudEngine::WaypointRenderer::Release()
 {
+	// Save waypoints to file
+	std::ofstream file(executableDirectory + WAYPOINTS_FILENAME, std::ios::out | std::ios::binary);
+
+	file.write((char*)& waypointSize, sizeof(UINT));
+	file.write((char*)waypointPositions.data(), sizeof(Vector3) * waypointSize);
+	file.write((char*)waypointRotations.data(), sizeof(Matrix) * waypointSize);
+	file.write((char*)waypointForwards.data(), sizeof(Vector3) * waypointSize);
+
+	file.flush();
+	file.close();
+
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(constantBuffer);
 }
