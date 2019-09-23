@@ -7,6 +7,8 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 // Forward declarations
+class HDF5File;
+
 namespace PointCloudEngine
 {
     class SceneObject;

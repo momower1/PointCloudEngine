@@ -17,10 +17,10 @@ public:
 	H5::Group CreateGroup(std::wstring name);
 	H5::Group CreateGroup(std::string name);
 
-	void AddColorTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
-	void AddColorTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
-	void AddDepthTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture);
-	void AddDepthTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture);
+	void AddColorTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
+	void AddColorTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture, float gammaCorrection = 1.0f);
+	void AddDepthTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture);
+	void AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture);
 	void AddStringAttribute(std::wstring name, std::wstring value);
 
 private:
@@ -30,7 +30,7 @@ private:
 	H5::DSetCreatPropList CreateDeflateCompressionPropList(std::initializer_list<hsize_t> chunkDimensions = {}, int deflateLevel = 6);
 	void AddStringAttribute(H5::H5Object* object, std::wstring name, std::wstring value);
 	void AddStringAttribute(H5::H5Object* object, std::string name, std::string value);
-	void SetImageAttributes(H5::DataSet dataSet);
+	void SetImageAttributes(H5::DataSet& dataSet);
 };
 
 #endif
