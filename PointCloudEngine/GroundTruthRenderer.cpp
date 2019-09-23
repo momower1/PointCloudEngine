@@ -81,11 +81,11 @@ void GroundTruthRenderer::Update()
 		hdf5file.AddStringAttribute(NAMEOF(settings->blendFactor), std::to_wstring(settings->blendFactor));
 		hdf5file.AddStringAttribute(NAMEOF(settings->density), std::to_wstring(settings->density));
 		hdf5file.AddStringAttribute(NAMEOF(settings->sparseSamplingRate), std::to_wstring(settings->sparseSamplingRate));
-		hdf5file.AddStringAttribute(NAMEOF(settings->stepSize), std::to_wstring(settings->stepSize));
-		hdf5file.AddStringAttribute(NAMEOF(settings->minTheta), std::to_wstring(settings->minTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->maxTheta), std::to_wstring(settings->maxTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->minPhi), std::to_wstring(settings->minPhi));
-		hdf5file.AddStringAttribute(NAMEOF(settings->maxPhi), std::to_wstring(settings->maxPhi));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereStepSize), std::to_wstring(settings->sphereStepSize));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinTheta), std::to_wstring(settings->sphereMinTheta));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxTheta), std::to_wstring(settings->sphereMaxTheta));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinPhi), std::to_wstring(settings->sphereMinPhi));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxPhi), std::to_wstring(settings->sphereMaxPhi));
 
 		int startViewMode = settings->viewMode;
 		Vector3 startPosition = camera->GetPosition();
@@ -103,11 +103,11 @@ void GroundTruthRenderer::Update()
 		};
 
 		UINT counter = 0;
-		float h = settings->stepSize;
+		float h = settings->sphereStepSize;
 
-		for (float theta = settings->minTheta + h / 2; theta < settings->maxTheta; theta += h / 2)
+		for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
 		{
-			for (float phi = settings->minPhi + h; phi < settings->maxPhi; phi += h)
+			for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
 			{
 				// Save the viewports in numbered groups with leading zeros
 				std::stringstream groupNameStream;

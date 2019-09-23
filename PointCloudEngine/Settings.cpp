@@ -21,141 +21,61 @@ PointCloudEngine::Settings::Settings()
                 std::wstring variableName = line.substr(0, delimiter);
                 std::wstring variableValue = line.substr(delimiter + 1, line.length());
 
-                // Parse by variable name
-                if (variableName.compare(NAMEOF(fovAngleY)) == 0)
-                {
-                    fovAngleY = std::stof(variableValue);
-                }
-                else if (variableName.compare(NAMEOF(nearZ)) == 0)
-                {
-                    nearZ = std::stof(variableValue);
-                }
-                else if (variableName.compare(NAMEOF(farZ)) == 0)
-                {
-                    farZ = std::stof(variableValue);
-                }
-                else if (variableName.compare(NAMEOF(resolutionX)) == 0)
-                {
-                    resolutionX = std::stoi(variableValue);
-                }
-                else if (variableName.compare(NAMEOF(resolutionY)) == 0)
-                {
-                    resolutionY = std::stoi(variableValue);
-                }
-                else if (variableName.compare(NAMEOF(windowed)) == 0)
-                {
-                    windowed = std::stoi(variableValue);
-                }
-				else if (variableName.compare(NAMEOF(help)) == 0)
-				{
-					help = std::stoi(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(viewMode)) == 0)
-				{
-					viewMode = std::stoi(variableValue);
-				}
-                else if (variableName.compare(NAMEOF(pointcloudFile)) == 0)
-                {
-                    pointcloudFile = variableValue;
-                }
-				else if (variableName.compare(NAMEOF(samplingRate)) == 0)
-				{
-					samplingRate = std::stof(variableValue);
-				}
-                else if (variableName.compare(NAMEOF(scale)) == 0)
-                {
-                    scale = std::stof(variableValue);
-                }
-				else if (variableName.compare(NAMEOF(useLighting)) == 0)
-				{
-					useLighting = std::stoi(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(lightDirection)) == 0)
-				{
-					lightDirection = ToVector3(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(lightIntensity)) == 0)
-				{
-					lightIntensity = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(ambient)) == 0)
-				{
-					ambient = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(diffuse)) == 0)
-				{
-					diffuse = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(specular)) == 0)
-				{
-					specular = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(specularExponent)) == 0)
-				{
-					specularExponent = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(useBlending)) == 0)
-				{
-					useBlending = std::stoi(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(blendFactor)) == 0)
-				{
-					blendFactor = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(density)) == 0)
-				{
-					density = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(sparseSamplingRate)) == 0)
-				{
-					sparseSamplingRate = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(stepSize)) == 0)
-				{
-					stepSize = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(minTheta)) == 0)
-				{
-					minTheta = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(maxTheta)) == 0)
-				{
-					maxTheta = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(minPhi)) == 0)
-				{
-					minPhi = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(maxPhi)) == 0)
-				{
-					maxPhi = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(useOctree)) == 0)
-				{
-					useOctree = std::stoi(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(maxOctreeDepth)) == 0)
-				{
-					maxOctreeDepth = std::stoi(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(overlapFactor)) == 0)
-				{
-					overlapFactor = std::stof(variableValue);
-				}
-				else if (variableName.compare(NAMEOF(appendBufferCount)) == 0)
-				{
-					appendBufferCount = std::stoi(variableValue);
-				}
-                else if (variableName.compare(NAMEOF(mouseSensitivity)) == 0)
-                {
-                    mouseSensitivity = std::stof(variableValue);
-                }
-                else if (variableName.compare(NAMEOF(scrollSensitivity)) == 0)
-                {
-                    scrollSensitivity = std::stof(variableValue);
-                }
+				// Put both into the map
+				settingsMap[variableName] = variableValue;
             }
         }
+
+		// Parse rendering parameters
+		TryParse(NAMEOF(fovAngleY), fovAngleY);
+		TryParse(NAMEOF(nearZ), nearZ);
+		TryParse(NAMEOF(farZ), farZ);
+		TryParse(NAMEOF(resolutionX), resolutionX);
+		TryParse(NAMEOF(resolutionY), resolutionY);
+		TryParse(NAMEOF(windowed), windowed);
+		TryParse(NAMEOF(help), help);
+		TryParse(NAMEOF(viewMode), viewMode);
+
+		// Parse pointcloud file parameters
+		TryParse(NAMEOF(pointcloudFile), pointcloudFile);
+		TryParse(NAMEOF(samplingRate), samplingRate);
+		TryParse(NAMEOF(scale), scale);
+
+		// Parse lighting parameters
+		TryParse(NAMEOF(useLighting), useLighting);
+		TryParse(NAMEOF(lightDirection), lightDirection);
+		TryParse(NAMEOF(lightIntensity), lightIntensity);
+		TryParse(NAMEOF(ambient), ambient);
+		TryParse(NAMEOF(diffuse), diffuse);
+		TryParse(NAMEOF(specular), specular);
+		TryParse(NAMEOF(specularExponent), specularExponent);
+
+		// Parse blending parameters
+		TryParse(NAMEOF(useBlending), useBlending);
+		TryParse(NAMEOF(blendFactor), blendFactor);
+
+		// Parse ground truth parameters
+		TryParse(NAMEOF(density), density);
+		TryParse(NAMEOF(sparseSamplingRate), sparseSamplingRate);
+
+		// Parse HDF5 dataset generation parameters
+		TryParse(NAMEOF(waypointStepSize), waypointStepSize);
+		TryParse(NAMEOF(waypointPreviewStepSize), waypointPreviewStepSize);
+		TryParse(NAMEOF(sphereStepSize), sphereStepSize);
+		TryParse(NAMEOF(sphereMinTheta), sphereMinTheta);
+		TryParse(NAMEOF(sphereMaxTheta), sphereMaxTheta);
+		TryParse(NAMEOF(sphereMinPhi), sphereMinPhi);
+		TryParse(NAMEOF(sphereMaxPhi), sphereMaxPhi);
+
+		// Parse octree parameters
+		TryParse(NAMEOF(useOctree), useOctree);
+		TryParse(NAMEOF(maxOctreeDepth), maxOctreeDepth);
+		TryParse(NAMEOF(overlapFactor), overlapFactor);
+		TryParse(NAMEOF(appendBufferCount), appendBufferCount);
+
+		// Parse input parameters
+		TryParse(NAMEOF(mouseSensitivity), mouseSensitivity);
+		TryParse(NAMEOF(scrollSensitivity), scrollSensitivity);
     }
 }
 
@@ -206,11 +126,13 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << std::endl;
 
 	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;
-	settingsFile << NAMEOF(stepSize) << L"=" << stepSize << std::endl;
-	settingsFile << NAMEOF(minTheta) << L"=" << minTheta << std::endl;
-	settingsFile << NAMEOF(maxTheta) << L"=" << maxTheta << std::endl;
-	settingsFile << NAMEOF(minPhi) << L"=" << minPhi << std::endl;
-	settingsFile << NAMEOF(maxPhi) << L"=" << maxPhi << std::endl;
+	settingsFile << NAMEOF(waypointStepSize) << L"=" << waypointStepSize << std::endl;
+	settingsFile << NAMEOF(waypointPreviewStepSize) << L"=" << waypointPreviewStepSize << std::endl;
+	settingsFile << NAMEOF(sphereStepSize) << L"=" << sphereStepSize << std::endl;
+	settingsFile << NAMEOF(sphereMinTheta) << L"=" << sphereMinTheta << std::endl;
+	settingsFile << NAMEOF(sphereMaxTheta) << L"=" << sphereMaxTheta << std::endl;
+	settingsFile << NAMEOF(sphereMinPhi) << L"=" << sphereMinPhi << std::endl;
+	settingsFile << NAMEOF(sphereMaxPhi) << L"=" << sphereMaxPhi << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
@@ -246,4 +168,52 @@ Vector3 PointCloudEngine::Settings::ToVector3(std::wstring s)
 	std::wstring z = s.substr(y.length() + 1, s.length());
 	
 	return Vector3(std::stof(x), std::stof(y), std::stof(z));
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, float& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = std::stof(settingsMap[parameterName]);
+	}
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, int& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = std::stoi(settingsMap[parameterName]);
+	}
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, UINT& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = std::stoi(settingsMap[parameterName]);
+	}
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, bool& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = std::stoi(settingsMap[parameterName]);
+	}
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, Vector3& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = ToVector3(settingsMap[parameterName]);
+	}
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, std::wstring& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = settingsMap[parameterName];
+	}
 }

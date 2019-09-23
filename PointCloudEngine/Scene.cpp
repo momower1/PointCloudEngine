@@ -112,6 +112,7 @@ void Scene::Update(Timer &timer)
 	// Camera tracking shot using the waypoints
 	if (Input::GetKeyDown(Keyboard::Space))
 	{
+		waypointPreviewLocation = 0;
 		waypointStartPosition = camera->GetPosition();
 	}
 	else if (Input::GetKeyUp(Keyboard::Space))
@@ -120,11 +121,11 @@ void Scene::Update(Timer &timer)
 	}
 	else if (Input::GetKey(Keyboard::Space))
 	{
-		Vector3 newCameraPosition;
-		Matrix newCameraRotation;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
 
-		waypointRenderer->LerpWaypoints(waypointTime, newCameraPosition, newCameraRotation);
-		waypointTime += 0.25f * settings->stepSize;
+		waypointRenderer->LerpWaypoints(waypointPreviewLocation, newCameraPosition, newCameraRotation);
+		waypointPreviewLocation += settings->waypointPreviewStepSize;
 
 		camera->SetPosition(newCameraPosition);
 		camera->SetRotationMatrix(newCameraRotation);
