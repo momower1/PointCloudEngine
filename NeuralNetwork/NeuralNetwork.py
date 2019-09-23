@@ -25,3 +25,7 @@ for i in range(0, 5):
     rnd = random.randrange(0, len(trainloader.dataset))
     print(trainloader.dataset.classes[trainloader.dataset.targets[rnd]])
     imshow(torch.from_numpy(trainloader.dataset.data[rnd]))
+
+# TESTING: Load neural network
+model = torch.load('./data/Pytorch_Model_Lucy.pth')
+print('Loaded pytorch model')
