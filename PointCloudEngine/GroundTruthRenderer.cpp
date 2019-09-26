@@ -294,7 +294,12 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 
 	H5::Group group = hdf5file.CreateGroup(groupNameStream.str());
 
-	// TODO: Headlight
+	// When using headlight update the light direction
+	if (settings->useHeadlight)
+	{
+		lightingConstantBufferData.lightDirection = camera->GetForward();
+		d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
+	}
 
 	// Calculates view and projection matrices and sets the viewport
 	camera->PrepareDraw();

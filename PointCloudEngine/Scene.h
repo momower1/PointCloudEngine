@@ -43,10 +43,6 @@ namespace PointCloudEngine
 		// Speed up WASD, Q/E, V/N and so on for faster movement and parameter tweaking
         float inputSpeed = 0;
 
-		// Rendering parameters that can be changed in both ground truth and octree renderer
-		ID3D11Buffer* lightingConstantBuffer = NULL;
-		LightingConstantBuffer lightingConstantBufferData;
-
         float timeUntilLoadFile = -1.0f;
         float timeSinceLoadFile = 0.0f;
 
