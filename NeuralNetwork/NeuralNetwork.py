@@ -27,5 +27,6 @@ for i in range(0, 5):
     imshow(torch.from_numpy(trainloader.dataset.data[rnd]))
 
 # TESTING: Load neural network
+# Input and Output: 3 Channel Color (RGB), 1 Channel Depth
 model = torch.jit.load('./data/Pytorch_Jit_Model_Lucy.pt')
 print('Loaded pytorch model')
