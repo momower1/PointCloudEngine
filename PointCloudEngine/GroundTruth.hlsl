@@ -16,9 +16,12 @@ cbuffer GroundTruthRendererConstantBuffer : register(b0)
     float samplingRate;
 	float blendFactor;
 	bool useBlending;
-	bool normal;
+	bool drawNormals;
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 352 bytes with constant buffer packing rules
+	bool normalsInScreenSpace;
+	// 12 bytes auto padding
+//------------------------------------------------------------------------------ (16 byte boundary)
+};  // Total: 368 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {

@@ -37,7 +37,9 @@ namespace PointCloudEngine
             float samplingRate;
 			float blendFactor;
 			int useBlending;
-			int normal;
+			int drawNormals;
+			int normalsInScreenSpace;
+			float padding[3];
         };
 
         std::vector<Vertex> vertices;
@@ -47,12 +49,12 @@ namespace PointCloudEngine
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
         ID3D11Buffer* constantBuffer;
 
-		std::wstring hdf5DatasetNames[4][3] =
+		std::wstring hdf5DatasetNames[4][4] =
 		{
-			{ L"SplatsColor", L"SplatsNormal", L"SplatsDepth" },
-			{ L"SplatsSparseColor", L"SplatsSparseNormal", L"SplatsSparseDepth" },
-			{ L"PointsColor", L"PointsNormal", L"PointsDepth" },
-			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseDepth" }
+			{ L"SplatsColor", L"SplatsNormal", L"SplatsNormalScreen", L"SplatsDepth" },
+			{ L"SplatsSparseColor", L"SplatsSparseNormal", L"SplatsSparseNormalScreen", L"SplatsSparseDepth" },
+			{ L"PointsColor", L"PointsNormal", L"PointsNormalScreen", L"PointsDepth" },
+			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseNormalScreen", L"PointsSparseDepth" }
 		};
 
 		void HDF5Draw();

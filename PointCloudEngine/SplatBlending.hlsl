@@ -8,6 +8,7 @@ struct GS_SPLAT_OUTPUT
 	float4 positionClip : POSITION1;
 	float3 positionWorld : POSITION2;
 	float3 positionCenter : POSITION3;
+	float3 normalScreen : NORMAL_SCREEN;
 	float3 normal : NORMAL;
 	float3 color : COLOR;
 	float radius : RADIUS;
@@ -40,6 +41,7 @@ void SplatBlendingGS(float3 worldPosition, float3 worldNormal, float3 color, flo
 
 	GS_SPLAT_OUTPUT element;
 	element.positionCenter = worldPosition;
+	element.normalScreen = normalize(mul(worldNormal, VP));
 	element.normal = worldNormal;
 	element.color = color;
 	element.radius = length(up);

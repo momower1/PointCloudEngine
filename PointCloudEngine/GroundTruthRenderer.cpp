@@ -10,7 +10,7 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
-	constantBufferData.normal = false;
+	constantBufferData.drawNormals = false;
 }
 
 void GroundTruthRenderer::Initialize()
@@ -294,6 +294,8 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 
 	H5::Group group = hdf5file.CreateGroup(groupNameStream.str());
 
+	// TODO: Headlight
+
 	// Calculates view and projection matrices and sets the viewport
 	camera->PrepareDraw();
 
@@ -307,10 +309,16 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][0], backBufferTexture);
 
 		// Draw and save normal texture
-		constantBufferData.normal = true;
+		constantBufferData.drawNormals = true;
+		constantBufferData.normalsInScreenSpace = false;
 		HDF5Draw();
-		constantBufferData.normal = false;
 		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][1], backBufferTexture);
+
+		// Draw screen space normal texture
+		constantBufferData.normalsInScreenSpace = true;
+		HDF5Draw();
+		constantBufferData.drawNormals = false;
+		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][2], backBufferTexture);
 
 		// Draw depth again without blending (depth buffer is cleared when using blending)
 		if (i < 2 && settings->useBlending)
@@ -321,7 +329,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 		}
 
 		// Save depth texture
-		hdf5file.AddDepthTextureDataset(group, hdf5DatasetNames[i][2], depthStencilTexture);
+		hdf5file.AddDepthTextureDataset(group, hdf5DatasetNames[i][3], depthStencilTexture);
 	}
 
 	group.close();

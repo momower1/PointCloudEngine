@@ -20,10 +20,10 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 
 float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 {
-	if (normal)
+	if (drawNormals)
 	{
 		// Output and possibly blend the world normal vectors in RGB without lighting
-		input.color = 0.5f * (input.normal + 1);
+		input.color = 0.5f * ((normalsInScreenSpace ? input.normalScreen : input.normal) + 1);
 
 		return SplatBlendingPS(false, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
 	}
