@@ -72,6 +72,7 @@ void GroundTruthRenderer::Update()
 		hdf5file.AddStringAttribute(NAMEOF(settings->samplingRate), std::to_wstring(settings->samplingRate));
 		hdf5file.AddStringAttribute(NAMEOF(settings->scale), std::to_wstring(settings->scale));
 		hdf5file.AddStringAttribute(NAMEOF(settings->useLighting), std::to_wstring(settings->useLighting));
+		hdf5file.AddStringAttribute(NAMEOF(settings->useHeadlight), std::to_wstring(settings->useHeadlight));
 		hdf5file.AddStringAttribute(NAMEOF(settings->lightDirection), settings->ToString(settings->lightDirection));
 		hdf5file.AddStringAttribute(NAMEOF(settings->lightIntensity), std::to_wstring(settings->lightIntensity));
 		hdf5file.AddStringAttribute(NAMEOF(settings->ambient), std::to_wstring(settings->ambient));
