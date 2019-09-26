@@ -286,6 +286,16 @@ void Scene::Draw()
 	lightingConstantBufferData.specular = settings->specular;
 	lightingConstantBufferData.specularExponent = settings->specularExponent;
 
+	// Use a headlight or a constant light direction
+	if (settings->useHeadlight)
+	{
+		lightingConstantBufferData.lightDirection = camera->GetForward();
+	}
+	else
+	{
+		lightingConstantBufferData.lightDirection = settings->lightDirection;
+	}
+
 	// Update the buffer
 	d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
 
@@ -381,8 +391,4 @@ void PointCloudEngine::Scene::LoadFile()
     // Reset camera rotation
     cameraPitch = 0;
     cameraYaw = 0;
-
-    // Reset other properties
-	lightingConstantBufferData.useLighting = true;
-	lightingConstantBufferData.lightDirection = settings->lightDirection;
 }

@@ -43,6 +43,7 @@ PointCloudEngine::Settings::Settings()
 
 		// Parse lighting parameters
 		TryParse(NAMEOF(useLighting), useLighting);
+		TryParse(NAMEOF(useHeadlight), useHeadlight);
 		TryParse(NAMEOF(lightDirection), lightDirection);
 		TryParse(NAMEOF(lightIntensity), lightIntensity);
 		TryParse(NAMEOF(ambient), ambient);
@@ -107,6 +108,7 @@ PointCloudEngine::Settings::~Settings()
 
 	settingsFile << L"# Lighting Parameters" << std::endl;
 	settingsFile << NAMEOF(useLighting) << L"=" << useLighting << std::endl;
+	settingsFile << NAMEOF(useHeadlight) << L"=" << useHeadlight << std::endl;
 	settingsFile << NAMEOF(lightDirection) << L"=" << ToString(lightDirection) << std::endl;
 	settingsFile << NAMEOF(lightIntensity) << L"=" << lightIntensity << std::endl;
 	settingsFile << NAMEOF(ambient) << L"=" << ambient << std::endl;

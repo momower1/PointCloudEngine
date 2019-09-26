@@ -29,6 +29,7 @@ namespace PointCloudEngine
 
 		// Lighting parameters
 		bool useLighting = true;
+		bool useHeadlight = true;
 		Vector3 lightDirection = Vector3(0, -0.5f, 1.0f);
 		float lightIntensity = 1.0f;
 		float ambient = 0.4f;
