@@ -7,6 +7,8 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 // Forward declarations
+class HDF5File;
+
 namespace PointCloudEngine
 {
     class SceneObject;
@@ -93,6 +95,8 @@ extern ID3D11BlendState* blendState;
 extern ID3D11Buffer* nullBuffer[1];
 extern ID3D11UnorderedAccessView* nullUAV[1];
 extern ID3D11ShaderResourceView* nullSRV[1];
+extern ID3D11Buffer* lightingConstantBuffer;
+extern LightingConstantBuffer lightingConstantBufferData;
 
 // Global function declarations
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);

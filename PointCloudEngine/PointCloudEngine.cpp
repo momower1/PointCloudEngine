@@ -37,6 +37,10 @@ ID3D11ShaderResourceView* depthTextureSRV;
 ID3D11DepthStencilState* depthStencilState;     // Standard depth/stencil state for 3d rendering
 ID3D11BlendState* blendState;                   // Blend state that is used for transparency
 ID3D11RasterizerState* rasterizerState;		    // Encapsulates settings for the rasterizer stage of the pipeline
+		
+// Lighting buffer
+ID3D11Buffer* lightingConstantBuffer = NULL;
+LightingConstantBuffer lightingConstantBufferData;
 
 // For splat blending
 ID3D11Texture2D* blendingDepthTexture;
@@ -567,6 +571,16 @@ bool InitializeScene()
     TextRenderer::CreateSpriteFont(L"Consolas", L"Assets/Consolas.spritefont");
     TextRenderer::CreateSpriteFont(L"Times New Roman", L"Assets/Times New Roman.spritefont");
 
+	// Create the constant buffer for the lighting
+	D3D11_BUFFER_DESC lightingConstantBufferDesc;
+	ZeroMemory(&lightingConstantBufferDesc, sizeof(lightingConstantBufferDesc));
+	lightingConstantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	lightingConstantBufferDesc.ByteWidth = sizeof(LightingConstantBuffer);
+	lightingConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	hr = d3d11Device->CreateBuffer(&lightingConstantBufferDesc, NULL, &lightingConstantBuffer);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
+
 	scene.Initialize();
     timer.ResetElapsedTime();
 
@@ -603,8 +617,32 @@ void DrawScene()
 	// Set the blend state, blend factor will become (1, 1, 1, 1) when passing NULL
 	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
 
-    // Calculates view and projection matrices and sets the viewport
-    camera->PrepareDraw();
+	// Set the lighting constant buffer
+	lightingConstantBufferData.useLighting = settings->useLighting;
+	lightingConstantBufferData.lightIntensity = settings->lightIntensity;
+	lightingConstantBufferData.ambient = settings->ambient;
+	lightingConstantBufferData.diffuse = settings->diffuse;
+	lightingConstantBufferData.specular = settings->specular;
+	lightingConstantBufferData.specularExponent = settings->specularExponent;
+
+	// Use a headlight or a constant light direction
+	if (settings->useHeadlight)
+	{
+		lightingConstantBufferData.lightDirection = camera->GetForward();
+	}
+	else
+	{
+		lightingConstantBufferData.lightDirection = settings->lightDirection;
+	}
+
+	// Update the buffer
+	d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
+
+	// Set the buffer for the pixel shader
+	d3d11DevCon->PSSetConstantBuffers(1, 1, &lightingConstantBuffer);
+
+	// Calculates view and projection matrices and sets the viewport
+	camera->PrepareDraw();
 
     // Draw scene
     scene.Draw();
@@ -671,6 +709,7 @@ void ReleaseObjects()
     SAFE_RELEASE(depthStencilTexture);
 	SAFE_RELEASE(depthTextureSRV);
     SAFE_RELEASE(rasterizerState);
+	SAFE_RELEASE(lightingConstantBuffer);
 
 	// Release resources for blending
 	SAFE_RELEASE(blendingDepthTexture);

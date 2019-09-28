@@ -10,7 +10,7 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
-	constantBufferData.normal = false;
+	constantBufferData.drawNormals = false;
 }
 
 void GroundTruthRenderer::Initialize()
@@ -59,7 +59,7 @@ void GroundTruthRenderer::Update()
 	}
 
 	// Save HDF5 file
-	if (Input::GetKeyDown(Keyboard::F8))
+	if (Input::GetKeyDown(Keyboard::F7) || Input::GetKeyDown(Keyboard::F8))
 	{
 		// Create a directory for the HDF5 files
 		CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
@@ -72,6 +72,7 @@ void GroundTruthRenderer::Update()
 		hdf5file.AddStringAttribute(NAMEOF(settings->samplingRate), std::to_wstring(settings->samplingRate));
 		hdf5file.AddStringAttribute(NAMEOF(settings->scale), std::to_wstring(settings->scale));
 		hdf5file.AddStringAttribute(NAMEOF(settings->useLighting), std::to_wstring(settings->useLighting));
+		hdf5file.AddStringAttribute(NAMEOF(settings->useHeadlight), std::to_wstring(settings->useHeadlight));
 		hdf5file.AddStringAttribute(NAMEOF(settings->lightDirection), settings->ToString(settings->lightDirection));
 		hdf5file.AddStringAttribute(NAMEOF(settings->lightIntensity), std::to_wstring(settings->lightIntensity));
 		hdf5file.AddStringAttribute(NAMEOF(settings->ambient), std::to_wstring(settings->ambient));
@@ -81,74 +82,24 @@ void GroundTruthRenderer::Update()
 		hdf5file.AddStringAttribute(NAMEOF(settings->blendFactor), std::to_wstring(settings->blendFactor));
 		hdf5file.AddStringAttribute(NAMEOF(settings->density), std::to_wstring(settings->density));
 		hdf5file.AddStringAttribute(NAMEOF(settings->sparseSamplingRate), std::to_wstring(settings->sparseSamplingRate));
-		hdf5file.AddStringAttribute(NAMEOF(settings->stepSize), std::to_wstring(settings->stepSize));
-		hdf5file.AddStringAttribute(NAMEOF(settings->minTheta), std::to_wstring(settings->minTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->maxTheta), std::to_wstring(settings->maxTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->minPhi), std::to_wstring(settings->minPhi));
-		hdf5file.AddStringAttribute(NAMEOF(settings->maxPhi), std::to_wstring(settings->maxPhi));
+		hdf5file.AddStringAttribute(NAMEOF(settings->waypointStepSize), std::to_wstring(settings->waypointStepSize));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereStepSize), std::to_wstring(settings->sphereStepSize));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinTheta), std::to_wstring(settings->sphereMinTheta));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxTheta), std::to_wstring(settings->sphereMaxTheta));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinPhi), std::to_wstring(settings->sphereMinPhi));
+		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxPhi), std::to_wstring(settings->sphereMaxPhi));
 
 		int startViewMode = settings->viewMode;
 		Vector3 startPosition = camera->GetPosition();
 		Matrix startRotation = camera->GetRotationMatrix();
 
-		Vector3 center = boundingCubePosition * sceneObject->transform->scale;
-		float r = Vector3::Distance(camera->GetPosition(), center);
-
-		std::wstring datasetNames[4][3] =
+		if (Input::GetKeyDown(Keyboard::F7))
 		{
-			{ L"SplatsColor", L"SplatsNormal", L"SplatsDepth" },
-			{ L"SplatsSparseColor", L"SplatsSparseNormal", L"SplatsSparseDepth" },
-			{ L"PointsColor", L"PointsNormal", L"PointsDepth" },
-			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseDepth" }
-		};
-
-		UINT counter = 0;
-		float h = settings->stepSize;
-
-		for (float theta = settings->minTheta + h / 2; theta < settings->maxTheta; theta += h / 2)
+			GenerateWaypointDataset(hdf5file);
+		}
+		else
 		{
-			for (float phi = settings->minPhi + h; phi < settings->maxPhi; phi += h)
-			{
-				// Save the viewports in numbered groups with leading zeros
-				std::stringstream groupNameStream;
-				groupNameStream << std::setw(5) << std::setfill('0') << counter++;
-
-				H5::Group group = hdf5file.CreateGroup(groupNameStream.str());
-
-				// Rotate around and look at the center
-				camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
-				camera->LookAt(center);
-
-				// Calculates view and projection matrices and sets the viewport
-				camera->PrepareDraw();
-
-				// Draw and present in every view mode
-				for (UINT i = 0; i < 4; i++)
-				{
-					settings->viewMode = i;
-
-					// Draw and save the color texture
-					HDF5Draw();
-					hdf5file.AddColorTextureDataset(group, datasetNames[i][0], backBufferTexture);
-
-					// Draw and save normal texture
-					constantBufferData.normal = true;
-					HDF5Draw();
-					constantBufferData.normal = false;
-					hdf5file.AddColorTextureDataset(group, datasetNames[i][1], backBufferTexture);
-
-					// Draw depth again without blending (depth buffer is cleared when using blending)
-					if (i < 2 && settings->useBlending)
-					{
-						settings->useBlending = false;
-						HDF5Draw();
-						settings->useBlending = true;
-					}
-
-					// Save depth texture
-					hdf5file.AddDepthTextureDataset(group, datasetNames[i][2], depthStencilTexture);
-				}
-			}
+			GenerateSphereDataset(hdf5file);
 		}
 
 		// Reset properties
@@ -260,7 +211,8 @@ void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTrans
 		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
 		helpTextRenderer->text.append(L"[SPACE] Preview camera trackshot\n");
 		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[F8] Generate HDF5 Dataset\n");
+		helpTextRenderer->text.append(L"[F7] Generate Waypoint HDF5 Dataset\n");
+		helpTextRenderer->text.append(L"[F8] Generate Sphere HDF5 Dataset\n");
 		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
 		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
 		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
@@ -333,4 +285,102 @@ void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
 
 	// Present the result to the screen
 	swapChain->Present(0, 0);
+}
+
+void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex)
+{
+	// Save the viewports in numbered groups with leading zeros
+	std::stringstream groupNameStream;
+	groupNameStream << std::setw(5) << std::setfill('0') << groupIndex;
+
+	H5::Group group = hdf5file.CreateGroup(groupNameStream.str());
+
+	// When using headlight update the light direction
+	if (settings->useHeadlight)
+	{
+		lightingConstantBufferData.lightDirection = camera->GetForward();
+		d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
+	}
+
+	// Calculates view and projection matrices and sets the viewport
+	camera->PrepareDraw();
+
+	// Draw and present in every view mode
+	for (UINT i = 0; i < 4; i++)
+	{
+		settings->viewMode = i;
+
+		// Draw and save the color texture
+		HDF5Draw();
+		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][0], backBufferTexture);
+
+		// Draw and save normal texture
+		constantBufferData.drawNormals = true;
+		constantBufferData.normalsInScreenSpace = false;
+		HDF5Draw();
+		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][1], backBufferTexture);
+
+		// Draw screen space normal texture
+		constantBufferData.normalsInScreenSpace = true;
+		HDF5Draw();
+		constantBufferData.drawNormals = false;
+		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][2], backBufferTexture);
+
+		// Draw depth again without blending (depth buffer is cleared when using blending)
+		if (i < 2 && settings->useBlending)
+		{
+			settings->useBlending = false;
+			HDF5Draw();
+			settings->useBlending = true;
+		}
+
+		// Save depth texture
+		hdf5file.AddDepthTextureDataset(group, hdf5DatasetNames[i][3], depthStencilTexture);
+	}
+
+	group.close();
+}
+
+void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset(HDF5File& hdf5file)
+{
+	Vector3 center = boundingCubePosition * sceneObject->transform->scale;
+	float r = Vector3::Distance(camera->GetPosition(), center);
+
+	UINT counter = 0;
+	float h = settings->sphereStepSize;
+
+	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
+	{
+		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
+		{
+			// Rotate around and look at the center
+			camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
+			camera->LookAt(center);
+
+			HDF5DrawDatasets(hdf5file, counter++);
+		}
+	}
+}
+
+void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset(HDF5File& hdf5file)
+{
+	WaypointRenderer* waypointRenderer = sceneObject->GetComponent<WaypointRenderer>();
+
+	if (waypointRenderer != NULL)
+	{
+		UINT counter = 0;
+		float waypointLocation = 0;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
+
+		while (waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
+		{
+			camera->SetPosition(newCameraPosition);
+			camera->SetRotationMatrix(newCameraRotation);
+
+			HDF5DrawDatasets(hdf5file, counter++);
+
+			waypointLocation += settings->waypointStepSize;
+		}
+	}
 }

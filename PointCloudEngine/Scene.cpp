@@ -48,16 +48,6 @@ void Scene::Initialize()
 	loadingText->transform->scale = Vector3::One;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
-	// Create the constant buffer for the lighting
-	D3D11_BUFFER_DESC lightingConstantBufferDesc;
-	ZeroMemory(&lightingConstantBufferDesc, sizeof(lightingConstantBufferDesc));
-	lightingConstantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	lightingConstantBufferDesc.ByteWidth = sizeof(LightingConstantBuffer);
-	lightingConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-	hr = d3d11Device->CreateBuffer(&lightingConstantBufferDesc, NULL, &lightingConstantBuffer);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
-
     // Try to load the last pointcloudFile
     DelayedLoadFile(settings->pointcloudFile);
 }
@@ -112,6 +102,7 @@ void Scene::Update(Timer &timer)
 	// Camera tracking shot using the waypoints
 	if (Input::GetKeyDown(Keyboard::Space))
 	{
+		waypointPreviewLocation = 0;
 		waypointStartPosition = camera->GetPosition();
 	}
 	else if (Input::GetKeyUp(Keyboard::Space))
@@ -120,11 +111,11 @@ void Scene::Update(Timer &timer)
 	}
 	else if (Input::GetKey(Keyboard::Space))
 	{
-		Vector3 newCameraPosition;
-		Matrix newCameraRotation;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
 
-		waypointRenderer->LerpWaypoints(waypointTime, newCameraPosition, newCameraRotation);
-		waypointTime += 0.25f * settings->stepSize;
+		waypointRenderer->LerpWaypoints(waypointPreviewLocation, newCameraPosition, newCameraRotation);
+		waypointPreviewLocation += settings->waypointPreviewStepSize;
 
 		camera->SetPosition(newCameraPosition);
 		camera->SetRotationMatrix(newCameraRotation);
@@ -277,27 +268,11 @@ void Scene::Update(Timer &timer)
 
 void Scene::Draw()
 {
-	// Set the lighting constant buffer
-	lightingConstantBufferData.useLighting = settings->useLighting;
-	lightingConstantBufferData.lightIntensity = settings->lightIntensity;
-	lightingConstantBufferData.ambient = settings->ambient;
-	lightingConstantBufferData.diffuse = settings->diffuse;
-	lightingConstantBufferData.specular = settings->specular;
-	lightingConstantBufferData.specularExponent = settings->specularExponent;
-
-	// Update the buffer
-	d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
-
-	// Set the buffer for the pixel shader
-	d3d11DevCon->PSSetConstantBuffers(1, 1, &lightingConstantBuffer);
-
     Hierarchy::DrawAllSceneObjects();
 }
 
 void Scene::Release()
 {
-	SAFE_RELEASE(lightingConstantBuffer);
-
     Hierarchy::ReleaseAllSceneObjects();
 }
 
@@ -380,8 +355,4 @@ void PointCloudEngine::Scene::LoadFile()
     // Reset camera rotation
     cameraPitch = 0;
     cameraYaw = 0;
-
-    // Reset other properties
-	lightingConstantBufferData.useLighting = true;
-	lightingConstantBufferData.lightDirection = settings->lightDirection;
 }

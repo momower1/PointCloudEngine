@@ -5,6 +5,7 @@ struct GS_POINT_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float3 positionWorld : POSITION1;
+	float3 normalScreen : NORMAL_SCREEN;
 	float3 normal : NORMAL;
 	float3 color : COLOR;
 };
@@ -17,6 +18,7 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 	GS_POINT_OUTPUT element;
 	element.position = mul(float4(input[0].position, 1), VP);
 	element.positionWorld = input[0].position;
+	element.normalScreen = normalize(mul(input[0].normal, VP));
 	element.normal = input[0].normal;
 	element.color = input[0].color;
 
@@ -25,9 +27,9 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 
 float4 PS(GS_POINT_OUTPUT input) : SV_TARGET
 {
-	if (normal)
+	if (drawNormals)
 	{
-		return float4(0.5f * (input.normal + 1), 1);
+		return float4(0.5f * ((normalsInScreenSpace ? input.normalScreen : input.normal) + 1), 1);
 	}
 	else if (useLighting)
 	{

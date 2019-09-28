@@ -29,6 +29,7 @@ namespace PointCloudEngine
 
 		// Lighting parameters
 		bool useLighting = true;
+		bool useHeadlight = true;
 		Vector3 lightDirection = Vector3(0, -0.5f, 1.0f);
 		float lightIntensity = 1.0f;
 		float ambient = 0.4f;
@@ -45,11 +46,13 @@ namespace PointCloudEngine
 		float sparseSamplingRate = 0.01f;
 
 		// HDF5 dataset generation parameters
-		float stepSize = 0.5f;
-		float minTheta = 0;
-		float maxTheta = XM_PI;
-		float minPhi = 0;
-		float maxPhi = 2 * XM_PI;
+		float waypointStepSize = 0.5f;
+		float waypointPreviewStepSize = 0.1f;
+		float sphereStepSize = 0.5f;
+		float sphereMinTheta = 0;
+		float sphereMaxTheta = XM_PI;
+		float sphereMinPhi = 0;
+		float sphereMaxPhi = 2 * XM_PI;
 
 		// Octree parameters
 		bool useOctree = false;
@@ -63,6 +66,16 @@ namespace PointCloudEngine
 
 		std::wstring ToString(Vector3 v);
 		Vector3 ToVector3(std::wstring s);
+
+	private:
+		std::map<std::wstring, std::wstring> settingsMap;
+
+		void TryParse(std::wstring parameterName, float& outParameterValue);
+		void TryParse(std::wstring parameterName, int& outParameterValue);
+		void TryParse(std::wstring parameterName, UINT& outParameterValue);
+		void TryParse(std::wstring parameterName, bool& outParameterValue);
+		void TryParse(std::wstring parameterName, Vector3& outParameterValue);
+		void TryParse(std::wstring parameterName, std::wstring& outParameterValue);
     };
 }
 

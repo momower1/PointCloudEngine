@@ -25,12 +25,12 @@ H5::Group HDF5File::CreateGroup(std::string name)
 	return file->createGroup(name);
 }
 
-void HDF5File::AddColorTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection)
+void HDF5File::AddColorTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection)
 {
 	AddColorTextureDataset(group, std::string(name.begin(), name.end()), texture, gammaCorrection);
 }
 
-void HDF5File::AddColorTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture, float gammaCorrection)
+void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture, float gammaCorrection)
 {
 	// 1. Convert the input RGBA texture into a 32bit RGBA texture
 	// 2. Make it readable by the CPU and convert only the RGB content to a 8bit buffer (skip alpha)
@@ -159,12 +159,12 @@ void HDF5File::AddColorTextureDataset(H5::Group group, std::string name, ID3D11T
 	dataSet.write(buffer.data(), H5::PredType::STD_U8BE);
 }
 
-void HDF5File::AddDepthTextureDataset(H5::Group group, std::wstring name, ID3D11Texture2D* texture)
+void HDF5File::AddDepthTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture)
 {
 	AddDepthTextureDataset(group, std::string(name.begin(), name.end()), texture);
 }
 
-void HDF5File::AddDepthTextureDataset(H5::Group group, std::string name, ID3D11Texture2D* texture)
+void HDF5File::AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture)
 {
 	ID3D11Texture2D* readableTexture = NULL;
 
@@ -247,7 +247,7 @@ void HDF5File::AddStringAttribute(H5::H5Object* object, std::string name, std::s
 	attribute.write(attributeType, value);
 }
 
-void HDF5File::SetImageAttributes(H5::DataSet dataSet)
+void HDF5File::SetImageAttributes(H5::DataSet& dataSet)
 {
 	AddStringAttribute(&dataSet, L"CLASS", L"IMAGE");
 	AddStringAttribute(&dataSet, L"IMAGE_VERSION", L"1.2");
