@@ -5,28 +5,34 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Load and normalize CIFAR10 dataset
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, num_workers=2)
-classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
 # Function to show an image
 def imshow(img):
-    img = img / 2 + 0.5     # unnormalize
     npimg = img.numpy()
+    npimg = np.transpose(npimg, axes=(1, 2, 0))
     plt.imshow(npimg)
     plt.show()
 
-# Show some random images with the labels
-for i in range(0, 5):
-    rnd = random.randrange(0, len(trainloader.dataset))
-    print(trainloader.dataset.classes[trainloader.dataset.targets[rnd]])
-    imshow(torch.from_numpy(trainloader.dataset.data[rnd]))
+testset = torchvision.datasets.ImageFolder(root='./data/Testset/', transform=torchvision.transforms.ToTensor())
+testloader = torch.utils.data.DataLoader(testset, batch_size=3, shuffle=False, num_workers=0)
+
+iterator = iter(testloader)
+
+print('Showing ground truth')
+groundTruth = iterator.next()
+imshow(groundTruth[0][0])
+imshow(groundTruth[0][1])
+imshow(groundTruth[0][2])
+
+print('Showing input')
+input = iterator.next()
+imshow(input[0][0])
+imshow(input[0][1])
+imshow(input[0][2])
 
 # TESTING: Load neural network
 # Input and Output: 3 Channel Color (RGB), 1 Channel Depth
 model = torch.jit.load('./data/Pytorch_Jit_Model_Lucy.pt')
 print('Loaded pytorch model')
+
+# Evaluate model
+#output = model(input)
