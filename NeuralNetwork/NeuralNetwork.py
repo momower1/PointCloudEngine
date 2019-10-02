@@ -17,22 +17,26 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=3, shuffle=False, n
 
 iterator = iter(testloader)
 
-print('Showing ground truth')
-groundTruth = iterator.next()
-imshow(groundTruth[0][0])
-imshow(groundTruth[0][1])
-imshow(groundTruth[0][2])
+print('Showing splats')
+splats = iterator.next()
+imshow(splats[0][0])
+imshow(splats[0][1])
+imshow(splats[0][2])
 
-print('Showing input')
-input = iterator.next()
-imshow(input[0][0])
-imshow(input[0][1])
-imshow(input[0][2])
+print('Showing sparse points')
+sparsePoints = iterator.next()
+imshow(sparsePoints[0][0])
+imshow(sparsePoints[0][1])
+imshow(sparsePoints[0][2])
 
 # TESTING: Load neural network
 # Input and Output: 3 Channel Color (RGB), 1 Channel Depth
 model = torch.jit.load('./data/Pytorch_Jit_Model_Lucy.pt')
-print('Loaded pytorch model')
+model = model.to('cuda')
+print('Loaded model')
 
-# Evaluate model
-#output = model(input)
+# Evaluate model with random input
+input = torch.randn(1, 2, 1024, 1024)
+input = input.to('cuda')
+output = model(input)
+print('Done')
