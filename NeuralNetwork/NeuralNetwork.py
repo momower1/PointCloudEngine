@@ -7,7 +7,7 @@ import numpy as np
 
 # Function to show an image
 def imshow(img):
-    npimg = img.numpy()
+    npimg = img.detach().numpy()
     npimg = np.transpose(npimg, axes=(1, 2, 0))
     plt.imshow(npimg)
     plt.show()
@@ -32,11 +32,16 @@ imshow(sparsePoints[0][2])
 # TESTING: Load neural network
 # Input and Output: 3 Channel Color (RGB), 1 Channel Depth
 model = torch.jit.load('./data/Pytorch_Jit_Model_Lucy.pt')
-model = model.to('cuda')
+model = model.cuda()
 print('Loaded model')
 
 # Evaluate model with random input
 input = torch.randn(1, 2, 1024, 1024)
-input = input.to('cuda')
+input = input.cuda()
 output = model(input)
-print('Done')
+print('Evaluated model')
+
+# Show output image
+print('Showing output')
+output = output.cpu()
+imshow(output[0])
