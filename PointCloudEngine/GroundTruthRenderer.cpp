@@ -178,12 +178,19 @@ void GroundTruthRenderer::Draw()
 	{
 		d3d11DevCon->Draw(vertexCount, 0);
 	}
+
+	// Evaluate neural network and present the result to the screen
+	if (settings->viewMode == 4)
+	{
+		DrawNeuralNetwork();
+	}
 }
 
 void GroundTruthRenderer::Release()
 {
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
+	SafeDelete(torchDevice);
 }
 
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
@@ -225,7 +232,12 @@ void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTrans
 
 void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, TextRenderer* textRenderer)
 {
-	if (settings->viewMode % 2 == 0)
+	if (settings->viewMode == 4)
+	{
+		textTransform->position = Vector3(-1.0f, -0.735f, 0);
+		textRenderer->text = std::wstring(L"View Mode: Neural Network\n");
+	}
+	else if (settings->viewMode % 2 == 0)
 	{
 		textTransform->position = Vector3(-1.0f, -0.735f, 0);
 
@@ -271,6 +283,33 @@ void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 	sceneObject->RemoveComponent(this);
 }
 
+void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
+{
+	// Load the neural network from file
+	if (torchDevice == NULL)
+	{
+		torchDevice = new torch::Device(torch::kCPU);
+		std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
+
+		try
+		{
+			model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), *torchDevice);
+		}
+		catch (const std::exception & e)
+		{
+			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
+		}
+	}
+
+	// Evaluate the network with random input
+	std::vector<torch::jit::IValue> inputs;
+	inputs.push_back(torch::rand({ 1, 2, 128, 128 }, *torchDevice));
+
+	torch::Tensor output = model.forward(inputs).toTensor();
+
+	std::cout << output;
+}
+
 void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
 {
 	// Clear the render target
@@ -305,7 +344,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	// Calculates view and projection matrices and sets the viewport
 	camera->PrepareDraw();
 
-	// Draw and present in every view mode
+	// Draw and present in four different view modes
 	for (UINT i = 0; i < 4; i++)
 	{
 		settings->viewMode = i;

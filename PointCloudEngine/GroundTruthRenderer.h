@@ -57,6 +57,11 @@ namespace PointCloudEngine
 			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseNormalScreen", L"PointsSparseDepth" }
 		};
 
+		// Pytorch Neural Network
+		torch::Device *torchDevice = NULL;
+		torch::jit::script::Module model;
+
+		void DrawNeuralNetwork();
 		void HDF5Draw();
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
 		void GenerateSphereDataset(HDF5File& hdf5file);

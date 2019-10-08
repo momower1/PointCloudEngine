@@ -77,7 +77,7 @@ void Scene::Update(Timer &timer)
 	// Toggle view mode depending on the renderer
 	if (Input::GetKeyDown(Keyboard::Enter))
 	{
-		settings->viewMode = (settings->viewMode + 1) % (settings->useOctree ? 3 : 4);
+		settings->viewMode = (settings->viewMode + 1) % (settings->useOctree ? 3 : 5);
 	}
 
 	// Toggle lighting with L
