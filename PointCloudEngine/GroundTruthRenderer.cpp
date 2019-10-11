@@ -330,10 +330,10 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		d3d11DevCon->Map(tensorTexture, 0, D3D11_MAP_READ, 0, &subresource);
 
 		// Convert the texture data to a tensor for the neural network
-		torch::Tensor input = torch::zeros({ 1, 2, 128, 128 }, torch::dtype(torch::kHalf));
+		torch::Tensor input = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kHalf));
 
 		// Copy the data from the texture to the tensor
-		memcpy(input.data_ptr(), subresource.pData, 2 * 2 * 128 * 128);
+		memcpy(input.data_ptr(), subresource.pData, 2 * 2 * settings->resolutionX * settings->resolutionY);
 
 		// Unmap the texture
 		d3d11DevCon->Unmap(tensorTexture, 0);
@@ -360,12 +360,12 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		d3d11DevCon->Map(tensorTexture, 0, D3D11_MAP_WRITE, 0, &subresource);
 
 		// Copy the data from the texture to the tensor
-		memcpy(subresource.pData, output.data_ptr(), 2 * 2 * 128 * 128);
+		memcpy(subresource.pData, output.data_ptr(), 2 * 2 * settings->resolutionX * settings->resolutionY);
 
 		// Unmap the texture
 		d3d11DevCon->Unmap(tensorTexture, 0);
 
-		SaveWICTextureToFile(d3d11DevCon, tensorTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
+		//SaveWICTextureToFile(d3d11DevCon, tensorTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
 
 		SAFE_RELEASE(tensorTexture);
 	}
