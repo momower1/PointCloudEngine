@@ -288,7 +288,15 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	// Load the neural network from file
 	if (torchDevice == NULL)
 	{
-		torchDevice = new torch::Device(torch::kCPU);
+		if (torch::cuda::is_available())
+		{
+			torchDevice = new torch::Device(at::kCUDA);
+		}
+		else
+		{
+			torchDevice = new torch::Device(at::kCPU);
+		}
+
 		std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
 
 		try
@@ -302,8 +310,10 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	}
 
 	// Evaluate the network with random input
+	torch::Tensor input = torch::rand({ 1, 2, 128, 128 }, *torchDevice);
+
 	std::vector<torch::jit::IValue> inputs;
-	inputs.push_back(torch::rand({ 1, 2, 128, 128 }, *torchDevice));
+	inputs.push_back(input);
 
 	torch::Tensor output = model.forward(inputs).toTensor();
 
