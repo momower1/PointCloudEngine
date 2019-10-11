@@ -285,9 +285,9 @@ void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
-	// Load the neural network from file
 	if (torchDevice == NULL)
 	{
+		// Load the neural network from file
 		if (torch::cuda::is_available())
 		{
 			torchDevice = new torch::Device(at::kCUDA);
@@ -308,16 +308,67 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
 		}
 	}
+	else
+	{
+		// Get the data from the backbuffer
+		ID3D11Texture2D* tensorTexture = NULL;
+		D3D11_TEXTURE2D_DESC tensorTextureDesc;
 
-	// Evaluate the network with random input
-	torch::Tensor input = torch::rand({ 1, 2, 128, 128 }, *torchDevice);
+		// Copy it to a cpu readable and writeable texture
+		backBufferTexture->GetDesc(&tensorTextureDesc);
+		tensorTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+		tensorTextureDesc.Usage = D3D11_USAGE_STAGING;
+		tensorTextureDesc.BindFlags = 0;
 
-	std::vector<torch::jit::IValue> inputs;
-	inputs.push_back(input);
+		hr = d3d11Device->CreateTexture2D(&tensorTextureDesc, NULL, &tensorTexture);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-	torch::Tensor output = model.forward(inputs).toTensor();
+		d3d11DevCon->CopyResource(tensorTexture, backBufferTexture);
 
-	std::cout << output;
+		// Read the raw texture data
+		D3D11_MAPPED_SUBRESOURCE subresource;
+		d3d11DevCon->Map(tensorTexture, 0, D3D11_MAP_READ, 0, &subresource);
+
+		// Convert the texture data to a tensor for the neural network
+		torch::Tensor input = torch::zeros({ 1, 2, 128, 128 }, torch::dtype(torch::kHalf));
+
+		// Copy the data from the texture to the tensor
+		memcpy(input.data_ptr(), subresource.pData, 2 * 2 * 128 * 128);
+
+		// Unmap the texture
+		d3d11DevCon->Unmap(tensorTexture, 0);
+
+		// Convert to 32bit float and push to GPU if possible
+		input = input.to(torch::dtype(torch::kFloat32));
+
+		if (torch::cuda::is_available())
+		{
+			input = input.cuda();
+		}
+
+		std::vector<torch::jit::IValue> inputs;
+		inputs.push_back(input);
+
+		// Evaluate the model
+		torch::Tensor output = model.forward(inputs).toTensor();
+
+		// Put the tensor back to 16bit float and on the cpu in order to read it
+		output = output.to(torch::dtype(torch::kHalf));
+		output = output.cpu();
+
+		// Copy the output data to the texture
+		d3d11DevCon->Map(tensorTexture, 0, D3D11_MAP_WRITE, 0, &subresource);
+
+		// Copy the data from the texture to the tensor
+		memcpy(subresource.pData, output.data_ptr(), 2 * 2 * 128 * 128);
+
+		// Unmap the texture
+		d3d11DevCon->Unmap(tensorTexture, 0);
+
+		SaveWICTextureToFile(d3d11DevCon, tensorTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
+
+		SAFE_RELEASE(tensorTexture);
+	}
 }
 
 void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
