@@ -58,7 +58,17 @@ namespace PointCloudEngine
 		};
 
 		// Pytorch Neural Network
-		torch::jit::script::Module* model = NULL;
+		bool loadPytorchModel = true;
+		torch::jit::script::Module model;
+		torch::Tensor colorTensor;
+		torch::Tensor depthTensor;
+		torch::Tensor inputTensor;
+		ID3D11Texture2D* colorTexture = NULL;
+		ID3D11Texture2D* depthTexture = NULL;
+
+		// Required to avoid memory overload with the forward function
+		// Since we don't use model.backward() it should be fine
+		//torch::NoGradGuard noGradGuard;
 
 		void DrawNeuralNetwork();
 		void HDF5Draw();

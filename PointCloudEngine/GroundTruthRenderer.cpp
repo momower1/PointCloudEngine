@@ -190,7 +190,10 @@ void GroundTruthRenderer::Release()
 {
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
-	SafeDelete(model);
+
+	// Neural Network
+	SAFE_RELEASE(colorTexture);
+	SAFE_RELEASE(depthTexture);
 }
 
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
@@ -285,128 +288,119 @@ void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
-	if (model == NULL)
+	if (loadPytorchModel)
 	{
 		std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
 
 		try
 		{
-			model = new torch::jit::script::Module();
-
 			// Load the neural network from file
 			if (torch::cuda::is_available())
 			{
-				*model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
+				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
 			}
 			else
 			{
-				*model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
+				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
 			}
+
+			// Create CPU readable and writeable textures
+			D3D11_TEXTURE2D_DESC colorTextureDesc;
+			D3D11_TEXTURE2D_DESC depthTextureDesc;
+
+			// Copy the format information and set the flags
+			backBufferTexture->GetDesc(&colorTextureDesc);
+			depthStencilTexture->GetDesc(&depthTextureDesc);
+			colorTextureDesc.CPUAccessFlags = depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+			colorTextureDesc.Usage = depthTextureDesc.Usage = D3D11_USAGE_STAGING;
+			colorTextureDesc.BindFlags = depthTextureDesc.BindFlags = 0;
+
+			hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
+			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+			hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
+			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+			// Create an empty tensor to use as color texture read/write input and output (texture memory layout is different from tensor)
+			colorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
+
+			// Create an empty tensor to use as depth input
+			depthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
+
+			// Create an input tensor for the neural network
+			inputTensor = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+
+			loadPytorchModel = false;
 		}
-		catch (const std::exception & e)
+		catch (const std::exception &e)
 		{
 			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
 		}
 	}
 	else
 	{
-		// Create CPU readable and writeable textures
-		ID3D11Texture2D* colorTexture = NULL;
-		ID3D11Texture2D* depthTexture = NULL;
-		D3D11_TEXTURE2D_DESC colorTextureDesc;
-		D3D11_TEXTURE2D_DESC depthTextureDesc;
-
-		// Copy the format information and set the flags
-		backBufferTexture->GetDesc(&colorTextureDesc);
-		depthStencilTexture->GetDesc(&depthTextureDesc);
-		colorTextureDesc.CPUAccessFlags = depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-		colorTextureDesc.Usage = depthTextureDesc.Usage = D3D11_USAGE_STAGING;
-		colorTextureDesc.BindFlags = depthTextureDesc.BindFlags = 0;
-
-		hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-		hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
 		// Copy color and depth from the screeen to these textures
 		d3d11DevCon->CopyResource(colorTexture, backBufferTexture);
 		d3d11DevCon->CopyResource(depthTexture, depthStencilTexture);
 
-		// Create an empty tensor to use as color texture read/write input and output (texture memory layout is different from tensor)
-		torch::Tensor color = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
-
-		// Read the raw texture data
+		// Copy the data from the color texture to the cpu tensor
 		D3D11_MAPPED_SUBRESOURCE subresource;
+		colorTensor = colorTensor.cpu();
 		d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_READ, 0, &subresource);
-
-		// Copy the data from the texture to the tensor
-		memcpy(color.data_ptr(), subresource.pData, sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
-
-		// Unmap the texture
+		memcpy(colorTensor.data_ptr(), subresource.pData, sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
 		d3d11DevCon->Unmap(colorTexture, 0);
 
-		// Create an empty tensor to use as depth input
-		torch::Tensor depth = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
-
-		// Read depth data into the tensor
+		// Copy the data from the depth texture to the cpu tensor
+		depthTensor = depthTensor.cpu();
 		d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
-
-		// Copy the data from the texture to the tensor
-		memcpy(depth.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY);
-
-		// Unmap the texture
+		memcpy(depthTensor.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY);
 		d3d11DevCon->Unmap(depthTexture, 0);
 
-		// Create an input tensor for the neural network
-		torch::Tensor input = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+		// Move tensors to gpu for faster computation
+		if (torch::cuda::is_available())
+		{
+			colorTensor = colorTensor.cuda();
+			depthTensor = depthTensor.cuda();
+			inputTensor = inputTensor.cuda();
+		}
 
 		// First input channel is color
 		// Convert to 32bit float and transpose the tensor to make it compatible with the neural network input
-		color = color.to(torch::dtype(torch::kFloat32));
-		color = color.transpose(0, 2);
-		input[0][0] = color[0];
+		colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
+		colorTensor = colorTensor.transpose(0, 2);
+		inputTensor[0][0] = colorTensor[0];
 
-		// Second channel is depth
+		// Second input channel is depth
 		// Transpose the tensor to make it compatible
-		depth = depth.transpose(0, 2);
-		input[0][1] = depth[0];
-
-		// Move input to gpu
-		if (torch::cuda::is_available())
-		{
-			input = input.cuda();
-		}
+		depthTensor = depthTensor.transpose(0, 2);
+		inputTensor[0][1] = depthTensor[0];
 
 		std::vector<torch::jit::IValue> inputs;
-		inputs.push_back(input);
+		inputs.push_back(inputTensor);
 
 		// Evaluate the model
 		// Input: 1 Channel Color (R, G or B), 1 Channel Depth
 		// Output: 1 Channel Color, 1 Channel Depth, 1 Channel Visibility Mask
-		torch::Tensor output = model->forward(inputs).toTensor();
+		torch::Tensor output = model.forward(inputs).toTensor();
 
 		// Replace the channels in the color tensor
-		color[0] = output[0][0];
-		color[1] = output[0][1];
-		color[2] = output[0][2];
+		colorTensor[0] = output[0][0];
+		colorTensor[1] = output[0][1];
+		colorTensor[2] = output[0][2];
 
 		// Transpose back to texture format
-		color = color.transpose(0, 2);
-		color = color.to(torch::dtype(torch::kHalf));
+		depthTensor = depthTensor.transpose(0, 2);
+		colorTensor = colorTensor.transpose(0, 2);
+		colorTensor = colorTensor.to(torch::dtype(torch::kHalf));
 
-		// Copy the color data to the texture
+		// Copy the cpu color data to the texture
+		colorTensor = colorTensor.cpu();
 		d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_WRITE, 0, &subresource);
-
-		memcpy(subresource.pData, color.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
-
-		// Unmap the texture
+		memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
 		d3d11DevCon->Unmap(colorTexture, 0);
 
 		// Replace the backbuffer texture by the output
 		d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
-
-		SAFE_RELEASE(colorTexture);
 	}
 }
 
