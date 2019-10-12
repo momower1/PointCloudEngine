@@ -365,7 +365,8 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// Unmap the texture
 		d3d11DevCon->Unmap(tensorTexture, 0);
 
-		//SaveWICTextureToFile(d3d11DevCon, tensorTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
+		// Replace the backbuffer texture by the output
+		d3d11DevCon->CopyResource(backBufferTexture, tensorTexture);
 
 		SAFE_RELEASE(tensorTexture);
 	}
