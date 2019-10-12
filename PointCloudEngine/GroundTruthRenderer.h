@@ -58,8 +58,7 @@ namespace PointCloudEngine
 		};
 
 		// Pytorch Neural Network
-		torch::Device *torchDevice = NULL;
-		torch::jit::script::Module model;
+		torch::jit::script::Module* model = NULL;
 
 		void DrawNeuralNetwork();
 		void HDF5Draw();
