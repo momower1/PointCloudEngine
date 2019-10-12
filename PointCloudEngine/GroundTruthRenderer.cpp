@@ -330,6 +330,9 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			// Create an input tensor for the neural network
 			inputTensor = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
 
+			// Create an output tensor for the neural network
+			outputTensor = torch::zeros({ 1, 3, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+
 			loadPytorchModel = false;
 		}
 		catch (const std::exception &e)
@@ -367,30 +370,37 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// First input channel is color
 		// Convert to 32bit float and transpose the tensor to make it compatible with the neural network input
 		colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
-		colorTensor = colorTensor.transpose(0, 2);
+		colorTensor = colorTensor.transpose(0, 2).transpose(1, 2);
 		inputTensor[0][0] = colorTensor[0];
 
 		// Second input channel is depth
 		// Transpose the tensor to make it compatible
-		depthTensor = depthTensor.transpose(0, 2);
+		depthTensor = depthTensor.transpose(0, 2).transpose(1, 2);
 		inputTensor[0][1] = depthTensor[0];
 
-		std::vector<torch::jit::IValue> inputs;
-		inputs.push_back(inputTensor);
+		try
+		{
+			std::vector<torch::jit::IValue> inputs;
+			inputs.push_back(inputTensor);
 
-		// Evaluate the model
-		// Input: 1 Channel Color (R, G or B), 1 Channel Depth
-		// Output: 1 Channel Color, 1 Channel Depth, 1 Channel Visibility Mask
-		torch::Tensor output = model.forward(inputs).toTensor();
+			// Evaluate the model
+			// Input: 1 Channel Color (R, G or B), 1 Channel Depth
+			// Output: 1 Channel Color, 1 Channel Depth, 1 Channel Visibility Mask
+			outputTensor = model.forward(inputs).toTensor();
+		}
+		catch (std::exception & e)
+		{
+			ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the resolution in x and y is a multiple of 128!");
+		}
 
 		// Replace the channels in the color tensor
-		colorTensor[0] = output[0][0];
-		colorTensor[1] = output[0][1];
-		colorTensor[2] = output[0][2];
+		colorTensor[0] = outputTensor[0][0];
+		colorTensor[1] = outputTensor[0][1];
+		colorTensor[2] = outputTensor[0][2];
 
 		// Transpose back to texture format
-		depthTensor = depthTensor.transpose(0, 2);
-		colorTensor = colorTensor.transpose(0, 2);
+		depthTensor = depthTensor.transpose(1, 2).transpose(0, 2);
+		colorTensor = colorTensor.transpose(1, 2).transpose(0, 2);
 		colorTensor = colorTensor.to(torch::dtype(torch::kHalf));
 
 		// Copy the cpu color data to the texture
