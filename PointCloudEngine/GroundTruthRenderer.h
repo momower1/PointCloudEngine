@@ -66,12 +66,15 @@ namespace PointCloudEngine
 		torch::Tensor outputTensor;
 		ID3D11Texture2D* colorTexture = NULL;
 		ID3D11Texture2D* depthTexture = NULL;
+		float l1Loss, mseLoss, smoothL1Loss;
 
 		// Required to avoid memory overload with the forward function
 		// Since we don't use model.backward() it should be fine
 		torch::NoGradGuard noGradGuard;
 
 		void DrawNeuralNetwork();
+		void CalculateLosses();
+		void OutputTensorSize(torch::Tensor tensor);
 		void HDF5Draw();
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
 		void GenerateSphereDataset(HDF5File& hdf5file);

@@ -239,6 +239,9 @@ void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, Te
 	{
 		textTransform->position = Vector3(-1.0f, -0.735f, 0);
 		textRenderer->text = std::wstring(L"View Mode: Neural Network\n");
+		textRenderer->text.append(L"L1 Loss: " + (settings->calculateLosses ? std::to_wstring(l1Loss) : L"Off") + L"\n");
+		textRenderer->text.append(L"Mean Square Error Loss: " + (settings->calculateLosses ? std::to_wstring(mseLoss) : L"Off") + L"\n");
+		textRenderer->text.append(L"Smooth L1 Loss: " + (settings->calculateLosses ? std::to_wstring(smoothL1Loss) : L"Off") + L"\n");
 	}
 	else if (settings->viewMode % 2 == 0)
 	{
@@ -409,9 +412,84 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
 		d3d11DevCon->Unmap(colorTexture, 0);
 
+		if (settings->calculateLosses)
+		{
+			CalculateLosses();
+		}
+
 		// Replace the backbuffer texture by the output
 		d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
 	}
+}
+
+void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
+{
+	// Create a temporary texture and tensor to store the splat color rendering
+	ID3D11Texture2D* splatColorTexture = NULL;
+	D3D11_TEXTURE2D_DESC splatColorTextureDesc;
+	colorTexture->GetDesc(&splatColorTextureDesc);
+	hr = d3d11Device->CreateTexture2D(&splatColorTextureDesc, NULL, &splatColorTexture);
+	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+	torch::Tensor splatColorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
+	torch::Tensor splatDepthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
+
+	// Draw again in splat view mode
+	settings->viewMode = 0;
+	Draw();
+	settings->viewMode = 4;
+
+	// Copy splat rendering from screen to the texture
+	d3d11DevCon->CopyResource(splatColorTexture, backBufferTexture);
+	d3d11DevCon->CopyResource(depthTexture, depthStencilTexture);
+
+	// Copy the data from the splat color texture to the tensor
+	D3D11_MAPPED_SUBRESOURCE subresource;
+	d3d11DevCon->Map(splatColorTexture, 0, D3D11_MAP_READ, 0, &subresource);
+	memcpy(splatColorTensor.data_ptr(), subresource.pData, sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
+	d3d11DevCon->Unmap(splatColorTexture, 0);
+	SAFE_RELEASE(splatColorTexture);
+
+	// Copy the depth data to the depth tensor
+	d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
+	memcpy(splatDepthTensor.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY * 1);
+	d3d11DevCon->Unmap(depthTexture, 0);
+
+	if (settings->useCUDA && torch::cuda::is_available())
+	{
+		splatColorTensor = splatColorTensor.cuda();
+		splatDepthTensor = splatDepthTensor.cuda();
+	}
+
+	// Convert into the same format as the output tensor
+	splatColorTensor = splatColorTensor.transpose(0, 2).transpose(1, 2);
+	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
+	splatDepthTensor = splatDepthTensor.transpose(0, 2).transpose(1, 2);
+
+	torch::Tensor selfTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+	selfTensor[0] = outputTensor[0][0];
+	selfTensor[1] = outputTensor[0][1];
+
+	torch::Tensor targetTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+	targetTensor[0] = splatColorTensor[0];
+	targetTensor[1] = splatDepthTensor[0];
+
+	// Calculate the losses
+	l1Loss = torch::l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
+	mseLoss = torch::mse_loss(selfTensor, targetTensor).cpu().data<float>()[0];
+	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
+}
+
+void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor tensor)
+{
+	c10::IntArrayRef sizes = tensor.sizes();
+
+	for (int i = 0; i < sizes.size(); i++)
+	{
+		OutputDebugString((std::to_wstring(sizes[i]) + L" ").c_str());
+	}
+
+	OutputDebugString(L"\n");
 }
 
 void PointCloudEngine::GroundTruthRenderer::HDF5Draw()

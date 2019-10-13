@@ -61,6 +61,7 @@ PointCloudEngine::Settings::Settings()
 
 		// Parse neural network parameters
 		TryParse(NAMEOF(useCUDA), useCUDA);
+		TryParse(NAMEOF(calculateLosses), calculateLosses);
 
 		// Parse HDF5 dataset generation parameters
 		TryParse(NAMEOF(waypointStepSize), waypointStepSize);
@@ -132,6 +133,7 @@ PointCloudEngine::Settings::~Settings()
 
 	settingsFile << L"# Neural Network Parameters" << std::endl;
 	settingsFile << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
+	settingsFile << NAMEOF(calculateLosses) << L"=" << calculateLosses << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;
