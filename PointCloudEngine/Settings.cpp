@@ -59,6 +59,9 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(density), density);
 		TryParse(NAMEOF(sparseSamplingRate), sparseSamplingRate);
 
+		// Parse neural network parameters
+		TryParse(NAMEOF(useCUDA), useCUDA);
+
 		// Parse HDF5 dataset generation parameters
 		TryParse(NAMEOF(waypointStepSize), waypointStepSize);
 		TryParse(NAMEOF(waypointPreviewStepSize), waypointPreviewStepSize);
@@ -125,6 +128,10 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# Ground Truth Parameters" << std::endl;
 	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
 	settingsFile << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
+	settingsFile << std::endl;
+
+	settingsFile << L"# Neural Network Parameters" << std::endl;
+	settingsFile << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;

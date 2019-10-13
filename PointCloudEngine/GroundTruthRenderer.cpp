@@ -295,7 +295,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		try
 		{
 			// Load the neural network from file
-			if (torch::cuda::is_available())
+			if (settings->useCUDA && torch::cuda::is_available())
 			{
 				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
 			}
@@ -360,7 +360,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		d3d11DevCon->Unmap(depthTexture, 0);
 
 		// Move tensors to gpu for faster computation
-		if (torch::cuda::is_available())
+		if (settings->useCUDA && torch::cuda::is_available())
 		{
 			colorTensor = colorTensor.cuda();
 			depthTensor = depthTensor.cuda();

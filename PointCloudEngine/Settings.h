@@ -45,6 +45,9 @@ namespace PointCloudEngine
 		float density = 1.0f;
 		float sparseSamplingRate = 0.01f;
 
+		// Neural Network parameters
+		bool useCUDA = true;
+
 		// HDF5 dataset generation parameters
 		float waypointStepSize = 0.5f;
 		float waypointPreviewStepSize = 0.1f;
