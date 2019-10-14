@@ -13,6 +13,7 @@ namespace PointCloudEngine
         ~Settings();
 
         // Rendering parameters default values
+		Vector4 backgroundColor = Vector4(0.5f, 0.5f, 0.5f, 0);
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
         float farZ = 1000.0f;
@@ -69,7 +70,9 @@ namespace PointCloudEngine
         float scrollSensitivity = 0.5f;
 
 		std::wstring ToString(Vector3 v);
+		std::wstring ToString(Vector4 v);
 		Vector3 ToVector3(std::wstring s);
+		Vector4 ToVector4(std::wstring s);
 
 	private:
 		std::map<std::wstring, std::wstring> settingsMap;
@@ -79,6 +82,7 @@ namespace PointCloudEngine
 		void TryParse(std::wstring parameterName, UINT& outParameterValue);
 		void TryParse(std::wstring parameterName, bool& outParameterValue);
 		void TryParse(std::wstring parameterName, Vector3& outParameterValue);
+		void TryParse(std::wstring parameterName, Vector4& outParameterValue);
 		void TryParse(std::wstring parameterName, std::wstring& outParameterValue);
     };
 }

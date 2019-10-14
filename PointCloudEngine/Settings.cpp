@@ -27,6 +27,7 @@ PointCloudEngine::Settings::Settings()
         }
 
 		// Parse rendering parameters
+		TryParse(NAMEOF(backgroundColor), backgroundColor);
 		TryParse(NAMEOF(fovAngleY), fovAngleY);
 		TryParse(NAMEOF(nearZ), nearZ);
 		TryParse(NAMEOF(farZ), farZ);
@@ -93,6 +94,7 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << std::endl;
 
     settingsFile << L"# Rendering Parameters" << std::endl;
+	settingsFile << NAMEOF(backgroundColor) << L"=" << ToString(backgroundColor) << std::endl;
     settingsFile << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
     settingsFile << NAMEOF(nearZ) << L"=" << nearZ << std::endl;
     settingsFile << NAMEOF(farZ) << L"=" << farZ << std::endl;
@@ -167,6 +169,11 @@ std::wstring PointCloudEngine::Settings::ToString(Vector3 v)
 	return L"(" + std::to_wstring(v.x) + L"," + std::to_wstring(v.y) + L"," + std::to_wstring(v.z) + L")";
 }
 
+std::wstring PointCloudEngine::Settings::ToString(Vector4 v)
+{
+	return L"(" + std::to_wstring(v.x) + L"," + std::to_wstring(v.y) + L"," + std::to_wstring(v.z) + L"," + std::to_wstring(v.w) + L")";
+}
+
 Vector3 PointCloudEngine::Settings::ToVector3(std::wstring s)
 {
 	// Remove brackets
@@ -179,6 +186,22 @@ Vector3 PointCloudEngine::Settings::ToVector3(std::wstring s)
 	std::wstring z = s.substr(y.length() + 1, s.length());
 	
 	return Vector3(std::stof(x), std::stof(y), std::stof(z));
+}
+
+Vector4 PointCloudEngine::Settings::ToVector4(std::wstring s)
+{
+	// Remove brackets
+	s = s.substr(1, s.length() - 1);
+
+	// Parse the string into seperate x,y,z,w strings
+	std::wstring x = s.substr(0, s.find(L','));
+	s = s.substr(x.length() + 1, s.length());
+	std::wstring y = s.substr(0, s.find(L','));
+	s = s.substr(y.length() + 1, s.length());
+	std::wstring z = s.substr(0, s.find(L','));
+	std::wstring w = s.substr(z.length() + 1, s.length());
+
+	return Vector4(std::stof(x), std::stof(y), std::stof(z), std::stof(w));
 }
 
 void PointCloudEngine::Settings::TryParse(std::wstring parameterName, float& outParameterValue)
@@ -218,6 +241,14 @@ void PointCloudEngine::Settings::TryParse(std::wstring parameterName, Vector3& o
 	if (settingsMap.find(parameterName) != settingsMap.end())
 	{
 		outParameterValue = ToVector3(settingsMap[parameterName]);
+	}
+}
+
+void PointCloudEngine::Settings::TryParse(std::wstring parameterName, Vector4& outParameterValue)
+{
+	if (settingsMap.find(parameterName) != settingsMap.end())
+	{
+		outParameterValue = ToVector4(settingsMap[parameterName]);
 	}
 }
 

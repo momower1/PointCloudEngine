@@ -416,9 +416,11 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		{
 			CalculateLosses();
 		}
-
-		// Replace the backbuffer texture by the output
-		d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
+		else
+		{
+			// Replace the backbuffer texture by the output
+			d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
+		}
 	}
 }
 
@@ -433,6 +435,10 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 
 	torch::Tensor splatColorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
 	torch::Tensor splatDepthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
+
+	// Clear render target and the depth/stencil view
+	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Draw again in splat view mode
 	settings->viewMode = 0;
@@ -478,6 +484,9 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	l1Loss = torch::l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
 	mseLoss = torch::mse_loss(selfTensor, targetTensor).cpu().data<float>()[0];
 	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
+
+	// Show results on screen
+	d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
 }
 
 void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor tensor)
@@ -495,8 +504,7 @@ void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor tenso
 void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
 {
 	// Clear the render target
-	float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
-	d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
+	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
 
 	// Clear the depth/stencil view
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

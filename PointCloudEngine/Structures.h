@@ -209,7 +209,7 @@ namespace PointCloudEngine
 		float diffuse;
 		float specular;
 		float specularExponent;
-		float padding[3];
+		Vector3 backgroundColor;
 	};
 }
 

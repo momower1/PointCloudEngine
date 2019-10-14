@@ -9,7 +9,7 @@ cbuffer LightingConstantBuffer : register(b1)
 	float specular;
 //------------------------------------------------------------------------------ (16 byte boundary)
 	float specularExponent;
-	// 12 byte auto padding
+	float3 backgroundColor;
 //------------------------------------------------------------------------------ (16 byte boundary)
 };	// Total: 48 bytes with constant buffer packing rules
 
