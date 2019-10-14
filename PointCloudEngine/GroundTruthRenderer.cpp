@@ -373,12 +373,12 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// First input channel is color
 		// Convert to 32bit float and transpose the tensor to make it compatible with the neural network input
 		colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
-		colorTensor = colorTensor.transpose(0, 2).transpose(1, 2);
+		colorTensor = colorTensor.permute({ 2, 0, 1 });
 		inputTensor[0][0] = colorTensor[0];
 
 		// Second input channel is depth
 		// Transpose the tensor to make it compatible
-		depthTensor = depthTensor.transpose(0, 2).transpose(1, 2);
+		depthTensor = depthTensor.permute({ 2, 0, 1 });
 		inputTensor[0][1] = depthTensor[0];
 
 		try
@@ -402,8 +402,8 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		colorTensor[2] = outputTensor[0][2];
 
 		// Transpose back to texture format
-		depthTensor = depthTensor.transpose(1, 2).transpose(0, 2);
-		colorTensor = colorTensor.transpose(1, 2).transpose(0, 2);
+		depthTensor = depthTensor.permute({ 1, 2, 0 });
+		colorTensor = colorTensor.permute({ 1, 2, 0 });
 		colorTensor = colorTensor.to(torch::dtype(torch::kHalf));
 
 		// Copy the cpu color data to the texture
@@ -468,9 +468,9 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	}
 
 	// Convert into the same format as the output tensor
-	splatColorTensor = splatColorTensor.transpose(0, 2).transpose(1, 2);
+	splatColorTensor = splatColorTensor.permute({ 2, 0, 1 });
 	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
-	splatDepthTensor = splatDepthTensor.transpose(0, 2).transpose(1, 2);
+	splatDepthTensor = splatDepthTensor.permute({ 2, 0, 1 });
 
 	torch::Tensor selfTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
 	selfTensor[0] = outputTensor[0][0];
@@ -484,6 +484,27 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	l1Loss = torch::l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
 	mseLoss = torch::mse_loss(selfTensor, targetTensor).cpu().data<float>()[0];
 	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
+
+	// Copy half of the splat color/depth tensor to the color tensor
+	// This way the results can be compared on the screen in real time
+	colorTensor = colorTensor.permute({ 2, 0, 1 });
+	colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
+	colorTensor = colorTensor.cpu();
+	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
+	splatColorTensor = splatColorTensor.cpu();
+	splatDepthTensor = splatDepthTensor.cpu();
+
+	memcpy(colorTensor[0].data_ptr(), splatColorTensor[0].data_ptr(), sizeof(float) * 0.5f * settings->resolutionX * settings->resolutionY);
+	memcpy(colorTensor[1].data_ptr(), splatDepthTensor[0].data_ptr(), sizeof(float) * 0.5f * settings->resolutionX * settings->resolutionY);
+
+	// Transpose back to texture format
+	colorTensor = colorTensor.permute({ 1, 2, 0 });
+	colorTensor = colorTensor.to(torch::dtype(torch::kHalf));
+
+	// Copy the cpu color data to the texture
+	d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_WRITE, 0, &subresource);
+	memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
+	d3d11DevCon->Unmap(colorTexture, 0);
 
 	// Show results on screen
 	d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
