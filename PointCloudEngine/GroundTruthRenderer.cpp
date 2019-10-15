@@ -58,6 +58,18 @@ void GroundTruthRenderer::Update()
 		settings->density = max(0, settings->density - 0.15f * dt);
 	}
 
+	// Select the screen area of the neural network compared to the splats
+	if (Input::GetKey(Keyboard::Up))
+	{
+		settings->neuralNetworkScreenArea += 0.5f * dt;
+	}
+	else if (Input::GetKey(Keyboard::Down))
+	{
+		settings->neuralNetworkScreenArea -= 0.5f * dt;
+	}
+
+	settings->neuralNetworkScreenArea = min(max(0.0f, settings->neuralNetworkScreenArea), 1.0f);
+
 	// Save HDF5 file
 	if (Input::GetKeyDown(Keyboard::F7) || Input::GetKeyDown(Keyboard::F8))
 	{
@@ -216,6 +228,7 @@ void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTrans
 		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
 		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
 		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
+		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease neural network screen area\n");
 		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
 		helpTextRenderer->text.append(L"[INSERT] Add camera waypoint\n");
 		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
@@ -239,9 +252,10 @@ void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, Te
 	{
 		textTransform->position = Vector3(-1.0f, -0.735f, 0);
 		textRenderer->text = std::wstring(L"View Mode: Neural Network\n");
-		textRenderer->text.append(L"L1 Loss: " + (settings->calculateLosses ? std::to_wstring(l1Loss) : L"Off") + L"\n");
-		textRenderer->text.append(L"Mean Square Error Loss: " + (settings->calculateLosses ? std::to_wstring(mseLoss) : L"Off") + L"\n");
-		textRenderer->text.append(L"Smooth L1 Loss: " + (settings->calculateLosses ? std::to_wstring(smoothL1Loss) : L"Off") + L"\n");
+		textRenderer->text.append(L"Neural Network Screen Area: " + std::to_wstring(settings->neuralNetworkScreenArea) + L"\n");
+		textRenderer->text.append(L"L1 Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(l1Loss) : L"Off") + L"\n");
+		textRenderer->text.append(L"Mean Square Error Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(mseLoss) : L"Off") + L"\n");
+		textRenderer->text.append(L"Smooth L1 Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(smoothL1Loss) : L"Off") + L"\n");
 	}
 	else if (settings->viewMode % 2 == 0)
 	{
@@ -412,14 +426,14 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
 		d3d11DevCon->Unmap(colorTexture, 0);
 
-		if (settings->calculateLosses)
-		{
-			CalculateLosses();
-		}
-		else
+		if (settings->neuralNetworkScreenArea >= 0.99f)
 		{
 			// Replace the backbuffer texture by the output
 			d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
+		}
+		else
+		{
+			CalculateLosses();
 		}
 	}
 }
@@ -461,8 +475,14 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	memcpy(splatDepthTensor.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY * 1);
 	d3d11DevCon->Unmap(depthTexture, 0);
 
+	// Tensors that are used to calculate the loss
+	torch::Tensor selfTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+	torch::Tensor targetTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+
 	if (settings->useCUDA && torch::cuda::is_available())
 	{
+		selfTensor = selfTensor.cuda();
+		targetTensor = targetTensor.cuda();
 		splatColorTensor = splatColorTensor.cuda();
 		splatDepthTensor = splatDepthTensor.cuda();
 	}
@@ -472,11 +492,11 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
 	splatDepthTensor = splatDepthTensor.permute({ 2, 0, 1 });
 
-	torch::Tensor selfTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+	// Set self tensor (neural network prediction)
 	selfTensor[0] = outputTensor[0][0];
 	selfTensor[1] = outputTensor[0][1];
 
-	torch::Tensor targetTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+	// Set target tensor (ground truth)
 	targetTensor[0] = splatColorTensor[0];
 	targetTensor[1] = splatDepthTensor[0];
 
@@ -489,13 +509,15 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	// This way the results can be compared on the screen in real time
 	colorTensor = colorTensor.permute({ 2, 0, 1 });
 	colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
-	colorTensor = colorTensor.cpu();
 	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
+
+	// Copy parts of the splat tensors to the color tensor
+	colorTensor = colorTensor.cpu();
 	splatColorTensor = splatColorTensor.cpu();
 	splatDepthTensor = splatDepthTensor.cpu();
-
-	memcpy(colorTensor[0].data_ptr(), splatColorTensor[0].data_ptr(), sizeof(float) * 0.5f * settings->resolutionX * settings->resolutionY);
-	memcpy(colorTensor[1].data_ptr(), splatDepthTensor[0].data_ptr(), sizeof(float) * 0.5f * settings->resolutionX * settings->resolutionY);
+	float splatScreenArea = 1.0f - settings->neuralNetworkScreenArea;
+	memcpy(colorTensor[0].data_ptr(), splatColorTensor[0].data_ptr(), sizeof(float) * splatScreenArea * settings->resolutionX * settings->resolutionY);
+	memcpy(colorTensor[1].data_ptr(), splatDepthTensor[0].data_ptr(), sizeof(float) * splatScreenArea * settings->resolutionX * settings->resolutionY);
 
 	// Transpose back to texture format
 	colorTensor = colorTensor.permute({ 1, 2, 0 });

@@ -48,7 +48,7 @@ namespace PointCloudEngine
 
 		// Neural Network parameters
 		bool useCUDA = true;
-		bool calculateLosses = true;
+		float neuralNetworkScreenArea = 0.5f;
 
 		// HDF5 dataset generation parameters
 		float waypointStepSize = 0.5f;
