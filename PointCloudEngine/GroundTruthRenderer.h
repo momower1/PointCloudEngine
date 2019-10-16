@@ -59,6 +59,7 @@ namespace PointCloudEngine
 
 		// Pytorch Neural Network
 		bool loadPytorchModel = true;
+		bool validPytorchModel = false;
 		torch::jit::script::Module model;
 		torch::Tensor colorTensor;
 		torch::Tensor depthTensor;

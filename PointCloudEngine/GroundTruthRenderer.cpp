@@ -307,7 +307,39 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
 	if (loadPytorchModel)
 	{
+		// Only do this once
+		loadPytorchModel = false;
+
 		std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
+
+		// Create CPU readable and writeable textures
+		D3D11_TEXTURE2D_DESC colorTextureDesc;
+		D3D11_TEXTURE2D_DESC depthTextureDesc;
+
+		// Copy the format information and set the flags
+		backBufferTexture->GetDesc(&colorTextureDesc);
+		depthStencilTexture->GetDesc(&depthTextureDesc);
+		colorTextureDesc.CPUAccessFlags = depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+		colorTextureDesc.Usage = depthTextureDesc.Usage = D3D11_USAGE_STAGING;
+		colorTextureDesc.BindFlags = depthTextureDesc.BindFlags = 0;
+
+		hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+		hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+		// Create an empty tensor to use as color texture read/write input and output (texture memory layout is different from tensor)
+		colorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
+
+		// Create an empty tensor to use as depth input
+		depthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
+
+		// Create an input tensor for the neural network
+		inputTensor = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+
+		// Create an output tensor for the neural network
+		outputTensor = torch::zeros({ 1, 3, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
 
 		try
 		{
@@ -321,36 +353,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
 			}
 
-			// Create CPU readable and writeable textures
-			D3D11_TEXTURE2D_DESC colorTextureDesc;
-			D3D11_TEXTURE2D_DESC depthTextureDesc;
-
-			// Copy the format information and set the flags
-			backBufferTexture->GetDesc(&colorTextureDesc);
-			depthStencilTexture->GetDesc(&depthTextureDesc);
-			colorTextureDesc.CPUAccessFlags = depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-			colorTextureDesc.Usage = depthTextureDesc.Usage = D3D11_USAGE_STAGING;
-			colorTextureDesc.BindFlags = depthTextureDesc.BindFlags = 0;
-
-			hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
-			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-			hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
-			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-			// Create an empty tensor to use as color texture read/write input and output (texture memory layout is different from tensor)
-			colorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
-
-			// Create an empty tensor to use as depth input
-			depthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
-
-			// Create an input tensor for the neural network
-			inputTensor = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-			// Create an output tensor for the neural network
-			outputTensor = torch::zeros({ 1, 3, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-			loadPytorchModel = false;
+			validPytorchModel = true;
 		}
 		catch (const std::exception &e)
 		{
@@ -395,19 +398,22 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		depthTensor = depthTensor.permute({ 2, 0, 1 });
 		inputTensor[0][1] = depthTensor[0];
 
-		try
+		if (validPytorchModel)
 		{
-			std::vector<torch::jit::IValue> inputs;
-			inputs.push_back(inputTensor);
+			try
+			{
+				std::vector<torch::jit::IValue> inputs;
+				inputs.push_back(inputTensor);
 
-			// Evaluate the model
-			// Input: 1 Channel Color (R, G or B), 1 Channel Depth
-			// Output: 1 Channel Color, 1 Channel Depth, 1 Channel Visibility Mask
-			outputTensor = model.forward(inputs).toTensor();
-		}
-		catch (std::exception & e)
-		{
-			ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the resolution in x and y is a multiple of 128!");
+				// Evaluate the model
+				// Input: 1 Channel Color (R, G or B), 1 Channel Depth
+				// Output: 1 Channel Color, 1 Channel Depth, 1 Channel Visibility Mask
+				outputTensor = model.forward(inputs).toTensor();
+			}
+			catch (std::exception & e)
+			{
+				ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the resolution in x and y is a multiple of 128!");
+			}
 		}
 
 		// Replace the channels in the color tensor
