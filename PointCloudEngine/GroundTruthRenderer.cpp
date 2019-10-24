@@ -357,11 +357,11 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 					// Sum up to get the total dimensions of the input and output
 					if (channel.input)
 					{
-						inputDimensions++;
+						inputDimensions += channel.dimensions;
 					}
 					else
 					{
-						outputDimensions++;
+						outputDimensions += channel.dimensions;
 					}
 
 					modelChannels.push_back(channel);
@@ -525,14 +525,12 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 				std::vector<torch::jit::IValue> inputs;
 				inputs.push_back(inputTensor);
 
-				// Evaluate the model
-				// Input: 1 Channel Color (R, G or B), 1 Channel Depth
-				// Output: 1 Channel Color, 1 Channel Depth, 1 Channel Visibility Mask
+				// Evaluate the model, input and output channels are given in the model description
 				outputTensor = model.forward(inputs).toTensor();
 			}
 			catch (std::exception & e)
 			{
-				ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the resolution in x and y is a multiple of 128!");
+				ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the input dimensions and the resolution is correct!");
 			}
 		}
 
