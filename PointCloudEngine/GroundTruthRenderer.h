@@ -73,12 +73,23 @@ namespace PointCloudEngine
 			{ L"PointsSparseNormalScreen", XMUINT2(3, 3) },
 		};
 
+		// Used for parsing the model description file
+		struct ModelChannel
+		{
+			std::wstring name;
+			torch::Tensor tensor;
+			UINT dimensions;
+			UINT offset;
+			bool normalize;
+			bool input;
+		};
+
 		// Pytorch Neural Network
 		bool loadPytorchModel = true;
 		bool validPytorchModel = false;
 		torch::jit::script::Module model;
-		torch::Tensor colorTensor;
-		torch::Tensor depthTensor;
+		std::vector<ModelChannel> modelChannels;
+		UINT inputDimensions, outputDimensions;
 		torch::Tensor inputTensor;
 		torch::Tensor outputTensor;
 		ID3D11Texture2D* colorTexture = NULL;
@@ -91,8 +102,10 @@ namespace PointCloudEngine
 
 		void DrawNeuralNetwork();
 		void CalculateLosses();
-		void OutputTensorSize(torch::Tensor tensor);
-		void HDF5Draw();
+		void CopyBackbufferTextureToTensor(torch::Tensor& tensor);
+		void CopyDepthTextureToTensor(torch::Tensor& tensor);
+		void OutputTensorSize(torch::Tensor &tensor);
+		void Redraw(bool present);
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
 		void GenerateSphereDataset(HDF5File& hdf5file);
 		void GenerateWaypointDataset(HDF5File& hdf5file);

@@ -123,7 +123,12 @@ void GroundTruthRenderer::Update()
 
 void GroundTruthRenderer::Draw()
 {
-	if (settings->viewMode < 2)
+	// Evaluate neural network and present the result to the screen
+	if (settings->viewMode == 4)
+	{
+		DrawNeuralNetwork();
+	}
+	else if (settings->viewMode < 2)
 	{
 		// Set the splat shaders
 		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -189,12 +194,6 @@ void GroundTruthRenderer::Draw()
 	else
 	{
 		d3d11DevCon->Draw(vertexCount, 0);
-	}
-
-	// Evaluate neural network and present the result to the screen
-	if (settings->viewMode == 4)
-	{
-		DrawNeuralNetwork();
 	}
 }
 
@@ -307,19 +306,26 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
 	if (loadPytorchModel)
 	{
+		// Only do this once
+		loadPytorchModel = false;
+
+		const std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
+		const std::wstring modelDescriptionFilename = executableDirectory + L"\\NeuralNetworkDescription.txt";
+
 		// Load .txt file storing neural network input and output channel descriptions
 		// Each entry consists of:
-		// - String: Name of the channel
+		// - String: Name of the channel (render mode)
 		// - Int: Dimension of channel
 		// - String: Identifying if the channel is input (inp) or output (tar)
 		// - String: Transformation keywords e.g. normalization
 		// - Int: Offset of this channel from the start channel
-		std::wifstream neuralNetworkDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
+		std::wifstream modelDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
 
-		if (neuralNetworkDescriptionFile.is_open())
+		if (modelDescriptionFile.is_open())
 		{
 			std::wstring line;
-			if (std::getline(neuralNetworkDescriptionFile, line))
+
+			if (std::getline(modelDescriptionFile, line))
 			{
 				std::wstring tmp = L"";
 
@@ -327,7 +333,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 				for (int i = 0; i < line.length(); i++)
 				{
 					wchar_t c = line.at(i);
-					
+
 					if (c != ' ' && c != L'\'' && c != L'[' && c != L']')
 					{
 						tmp += c;
@@ -336,19 +342,42 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 				line = tmp;
 
-				std::vector<std::wstring> s = SplitString(line, L',');
+				std::vector<std::wstring> splits = SplitString(line, L',');
 
-				for (int i = 0; i < s.size(); i++)
+				// Parse the content from the split into a struct
+				for (int i = 0; i < splits.size(); i += 5)
 				{
-					OutputDebugString((s[i] + L"\n").c_str());
+					ModelChannel channel;
+					channel.name = splits[i];
+					channel.dimensions = std::stoi(splits[i + 1]);
+					channel.offset = std::stoi(splits[i + 4]);
+					channel.input = !std::wcscmp(splits[i + 2].c_str(), L"inp");
+					channel.normalize = !std::wcscmp(splits[i + 3].c_str(), L"normalize");
+
+					// Sum up to get the total dimensions of the input and output
+					if (channel.input)
+					{
+						inputDimensions++;
+					}
+					else
+					{
+						outputDimensions++;
+					}
+
+					modelChannels.push_back(channel);
 				}
 			}
+			else
+			{
+				ERROR_MESSAGE(L"Could not parse Neural Network Description file " + modelDescriptionFilename);
+				return;
+			}
 		}
-
-		// Only do this once
-		loadPytorchModel = false;
-
-		std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
+		else
+		{
+			ERROR_MESSAGE(L"Could not open Neural Network Description file " + modelDescriptionFilename);
+			return;
+		}
 
 		// Create CPU readable and writeable textures
 		D3D11_TEXTURE2D_DESC colorTextureDesc;
@@ -367,17 +396,11 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-		// Create an empty tensor to use as color texture read/write input and output (texture memory layout is different from tensor)
-		colorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
-
-		// Create an empty tensor to use as depth input
-		depthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
-
 		// Create an input tensor for the neural network
-		inputTensor = torch::zeros({ 1, 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+		inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
 
 		// Create an output tensor for the neural network
-		outputTensor = torch::zeros({ 1, 3, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+		outputTensor = torch::zeros({ 1, outputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
 
 		try
 		{
@@ -400,41 +423,100 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	}
 	else
 	{
-		// Copy color and depth from the screeen to these textures
-		d3d11DevCon->CopyResource(colorTexture, backBufferTexture);
-		d3d11DevCon->CopyResource(depthTexture, depthStencilTexture);
+		// TODO: Call draw again in the corresponding view modes of the channels
+		// Copy data to the channel tensors
+		// Set input channels to these channels
+		// Evaluate and show result
 
-		// Copy the data from the color texture to the cpu tensor
-		D3D11_MAPPED_SUBRESOURCE subresource;
-		colorTensor = colorTensor.cpu();
-		d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_READ, 0, &subresource);
-		memcpy(colorTensor.data_ptr(), subresource.pData, sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
-		d3d11DevCon->Unmap(colorTexture, 0);
-
-		// Copy the data from the depth texture to the cpu tensor
-		depthTensor = depthTensor.cpu();
-		d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
-		memcpy(depthTensor.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY);
-		d3d11DevCon->Unmap(depthTexture, 0);
-
-		// Move tensors to gpu for faster computation
-		if (settings->useCUDA && torch::cuda::is_available())
+		// Copy the renderings to the tensors of the different input channels
+		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
 		{
-			colorTensor = colorTensor.cuda();
-			depthTensor = depthTensor.cuda();
-			inputTensor = inputTensor.cuda();
+			if (it->input && (renderModes.find(it->name) != renderModes.end()))
+			{
+				// Create all the empty input tensors that are used by the channels
+				if (renderModes[it->name].y == 1)
+				{
+					// Depth tensor to use as depth input
+					it->tensor = torch::zeros({ settings->resolutionX, settings->resolutionY, it->dimensions }, torch::dtype(torch::kFloat32));
+				}
+				else
+				{
+					// Color tensor to use as color texture read/write input and output (D3D11 texture memory layout is different from tensor)
+					it->tensor = torch::zeros({ settings->resolutionX, settings->resolutionY, it->dimensions }, torch::dtype(torch::kHalf));
+				}
+
+				// Set the view mode according to the channel
+				settings->viewMode = renderModes[it->name].x;
+
+				// Render differently based on the shading mode
+				switch (renderModes[it->name].y)
+				{
+					case 0:
+					{
+						// Color
+						Redraw(false);
+						CopyBackbufferTextureToTensor(it->tensor);
+						break;
+					}
+					case 1:
+					{
+						// Depth without blending (depth buffer is cleared when using blending)
+						if (settings->useBlending)
+						{
+							settings->useBlending = false;
+							Redraw(false);
+							settings->useBlending = true;
+						}
+						else
+						{
+							Redraw(false);
+						}
+
+						CopyDepthTextureToTensor(it->tensor);
+						break;
+					}
+					case 2:
+					{
+						// Normal
+						constantBufferData.drawNormals = true;
+						constantBufferData.normalsInScreenSpace = false;
+						Redraw(false);
+						constantBufferData.drawNormals = false;
+						CopyBackbufferTextureToTensor(it->tensor);
+						break;
+					}
+					case 3:
+					{
+						// Normal Screen
+						constantBufferData.drawNormals = true;
+						constantBufferData.normalsInScreenSpace = true;
+						Redraw(false);
+						constantBufferData.drawNormals = false;
+						CopyBackbufferTextureToTensor(it->tensor);
+						break;
+					}
+				}
+
+				// Reset to the neural network view mode
+				settings->viewMode = 4;
+
+				// Move tensors to gpu for faster computation
+				if (settings->useCUDA && torch::cuda::is_available())
+				{
+					it->tensor = it->tensor.cuda();
+					inputTensor = inputTensor.cuda();
+				}
+
+				// Convert to correct data type and shape for the input
+				it->tensor = it->tensor.to(torch::dtype(torch::kFloat32)).permute({ 2, 0, 1 });
+
+				// Assign this channel as input
+				for (int i = 0; i < it->dimensions; i++)
+				{
+					inputTensor[0][it->offset + i] = it->tensor[i];
+				}
+			}
 		}
-
-		// First input channel is color
-		// Convert to 32bit float and transpose the tensor to make it compatible with the neural network input
-		colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
-		colorTensor = colorTensor.permute({ 2, 0, 1 });
-		inputTensor[0][0] = colorTensor[0];
-
-		// Second input channel is depth
-		// Transpose the tensor to make it compatible
-		depthTensor = depthTensor.permute({ 2, 0, 1 });
-		inputTensor[0][1] = depthTensor[0];
 
 		if (validPytorchModel)
 		{
@@ -454,20 +536,14 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			}
 		}
 
-		// Replace the channels in the color tensor
-		colorTensor[0] = outputTensor[0][0];
-		colorTensor[1] = outputTensor[0][1];
-		colorTensor[2] = outputTensor[0][2];
+		// Convert the output tensor into texture format
+		outputTensor = outputTensor.permute({ 0, 2, 3, 1 }).to(torch::dtype(torch::kHalf)).cpu();
 
-		// Transpose back to texture format
-		depthTensor = depthTensor.permute({ 1, 2, 0 });
-		colorTensor = colorTensor.permute({ 1, 2, 0 });
-		colorTensor = colorTensor.to(torch::dtype(torch::kHalf));
-
-		// Copy the cpu color data to the texture
-		colorTensor = colorTensor.cpu();
+		// Copy the tensor data to the texture
+		D3D11_MAPPED_SUBRESOURCE subresource;
 		d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_WRITE, 0, &subresource);
-		memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
+		ZeroMemory(subresource.pData, sizeof(short)* settings->resolutionX * settings->resolutionY * 4);
+		memcpy(subresource.pData, outputTensor[0][0].data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * min(outputDimensions, 4));
 		d3d11DevCon->Unmap(colorTexture, 0);
 
 		if (settings->neuralNetworkScreenArea >= 0.99f)
@@ -484,6 +560,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 {
+	/*
 	// Create a temporary texture and tensor to store the splat color rendering
 	ID3D11Texture2D* splatColorTexture = NULL;
 	D3D11_TEXTURE2D_DESC splatColorTextureDesc;
@@ -574,9 +651,38 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 
 	// Show results on screen
 	d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
+	*/
 }
 
-void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor tensor)
+void PointCloudEngine::GroundTruthRenderer::CopyBackbufferTextureToTensor(torch::Tensor& tensor)
+{
+	d3d11DevCon->CopyResource(colorTexture, backBufferTexture);
+
+	// Make sure that the format matches
+	tensor = tensor.to(torch::dtype(torch::kHalf)).cpu();
+
+	// Copy the data from the color texture to the cpu tensor
+	D3D11_MAPPED_SUBRESOURCE subresource;
+	d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_READ, 0, &subresource);
+	memcpy(tensor.data_ptr(), subresource.pData, sizeof(short) * tensor.numel());
+	d3d11DevCon->Unmap(colorTexture, 0);
+}
+
+void PointCloudEngine::GroundTruthRenderer::CopyDepthTextureToTensor(torch::Tensor& tensor)
+{
+	d3d11DevCon->CopyResource(depthTexture, depthStencilTexture);
+
+	// Make sure that the format matches
+	tensor = tensor.to(torch::dtype(torch::kFloat32)).cpu();
+
+	// Copy the data from the depth texture to the cpu tensor
+	D3D11_MAPPED_SUBRESOURCE subresource;
+	d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
+	memcpy(tensor.data_ptr(), subresource.pData, sizeof(float) * tensor.numel());
+	d3d11DevCon->Unmap(depthTexture, 0);
+}
+
+void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor &tensor)
 {
 	c10::IntArrayRef sizes = tensor.sizes();
 
@@ -588,7 +694,7 @@ void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor tenso
 	OutputDebugString(L"\n");
 }
 
-void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
+void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)
 {
 	// Clear the render target
 	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
@@ -599,8 +705,11 @@ void PointCloudEngine::GroundTruthRenderer::HDF5Draw()
 	// Draw
 	Draw();
 
-	// Present the result to the screen
-	swapChain->Present(0, 0);
+	if (present)
+	{
+		// Present the result to the screen
+		swapChain->Present(0, 0);
+	}
 }
 
 void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex)
@@ -632,7 +741,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 			case 0:
 			{
 				// Color
-				HDF5Draw();
+				Redraw(true);
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
 			}
@@ -642,12 +751,12 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				if (settings->useBlending)
 				{
 					settings->useBlending = false;
-					HDF5Draw();
+					Redraw(true);
 					settings->useBlending = true;
 				}
 				else
 				{
-					HDF5Draw();
+					Redraw(true);
 				}
 				hdf5file.AddDepthTextureDataset(group, it->first, depthStencilTexture);
 				break;
@@ -657,7 +766,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				// Normal
 				constantBufferData.drawNormals = true;
 				constantBufferData.normalsInScreenSpace = false;
-				HDF5Draw();
+				Redraw(true);
 				constantBufferData.drawNormals = false;
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
@@ -667,7 +776,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				// Normal Screen
 				constantBufferData.drawNormals = true;
 				constantBufferData.normalsInScreenSpace = true;
-				HDF5Draw();
+				Redraw(true);
 				constantBufferData.drawNormals = false;
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
