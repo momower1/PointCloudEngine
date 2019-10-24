@@ -80,6 +80,7 @@ namespace PointCloudEngine
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
 		void GenerateSphereDataset(HDF5File& hdf5file);
 		void GenerateWaypointDataset(HDF5File& hdf5file);
+		std::vector<std::wstring> SplitString(std::wstring s, wchar_t delimiter);
     };
 }
 #endif

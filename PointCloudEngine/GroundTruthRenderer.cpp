@@ -307,6 +307,44 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
 	if (loadPytorchModel)
 	{
+		// Load .txt file storing neural network input and output channel descriptions
+		// Each entry consists of:
+		// - String: Name of the channel
+		// - Int: Dimension of channel
+		// - String: Identifying if the channel is input (inp) or output (tar)
+		// - String: Transformation keywords e.g. normalization
+		// - Int: Offset of this channel from the start channel
+		std::wifstream neuralNetworkDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
+
+		if (neuralNetworkDescriptionFile.is_open())
+		{
+			std::wstring line;
+			if (std::getline(neuralNetworkDescriptionFile, line))
+			{
+				std::wstring tmp = L"";
+
+				// Remove unwanted characters
+				for (int i = 0; i < line.length(); i++)
+				{
+					wchar_t c = line.at(i);
+					
+					if (c != ' ' && c != L'\'' && c != L'[' && c != L']')
+					{
+						tmp += c;
+					}
+				}
+
+				line = tmp;
+
+				std::vector<std::wstring> s = SplitString(line, L',');
+
+				for (int i = 0; i < s.size(); i++)
+				{
+					OutputDebugString((s[i] + L"\n").c_str());
+				}
+			}
+		}
+
 		// Only do this once
 		loadPytorchModel = false;
 
@@ -661,4 +699,24 @@ void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset(HDF5File& hd
 			waypointLocation += settings->waypointStepSize;
 		}
 	}
+}
+
+std::vector<std::wstring> PointCloudEngine::GroundTruthRenderer::SplitString(std::wstring s, wchar_t delimiter)
+{
+	std::vector<std::wstring> output;
+	size_t index = s.find_first_of(delimiter);
+
+	while (index >= 0 && index <= s.length())
+	{
+		// Add the left side of the split to the output
+		output.push_back(s.substr(0, index));
+
+		// Continue looking for splits in the right side
+		s = s.substr(index + 1, s.length());
+		index = s.find_first_of(delimiter);
+	}
+
+	output.push_back(s);
+
+	return output;
 }
