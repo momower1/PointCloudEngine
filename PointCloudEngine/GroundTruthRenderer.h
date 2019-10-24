@@ -102,8 +102,8 @@ namespace PointCloudEngine
 
 		void DrawNeuralNetwork();
 		void CalculateLosses();
-		void CopyBackbufferTextureToTensor(torch::Tensor& tensor);
-		void CopyDepthTextureToTensor(torch::Tensor& tensor);
+		void CopyBackbufferTextureToChannel(ModelChannel &channel);
+		void CopyDepthTextureToChannel(ModelChannel &channel);
 		void OutputTensorSize(torch::Tensor &tensor);
 		void Redraw(bool present);
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);

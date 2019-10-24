@@ -13,7 +13,7 @@ namespace PointCloudEngine
         ~Settings();
 
         // Rendering parameters default values
-		Vector4 backgroundColor = Vector4(0.5f, 0.5f, 0.5f, 0);
+		Vector4 backgroundColor = Vector4(0, 0, 0, 0);
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
         float farZ = 1000.0f;
