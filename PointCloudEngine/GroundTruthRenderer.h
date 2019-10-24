@@ -49,12 +49,28 @@ namespace PointCloudEngine
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
         ID3D11Buffer* constantBuffer;
 
-		std::wstring hdf5DatasetNames[4][4] =
+		// Maps from the name of the render mode to the view mode (x) and the shading mode (y)
+		std::map<std::wstring, XMUINT2> renderModes =
 		{
-			{ L"SplatsColor", L"SplatsNormal", L"SplatsNormalScreen", L"SplatsDepth" },
-			{ L"SplatsSparseColor", L"SplatsSparseNormal", L"SplatsSparseNormalScreen", L"SplatsSparseDepth" },
-			{ L"PointsColor", L"PointsNormal", L"PointsNormalScreen", L"PointsDepth" },
-			{ L"PointsSparseColor", L"PointsSparseNormal", L"PointsSparseNormalScreen", L"PointsSparseDepth" }
+			{ L"SplatsColor", XMUINT2(0, 0) },
+			{ L"SplatsDepth", XMUINT2(0, 1) },
+			{ L"SplatsNormal", XMUINT2(0, 2) },
+			{ L"SplatsNormalScreen", XMUINT2(0, 3) },
+
+			{ L"SplatsSparseColor", XMUINT2(1, 0) },
+			{ L"SplatsSparseDepth", XMUINT2(1, 1) },
+			{ L"SplatsSparseNormal", XMUINT2(1, 2) },
+			{ L"SplatsSparseNormalScreen", XMUINT2(1, 3) },
+
+			{ L"PointsColor", XMUINT2(2, 0) },
+			{ L"PointsDepth", XMUINT2(2, 1) },
+			{ L"PointsNormal", XMUINT2(2, 2) },
+			{ L"PointsNormalScreen", XMUINT2(2, 3) },
+
+			{ L"PointsSparseColor", XMUINT2(3, 0) },
+			{ L"PointsSparseDepth", XMUINT2(3, 1) },
+			{ L"PointsSparseNormal", XMUINT2(3, 2) },
+			{ L"PointsSparseNormalScreen", XMUINT2(3, 3) },
 		};
 
 		// Pytorch Neural Network

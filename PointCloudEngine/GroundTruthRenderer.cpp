@@ -621,37 +621,58 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	// Calculates view and projection matrices and sets the viewport
 	camera->PrepareDraw();
 
-	// Draw and present in four different view modes
-	for (UINT i = 0; i < 4; i++)
+	// Draw in every render mode and save it to the dataset
+	for (auto it = renderModes.begin(); it != renderModes.end(); it++)
 	{
-		settings->viewMode = i;
+		settings->viewMode = it->second.x;
 
-		// Draw and save the color texture
-		HDF5Draw();
-		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][0], backBufferTexture);
-
-		// Draw and save normal texture
-		constantBufferData.drawNormals = true;
-		constantBufferData.normalsInScreenSpace = false;
-		HDF5Draw();
-		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][1], backBufferTexture);
-
-		// Draw screen space normal texture
-		constantBufferData.normalsInScreenSpace = true;
-		HDF5Draw();
-		constantBufferData.drawNormals = false;
-		hdf5file.AddColorTextureDataset(group, hdf5DatasetNames[i][2], backBufferTexture);
-
-		// Draw depth again without blending (depth buffer is cleared when using blending)
-		if (i < 2 && settings->useBlending)
+		// Render differently based on the shading mode
+		switch (it->second.y)
 		{
-			settings->useBlending = false;
-			HDF5Draw();
-			settings->useBlending = true;
+			case 0:
+			{
+				// Color
+				HDF5Draw();
+				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
+				break;
+			}
+			case 1:
+			{
+				// Depth without blending (depth buffer is cleared when using blending)
+				if (settings->useBlending)
+				{
+					settings->useBlending = false;
+					HDF5Draw();
+					settings->useBlending = true;
+				}
+				else
+				{
+					HDF5Draw();
+				}
+				hdf5file.AddDepthTextureDataset(group, it->first, depthStencilTexture);
+				break;
+			}
+			case 2:
+			{
+				// Normal
+				constantBufferData.drawNormals = true;
+				constantBufferData.normalsInScreenSpace = false;
+				HDF5Draw();
+				constantBufferData.drawNormals = false;
+				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
+				break;
+			}
+			case 3:
+			{
+				// Normal Screen
+				constantBufferData.drawNormals = true;
+				constantBufferData.normalsInScreenSpace = true;
+				HDF5Draw();
+				constantBufferData.drawNormals = false;
+				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
+				break;
+			}
 		}
-
-		// Save depth texture
-		hdf5file.AddDepthTextureDataset(group, hdf5DatasetNames[i][3], depthStencilTexture);
 	}
 
 	group.close();

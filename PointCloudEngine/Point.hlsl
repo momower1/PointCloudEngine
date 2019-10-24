@@ -19,6 +19,7 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 	element.position = mul(float4(input[0].position, 1), VP);
 	element.positionWorld = input[0].position;
 	element.normalScreen = normalize(mul(input[0].normal, VP));
+	element.normalScreen.z *= -1;
 	element.normal = input[0].normal;
 	element.color = input[0].color;
 
