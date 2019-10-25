@@ -192,10 +192,13 @@ void Scene::Update(Timer &timer)
         timeSinceLoadFile += dt;
     }
 
-    // Increase input speed when pressing shift
+    // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))
     {
-        inputSpeed += 20 * dt;
+		if (Input::GetKey(Keyboard::W) || Input::GetKey(Keyboard::A) || Input::GetKey(Keyboard::S) || Input::GetKey(Keyboard::D) || Input::GetKey(Keyboard::Q) || Input::GetKey(Keyboard::E))
+		{
+			inputSpeed += 20 * dt;
+		}
     }
     else
     {
