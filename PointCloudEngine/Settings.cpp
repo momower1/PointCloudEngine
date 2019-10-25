@@ -63,6 +63,9 @@ PointCloudEngine::Settings::Settings()
 		// Parse neural network parameters
 		TryParse(NAMEOF(useCUDA), useCUDA);
 		TryParse(NAMEOF(neuralNetworkScreenArea), neuralNetworkScreenArea);
+		TryParse(NAMEOF(neuralNetworkOutputRed), neuralNetworkOutputRed);
+		TryParse(NAMEOF(neuralNetworkOutputGreen), neuralNetworkOutputGreen);
+		TryParse(NAMEOF(neuralNetworkOutputBlue), neuralNetworkOutputBlue);
 
 		// Parse HDF5 dataset generation parameters
 		TryParse(NAMEOF(waypointStepSize), waypointStepSize);
@@ -136,6 +139,9 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# Neural Network Parameters" << std::endl;
 	settingsFile << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
 	settingsFile << NAMEOF(neuralNetworkScreenArea) << L"=" << neuralNetworkScreenArea << std::endl;
+	settingsFile << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;
+	settingsFile << NAMEOF(neuralNetworkOutputGreen) << L"=" << neuralNetworkOutputGreen << std::endl;
+	settingsFile << NAMEOF(neuralNetworkOutputBlue) << L"=" << neuralNetworkOutputBlue << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;

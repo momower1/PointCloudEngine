@@ -49,6 +49,9 @@ namespace PointCloudEngine
 		// Neural Network parameters
 		bool useCUDA = true;
 		float neuralNetworkScreenArea = 0.5f;
+		int neuralNetworkOutputRed = 0;
+		int neuralNetworkOutputGreen = 1;
+		int neuralNetworkOutputBlue = 2;
 
 		// HDF5 dataset generation parameters
 		float waypointStepSize = 0.5f;

@@ -537,10 +537,21 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// Fill a four channel color tensor with the output (required due to the texture memory layout)
 		torch::Tensor colorTensor = torch::zeros({ 4, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kHalf));
 
-		// TODO: Select individual output channels
-		for (int i = 0; i < min(outputDimensions, 4); i++)
+		// When a value is out of range this channel will be skipped
+		int colorToOutputChannels[] =
 		{
-			colorTensor[i] = outputTensor[0][i];
+			settings->neuralNetworkOutputRed,
+			settings->neuralNetworkOutputGreen,
+			settings->neuralNetworkOutputBlue
+		};
+
+		// Select individual output channels based on the values in the settings
+		for (int i = 0; i < 3; i++)
+		{
+			if (colorToOutputChannels[i] >= 0 && colorToOutputChannels[i] < outputDimensions)
+			{
+				colorTensor[i] = outputTensor[0][colorToOutputChannels[i]];
+			}
 		}
 
 		colorTensor = colorTensor.permute({ 1, 2, 0 }).contiguous().cpu();
