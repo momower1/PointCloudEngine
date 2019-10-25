@@ -238,12 +238,11 @@ copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll
 copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
 copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\szip.dll" "$(OutDir)szip.dll"
 copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
+copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
 copy /Y "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"</Command>
+copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
+copy /Y "C:\ProgramData\Anaconda3\Library\bin\cusparse64_100.dll" "$(OutDir)cusparse64_100.dll"
+copy /Y "C:\ProgramData\Anaconda3\Library\bin\curand64_100.dll" "$(OutDir)curand64_100.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
