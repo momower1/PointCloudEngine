@@ -423,11 +423,6 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	}
 	else
 	{
-		// TODO: Call draw again in the corresponding view modes of the channels
-		// Copy data to the channel tensors
-		// Set input channels to these channels
-		// Evaluate and show result
-
 		// Copy the renderings to the tensors of the different input channels
 		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
 		{
@@ -505,6 +500,12 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 				{
 					it->tensor = it->tensor.cuda();
 					inputTensor = inputTensor.cuda();
+				}
+
+				if (it->normalize)
+				{
+					// TODO: Normalize the tensor
+					// Right now this is not needed
 				}
 
 				// Convert to correct data type and shape for the input
@@ -719,13 +720,10 @@ void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor &tens
 
 void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)
 {
-	// Clear the render target
+	// Clear the render target and depth/stencil view
 	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
-
-	// Clear the depth/stencil view
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	// Draw
 	Draw();
 
 	if (present)
