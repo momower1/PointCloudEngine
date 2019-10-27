@@ -52,6 +52,8 @@ namespace PointCloudEngine
 		int neuralNetworkOutputRed = 0;
 		int neuralNetworkOutputGreen = 1;
 		int neuralNetworkOutputBlue = 2;
+		std::wstring lossCalculationSelf = L"SplatsColor";
+		std::wstring lossCalculationTarget = L"SplatsColor";
 
 		// HDF5 dataset generation parameters
 		float waypointStepSize = 0.5f;

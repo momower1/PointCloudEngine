@@ -66,6 +66,8 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(neuralNetworkOutputRed), neuralNetworkOutputRed);
 		TryParse(NAMEOF(neuralNetworkOutputGreen), neuralNetworkOutputGreen);
 		TryParse(NAMEOF(neuralNetworkOutputBlue), neuralNetworkOutputBlue);
+		TryParse(NAMEOF(lossCalculationSelf), lossCalculationSelf);
+		TryParse(NAMEOF(lossCalculationTarget), lossCalculationTarget);
 
 		// Parse HDF5 dataset generation parameters
 		TryParse(NAMEOF(waypointStepSize), waypointStepSize);
@@ -142,6 +144,8 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;
 	settingsFile << NAMEOF(neuralNetworkOutputGreen) << L"=" << neuralNetworkOutputGreen << std::endl;
 	settingsFile << NAMEOF(neuralNetworkOutputBlue) << L"=" << neuralNetworkOutputBlue << std::endl;
+	settingsFile << NAMEOF(lossCalculationSelf) << L"=" << lossCalculationSelf << std::endl;
+	settingsFile << NAMEOF(lossCalculationTarget) << L"=" << lossCalculationTarget << std::endl;
 	settingsFile << std::endl;
 
 	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;

@@ -528,6 +528,15 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 				// Evaluate the model, input and output channels are given in the model description
 				outputTensor = model.forward(inputs).toTensor();
+
+				// Assign the channel output tensors
+				for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
+				{
+					if (!it->input)
+					{
+						it->tensor = outputTensor[0].narrow(0, it->offset, it->dimensions);
+					}
+				}
 			}
 			catch (std::exception & e)
 			{
@@ -577,6 +586,52 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 {
+	// Check if the target channel exists
+	bool validTargetChannel = false;
+
+	for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
+	{
+		if (!it->input && !it->name.compare(settings->lossCalculationTarget))
+		{
+			validTargetChannel = true;
+			break;
+		}
+	}
+
+	// Show an error message and the possible values
+	if (!validTargetChannel)
+	{
+		std::wstring possibleValues = L"";
+
+		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
+		{
+			if (!it->input)
+			{
+				possibleValues += it->name + L"\n";
+			}
+		}
+
+		ERROR_MESSAGE(NAMEOF(settings->lossCalculationTarget) + L" is not valid!\nPossible values are:\n\n" + possibleValues);
+		return;
+	}
+
+	// Check if the self channel exists
+	bool validSelfChannel = renderModes.find(settings->lossCalculationSelf) != renderModes.end();
+
+	// Show an error message and the possible values
+	if (!validSelfChannel)
+	{
+		std::wstring possibleValues = L"";
+
+		for (auto it = renderModes.begin(); it != renderModes.end(); it++)
+		{
+			possibleValues += it->first + L"\n";
+		}
+
+		ERROR_MESSAGE(NAMEOF(settings->lossCalculationSelf) + L" is not valid!\nPossible values are:\n\n" + possibleValues);
+		return;
+	}
+
 	/*
 	// Create a temporary texture and tensor to store the splat color rendering
 	ID3D11Texture2D* splatColorTexture = NULL;
