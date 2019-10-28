@@ -127,6 +127,7 @@ void GroundTruthRenderer::Draw()
 	if (settings->viewMode == 4)
 	{
 		DrawNeuralNetwork();
+		return;
 	}
 	else if (settings->viewMode < 2)
 	{
@@ -583,7 +584,6 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	torch::Tensor colorTensor = torch::zeros({ 4, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kHalf));
 	torch::Tensor selfTensor = torch::zeros_like(targetChannel->tensor);
 
-	// TODO: Fix runtime D3D11 device issue when calling this
 	// Render the loss input and store it in the self tensor
 	RenderToTensor(settings->lossCalculationSelf, selfTensor);
 
@@ -592,98 +592,30 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	mseLoss = torch::mse_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
 	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
 
-	/*
-	// Create a temporary texture and tensor to store the splat color rendering
-	ID3D11Texture2D* splatColorTexture = NULL;
-	D3D11_TEXTURE2D_DESC splatColorTextureDesc;
-	colorTexture->GetDesc(&splatColorTextureDesc);
-	hr = d3d11Device->CreateTexture2D(&splatColorTextureDesc, NULL, &splatColorTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+	// Convert into correct data type
+	selfTensor = selfTensor.to(torch::dtype(torch::kHalf)).cpu();
+	targetChannel->tensor = targetChannel->tensor.to(torch::dtype(torch::kHalf)).cpu();
 
-	torch::Tensor splatColorTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 4 }, torch::dtype(torch::kHalf));
-	torch::Tensor splatDepthTensor = torch::zeros({ settings->resolutionX, settings->resolutionY, 1 }, torch::dtype(torch::kFloat32));
-
-	// Clear render target and the depth/stencil view
-	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
-	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	// Draw again in splat view mode
-	settings->viewMode = 0;
-	Draw();
-	settings->viewMode = 4;
-
-	// Copy splat rendering from screen to the texture
-	d3d11DevCon->CopyResource(splatColorTexture, backBufferTexture);
-	d3d11DevCon->CopyResource(depthTexture, depthStencilTexture);
-
-	// Copy the data from the splat color texture to the tensor
-	D3D11_MAPPED_SUBRESOURCE subresource;
-	d3d11DevCon->Map(splatColorTexture, 0, D3D11_MAP_READ, 0, &subresource);
-	memcpy(splatColorTensor.data_ptr(), subresource.pData, sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
-	d3d11DevCon->Unmap(splatColorTexture, 0);
-	SAFE_RELEASE(splatColorTexture);
-
-	// Copy the depth data to the depth tensor
-	d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
-	memcpy(splatDepthTensor.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY * 1);
-	d3d11DevCon->Unmap(depthTexture, 0);
-
-	// Tensors that are used to calculate the loss
-	torch::Tensor selfTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-	torch::Tensor targetTensor = torch::zeros({ 2, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-	if (settings->useCUDA && torch::cuda::is_available())
+	// Copy parts of the corresponding channels into the color tensor
+	for (int i = 0; i < targetChannel->dimensions; i++)
 	{
-		selfTensor = selfTensor.cuda();
-		targetTensor = targetTensor.cuda();
-		splatColorTensor = splatColorTensor.cuda();
-		splatDepthTensor = splatDepthTensor.cuda();
+		size_t numTarget = settings->neuralNetworkScreenArea * colorTensor[i].numel();
+		size_t numSelf = colorTensor[i].numel() - numTarget;
+		memcpy(colorTensor[i].data_ptr(), selfTensor[i].data_ptr(), sizeof(short) * numSelf);
+		memcpy((short*)colorTensor[i].data_ptr() + numSelf, (short*)targetChannel->tensor[i].data_ptr() + numSelf, sizeof(short) * numTarget);
 	}
 
-	// Convert into the same format as the output tensor
-	splatColorTensor = splatColorTensor.permute({ 2, 0, 1 });
-	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
-	splatDepthTensor = splatDepthTensor.permute({ 2, 0, 1 });
+	// Convert the color tensor into DirextX texture memory layout
+	colorTensor = colorTensor.permute({ 1, 2, 0 }).contiguous();
 
-	// Set self tensor (neural network prediction)
-	selfTensor[0] = outputTensor[0][0];
-	selfTensor[1] = outputTensor[0][1];
-
-	// Set target tensor (ground truth)
-	targetTensor[0] = splatColorTensor[0];
-	targetTensor[1] = splatDepthTensor[0];
-
-	// Calculate the losses
-	l1Loss = torch::l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
-	mseLoss = torch::mse_loss(selfTensor, targetTensor).cpu().data<float>()[0];
-	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetTensor).cpu().data<float>()[0];
-
-	// Copy half of the splat color/depth tensor to the color tensor
-	// This way the results can be compared on the screen in real time
-	colorTensor = colorTensor.permute({ 2, 0, 1 });
-	colorTensor = colorTensor.to(torch::dtype(torch::kFloat32));
-	splatColorTensor = splatColorTensor.to(torch::dtype(torch::kFloat32));
-
-	// Copy parts of the splat tensors to the color tensor
-	colorTensor = colorTensor.cpu();
-	splatColorTensor = splatColorTensor.cpu();
-	splatDepthTensor = splatDepthTensor.cpu();
-	float splatScreenArea = 1.0f - settings->neuralNetworkScreenArea;
-	memcpy(colorTensor[0].data_ptr(), splatColorTensor[0].data_ptr(), sizeof(float) * splatScreenArea * settings->resolutionX * settings->resolutionY);
-	memcpy(colorTensor[1].data_ptr(), splatDepthTensor[0].data_ptr(), sizeof(float) * splatScreenArea * settings->resolutionX * settings->resolutionY);
-
-	// Transpose back to texture format
-	colorTensor = colorTensor.permute({ 1, 2, 0 });
-	colorTensor = colorTensor.to(torch::dtype(torch::kHalf));
-
-	// Copy the cpu color data to the texture
+	// Copy the color data to the texture
+	D3D11_MAPPED_SUBRESOURCE subresource;
 	d3d11DevCon->Map(colorTexture, 0, D3D11_MAP_WRITE, 0, &subresource);
-	memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * settings->resolutionX * settings->resolutionY * 4);
+	memcpy(subresource.pData, colorTensor.data_ptr(), sizeof(short) * colorTensor.numel());
 	d3d11DevCon->Unmap(colorTexture, 0);
 
 	// Show results on screen
 	d3d11DevCon->CopyResource(backBufferTexture, colorTexture);
-	*/
 }
 
 void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMode, torch::Tensor& tensor)
