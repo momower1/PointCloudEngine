@@ -587,6 +587,13 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	// Render the loss input and store it in the self tensor
 	RenderToTensor(settings->lossCalculationSelf, selfTensor);
 
+	// Move tensors to gpu for faster computation
+	if (settings->useCUDA && torch::cuda::is_available())
+	{
+		selfTensor = selfTensor.cuda();
+		targetChannel->tensor = targetChannel->tensor.cuda();
+	}
+
 	// Calculate the losses
 	l1Loss = torch::l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
 	mseLoss = torch::mse_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
