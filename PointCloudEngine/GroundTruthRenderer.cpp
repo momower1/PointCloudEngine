@@ -310,6 +310,9 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// Only do this once
 		loadPytorchModel = false;
 
+		// Set this to false in any error case
+		validPytorchModel = true;
+
 		const std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
 		const std::wstring modelDescriptionFilename = executableDirectory + L"\\NeuralNetworkDescription.txt";
 
@@ -371,12 +374,14 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			else
 			{
 				ERROR_MESSAGE(L"Could not parse Neural Network Description file " + modelDescriptionFilename);
+				validPytorchModel = false;
 				return;
 			}
 		}
 		else
 		{
 			ERROR_MESSAGE(L"Could not open Neural Network Description file " + modelDescriptionFilename);
+			validPytorchModel = false;
 			return;
 		}
 
@@ -414,15 +419,14 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			{
 				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
 			}
-
-			validPytorchModel = true;
 		}
 		catch (const std::exception &e)
 		{
 			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
+			validPytorchModel = false;
 		}
 	}
-	else
+	else if (validPytorchModel)
 	{
 		// Copy the renderings to the tensors of the different input channels
 		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
@@ -467,29 +471,27 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			}
 		}
 
-		if (validPytorchModel)
+		try
 		{
-			try
+			std::vector<torch::jit::IValue> inputs;
+			inputs.push_back(inputTensor);
+
+			// Evaluate the model, input and output channels are given in the model description
+			outputTensor = model.forward(inputs).toTensor();
+
+			// Assign the channel output tensors
+			for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
 			{
-				std::vector<torch::jit::IValue> inputs;
-				inputs.push_back(inputTensor);
-
-				// Evaluate the model, input and output channels are given in the model description
-				outputTensor = model.forward(inputs).toTensor();
-
-				// Assign the channel output tensors
-				for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
+				if (!it->input)
 				{
-					if (!it->input)
-					{
-						it->tensor = outputTensor[0].narrow(0, it->offset, it->dimensions);
-					}
+					it->tensor = outputTensor[0].narrow(0, it->offset, it->dimensions);
 				}
 			}
-			catch (std::exception & e)
-			{
-				ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the input dimensions and the resolution is correct!");
-			}
+		}
+		catch (std::exception & e)
+		{
+			ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the input dimensions and the resolution is correct!");
+			validPytorchModel = false;
 		}
 
 		if (settings->neuralNetworkScreenArea >= 0.99f)
@@ -560,6 +562,7 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 		}
 
 		ERROR_MESSAGE(NAMEOF(settings->lossCalculationTarget) + L" is not valid!\nPossible values are:\n\n" + possibleValues);
+		validPytorchModel = false;
 		return;
 	}
 
@@ -577,6 +580,7 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 		}
 
 		ERROR_MESSAGE(NAMEOF(settings->lossCalculationSelf) + L" is not valid!\nPossible values are:\n\n" + possibleValues);
+		validPytorchModel = false;
 		return;
 	}
 
@@ -714,7 +718,7 @@ void PointCloudEngine::GroundTruthRenderer::CopyDepthTextureToTensor(torch::Tens
 	// Copy the data from the depth texture to the cpu tensor
 	D3D11_MAPPED_SUBRESOURCE subresource;
 	d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
-	memcpy(tensor.data_ptr(), subresource.pData, sizeof(float) * tensor.numel());
+	memcpy(tensor.data_ptr(), subresource.pData, subresource.DepthPitch);
 	d3d11DevCon->Unmap(depthTexture, 0);
 }
 
