@@ -424,6 +424,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		{
 			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
 			validPytorchModel = false;
+			return;
 		}
 	}
 	else if (validPytorchModel)
@@ -492,6 +493,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		{
 			ERROR_MESSAGE(L"Could not evaluate Pytorch Jit Model.\nMake sure that the input dimensions and the resolution is correct!");
 			validPytorchModel = false;
+			return;
 		}
 
 		if (settings->neuralNetworkScreenArea >= 0.99f)
