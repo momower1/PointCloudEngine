@@ -1,6 +1,6 @@
 ## Overview
 - Two seperate point cloud renderers with support for splatting and phong lighing
-- [Ground Truth Renderer](https://github.com/momower1/PointCloudEngine/wiki/Ground-Truth-Renderer) directly renders a subset of the point cloud without preprocessing
+- [Ground Truth Renderer](https://github.com/momower1/PointCloudEngine/wiki/Ground-Truth-Renderer) renders a subset of the point cloud and can input it into a neural network
 - [Octree Renderer](https://github.com/momower1/PointCloudEngine/wiki/Octree-Renderer) builds an octree in a preprocessing step and renders the point cloud with LOD control
 - [PlyToPointcloud](https://github.com/momower1/PointCloudEngine/wiki/PlyToPointcloud) tool for converting .ply files with _x,y,z,nx,ny,nz,red,green,blue_ format into the required .pointcloud format
 
@@ -26,7 +26,6 @@
   - Python environment in Visual Studio Installer (no need to install Python 3.7)
 - Run admin command line:
   - _conda install pytorch torchvision cudatoolkit=10.0 -c pytorch_
-  - _conda activate_
 
 ## Example for supported .ply file
 ```
