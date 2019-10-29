@@ -77,7 +77,7 @@ void Scene::Update(Timer &timer)
 	// Toggle view mode depending on the renderer
 	if (Input::GetKeyDown(Keyboard::Enter))
 	{
-		settings->viewMode = (settings->viewMode + 1) % (settings->useOctree ? 3 : 4);
+		settings->viewMode = (settings->viewMode + 1) % (settings->useOctree ? 3 : 5);
 	}
 
 	// Toggle lighting with L
@@ -192,10 +192,13 @@ void Scene::Update(Timer &timer)
         timeSinceLoadFile += dt;
     }
 
-    // Increase input speed when pressing shift
+    // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))
     {
-        inputSpeed += 20 * dt;
+		if (Input::GetKey(Keyboard::W) || Input::GetKey(Keyboard::A) || Input::GetKey(Keyboard::S) || Input::GetKey(Keyboard::D) || Input::GetKey(Keyboard::Q) || Input::GetKey(Keyboard::E))
+		{
+			inputSpeed += 20 * dt;
+		}
     }
     else
     {

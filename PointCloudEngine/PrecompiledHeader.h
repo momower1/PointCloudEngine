@@ -1,5 +1,6 @@
 // Pytorch
 #include <torch/script.h>
+#include <torch/torch.h>
 
 #include <windows.h>
 #include <windowsx.h>

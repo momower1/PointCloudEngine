@@ -42,6 +42,7 @@ void SplatBlendingGS(float3 worldPosition, float3 worldNormal, float3 color, flo
 	GS_SPLAT_OUTPUT element;
 	element.positionCenter = worldPosition;
 	element.normalScreen = normalize(mul(worldNormal, VP));
+	element.normalScreen.z *= -1;
 	element.normal = worldNormal;
 	element.color = color;
 	element.radius = length(up);

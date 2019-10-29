@@ -1,4 +1,5 @@
 #include "ImageEffect.hlsl"
+#include "LightingConstantBuffer.hlsl"
 
 float4 PS(GS_INOUTPUT input) : SV_TARGET
 {
@@ -10,7 +11,7 @@ float4 PS(GS_INOUTPUT input) : SV_TARGET
 	if (color.a > 0)
 	{
 		// Remove the background color and alpha
-		color -= float4(0.5f, 0.5f, 0.5f, 0);
+		color -= float4(backgroundColor, 0);
 
 		// Divide by the sum of weights
 		color /= color.a;

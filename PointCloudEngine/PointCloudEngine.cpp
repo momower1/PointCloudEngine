@@ -605,8 +605,7 @@ void DrawScene()
     d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);	// 1 since there is only 1 view
 
 	// Clear out backbuffer to the updated color
-	float backgroundColor[4] = { 0.5f, 0.5f, 0.5f, 0 };
-	d3d11DevCon->ClearRenderTargetView(renderTargetView, backgroundColor);
+	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
 	
 	// Refresh the depth/stencil view
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -624,6 +623,7 @@ void DrawScene()
 	lightingConstantBufferData.diffuse = settings->diffuse;
 	lightingConstantBufferData.specular = settings->specular;
 	lightingConstantBufferData.specularExponent = settings->specularExponent;
+	lightingConstantBufferData.backgroundColor = (Vector3)settings->backgroundColor;
 
 	// Use a headlight or a constant light direction
 	if (settings->useHeadlight)
