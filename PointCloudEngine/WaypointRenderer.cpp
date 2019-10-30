@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "WaypointRenderer.h"
 
-#define WAYPOINTS_FILENAME L"/.waypoints"
+#define WAYPOINTS_FILENAME L"/Waypoints.vector"
 
 void PointCloudEngine::WaypointRenderer::Initialize()
 {
