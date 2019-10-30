@@ -110,25 +110,25 @@
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
 
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
 
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -163,25 +163,25 @@ copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
 
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
 
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -220,25 +220,25 @@ copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
 
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
 
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -277,25 +277,25 @@ copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
 
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy /Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy /Y "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
+copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
 
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy /Y "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
+copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
 
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy /Y "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
+copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
