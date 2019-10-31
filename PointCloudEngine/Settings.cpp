@@ -87,6 +87,9 @@ PointCloudEngine::Settings::Settings()
 		// Parse input parameters
 		TryParse(NAMEOF(mouseSensitivity), &mouseSensitivity);
 		TryParse(NAMEOF(scrollSensitivity), &scrollSensitivity);
+
+		// Background color alpha has to be 0 for blending to work correctly
+		backgroundColor.w = 0;
     }
 }
 
