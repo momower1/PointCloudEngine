@@ -33,7 +33,7 @@ void Scene::Initialize()
 
 	// Create startup text
 	startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
-	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files by generating an octree.\nYou can convert .ply files with the PlyToPointcloud.exe!\nYou can change parameters (resolution, ...) in the settings file.\n\n\nPress [O] to open a .pointcloud file.\nOnly x,y,z,nx,ny,nz,red,green,blue format is supported.";
+	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files.\nYou can convert .ply files with the PlyToPointcloud.exe!\nThis requires .ply files with x,y,z,nx,ny,nz,red,green,blue format.\nYou can change parameters (resolution, ...) in the Settings.txt file.\n\n\nPress [O] to open a .pointcloud file.";
 	startupText = Hierarchy::Create(L"Startup Text");
 	startupText->AddComponent(startupTextRenderer);
 	startupText->transform->scale = Vector3(0.25, 0.35, 1);
