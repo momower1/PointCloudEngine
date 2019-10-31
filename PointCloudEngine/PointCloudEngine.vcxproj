@@ -108,7 +108,7 @@
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
@@ -161,7 +161,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
@@ -218,7 +218,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
@@ -275,7 +275,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)readme.txt"
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
 copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"

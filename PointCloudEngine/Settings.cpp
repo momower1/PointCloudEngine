@@ -1,6 +1,6 @@
 #include "Settings.h"
 
-#define SETTINGS_FILENAME L"/settings.txt"
+#define SETTINGS_FILENAME L"/Settings.txt"
 
 PointCloudEngine::Settings::Settings()
 {

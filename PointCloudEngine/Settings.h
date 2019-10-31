@@ -43,7 +43,7 @@ namespace PointCloudEngine
 		float blendFactor = 2.0f;
 
 		// Ground truth parameters
-		float density = 1.0f;
+		float density = 0.2f;
 		float sparseSamplingRate = 0.01f;
 
 		// Neural Network parameters
