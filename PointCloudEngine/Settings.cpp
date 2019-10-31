@@ -27,66 +27,66 @@ PointCloudEngine::Settings::Settings()
         }
 
 		// Parse rendering parameters
-		TryParse(NAMEOF(backgroundColor), backgroundColor);
-		TryParse(NAMEOF(fovAngleY), fovAngleY);
-		TryParse(NAMEOF(nearZ), nearZ);
-		TryParse(NAMEOF(farZ), farZ);
-		TryParse(NAMEOF(resolutionX), resolutionX);
-		TryParse(NAMEOF(resolutionY), resolutionY);
-		TryParse(NAMEOF(windowed), windowed);
-		TryParse(NAMEOF(help), help);
-		TryParse(NAMEOF(viewMode), viewMode);
+		TryParse(NAMEOF(backgroundColor), &backgroundColor);
+		TryParse(NAMEOF(fovAngleY), &fovAngleY);
+		TryParse(NAMEOF(nearZ), &nearZ);
+		TryParse(NAMEOF(farZ), &farZ);
+		TryParse(NAMEOF(resolutionX), &resolutionX);
+		TryParse(NAMEOF(resolutionY), &resolutionY);
+		TryParse(NAMEOF(windowed), &windowed);
+		TryParse(NAMEOF(help), &help);
+		TryParse(NAMEOF(viewMode), &viewMode);
 
 		// Parse pointcloud file parameters
-		TryParse(NAMEOF(pointcloudFile), pointcloudFile);
-		TryParse(NAMEOF(samplingRate), samplingRate);
-		TryParse(NAMEOF(scale), scale);
+		TryParse(NAMEOF(pointcloudFile), &pointcloudFile);
+		TryParse(NAMEOF(samplingRate), &samplingRate);
+		TryParse(NAMEOF(scale), &scale);
 
 		// Parse lighting parameters
-		TryParse(NAMEOF(useLighting), useLighting);
-		TryParse(NAMEOF(useHeadlight), useHeadlight);
-		TryParse(NAMEOF(lightDirection), lightDirection);
-		TryParse(NAMEOF(lightIntensity), lightIntensity);
-		TryParse(NAMEOF(ambient), ambient);
-		TryParse(NAMEOF(diffuse), diffuse);
-		TryParse(NAMEOF(specular), specular);
-		TryParse(NAMEOF(specularExponent), specularExponent);
+		TryParse(NAMEOF(useLighting), &useLighting);
+		TryParse(NAMEOF(useHeadlight), &useHeadlight);
+		TryParse(NAMEOF(lightDirection), &lightDirection);
+		TryParse(NAMEOF(lightIntensity), &lightIntensity);
+		TryParse(NAMEOF(ambient), &ambient);
+		TryParse(NAMEOF(diffuse), &diffuse);
+		TryParse(NAMEOF(specular), &specular);
+		TryParse(NAMEOF(specularExponent), &specularExponent);
 
 		// Parse blending parameters
-		TryParse(NAMEOF(useBlending), useBlending);
-		TryParse(NAMEOF(blendFactor), blendFactor);
+		TryParse(NAMEOF(useBlending), &useBlending);
+		TryParse(NAMEOF(blendFactor), &blendFactor);
 
 		// Parse ground truth parameters
-		TryParse(NAMEOF(density), density);
-		TryParse(NAMEOF(sparseSamplingRate), sparseSamplingRate);
+		TryParse(NAMEOF(density), &density);
+		TryParse(NAMEOF(sparseSamplingRate), &sparseSamplingRate);
 
 		// Parse neural network parameters
-		TryParse(NAMEOF(useCUDA), useCUDA);
-		TryParse(NAMEOF(neuralNetworkScreenArea), neuralNetworkScreenArea);
-		TryParse(NAMEOF(neuralNetworkOutputRed), neuralNetworkOutputRed);
-		TryParse(NAMEOF(neuralNetworkOutputGreen), neuralNetworkOutputGreen);
-		TryParse(NAMEOF(neuralNetworkOutputBlue), neuralNetworkOutputBlue);
-		TryParse(NAMEOF(lossCalculationSelf), lossCalculationSelf);
-		TryParse(NAMEOF(lossCalculationTarget), lossCalculationTarget);
+		TryParse(NAMEOF(useCUDA), &useCUDA);
+		TryParse(NAMEOF(neuralNetworkScreenArea), &neuralNetworkScreenArea);
+		TryParse(NAMEOF(neuralNetworkOutputRed), &neuralNetworkOutputRed);
+		TryParse(NAMEOF(neuralNetworkOutputGreen), &neuralNetworkOutputGreen);
+		TryParse(NAMEOF(neuralNetworkOutputBlue), &neuralNetworkOutputBlue);
+		TryParse(NAMEOF(lossCalculationSelf), &lossCalculationSelf);
+		TryParse(NAMEOF(lossCalculationTarget), &lossCalculationTarget);
 
 		// Parse HDF5 dataset generation parameters
-		TryParse(NAMEOF(waypointStepSize), waypointStepSize);
-		TryParse(NAMEOF(waypointPreviewStepSize), waypointPreviewStepSize);
-		TryParse(NAMEOF(sphereStepSize), sphereStepSize);
-		TryParse(NAMEOF(sphereMinTheta), sphereMinTheta);
-		TryParse(NAMEOF(sphereMaxTheta), sphereMaxTheta);
-		TryParse(NAMEOF(sphereMinPhi), sphereMinPhi);
-		TryParse(NAMEOF(sphereMaxPhi), sphereMaxPhi);
+		TryParse(NAMEOF(waypointStepSize), &waypointStepSize);
+		TryParse(NAMEOF(waypointPreviewStepSize), &waypointPreviewStepSize);
+		TryParse(NAMEOF(sphereStepSize), &sphereStepSize);
+		TryParse(NAMEOF(sphereMinTheta), &sphereMinTheta);
+		TryParse(NAMEOF(sphereMaxTheta), &sphereMaxTheta);
+		TryParse(NAMEOF(sphereMinPhi), &sphereMinPhi);
+		TryParse(NAMEOF(sphereMaxPhi), &sphereMaxPhi);
 
 		// Parse octree parameters
-		TryParse(NAMEOF(useOctree), useOctree);
-		TryParse(NAMEOF(maxOctreeDepth), maxOctreeDepth);
-		TryParse(NAMEOF(overlapFactor), overlapFactor);
-		TryParse(NAMEOF(appendBufferCount), appendBufferCount);
+		TryParse(NAMEOF(useOctree), &useOctree);
+		TryParse(NAMEOF(maxOctreeDepth), &maxOctreeDepth);
+		TryParse(NAMEOF(overlapFactor), &overlapFactor);
+		TryParse(NAMEOF(appendBufferCount), &appendBufferCount);
 
 		// Parse input parameters
-		TryParse(NAMEOF(mouseSensitivity), mouseSensitivity);
-		TryParse(NAMEOF(scrollSensitivity), scrollSensitivity);
+		TryParse(NAMEOF(mouseSensitivity), &mouseSensitivity);
+		TryParse(NAMEOF(scrollSensitivity), &scrollSensitivity);
     }
 }
 
@@ -212,60 +212,4 @@ Vector4 PointCloudEngine::Settings::ToVector4(std::wstring s)
 	std::wstring w = s.substr(z.length() + 1, s.length());
 
 	return Vector4(std::stof(x), std::stof(y), std::stof(z), std::stof(w));
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, float& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = std::stof(settingsMap[parameterName]);
-	}
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, int& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = std::stoi(settingsMap[parameterName]);
-	}
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, UINT& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = std::stoi(settingsMap[parameterName]);
-	}
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, bool& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = std::stoi(settingsMap[parameterName]);
-	}
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, Vector3& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = ToVector3(settingsMap[parameterName]);
-	}
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, Vector4& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = ToVector4(settingsMap[parameterName]);
-	}
-}
-
-void PointCloudEngine::Settings::TryParse(std::wstring parameterName, std::wstring& outParameterValue)
-{
-	if (settingsMap.find(parameterName) != settingsMap.end())
-	{
-		outParameterValue = settingsMap[parameterName];
-	}
 }

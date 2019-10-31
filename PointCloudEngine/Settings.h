@@ -82,13 +82,44 @@ namespace PointCloudEngine
 	private:
 		std::map<std::wstring, std::wstring> settingsMap;
 
-		void TryParse(std::wstring parameterName, float& outParameterValue);
-		void TryParse(std::wstring parameterName, int& outParameterValue);
-		void TryParse(std::wstring parameterName, UINT& outParameterValue);
-		void TryParse(std::wstring parameterName, bool& outParameterValue);
-		void TryParse(std::wstring parameterName, Vector3& outParameterValue);
-		void TryParse(std::wstring parameterName, Vector4& outParameterValue);
-		void TryParse(std::wstring parameterName, std::wstring& outParameterValue);
+		template<typename T> void TryParse(std::wstring parameterName, T* outParameterValue)
+		{
+			if (settingsMap.find(parameterName) != settingsMap.end())
+			{
+				if (typeid(T) == typeid(std::wstring))
+				{
+					*((std::wstring*)outParameterValue) = settingsMap[parameterName];
+				}
+				else if (typeid(T) == typeid(float))
+				{
+					*((float*)outParameterValue) = std::stof(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(int))
+				{
+					*((int*)outParameterValue) = std::stoi(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(UINT))
+				{
+					*((UINT*)outParameterValue) = std::stoi(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(bool))
+				{
+					*((bool*)outParameterValue) = std::stoi(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(Vector3))
+				{
+					*((Vector3*)outParameterValue) = ToVector3(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(Vector4))
+				{
+					*((Vector4*)outParameterValue) = ToVector4(settingsMap[parameterName]);
+				}
+				else
+				{
+					ERROR_MESSAGE(NAMEOF(TryParse) + L" cannot parse " + parameterName + L" because its type is unknown!");
+				}
+			}
+		};
     };
 }
 
