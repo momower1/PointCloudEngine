@@ -54,13 +54,6 @@ void Scene::Initialize()
 
 void Scene::Update(Timer &timer)
 {
-	// TEST
-	if (Input::GetKeyDown(Keyboard::M))
-	{
-		settings->backfaceCulling = !settings->backfaceCulling;
-	}
-
-
 	// Toggle help
 	if (Input::GetKeyDown(Keyboard::H))
 	{
