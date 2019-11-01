@@ -43,6 +43,7 @@ namespace PointCloudEngine
 		float blendFactor = 2.0f;
 
 		// Ground truth parameters
+		bool backfaceCulling = true;
 		float density = 0.2f;
 		float sparseSamplingRate = 0.01f;
 

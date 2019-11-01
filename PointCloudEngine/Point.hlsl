@@ -23,7 +23,11 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 	element.normal = input[0].normal;
 	element.color = input[0].color;
 
-	output.Append(element);
+	// Perform backface culling based on the normal
+	if (!backfaceCulling || (element.normalScreen.z > 0))
+	{
+		output.Append(element);
+	}
 }
 
 float4 PS(GS_POINT_OUTPUT input) : SV_TARGET

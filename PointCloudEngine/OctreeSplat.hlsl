@@ -80,7 +80,7 @@ void GS(point VS_INPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 		float3 right = 0.5f * splatSizeWorld * normalize(cross(worldNormal, up));
 		float4x4 VP = mul(View, Projection);
 
-		SplatBlendingGS(worldPosition, worldNormal, color, up, right, VP, output);
+		SplatBlendingGS(worldPosition, worldNormal, color, up, right, VP, false, output);
 	}
 }
 

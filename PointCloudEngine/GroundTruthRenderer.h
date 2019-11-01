@@ -39,7 +39,8 @@ namespace PointCloudEngine
 			int useBlending;
 			int drawNormals;
 			int normalsInScreenSpace;
-			float padding[3];
+			int backfaceCulling;
+			float padding[2];
         };
 
         std::vector<Vertex> vertices;

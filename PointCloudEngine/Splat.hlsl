@@ -15,7 +15,7 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 
     float4x4 VP = mul(View, Projection);
 
-	SplatBlendingGS(input[0].position, input[0].normal, input[0].color, up, right, VP, output);
+	SplatBlendingGS(input[0].position, input[0].normal, input[0].color, up, right, VP, backfaceCulling, output);
 }
 
 float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET

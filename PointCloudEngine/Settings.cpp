@@ -57,6 +57,7 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(blendFactor), &blendFactor);
 
 		// Parse ground truth parameters
+		TryParse(NAMEOF(backfaceCulling), &backfaceCulling);
 		TryParse(NAMEOF(density), &density);
 		TryParse(NAMEOF(sparseSamplingRate), &sparseSamplingRate);
 
@@ -137,6 +138,7 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << std::endl;
 
 	settingsFile << L"# Ground Truth Parameters" << std::endl;
+	settingsFile << NAMEOF(backfaceCulling) << L"=" << backfaceCulling << std::endl;
 	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
 	settingsFile << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
 	settingsFile << std::endl;
