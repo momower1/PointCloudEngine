@@ -26,7 +26,7 @@ float Gaussian(float x, float o)
 	return (1.0f / (o * sqrt(2 * 3.14159265359))) * pow(2.71828182846, -((x * x) / (2 * o * o)));
 }
 
-void SplatBlendingGS(float3 worldPosition, float3 worldNormal, float3 color, float3 up, float3 right, float4x4 VP, bool backfaceCulling, inout TriangleStream<GS_SPLAT_OUTPUT> output)
+void SplatBlendingGS(float3 worldPosition, float3 worldNormal, float3 color, float3 up, float3 right, float4x4 VP, inout TriangleStream<GS_SPLAT_OUTPUT> output)
 {
 	/*
 
@@ -47,36 +47,32 @@ void SplatBlendingGS(float3 worldPosition, float3 worldNormal, float3 color, flo
 	element.color = color;
 	element.radius = length(up);
 
-	// Perform backface culling based on the normal
-	if (!backfaceCulling || (element.normalScreen.z > 0))
-	{
-		// Append the vertices in the correct order to create a billboard
-		element.positionWorld = worldPosition + up - right;
-		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-		output.Append(element);
+	// Append the vertices in the correct order to create a billboard
+	element.positionWorld = worldPosition + up - right;
+	element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+	output.Append(element);
 
-		element.positionWorld = worldPosition - up + right;
-		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-		output.Append(element);
+	element.positionWorld = worldPosition - up + right;
+	element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+	output.Append(element);
 
-		element.positionWorld = worldPosition - up - right;
-		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-		output.Append(element);
+	element.positionWorld = worldPosition - up - right;
+	element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+	output.Append(element);
 
-		output.RestartStrip();
+	output.RestartStrip();
 
-		element.positionWorld = worldPosition + up - right;
-		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-		output.Append(element);
+	element.positionWorld = worldPosition + up - right;
+	element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+	output.Append(element);
 
-		element.positionWorld = worldPosition + up + right;
-		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-		output.Append(element);
+	element.positionWorld = worldPosition + up + right;
+	element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+	output.Append(element);
 
-		element.positionWorld = worldPosition - up + right;
-		element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
-		output.Append(element);
-	}
+	element.positionWorld = worldPosition - up + right;
+	element.position = element.positionClip = mul(float4(element.positionWorld, 1), VP);
+	output.Append(element);
 }
 
 float4 SplatBlendingPS(bool useLighting, bool useBlending, float3 cameraPosition, float blendFactor, float4x4 WVPI, GS_SPLAT_OUTPUT input)

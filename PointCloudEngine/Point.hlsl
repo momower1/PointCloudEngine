@@ -13,6 +13,18 @@ struct GS_POINT_OUTPUT
 [maxvertexcount(1)]
 void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 {
+	// Discard points that have a normal facing away from the camera
+	if (backfaceCulling)
+	{
+		float3 viewDirection = normalize(input[0].position - cameraPosition);
+		float angle = acos(dot(input[0].normal, -viewDirection));
+
+		if (angle > (PI / 2))
+		{
+			return;
+		}
+	}
+
 	float4x4 VP = mul(View, Projection);
 
 	GS_POINT_OUTPUT element;
@@ -23,11 +35,7 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 	element.normal = input[0].normal;
 	element.color = input[0].color;
 
-	// Perform backface culling based on the normal
-	if (!backfaceCulling || (element.normalScreen.z > 0))
-	{
-		output.Append(element);
-	}
+	output.Append(element);
 }
 
 float4 PS(GS_POINT_OUTPUT input) : SV_TARGET

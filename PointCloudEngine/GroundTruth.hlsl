@@ -1,3 +1,5 @@
+#define PI 3.141592654f
+
 cbuffer GroundTruthRendererConstantBuffer : register(b0)
 {
     float4x4 World;
