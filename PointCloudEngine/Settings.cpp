@@ -73,6 +73,8 @@ PointCloudEngine::Settings::Settings()
 		// Parse HDF5 dataset generation parameters
 		TryParse(NAMEOF(waypointStepSize), &waypointStepSize);
 		TryParse(NAMEOF(waypointPreviewStepSize), &waypointPreviewStepSize);
+		TryParse(NAMEOF(waypointMin), &waypointMin);
+		TryParse(NAMEOF(waypointMax), &waypointMax);
 		TryParse(NAMEOF(sphereStepSize), &sphereStepSize);
 		TryParse(NAMEOF(sphereMinTheta), &sphereMinTheta);
 		TryParse(NAMEOF(sphereMaxTheta), &sphereMaxTheta);
@@ -156,6 +158,8 @@ PointCloudEngine::Settings::~Settings()
 	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;
 	settingsFile << NAMEOF(waypointStepSize) << L"=" << waypointStepSize << std::endl;
 	settingsFile << NAMEOF(waypointPreviewStepSize) << L"=" << waypointPreviewStepSize << std::endl;
+	settingsFile << NAMEOF(waypointMin) << L"=" << waypointMin << std::endl;
+	settingsFile << NAMEOF(waypointMax) << L"=" << waypointMax << std::endl;
 	settingsFile << NAMEOF(sphereStepSize) << L"=" << sphereStepSize << std::endl;
 	settingsFile << NAMEOF(sphereMinTheta) << L"=" << sphereMinTheta << std::endl;
 	settingsFile << NAMEOF(sphereMaxTheta) << L"=" << sphereMaxTheta << std::endl;

@@ -14,6 +14,7 @@ namespace PointCloudEngine
         void Draw();
         void Release();
 
+		UINT GetWaypointSize();
 		bool LerpWaypoints(float t, Vector3& outPosition, Matrix& outRotation);
 		void AddWaypoint(Vector3 position, Matrix rotation, Vector3 forward);
 		void RemoveWaypoint();

@@ -59,6 +59,8 @@ namespace PointCloudEngine
 		// HDF5 dataset generation parameters
 		float waypointStepSize = 0.5f;
 		float waypointPreviewStepSize = 0.1f;
+		float waypointMin = 0.0f;
+		float waypointMax = 1.0f;
 		float sphereStepSize = 0.5f;
 		float sphereMinTheta = 0;
 		float sphereMaxTheta = XM_PI;

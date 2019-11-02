@@ -82,6 +82,11 @@ void PointCloudEngine::WaypointRenderer::Release()
 	SAFE_RELEASE(constantBuffer);
 }
 
+UINT PointCloudEngine::WaypointRenderer::GetWaypointSize()
+{
+	return waypointSize;
+}
+
 bool PointCloudEngine::WaypointRenderer::LerpWaypoints(float t, Vector3& outPosition, Matrix& outRotation)
 {
 	if (waypointSize > 0)

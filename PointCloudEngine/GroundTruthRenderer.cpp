@@ -92,9 +92,12 @@ void GroundTruthRenderer::Update()
 		hdf5file.AddStringAttribute(NAMEOF(settings->specular), std::to_wstring(settings->specular));
 		hdf5file.AddStringAttribute(NAMEOF(settings->specularExponent), std::to_wstring(settings->specularExponent));
 		hdf5file.AddStringAttribute(NAMEOF(settings->blendFactor), std::to_wstring(settings->blendFactor));
+		hdf5file.AddStringAttribute(NAMEOF(settings->backfaceCulling), std::to_wstring(settings->backfaceCulling));
 		hdf5file.AddStringAttribute(NAMEOF(settings->density), std::to_wstring(settings->density));
 		hdf5file.AddStringAttribute(NAMEOF(settings->sparseSamplingRate), std::to_wstring(settings->sparseSamplingRate));
 		hdf5file.AddStringAttribute(NAMEOF(settings->waypointStepSize), std::to_wstring(settings->waypointStepSize));
+		hdf5file.AddStringAttribute(NAMEOF(settings->waypointMin), std::to_wstring(settings->waypointMin));
+		hdf5file.AddStringAttribute(NAMEOF(settings->waypointMax), std::to_wstring(settings->waypointMax));
 		hdf5file.AddStringAttribute(NAMEOF(settings->sphereStepSize), std::to_wstring(settings->sphereStepSize));
 		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinTheta), std::to_wstring(settings->sphereMinTheta));
 		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxTheta), std::to_wstring(settings->sphereMaxTheta));
@@ -854,12 +857,15 @@ void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset(HDF5File& hd
 
 	if (waypointRenderer != NULL)
 	{
+		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
+		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
+
 		UINT counter = 0;
-		float waypointLocation = 0;
+		float waypointLocation = start;
 		Vector3 newCameraPosition = camera->GetPosition();
 		Matrix newCameraRotation = camera->GetRotationMatrix();
 
-		while (waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
+		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
 		{
 			camera->SetPosition(newCameraPosition);
 			camera->SetRotationMatrix(newCameraRotation);
