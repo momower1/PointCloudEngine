@@ -18,7 +18,6 @@ void Input::Initialize(HWND hwnd)
 {
     // Basic mouse input and absolute position
     mouse.SetWindow(hwnd);
-    mouse.SetMode(Mouse::MODE_RELATIVE);
     mouseButtonStateTracker.Reset();
 
     // Set position

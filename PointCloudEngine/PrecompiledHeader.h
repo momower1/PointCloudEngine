@@ -21,6 +21,9 @@
 #include <math.h>
 #include <wincodec.h>
 
+// Resources like menus and icons
+#include "resource.h"
+
 // DirectX Toolkit
 #include "CommonStates.h"
 #include "DDSTextureLoader.h"

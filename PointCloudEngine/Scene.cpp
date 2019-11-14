@@ -178,11 +178,15 @@ void Scene::Update(Timer &timer)
 
     if (timeSinceLoadFile > 0.1f && !Input::GetKey(Keyboard::Space))
     {
-		// Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
-        cameraYaw += Input::mouseDelta.x;
-        cameraPitch += Input::mouseDelta.y;
-        cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
-        camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+		// Only rotate the camera around the scene while pressing the right mouse button
+		if (Input::GetMouseButton(MouseButton::RightButton))
+		{
+			// Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
+			cameraYaw += Input::mouseDelta.x;
+			cameraPitch += Input::mouseDelta.y;
+			cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
+			camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+		}
 
 		// Move camera with WASD keys
 		camera->TranslateRUF(inputSpeed* dt* (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed* dt* (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
@@ -204,6 +208,17 @@ void Scene::Update(Timer &timer)
     {
         inputSpeed = 3;
     }
+
+	if (Input::GetMouseButtonDown(MouseButton::RightButton))
+	{
+		// Hide cursor
+		Input::SetMode(Mouse::MODE_RELATIVE);
+	}
+	else if (Input::GetMouseButtonUp(MouseButton::RightButton))
+	{
+		// Show cursor
+		Input::SetMode(Mouse::MODE_ABSOLUTE);
+	}
 
 	// Switch between the two renderers at runtime
 	if (Input::GetKeyDown(Keyboard::R))

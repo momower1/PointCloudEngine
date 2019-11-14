@@ -206,7 +206,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	hr = CoInitialize(NULL);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CoInitialize) + L" failed!");
 
-	if (!InitializeWindow(hInstance, nShowCmd, settings->resolutionX, settings->resolutionY, true))
+	if (!InitializeWindow(hInstance, nShowCmd))
 	{
 		ERROR_MESSAGE(NAMEOF(InitializeWindow) + L" failed!");
 		return 0;
@@ -229,7 +229,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	return 0;
 }
 
-bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, bool windowed)
+bool InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 {
 	/*
 	int ShowWnd - How the window should be displayed.Some common commands are SW_SHOWMAXIMIZED, SW_SHOW, SW_SHOWMINIMIZED.
@@ -249,7 +249,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);		// Colors the background
 	wc.lpszMenuName = NULL;		                        // Name to the menu that is attached to our window. we don't have one so we put NULL
 	wc.lpszClassName = WndClassName;		            // Name the class here
-    wc.hIcon = wc.hIconSm = (HICON) LoadImage(NULL, L"Assets/Icon.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+	wc.hIcon = wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
 
 	if (!RegisterClassEx(&wc))
 	{
@@ -257,8 +257,11 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 		return 1;
 	}
 
+	// Load the menu that will be shown below the title bar
+	HMENU menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU));
+
 	// Create window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
-	hwnd = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, hInstance, NULL);
+	hwnd = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, settings->resolutionX, settings->resolutionY, NULL, menu, hInstance, NULL);
 
 	if (!hwnd)
 	{

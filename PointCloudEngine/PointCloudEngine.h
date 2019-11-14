@@ -106,7 +106,7 @@ extern void SetFullscreen(bool fullscreen);
 extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending);
 
 // Function declarations
-bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);
+bool InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 int Messageloop();
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 bool InitializeDirect3d11App(HINSTANCE hInstance);
