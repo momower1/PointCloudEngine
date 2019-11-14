@@ -15,8 +15,7 @@ namespace PointCloudEngine
         void Release();
 
     private:
-        void DelayedLoadFile(std::wstring filepath);
-        void LoadFile();
+        void LoadFile(std::wstring filepath);
 
 		SceneObject* text = NULL;
 		SceneObject* helpText = NULL;
@@ -42,9 +41,6 @@ namespace PointCloudEngine
 
 		// Speed up WASD, Q/E, V/N and so on for faster movement and parameter tweaking
         float inputSpeed = 0;
-
-        float timeUntilLoadFile = -1.0f;
-        float timeSinceLoadFile = 0.0f;
 
 		Vector3 cameraPositions[6] =
 		{

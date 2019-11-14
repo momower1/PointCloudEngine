@@ -21,6 +21,11 @@ void PointCloudEngine::Hierarchy::ReleaseSceneObject(SceneObject *sceneObjectToR
     SafeDelete(sceneObjectToRemove);
 }
 
+void PointCloudEngine::Hierarchy::CalculateWorldMatrices()
+{
+	CalculateWorldMatrices(&rootTransforms);
+}
+
 void Hierarchy::UpdateAllSceneObjects()
 {
     for (auto it = sceneObjects.begin(); it != sceneObjects.end(); it++)
@@ -31,8 +36,6 @@ void Hierarchy::UpdateAllSceneObjects()
 
 void Hierarchy::DrawAllSceneObjects()
 {
-    CalculateWorldMatrices(&rootTransforms);
-
     for (auto it = sceneObjects.begin(); it != sceneObjects.end(); it++)
     {
         (*it)->Draw();

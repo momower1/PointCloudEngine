@@ -648,7 +648,7 @@ void DrawScene()
 	camera->PrepareDraw();
 
     // Draw scene
-    scene.Draw();
+	scene.Draw();
 
 	// Gamma correction is automatically applied in full screen mode, only apply it to the texture after presenting it to the screen (then screenshots will also be gamma corrected)
 	// In window mode the gamma correction has to be done before presenting it to the screen

@@ -28,6 +28,9 @@ namespace PointCloudEngine
             if (component != NULL)
             {
                 components.push_back(component);
+				component->sceneObject = this;
+				component->Initialize();
+				component->initialized = true;
                 return t;
             }
 

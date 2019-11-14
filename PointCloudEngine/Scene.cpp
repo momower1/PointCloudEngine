@@ -49,7 +49,7 @@ void Scene::Initialize()
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
     // Try to load the last pointcloudFile
-    DelayedLoadFile(settings->pointcloudFile);
+    LoadFile(settings->pointcloudFile);
 }
 
 void Scene::Update(Timer &timer)
@@ -102,15 +102,19 @@ void Scene::Update(Timer &timer)
 	// Camera tracking shot using the waypoints
 	if (Input::GetKeyDown(Keyboard::Space))
 	{
+		// Start preview
 		waypointPreviewLocation = 0;
 		waypointStartPosition = camera->GetPosition();
 	}
 	else if (Input::GetKeyUp(Keyboard::Space))
 	{
+		// End of preview
 		camera->SetPosition(waypointStartPosition);
+		camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
 	}
 	else if (Input::GetKey(Keyboard::Space))
 	{
+		// While preview
 		Vector3 newCameraPosition = camera->GetPosition();
 		Matrix newCameraRotation = camera->GetRotationMatrix();
 
@@ -119,6 +123,21 @@ void Scene::Update(Timer &timer)
 
 		camera->SetPosition(newCameraPosition);
 		camera->SetRotationMatrix(newCameraRotation);
+	}
+	else
+	{
+		// Only rotate the camera around the scene while pressing the right mouse button
+		if (Input::GetMouseButton(MouseButton::RightButton))
+		{
+			// Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
+			cameraYaw += Input::mouseDelta.x;
+			cameraPitch += Input::mouseDelta.y;
+			cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
+			camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+		}
+
+		// Move camera with WASD keys
+		camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 	}
 
 	// Set the sampling rate (minimal distance between two points) of the loaded point cloud
@@ -176,26 +195,6 @@ void Scene::Update(Timer &timer)
 		}
 	}
 
-    if (timeSinceLoadFile > 0.1f && !Input::GetKey(Keyboard::Space))
-    {
-		// Only rotate the camera around the scene while pressing the right mouse button
-		if (Input::GetMouseButton(MouseButton::RightButton))
-		{
-			// Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
-			cameraYaw += Input::mouseDelta.x;
-			cameraPitch += Input::mouseDelta.y;
-			cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
-			camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
-		}
-
-		// Move camera with WASD keys
-		camera->TranslateRUF(inputSpeed* dt* (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed* dt* (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
-    }
-    else
-    {
-        timeSinceLoadFile += dt;
-    }
-
     // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))
     {
@@ -224,7 +223,7 @@ void Scene::Update(Timer &timer)
 	if (Input::GetKeyDown(Keyboard::R))
 	{
 		settings->useOctree = !settings->useOctree;
-		DelayedLoadFile(settings->pointcloudFile);
+		LoadFile(settings->pointcloudFile);
 	}
 
 	// FPS counter
@@ -237,19 +236,9 @@ void Scene::Update(Timer &timer)
 		pointCloudRenderer->SetHelpText(helpText->transform, helpTextRenderer);
 	}
 
-    // Check if there is a file that should be loaded delayed
-    if (timeUntilLoadFile > 0)
+	// Open file dialog to load another file
+    if (Input::GetKeyDown(Keyboard::O))
     {
-        timeUntilLoadFile -= dt;
-
-        if (timeUntilLoadFile < 0)
-        {
-            LoadFile();
-        }
-    }
-    else if (Input::GetKeyDown(Keyboard::O))
-    {
-        // Open file dialog to load another file
         wchar_t filename[MAX_PATH];
         OPENFILENAMEW openFileName;
         ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
@@ -269,10 +258,8 @@ void Scene::Update(Timer &timer)
 
         if (GetOpenFileNameW(&openFileName))
         {
-            DelayedLoadFile(filename);
+            LoadFile(filename);
         }
-
-        Input::SetMode(Mouse::MODE_RELATIVE);
     }
 
     // Save config file and exit on ESC
@@ -281,40 +268,40 @@ void Scene::Update(Timer &timer)
         DestroyWindow(hwnd);
     }
 
-    Hierarchy::UpdateAllSceneObjects();
+	Hierarchy::UpdateAllSceneObjects();
 }
 
 void Scene::Draw()
 {
-    Hierarchy::DrawAllSceneObjects();
+	Hierarchy::CalculateWorldMatrices();
+
+	if (pointCloudRenderer == NULL)
+	{
+		startupTextRenderer->Draw();
+	}
+	else
+	{
+		Hierarchy::DrawAllSceneObjects();
+	}
 }
 
 void Scene::Release()
 {
-    Hierarchy::ReleaseAllSceneObjects();
+	Hierarchy::ReleaseAllSceneObjects();
 }
 
-void PointCloudEngine::Scene::DelayedLoadFile(std::wstring filepath)
+void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 {
-    std::wifstream file(filepath);
+	// Check if the file exists
+	std::wifstream file(filepath);
 
-    // Check if the file exists
-    if (file.is_open())
-    {
-        // Load after some delay
-        timeUntilLoadFile = 0.1f;
-        settings->pointcloudFile = filepath;
+	if (!file.is_open())
+	{
+		// Show startup text
+		startupTextRenderer->enabled = true;
+		return;
+	}
 
-		// Hide the startup text
-		startupTextRenderer->enabled = false;
-
-        // Show huge loading text
-		loadingTextRenderer->enabled = true;
-    }
-}
-
-void PointCloudEngine::Scene::LoadFile()
-{
     // Release resources before loading
     if (pointCloudRenderer != NULL)
     {
@@ -324,6 +311,24 @@ void PointCloudEngine::Scene::LoadFile()
 
     try
     {
+		// Clear screen and depth and initialize everything so that we can draw (possibly before any update)
+		d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+		d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+		Hierarchy::CalculateWorldMatrices();
+		camera->PrepareDraw();
+
+		// Show loading screen
+		loadingTextRenderer->enabled = true;
+		loadingTextRenderer->Draw();
+		loadingTextRenderer->enabled = false;
+
+		// Present the result on the screen
+		swapChain->Present(0, 0);
+
+		// Set the path for the new file
+		settings->pointcloudFile = filepath;
+
 		if (settings->useOctree)
 		{
 			// Try to build the octree from the points (takes a long time)
@@ -357,11 +362,8 @@ void PointCloudEngine::Scene::LoadFile()
         camera->SetPosition(settings->scale * (boundingBoxPosition - boundingBoxSize * Vector3::UnitZ));
     }
 
-    // Hide loading text
-	loadingTextRenderer->enabled = false;
-    timeSinceLoadFile = 0;
-
 	// Show the other text
+	startupTextRenderer->enabled = false;
 	helpTextRenderer->enabled = true;
 	fpsTextRenderer->enabled = true;
 	textRenderer->enabled = true;
@@ -371,6 +373,7 @@ void PointCloudEngine::Scene::LoadFile()
     pointCloud->transform->rotation = Quaternion::Identity;
 
     // Reset camera rotation
+	camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(0, 0, 0));
     cameraPitch = 0;
     cameraYaw = 0;
 }

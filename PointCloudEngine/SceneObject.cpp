@@ -71,14 +71,6 @@ void SceneObject::Update()
     for (auto it = components.begin(); it != components.end(); it++)
     {
         Component *component = *it;
-        
-        // Initialize the component if necessary
-        if (!component->initialized)
-        {
-			component->sceneObject = this;
-            component->Initialize();
-            component->initialized = true;
-        }
 
 		if (component->enabled)
 		{
