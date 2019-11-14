@@ -545,6 +545,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		    PostQuitMessage(0);
 		    return 0;
         }
+		case WM_COMMAND:
+		{
+			if (wParam == ID_FILE_OPEN)
+			{
+				scene.OpenFileDialog();
+			}
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);		//Takes care of all other messages

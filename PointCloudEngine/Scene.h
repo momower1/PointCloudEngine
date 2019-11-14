@@ -13,6 +13,7 @@ namespace PointCloudEngine
         void Update(Timer &timer);
         void Draw();
         void Release();
+		void OpenFileDialog();
 
     private:
         void LoadFile(std::wstring filepath);

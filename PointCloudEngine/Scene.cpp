@@ -239,27 +239,7 @@ void Scene::Update(Timer &timer)
 	// Open file dialog to load another file
     if (Input::GetKeyDown(Keyboard::O))
     {
-        wchar_t filename[MAX_PATH];
-        OPENFILENAMEW openFileName;
-        ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
-        openFileName.lStructSize = sizeof(OPENFILENAMEW);
-        openFileName.hwndOwner = hwnd;
-        openFileName.lpstrFilter = L"Pointcloud Files\0*.pointcloud\0\0";
-        openFileName.lpstrFile = filename;
-        openFileName.lpstrFile[0] = L'\0';
-        openFileName.nMaxFile = MAX_PATH;
-        openFileName.lpstrTitle = L"Select a file to open!";
-        openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-        openFileName.nFilterIndex = 1;
-
-		// Disable fullscreen in order to avoid issues with selecting the file
-		SetFullscreen(false);
-        Input::SetMode(Mouse::MODE_ABSOLUTE);
-
-        if (GetOpenFileNameW(&openFileName))
-        {
-            LoadFile(filename);
-        }
+		OpenFileDialog();
     }
 
     // Save config file and exit on ESC
@@ -288,6 +268,32 @@ void Scene::Draw()
 void Scene::Release()
 {
 	Hierarchy::ReleaseAllSceneObjects();
+}
+
+void PointCloudEngine::Scene::OpenFileDialog()
+{
+	// Show windows explorer open file dialog
+	wchar_t filename[MAX_PATH];
+	OPENFILENAMEW openFileName;
+	ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
+	openFileName.lStructSize = sizeof(OPENFILENAMEW);
+	openFileName.hwndOwner = hwnd;
+	openFileName.lpstrFilter = L"Pointcloud Files\0*.pointcloud\0\0";
+	openFileName.lpstrFile = filename;
+	openFileName.lpstrFile[0] = L'\0';
+	openFileName.nMaxFile = MAX_PATH;
+	openFileName.lpstrTitle = L"Select a file to open!";
+	openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	openFileName.nFilterIndex = 1;
+
+	// Disable fullscreen in order to avoid issues with selecting the file
+	SetFullscreen(false);
+	Input::SetMode(Mouse::MODE_ABSOLUTE);
+
+	if (GetOpenFileNameW(&openFileName))
+	{
+		LoadFile(filename);
+	}
 }
 
 void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
