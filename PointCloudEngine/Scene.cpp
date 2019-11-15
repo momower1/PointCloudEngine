@@ -48,6 +48,9 @@ void Scene::Initialize()
 	loadingText->transform->scale = Vector3::One;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
+	hwndSettings = CreateWindowEx(NULL, L"STATIC", L"", WS_CHILD | WS_BORDER | WS_VISIBLE, 0, 0, 0, 0, hwnd, NULL, NULL, NULL);
+	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 100, 20, hwndSettings, NULL, NULL, NULL);
+
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
 }
@@ -210,7 +213,8 @@ void Scene::Update(Timer &timer)
 
 	if (Input::GetMouseButtonDown(MouseButton::RightButton))
 	{
-		// Hide cursor
+		// Hide cursor and focus main window
+		SetFocus(hwnd);
 		Input::SetMode(Mouse::MODE_RELATIVE);
 	}
 	else if (Input::GetMouseButtonUp(MouseButton::RightButton))
@@ -241,6 +245,9 @@ void Scene::Update(Timer &timer)
     {
 		OpenFileDialog();
     }
+
+	// FUN ANIMATION FOR TESTING
+	MoveWindow(hwndSettings, 20, 20, (1 + 0.2f * sin(clock() / (float)CLOCKS_PER_SEC)) * settings->resolutionX / 4, settings->resolutionY / 2, true);
 
     // Save config file and exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))

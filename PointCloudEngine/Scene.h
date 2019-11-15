@@ -18,6 +18,8 @@ namespace PointCloudEngine
     private:
         void LoadFile(std::wstring filepath);
 
+		HWND hwndSettings = NULL;
+		HWND hwndDropdown = NULL;
 		SceneObject* text = NULL;
 		SceneObject* helpText = NULL;
 		SceneObject* fpsText = NULL;
