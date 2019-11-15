@@ -20,6 +20,7 @@ namespace PointCloudEngine
 
 		HWND hwndSettings = NULL;
 		HWND hwndDropdown = NULL;
+		HWND hwndSlider = NULL;
 		SceneObject* text = NULL;
 		SceneObject* helpText = NULL;
 		SceneObject* fpsText = NULL;

@@ -20,6 +20,7 @@
 #include <queue>
 #include <math.h>
 #include <wincodec.h>
+#include <CommCtrl.h>
 
 // Resources like menus and icons
 #include "resource.h"

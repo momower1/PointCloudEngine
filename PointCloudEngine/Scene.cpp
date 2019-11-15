@@ -48,8 +48,15 @@ void Scene::Initialize()
 	loadingText->transform->scale = Vector3::One;
     loadingText->transform->position = Vector3(-0.5f, 0.25f, 0.5f);
 
+	// Windows and buttons for the settings (uses Microsoft Win32 Common Controls API)
+	InitCommonControls();
 	hwndSettings = CreateWindowEx(NULL, L"STATIC", L"", WS_CHILD | WS_BORDER | WS_VISIBLE, 0, 0, 0, 0, hwnd, NULL, NULL, NULL);
 	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 100, 20, hwndSettings, NULL, NULL, NULL);
+	hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", WS_CHILD | WS_VISIBLE, 25, 100, 100, 20, hwndSettings, NULL, NULL, NULL);
+
+	// Set parameters of the slider
+	SendMessage(hwndSlider, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(0, 100));
+	SendMessage(hwndSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)50);
 
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
@@ -248,6 +255,12 @@ void Scene::Update(Timer &timer)
 
 	// FUN ANIMATION FOR TESTING
 	MoveWindow(hwndSettings, 20, 20, (1 + 0.2f * sin(clock() / (float)CLOCKS_PER_SEC)) * settings->resolutionX / 4, settings->resolutionY / 2, true);
+
+	RECT rect;
+	HDC dc = GetDC(hwndSettings);
+	GetClientRect(hwndSettings, &rect);
+	DrawText(dc, L"Hello World!", -1, &rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	ReleaseDC(hwndSettings, dc);
 
     // Save config file and exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))
