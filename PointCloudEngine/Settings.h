@@ -11,6 +11,11 @@ namespace PointCloudEngine
     public:
         Settings();
         ~Settings();
+		std::wstring ToKeyValueString();
+		std::wstring ToString(Vector3 v);
+		std::wstring ToString(Vector4 v);
+		Vector3 ToVector3(std::wstring s);
+		Vector4 ToVector4(std::wstring s);
 
         // Rendering parameters default values
 		Vector4 backgroundColor = Vector4(0, 0, 0, 0);
@@ -76,11 +81,6 @@ namespace PointCloudEngine
         // Input parameters default values
         float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;
-
-		std::wstring ToString(Vector3 v);
-		std::wstring ToString(Vector4 v);
-		Vector3 ToVector3(std::wstring s);
-		Vector4 ToVector4(std::wstring s);
 
 	private:
 		std::map<std::wstring, std::wstring> settingsMap;

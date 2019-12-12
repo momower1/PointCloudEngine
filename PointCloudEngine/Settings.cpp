@@ -98,89 +98,97 @@ PointCloudEngine::Settings::Settings()
 
 PointCloudEngine::Settings::~Settings()
 {
-    // Save values as lines with "variableName=variableValue" to file with comments
+    // Save values as lines with "variableKey=variableValue" to file with comments
     std::wofstream settingsFile(executableDirectory + SETTINGS_FILENAME);
 
-	settingsFile << L"# Parameters only apply when restarting the engine!" << std::endl;
-	settingsFile << std::endl;
-
-    settingsFile << L"# Rendering Parameters" << std::endl;
-	settingsFile << NAMEOF(backgroundColor) << L"=" << ToString(backgroundColor) << std::endl;
-    settingsFile << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
-    settingsFile << NAMEOF(nearZ) << L"=" << nearZ << std::endl;
-    settingsFile << NAMEOF(farZ) << L"=" << farZ << std::endl;
-    settingsFile << NAMEOF(resolutionX) << L"=" << resolutionX << std::endl;
-    settingsFile << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
-    settingsFile << NAMEOF(windowed) << L"=" << windowed << std::endl;
-	settingsFile << NAMEOF(help) << L"=" << help << std::endl;
-	settingsFile << NAMEOF(viewMode) << L"=" << viewMode << std::endl;
-    settingsFile << std::endl;
-
-    settingsFile << L"# Pointcloud File Parameters" << std::endl;
-	settingsFile << L"# Delete old .octree files when changing the " << NAMEOF(maxOctreeDepth) << std::endl;
-    settingsFile << NAMEOF(pointcloudFile) << L"=" << pointcloudFile << std::endl;
-	settingsFile << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
-    settingsFile << NAMEOF(scale) << L"=" << scale << std::endl;
-    settingsFile << std::endl;
-
-	settingsFile << L"# Lighting Parameters" << std::endl;
-	settingsFile << NAMEOF(useLighting) << L"=" << useLighting << std::endl;
-	settingsFile << NAMEOF(useHeadlight) << L"=" << useHeadlight << std::endl;
-	settingsFile << NAMEOF(lightDirection) << L"=" << ToString(lightDirection) << std::endl;
-	settingsFile << NAMEOF(lightIntensity) << L"=" << lightIntensity << std::endl;
-	settingsFile << NAMEOF(ambient) << L"=" << ambient << std::endl;
-	settingsFile << NAMEOF(diffuse) << L"=" << diffuse << std::endl;
-	settingsFile << NAMEOF(specular) << L"=" << specular << std::endl;
-	settingsFile << NAMEOF(specularExponent) << L"=" << specularExponent << std::endl;
-	settingsFile << std::endl;
-
-	settingsFile << L"# Blending Parameters" << std::endl;
-	settingsFile << NAMEOF(useBlending) << L"=" << useBlending << std::endl;
-	settingsFile << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
-	settingsFile << std::endl;
-
-	settingsFile << L"# Ground Truth Parameters" << std::endl;
-	settingsFile << NAMEOF(backfaceCulling) << L"=" << backfaceCulling << std::endl;
-	settingsFile << NAMEOF(density) << L"=" << density << std::endl;
-	settingsFile << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
-	settingsFile << std::endl;
-
-	settingsFile << L"# Neural Network Parameters" << std::endl;
-	settingsFile << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
-	settingsFile << NAMEOF(neuralNetworkScreenArea) << L"=" << neuralNetworkScreenArea << std::endl;
-	settingsFile << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;
-	settingsFile << NAMEOF(neuralNetworkOutputGreen) << L"=" << neuralNetworkOutputGreen << std::endl;
-	settingsFile << NAMEOF(neuralNetworkOutputBlue) << L"=" << neuralNetworkOutputBlue << std::endl;
-	settingsFile << NAMEOF(lossCalculationSelf) << L"=" << lossCalculationSelf << std::endl;
-	settingsFile << NAMEOF(lossCalculationTarget) << L"=" << lossCalculationTarget << std::endl;
-	settingsFile << std::endl;
-
-	settingsFile << L"# HDF5 Dataset Generation Parameters" << std::endl;
-	settingsFile << NAMEOF(waypointStepSize) << L"=" << waypointStepSize << std::endl;
-	settingsFile << NAMEOF(waypointPreviewStepSize) << L"=" << waypointPreviewStepSize << std::endl;
-	settingsFile << NAMEOF(waypointMin) << L"=" << waypointMin << std::endl;
-	settingsFile << NAMEOF(waypointMax) << L"=" << waypointMax << std::endl;
-	settingsFile << NAMEOF(sphereStepSize) << L"=" << sphereStepSize << std::endl;
-	settingsFile << NAMEOF(sphereMinTheta) << L"=" << sphereMinTheta << std::endl;
-	settingsFile << NAMEOF(sphereMaxTheta) << L"=" << sphereMaxTheta << std::endl;
-	settingsFile << NAMEOF(sphereMinPhi) << L"=" << sphereMinPhi << std::endl;
-	settingsFile << NAMEOF(sphereMaxPhi) << L"=" << sphereMaxPhi << std::endl;
-	settingsFile << std::endl;
-
-	settingsFile << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
-	settingsFile << NAMEOF(useOctree) << L"=" << useOctree << std::endl;
-	settingsFile << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
-	settingsFile << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
-	settingsFile << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;
-	settingsFile << std::endl;
-
-    settingsFile << L"# Input Parameters" << std::endl;
-    settingsFile << NAMEOF(mouseSensitivity) << L"=" << mouseSensitivity << std::endl;
-    settingsFile << NAMEOF(scrollSensitivity) << L"=" << scrollSensitivity << std::endl;
-    settingsFile << std::endl;
-
+	settingsFile << ToKeyValueString();
     settingsFile.flush();
     settingsFile.close();
+}
+
+std::wstring PointCloudEngine::Settings::ToKeyValueString()
+{
+	std::wstringstream settingsStream;
+
+	settingsStream << L"# Parameters only apply when restarting the engine!" << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Rendering Parameters" << std::endl;
+	settingsStream << NAMEOF(backgroundColor) << L"=" << ToString(backgroundColor) << std::endl;
+	settingsStream << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
+	settingsStream << NAMEOF(nearZ) << L"=" << nearZ << std::endl;
+	settingsStream << NAMEOF(farZ) << L"=" << farZ << std::endl;
+	settingsStream << NAMEOF(resolutionX) << L"=" << resolutionX << std::endl;
+	settingsStream << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
+	settingsStream << NAMEOF(windowed) << L"=" << windowed << std::endl;
+	settingsStream << NAMEOF(help) << L"=" << help << std::endl;
+	settingsStream << NAMEOF(viewMode) << L"=" << viewMode << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Pointcloud File Parameters" << std::endl;
+	settingsStream << L"# Delete old .octree files when changing the " << NAMEOF(maxOctreeDepth) << std::endl;
+	settingsStream << NAMEOF(pointcloudFile) << L"=" << pointcloudFile << std::endl;
+	settingsStream << NAMEOF(samplingRate) << L"=" << samplingRate << std::endl;
+	settingsStream << NAMEOF(scale) << L"=" << scale << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Lighting Parameters" << std::endl;
+	settingsStream << NAMEOF(useLighting) << L"=" << useLighting << std::endl;
+	settingsStream << NAMEOF(useHeadlight) << L"=" << useHeadlight << std::endl;
+	settingsStream << NAMEOF(lightDirection) << L"=" << ToString(lightDirection) << std::endl;
+	settingsStream << NAMEOF(lightIntensity) << L"=" << lightIntensity << std::endl;
+	settingsStream << NAMEOF(ambient) << L"=" << ambient << std::endl;
+	settingsStream << NAMEOF(diffuse) << L"=" << diffuse << std::endl;
+	settingsStream << NAMEOF(specular) << L"=" << specular << std::endl;
+	settingsStream << NAMEOF(specularExponent) << L"=" << specularExponent << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Blending Parameters" << std::endl;
+	settingsStream << NAMEOF(useBlending) << L"=" << useBlending << std::endl;
+	settingsStream << NAMEOF(blendFactor) << L"=" << blendFactor << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Ground Truth Parameters" << std::endl;
+	settingsStream << NAMEOF(backfaceCulling) << L"=" << backfaceCulling << std::endl;
+	settingsStream << NAMEOF(density) << L"=" << density << std::endl;
+	settingsStream << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Neural Network Parameters" << std::endl;
+	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
+	settingsStream << NAMEOF(neuralNetworkScreenArea) << L"=" << neuralNetworkScreenArea << std::endl;
+	settingsStream << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;
+	settingsStream << NAMEOF(neuralNetworkOutputGreen) << L"=" << neuralNetworkOutputGreen << std::endl;
+	settingsStream << NAMEOF(neuralNetworkOutputBlue) << L"=" << neuralNetworkOutputBlue << std::endl;
+	settingsStream << NAMEOF(lossCalculationSelf) << L"=" << lossCalculationSelf << std::endl;
+	settingsStream << NAMEOF(lossCalculationTarget) << L"=" << lossCalculationTarget << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# HDF5 Dataset Generation Parameters" << std::endl;
+	settingsStream << NAMEOF(waypointStepSize) << L"=" << waypointStepSize << std::endl;
+	settingsStream << NAMEOF(waypointPreviewStepSize) << L"=" << waypointPreviewStepSize << std::endl;
+	settingsStream << NAMEOF(waypointMin) << L"=" << waypointMin << std::endl;
+	settingsStream << NAMEOF(waypointMax) << L"=" << waypointMax << std::endl;
+	settingsStream << NAMEOF(sphereStepSize) << L"=" << sphereStepSize << std::endl;
+	settingsStream << NAMEOF(sphereMinTheta) << L"=" << sphereMinTheta << std::endl;
+	settingsStream << NAMEOF(sphereMaxTheta) << L"=" << sphereMaxTheta << std::endl;
+	settingsStream << NAMEOF(sphereMinPhi) << L"=" << sphereMinPhi << std::endl;
+	settingsStream << NAMEOF(sphereMaxPhi) << L"=" << sphereMaxPhi << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
+	settingsStream << NAMEOF(useOctree) << L"=" << useOctree << std::endl;
+	settingsStream << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
+	settingsStream << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
+	settingsStream << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Input Parameters" << std::endl;
+	settingsStream << NAMEOF(mouseSensitivity) << L"=" << mouseSensitivity << std::endl;
+	settingsStream << NAMEOF(scrollSensitivity) << L"=" << scrollSensitivity << std::endl;
+	settingsStream << std::endl;
+
+	return settingsStream.str();
 }
 
 std::wstring PointCloudEngine::Settings::ToString(Vector3 v)

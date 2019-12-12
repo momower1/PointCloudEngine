@@ -79,30 +79,8 @@ void GroundTruthRenderer::Update()
 		// Create and save the file
 		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
 
-		// Add attributes storing the settings
-		hdf5file.AddStringAttribute(NAMEOF(settings->pointcloudFile), settings->pointcloudFile);
-		hdf5file.AddStringAttribute(NAMEOF(settings->samplingRate), std::to_wstring(settings->samplingRate));
-		hdf5file.AddStringAttribute(NAMEOF(settings->scale), std::to_wstring(settings->scale));
-		hdf5file.AddStringAttribute(NAMEOF(settings->useLighting), std::to_wstring(settings->useLighting));
-		hdf5file.AddStringAttribute(NAMEOF(settings->useHeadlight), std::to_wstring(settings->useHeadlight));
-		hdf5file.AddStringAttribute(NAMEOF(settings->lightDirection), settings->ToString(settings->lightDirection));
-		hdf5file.AddStringAttribute(NAMEOF(settings->lightIntensity), std::to_wstring(settings->lightIntensity));
-		hdf5file.AddStringAttribute(NAMEOF(settings->ambient), std::to_wstring(settings->ambient));
-		hdf5file.AddStringAttribute(NAMEOF(settings->diffuse), std::to_wstring(settings->diffuse));
-		hdf5file.AddStringAttribute(NAMEOF(settings->specular), std::to_wstring(settings->specular));
-		hdf5file.AddStringAttribute(NAMEOF(settings->specularExponent), std::to_wstring(settings->specularExponent));
-		hdf5file.AddStringAttribute(NAMEOF(settings->blendFactor), std::to_wstring(settings->blendFactor));
-		hdf5file.AddStringAttribute(NAMEOF(settings->backfaceCulling), std::to_wstring(settings->backfaceCulling));
-		hdf5file.AddStringAttribute(NAMEOF(settings->density), std::to_wstring(settings->density));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sparseSamplingRate), std::to_wstring(settings->sparseSamplingRate));
-		hdf5file.AddStringAttribute(NAMEOF(settings->waypointStepSize), std::to_wstring(settings->waypointStepSize));
-		hdf5file.AddStringAttribute(NAMEOF(settings->waypointMin), std::to_wstring(settings->waypointMin));
-		hdf5file.AddStringAttribute(NAMEOF(settings->waypointMax), std::to_wstring(settings->waypointMax));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereStepSize), std::to_wstring(settings->sphereStepSize));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinTheta), std::to_wstring(settings->sphereMinTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxTheta), std::to_wstring(settings->sphereMaxTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinPhi), std::to_wstring(settings->sphereMinPhi));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxPhi), std::to_wstring(settings->sphereMaxPhi));
+		// Add attribute storing the settings
+		hdf5file.AddStringAttribute(L"Settings", settings->ToKeyValueString());
 
 		int startViewMode = settings->viewMode;
 		Vector3 startPosition = camera->GetPosition();
