@@ -21,6 +21,7 @@ namespace PointCloudEngine
     class Settings;
     class Camera;
     class Octree;
+	class GUI;
     struct OctreeNode;
 }
 
@@ -43,6 +44,7 @@ using namespace PointCloudEngine;
 #include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
 #include "WaypointRenderer.h"
+#include "GUI.h"
 #include "Scene.h"
 #include "HDF5File.h"
 
@@ -108,7 +110,7 @@ extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const vo
 // Function declarations
 bool InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 int Messageloop();
-LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 bool InitializeDirect3d11App(HINSTANCE hInstance);
 void ReleaseObjects();
 bool InitializeScene();

@@ -8,6 +8,7 @@ HWND hwnd = NULL;
 LPCTSTR WndClassName = L"PointCloudEngine";
 double dt = 0;
 Timer timer;
+GUI* gui;
 Scene scene;
 Settings* settings;
 Camera* camera;
@@ -241,7 +242,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;		            // Redraw when the window is moved or changed size
-	wc.lpfnWndProc = WndProc;		                    // lpfnWndProc is a pointer to the function we want to process the windows messages
+	wc.lpfnWndProc = WindowProc;		                    // lpfnWndProc is a pointer to the function we want to process the windows messages
 	wc.cbClsExtra = NULL;		                        // cbClsExtra is the number of extra bytes allocated after WNDCLASSEX.
 	wc.cbWndExtra = NULL;		                        // cbWndExtra specifies the number of bytes allocated after the windows instance.
 	wc.hInstance = hInstance;		                    // Handle to the current application, GetModuleHandle() function can be used to get the current window application by passing NUll to its 1 parameter
@@ -520,13 +521,14 @@ int Messageloop()
 				break;
 
 			TranslateMessage(&msg);		// Translating like the keyboard's virtual keys to characters
-			DispatchMessage(&msg);		// Sends the message to our windows procedure, WndProc
+			DispatchMessage(&msg);		// Sends the message to our windows procedure, WindowProc
 		}
 		else
 		{
 			// Run game code
 			UpdateScene();
 			DrawScene();
+			gui->Update();
 		}
 	}
 
@@ -534,9 +536,10 @@ int Messageloop()
 }
 
 // Check messages for events
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     Input::ProcessMessage(msg, wParam, lParam);
+	gui->HandleMessage(msg, wParam, lParam);
 
 	switch (msg)
 	{
@@ -593,6 +596,9 @@ bool InitializeScene()
 
 	scene.Initialize();
     timer.ResetElapsedTime();
+
+	// Create the second GUI window
+	gui = new GUI();
 
 	return true;
 }
@@ -702,6 +708,7 @@ void ReleaseObjects()
     // Delete settings (also saves them to the hard drive)
     SafeDelete(settings);
     SafeDelete(camera);
+	SafeDelete(gui);
 
     // Release and delete shaders
     Shader::ReleaseAllShaders();
