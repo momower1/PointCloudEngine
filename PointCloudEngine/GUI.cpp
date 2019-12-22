@@ -27,59 +27,78 @@ PointCloudEngine::GUI::GUI()
 
 	CreateContentGeneral();
 	CreateContentAdvanced();
+	ShowContentGeneral();
 
 	// Load a specific font for DrawText and TextOut functions
 	HFONT segoe = CreateFont(24, 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, VARIABLE_PITCH, TEXT("Segoe UI"));
-	hdcGeneral = GetDC(hwndGeneral);
-	SelectObject(hdcGeneral, segoe);
-
-	hdcAdvanced = GetDC(hwndAdvanced);
-	SelectObject(hdcAdvanced, segoe);
+	hdc = GetDC(hwndGUI);
+	SelectObject(hdc, segoe);
 }
 
 PointCloudEngine::GUI::~GUI()
 {
-	ReleaseDC(hwndGeneral, hdcGeneral);
-	ReleaseDC(hwndAdvanced, hdcAdvanced);
+	ReleaseDC(hwndGUI, hdc);
 }
 
 void PointCloudEngine::GUI::Update()
 {
 	// Text on general tab
-	TextOut(hdcGeneral, 10, 200, L"Sample with font!", 17);
+	TextOut(hdc, 10, 200, L"Sample with font!", 17);
 
 	// Text on advanced tab
 	RECT rect;
-	GetClientRect(hwndAdvanced, &rect);
-	DrawText(hdcAdvanced, L"Hello World!", -1, &rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	GetClientRect(hwndGUI, &rect);
+	DrawText(hdc, L"Hello World!", -1, &rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 }
 
 void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	// Tab handler
-	if ((msg == WM_NOTIFY) && ((LPNMHDR)lParam)->code == TCN_SELCHANGE)
+	switch (msg)
 	{
-		if (TabCtrl_GetCurSel(hwndTab) == 0)
+		case WM_COMMAND:
 		{
-			ShowWindow(hwndGeneral, SW_SHOW);
-			ShowWindow(hwndAdvanced, SW_HIDE);
+			// Button handler
+			if (((LPNMHDR)lParam)->code == BN_CLICKED)
+			{
+				OutputDebugString(L"You pressed a button!\n");
+			}
+			break;
 		}
-		else
+		case WM_NOTIFY:
 		{
-			ShowWindow(hwndGeneral, SW_HIDE);
-			ShowWindow(hwndAdvanced, SW_SHOW);
+			// Tab handler
+			if (((LPNMHDR)lParam)->code == TCN_SELCHANGE)
+			{
+				if (TabCtrl_GetCurSel(hwndTab) == 0)
+				{
+					ShowContentGeneral();
+				}
+				else
+				{
+					ShowContentAdvanced();
+				}
+			}
+			break;
+		}
+		case WM_HSCROLL:
+		{
+			// Slider
+			if (LOWORD(wParam) == TB_ENDTRACK)
+			{
+				float sliderPosition = SendMessage(hwndSlider, TBM_GETPOS, 0, 0) / 100.0f;
+				SetWindowText(hwndSliderValue, std::to_wstring(sliderPosition).c_str());
+			}
+			break;
 		}
 	}
 
-
-	OutputDebugString((std::to_wstring(msg) + L" " + std::to_wstring(wParam) + L" " + std::to_wstring(lParam)).c_str());
+	//OutputDebugString((std::to_wstring(msg) + L" " + std::to_wstring(wParam) + L" " + std::to_wstring(lParam)).c_str());
 }
 
 void PointCloudEngine::GUI::CreateContentGeneral()
 {
 	// For the general tab
-	hwndGeneral = CreateWindowEx(NULL, L"STATIC", L"", WS_VISIBLE | WS_CHILD, 0, 25, guiSize.x, guiSize.y, hwndTab, NULL, NULL, NULL);
-	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 100, 60, hwndGeneral, NULL, NULL, NULL);
+	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 100, 60, hwndGUI, NULL, NULL, NULL);
 
 	// Add items to the dropdown
 	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Eagle");
@@ -90,10 +109,34 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
 	// For the advanced tab
-	hwndAdvanced = CreateWindowEx(NULL, L"STATIC", L"", WS_CHILD, 0, 25, guiSize.x, guiSize.y, hwndTab, NULL, NULL, NULL);
-	hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", WS_CHILD | WS_VISIBLE, 25, 100, 100, 20, hwndAdvanced, NULL, NULL, NULL);
+	hwndButton = CreateWindowEx(NULL, L"BUTTON", L"Press me", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 100, 300, 100, 30, hwndGUI, NULL, NULL, NULL);
+
+	// Slider
+	hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | TBS_TOOLTIPS | WS_CHILD | WS_VISIBLE, 100, 100, 150, 20, hwndGUI, NULL, NULL, NULL);
+	hwndSliderName = CreateWindowEx(0, L"STATIC", L"Name ", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 50, 20, hwndGUI, NULL, NULL, NULL);
+	hwndSliderValue = CreateWindowEx(0, L"STATIC", L" Value", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 50, 20, hwndGUI, NULL, NULL, NULL);
+	SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
+	SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
 
 	// Set parameters of the slider
 	SendMessage(hwndSlider, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(0, 100));
 	SendMessage(hwndSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)50);
+}
+
+void PointCloudEngine::GUI::ShowContentGeneral()
+{
+	ShowWindow(hwndDropdown, SW_SHOW);
+	ShowWindow(hwndButton, SW_HIDE);
+	ShowWindow(hwndSlider, SW_HIDE);
+	ShowWindow(hwndSliderName, SW_HIDE);
+	ShowWindow(hwndSliderValue, SW_HIDE);
+}
+
+void PointCloudEngine::GUI::ShowContentAdvanced()
+{
+	ShowWindow(hwndDropdown, SW_HIDE);
+	ShowWindow(hwndButton, SW_SHOW);
+	ShowWindow(hwndSlider, SW_SHOW);
+	ShowWindow(hwndSliderName, SW_SHOW);
+	ShowWindow(hwndSliderValue, SW_SHOW);
 }

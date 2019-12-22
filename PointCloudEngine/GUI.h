@@ -19,16 +19,22 @@ namespace PointCloudEngine
 
 		HWND hwndGUI = NULL;
 		HWND hwndTab = NULL;
-		HWND hwndGeneral = NULL;
-		HWND hwndAdvanced = NULL;
-		HWND hwndDropdown = NULL;
-		HWND hwndSlider = NULL;
 
-		HDC hdcGeneral = NULL;
-		HDC hdcAdvanced = NULL;
+		// General
+		HWND hwndDropdown = NULL;
+
+		// Advanced
+		HWND hwndButton = NULL;
+		HWND hwndSlider = NULL;
+		HWND hwndSliderName = NULL;
+		HWND hwndSliderValue = NULL;
+
+		HDC hdc = NULL;
 
 		void CreateContentGeneral();
 		void CreateContentAdvanced();
+		void ShowContentGeneral();
+		void ShowContentAdvanced();
 	};
 }
 #endif
