@@ -58,7 +58,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		case WM_COMMAND:
 		{
 			// Button handler
-			if (((LPNMHDR)lParam)->code == BN_CLICKED)
+			if (HIWORD(wParam) == BN_CLICKED)
 			{
 				OutputDebugString(L"You pressed a button!\n");
 			}
@@ -83,7 +83,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		case WM_HSCROLL:
 		{
 			// Slider
-			if (LOWORD(wParam) == TB_ENDTRACK)
+			if (LOWORD(wParam) == SB_THUMBTRACK || LOWORD(wParam) == SB_LINELEFT || LOWORD(wParam) == SB_LINERIGHT)
 			{
 				float sliderPosition = SendMessage(hwndSlider, TBM_GETPOS, 0, 0) / 100.0f;
 				SetWindowText(hwndSliderValue, std::to_wstring(sliderPosition).c_str());
