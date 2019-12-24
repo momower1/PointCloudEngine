@@ -1,5 +1,5 @@
-#ifndef GUIElements_H
-#define GUIElements_H
+#ifndef GUISLIDER_H
+#define GUISLIDER_H
 
 #pragma once
 #include "PointCloudEngine.h"
@@ -24,7 +24,7 @@ namespace PointCloudEngine
 			this->value = value;
 			this->scale = scale;
 			this->offset = offset;
-			hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+			hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 			
 			// Left and right buddy showing text with name and value of the slider
 			hwndSliderName = CreateWindowEx(0, L"STATIC", name.c_str(), SS_RIGHT | WS_CHILD | WS_VISIBLE, 0, 0, 100, size.y, hwndParent, NULL, NULL, NULL);

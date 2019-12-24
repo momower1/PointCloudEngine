@@ -57,10 +57,15 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 	{
 		case WM_COMMAND:
 		{
-			// Button handler
 			if (HIWORD(wParam) == BN_CLICKED)
 			{
+				// Button handler
 				OutputDebugString(L"You pressed a button!\n");
+			}
+			else if (HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				// Dropdown list handler
+				settings->viewMode = SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0);
 			}
 			break;
 		}
@@ -101,12 +106,15 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 void PointCloudEngine::GUI::CreateContentGeneral()
 {
 	// For the general tab
-	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 100, 60, hwndGUI, NULL, NULL, NULL);
+	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"View Mode", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 200, 200, hwndGUI, NULL, NULL, NULL);
 
 	// Add items to the dropdown
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Eagle");
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Hamster");
-	SendMessage(hwndDropdown, CB_SETCURSEL, 0, 0);
+	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Splats");
+	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Sparse Splats");
+	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Points");
+	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Sparse Points");
+	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Neural Network");
+	SendMessage(hwndDropdown, CB_SETCURSEL, settings->viewMode, 0);
 
 	densitySlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 100), XMUINT2(200, 20), XMUINT2(0, 1000), 1000, 0, L"Point Density", &settings->density);
 	blendFactorSlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 150), XMUINT2(200, 20), XMUINT2(0, 100), 10, 0, L"Blend Factor", &settings->blendFactor);

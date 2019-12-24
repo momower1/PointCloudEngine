@@ -89,7 +89,7 @@
     <ClInclude Include="GUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUIElements.h">
+    <ClInclude Include="GUISlider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

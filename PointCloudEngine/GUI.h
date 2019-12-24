@@ -3,7 +3,7 @@
 
 #pragma once
 #include "PointCloudEngine.h"
-#include "GUIElements.h"
+#include "GUISlider.h"
 
 namespace PointCloudEngine
 {
