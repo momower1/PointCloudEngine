@@ -82,6 +82,9 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		}
 		case WM_HSCROLL:
 		{
+			densitySlider->HandleMessage(msg, wParam, lParam);
+			blendFactorSlider->HandleMessage(msg, wParam, lParam);
+
 			// Slider
 			if (LOWORD(wParam) == SB_THUMBTRACK || LOWORD(wParam) == SB_LINELEFT || LOWORD(wParam) == SB_LINERIGHT)
 			{
@@ -104,6 +107,9 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Eagle");
 	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Hamster");
 	SendMessage(hwndDropdown, CB_SETCURSEL, 0, 0);
+
+	densitySlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 100), XMUINT2(200, 20), XMUINT2(0, 1000), 1000, 0, L"Point Density", &settings->density);
+	blendFactorSlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 150), XMUINT2(200, 20), XMUINT2(0, 100), 10, 0, L"Blend Factor", &settings->blendFactor);
 }
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
@@ -126,6 +132,8 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 void PointCloudEngine::GUI::ShowContentGeneral()
 {
 	ShowWindow(hwndDropdown, SW_SHOW);
+	densitySlider->Show(SW_SHOW);
+	blendFactorSlider->Show(SW_SHOW);
 	ShowWindow(hwndButton, SW_HIDE);
 	ShowWindow(hwndSlider, SW_HIDE);
 	ShowWindow(hwndSliderName, SW_HIDE);
@@ -135,6 +143,8 @@ void PointCloudEngine::GUI::ShowContentGeneral()
 void PointCloudEngine::GUI::ShowContentAdvanced()
 {
 	ShowWindow(hwndDropdown, SW_HIDE);
+	densitySlider->Show(SW_HIDE);
+	blendFactorSlider->Show(SW_HIDE);
 	ShowWindow(hwndButton, SW_SHOW);
 	ShowWindow(hwndSlider, SW_SHOW);
 	ShowWindow(hwndSliderName, SW_SHOW);

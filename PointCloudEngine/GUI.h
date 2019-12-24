@@ -3,6 +3,7 @@
 
 #pragma once
 #include "PointCloudEngine.h"
+#include "GUIElements.h"
 
 namespace PointCloudEngine
 {
@@ -22,6 +23,8 @@ namespace PointCloudEngine
 
 		// General
 		HWND hwndDropdown = NULL;
+		GUISlider<float>* densitySlider = NULL;
+		GUISlider<float>* blendFactorSlider = NULL;
 
 		// Advanced
 		HWND hwndButton = NULL;
