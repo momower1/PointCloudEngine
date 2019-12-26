@@ -92,6 +92,21 @@
     <ClInclude Include="GUISlider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GUIText.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIValue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IGUIElement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIDropdown.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUITab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">

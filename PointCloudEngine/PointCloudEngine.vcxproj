@@ -372,7 +372,12 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GUI.h" />
+    <ClInclude Include="GUIDropdown.h" />
+    <ClInclude Include="GUITab.h" />
+    <ClInclude Include="IGUIElement.h" />
     <ClInclude Include="GUISlider.h" />
+    <ClInclude Include="GUIText.h" />
+    <ClInclude Include="GUIValue.h" />
     <ClInclude Include="HDF5File.h" />
     <ClInclude Include="PrecompiledHeader.h" />
     <ClInclude Include="resource.h" />

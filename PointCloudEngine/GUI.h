@@ -3,7 +3,11 @@
 
 #pragma once
 #include "PointCloudEngine.h"
+#include "GUIDropdown.h"
 #include "GUISlider.h"
+#include "GUITab.h"
+#include "GUIText.h"
+#include "GUIValue.h"
 
 namespace PointCloudEngine
 {
@@ -19,20 +23,18 @@ namespace PointCloudEngine
 		Vector2 guiSize = Vector2(400, 800);
 
 		HWND hwndGUI = NULL;
-		HWND hwndTab = NULL;
+		GUITab* guiTab = NULL;
+		int tabSelection = 0;
 
 		// General
-		HWND hwndDropdown = NULL;
+		GUIText* textDropdown = NULL;
+		GUIValue<float>* scaleValue = NULL;
+		GUIDropdown* dropdown = NULL;
 		GUISlider<float>* densitySlider = NULL;
 		GUISlider<float>* blendFactorSlider = NULL;
 
 		// Advanced
 		HWND hwndButton = NULL;
-		HWND hwndSlider = NULL;
-		HWND hwndSliderName = NULL;
-		HWND hwndSliderValue = NULL;
-
-		HDC hdc = NULL;
 
 		void CreateContentGeneral();
 		void CreateContentAdvanced();

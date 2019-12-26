@@ -14,88 +14,65 @@ PointCloudEngine::GUI::GUI()
 	hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwnd, NULL, NULL, NULL);
 
 	// Tab inside the gui window for choosing different groups of settings
-	hwndTab = CreateWindowEx(NULL, WC_TABCONTROLW, L"", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, 0, 0, guiSize.x, guiSize.y, hwndGUI, NULL, NULL, NULL);
-
-	TCITEM tcitem;
-	tcitem.mask = TCIF_TEXT;
-
-	tcitem.pszText = L"General";
-	TabCtrl_InsertItem(hwndTab, 0, &tcitem);
-
-	tcitem.pszText = L"Advanced";
-	TabCtrl_InsertItem(hwndTab, 1, &tcitem);
+	guiTab = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced" }, &tabSelection);
 
 	CreateContentGeneral();
 	CreateContentAdvanced();
 	ShowContentGeneral();
-
-	// Load a specific font for DrawText and TextOut functions
-	HFONT segoe = CreateFont(24, 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, VARIABLE_PITCH, TEXT("Segoe UI"));
-	hdc = GetDC(hwndGUI);
-	SelectObject(hdc, segoe);
 }
 
 PointCloudEngine::GUI::~GUI()
 {
-	ReleaseDC(hwndGUI, hdc);
+	// TODO: SafeDelete all GUI elements
 }
 
 void PointCloudEngine::GUI::Update()
 {
-	// Text on general tab
-	TextOut(hdc, 10, 200, L"Sample with font!", 17);
+	scaleValue->Update();
 
-	// Text on advanced tab
-	RECT rect;
-	GetClientRect(hwndGUI, &rect);
-	DrawText(hdc, L"Hello World!", -1, &rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	if (tabSelection == 0)
+	{
+		ShowContentGeneral();
+	}
+	else
+	{
+		ShowContentAdvanced();
+	}
 }
 
 void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	// During the creation of this instance there might be some messages arriving
+	// Make sure to ignore all these messages to avoid a null reference
+	if (this == NULL)
+		return;
+
 	switch (msg)
 	{
 		case WM_COMMAND:
 		{
+			if (dropdown != NULL)
+				dropdown->HandleMessage(msg, wParam, lParam);
+
 			if (HIWORD(wParam) == BN_CLICKED)
 			{
 				// Button handler
 				OutputDebugString(L"You pressed a button!\n");
 			}
-			else if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				// Dropdown list handler
-				settings->viewMode = SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0);
-			}
 			break;
 		}
 		case WM_NOTIFY:
 		{
-			// Tab handler
-			if (((LPNMHDR)lParam)->code == TCN_SELCHANGE)
-			{
-				if (TabCtrl_GetCurSel(hwndTab) == 0)
-				{
-					ShowContentGeneral();
-				}
-				else
-				{
-					ShowContentAdvanced();
-				}
-			}
+			if (guiTab != NULL)
+				guiTab->HandleMessage(msg, wParam, lParam);
 			break;
 		}
 		case WM_HSCROLL:
 		{
-			densitySlider->HandleMessage(msg, wParam, lParam);
-			blendFactorSlider->HandleMessage(msg, wParam, lParam);
-
-			// Slider
-			if (LOWORD(wParam) == SB_THUMBTRACK || LOWORD(wParam) == SB_LINELEFT || LOWORD(wParam) == SB_LINERIGHT)
-			{
-				float sliderPosition = SendMessage(hwndSlider, TBM_GETPOS, 0, 0) / 100.0f;
-				SetWindowText(hwndSliderValue, std::to_wstring(sliderPosition).c_str());
-			}
+			if (densitySlider != NULL)
+				densitySlider->HandleMessage(msg, wParam, lParam);
+			if (blendFactorSlider != NULL)
+				blendFactorSlider->HandleMessage(msg, wParam, lParam);
 			break;
 		}
 	}
@@ -105,16 +82,10 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 
 void PointCloudEngine::GUI::CreateContentGeneral()
 {
-	// For the general tab
-	hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"View Mode", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 25, 50, 200, 200, hwndGUI, NULL, NULL, NULL);
+	textDropdown = new GUIText(hwndGUI, XMUINT2(0, 50), XMUINT2(100, 20), L"View Mode: ");
+	scaleValue = new GUIValue<float>(hwndGUI, XMUINT2(300, 50), XMUINT2(50, 20), &settings->scale);
 
-	// Add items to the dropdown
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Splats");
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Sparse Splats");
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Points");
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Sparse Points");
-	SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)L"Neural Network");
-	SendMessage(hwndDropdown, CB_SETCURSEL, settings->viewMode, 0);
+	dropdown = new GUIDropdown(hwndGUI, XMUINT2(100, 50), XMUINT2(200, 200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, &settings->viewMode);
 
 	densitySlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 100), XMUINT2(200, 20), XMUINT2(0, 1000), 1000, 0, L"Point Density", &settings->density);
 	blendFactorSlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 150), XMUINT2(200, 20), XMUINT2(0, 100), 10, 0, L"Blend Factor", &settings->blendFactor);
@@ -124,37 +95,20 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 {
 	// For the advanced tab
 	hwndButton = CreateWindowEx(NULL, L"BUTTON", L"Press me", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 100, 300, 100, 30, hwndGUI, NULL, NULL, NULL);
-
-	// Slider
-	hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | TBS_TOOLTIPS | WS_CHILD | WS_VISIBLE, 100, 100, 150, 20, hwndGUI, NULL, NULL, NULL);
-	hwndSliderName = CreateWindowEx(0, L"STATIC", L"Name ", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 50, 20, hwndGUI, NULL, NULL, NULL);
-	hwndSliderValue = CreateWindowEx(0, L"STATIC", L" Value", SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 50, 20, hwndGUI, NULL, NULL, NULL);
-	SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
-	SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
-
-	// Set parameters of the slider
-	SendMessage(hwndSlider, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(0, 100));
-	SendMessage(hwndSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)50);
 }
 
 void PointCloudEngine::GUI::ShowContentGeneral()
 {
-	ShowWindow(hwndDropdown, SW_SHOW);
+	dropdown->Show(SW_SHOW);
 	densitySlider->Show(SW_SHOW);
 	blendFactorSlider->Show(SW_SHOW);
 	ShowWindow(hwndButton, SW_HIDE);
-	ShowWindow(hwndSlider, SW_HIDE);
-	ShowWindow(hwndSliderName, SW_HIDE);
-	ShowWindow(hwndSliderValue, SW_HIDE);
 }
 
 void PointCloudEngine::GUI::ShowContentAdvanced()
 {
-	ShowWindow(hwndDropdown, SW_HIDE);
+	dropdown->Show(SW_HIDE);
 	densitySlider->Show(SW_HIDE);
 	blendFactorSlider->Show(SW_HIDE);
 	ShowWindow(hwndButton, SW_SHOW);
-	ShowWindow(hwndSlider, SW_SHOW);
-	ShowWindow(hwndSliderName, SW_SHOW);
-	ShowWindow(hwndSliderValue, SW_SHOW);
 }

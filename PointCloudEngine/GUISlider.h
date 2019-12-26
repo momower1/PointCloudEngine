@@ -3,10 +3,11 @@
 
 #pragma once
 #include "PointCloudEngine.h"
+#include "IGUIElement.h"
 
 namespace PointCloudEngine
 {
-	template <typename T> class GUISlider
+	template <typename T> class GUISlider : public IGUIElement
 	{
 	public:
 		HWND hwndSlider = NULL;
@@ -60,5 +61,3 @@ namespace PointCloudEngine
 	};
 }
 #endif
-
-
