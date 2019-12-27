@@ -28,8 +28,8 @@ namespace PointCloudEngine
 			hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 			
 			// Left and right buddy showing text with name and value of the slider
-			hwndSliderName = CreateWindowEx(0, L"STATIC", name.c_str(), SS_RIGHT | WS_CHILD | WS_VISIBLE, 0, 0, 100, size.y, hwndParent, NULL, NULL, NULL);
-			hwndSliderValue = CreateWindowEx(0, L"STATIC", std::to_wstring(*value).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 100, size.y, hwndParent, NULL, NULL, NULL);
+			hwndSliderName = CreateWindowEx(0, L"STATIC", name.c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 148, size.y, hwndParent, NULL, NULL, NULL);
+			hwndSliderValue = CreateWindowEx(0, L"STATIC", std::to_wstring(*value).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, 35, size.y, hwndParent, NULL, NULL, NULL);
 			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
 			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
 

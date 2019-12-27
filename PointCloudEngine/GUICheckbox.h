@@ -13,11 +13,14 @@ namespace PointCloudEngine
 		HWND hwndCheckbox = NULL;
 		std::function<void(bool)> OnClick = NULL;
 
-		GUICheckbox(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::wstring name, std::function<void(bool)> OnClick)
+		GUICheckbox(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::wstring name, std::function<void(bool)> OnClick, bool initialChecked = false)
 		{
 			// Create the checkbox
 			this->OnClick = OnClick;
 			hwndCheckbox = CreateWindowEx(NULL, L"BUTTON", name.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+
+			// Set initial value
+			SendMessage(hwndCheckbox, BM_SETCHECK, initialChecked ? BST_CHECKED : BST_UNCHECKED, 0);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)

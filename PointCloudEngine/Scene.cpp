@@ -232,6 +232,7 @@ void Scene::Update(Timer &timer)
 
 	// FPS counter
 	fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
+	GUI::fps = timer.GetFramesPerSecond();
 
 	// Set the other text
 	if (pointCloudRenderer != NULL)

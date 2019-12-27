@@ -11,12 +11,12 @@ namespace PointCloudEngine
 	{
 	public:
 		HWND hwndDropdown = NULL;
-		int* value = NULL;
+		std::function<void(int)> OnSelect = NULL;
 
-		GUIDropdown(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, int* value)
+		GUIDropdown(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, std::function<void(int)> OnSelect, int initialSelection = 0)
 		{
 			// Create the dropdown menu
-			this->value = value;
+			this->OnSelect = OnSelect;
 			hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 
 			// Add items to the dropdown
@@ -26,7 +26,7 @@ namespace PointCloudEngine
 			}
 
 			// Set initial value
-			SendMessage(hwndDropdown, CB_SETCURSEL, *value, 0);
+			SendMessage(hwndDropdown, CB_SETCURSEL, initialSelection, 0);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -35,8 +35,8 @@ namespace PointCloudEngine
 			{
 				if (((HWND)lParam == hwndDropdown) && (HIWORD(wParam) == CBN_SELCHANGE))
 				{
-					// Overwrite the value
-					*value = SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0);
+					// Invoke the function
+					OnSelect(SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0));
 				}
 			}
 		}

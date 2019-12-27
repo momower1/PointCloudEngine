@@ -178,6 +178,9 @@ void GroundTruthRenderer::Draw()
 	{
 		d3d11DevCon->Draw(vertexCount, 0);
 	}
+
+	// Show vertex count on GUI
+	GUI::vertexCount = vertexCount;
 }
 
 void GroundTruthRenderer::Release()
