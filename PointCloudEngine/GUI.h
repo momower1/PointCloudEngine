@@ -26,23 +26,20 @@ namespace PointCloudEngine
 		static Vector2 guiSize;
 
 		static HWND hwndGUI;
-		static GUITab* guiTab;
+		static GUITab* tab;
 
 		// General
-		static GUIText* textDropdown;
-		static GUIValue<float>* scaleValue;
-		static GUIDropdown* dropdown;
-		static GUISlider<float>* densitySlider;
-		static GUISlider<float>* blendFactorSlider;
+		static std::vector<IGUIElement*> generalElements;
 
 		// Advanced
-		static GUIButton* button;
-		static GUICheckbox* checkbox;
+		static std::vector<IGUIElement*> advancedElements;
 
+		static void ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND);
+		static void DeleteElements(std::vector<IGUIElement*> elements);
+		static void UpdateElements(std::vector<IGUIElement*> elements);
+		static void HandleMessageElements(std::vector<IGUIElement*> elements, UINT msg, WPARAM wParam, LPARAM lParam);
 		static void CreateContentGeneral();
 		static void CreateContentAdvanced();
-		static void ShowContentGeneral();
-		static void ShowContentAdvanced();
 
 		static void TabOnSelect(int selection);
 		static void ButtonOnClick();

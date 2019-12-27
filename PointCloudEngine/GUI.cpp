@@ -5,18 +5,13 @@ bool GUI::initialized = false;
 Vector2 GUI::guiSize = Vector2(400, 800);
 
 HWND GUI::hwndGUI = NULL;
-GUITab* GUI::guiTab = NULL;
+GUITab* GUI::tab = NULL;
 
 // General
-GUIText* GUI::textDropdown = NULL;
-GUIValue<float>* GUI::scaleValue = NULL;
-GUIDropdown* GUI::dropdown = NULL;
-GUISlider<float>* GUI::densitySlider = NULL;
-GUISlider<float>* GUI::blendFactorSlider = NULL;
+std::vector<IGUIElement*> GUI::generalElements;
 
 // Advanced
-GUIButton* GUI::button = NULL;
-GUICheckbox* GUI::checkbox = NULL;
+std::vector<IGUIElement*> GUI::advancedElements;
 
 void PointCloudEngine::GUI::Initialize()
 {
@@ -31,11 +26,12 @@ void PointCloudEngine::GUI::Initialize()
 	hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwnd, NULL, NULL, NULL);
 
 	// Tab inside the gui window for choosing different groups of settings
-	guiTab = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced" }, TabOnSelect);
+	tab = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced" }, TabOnSelect);
 
+	// Create and show content for each tab
 	CreateContentGeneral();
 	CreateContentAdvanced();
-	ShowContentGeneral();
+	ShowElements(advancedElements, SW_HIDE);
 
 	initialized = true;
 }
@@ -44,7 +40,9 @@ void PointCloudEngine::GUI::Release()
 {
 	initialized = false;
 
-	// TODO: SafeDelete all GUI elements
+	// SafeDelete all GUI elements, HWNDs are released automatically
+	DeleteElements(generalElements);
+	DeleteElements(advancedElements);
 }
 
 void PointCloudEngine::GUI::Update()
@@ -52,7 +50,8 @@ void PointCloudEngine::GUI::Update()
 	if (!initialized)
 		return;
 
-	scaleValue->Update();
+	UpdateElements(generalElements);
+	UpdateElements(advancedElements);
 }
 
 void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -60,83 +59,76 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 	if (!initialized)
 		return;
 
-	switch (msg)
+	// WindowsProcess message will be forwarded to this function
+	// The GUI is only interested in these kinds of messages for e.g. button notifications
+	if (msg == WM_COMMAND || msg == WM_NOTIFY || msg == WM_HSCROLL)
 	{
-		case WM_COMMAND:
-		{
-			if (dropdown != NULL)
-				dropdown->HandleMessage(msg, wParam, lParam);
+		tab->HandleMessage(msg, wParam, lParam);
+		HandleMessageElements(generalElements, msg, wParam, lParam);
+		HandleMessageElements(advancedElements, msg, wParam, lParam);
+	}
+}
 
-			if (button != NULL)
-				button->HandleMessage(msg, wParam, lParam);
-			
-			if (checkbox != NULL)
-				checkbox->HandleMessage(msg, wParam, lParam);
-			break;
-		}
-		case WM_NOTIFY:
-		{
-			if (guiTab != NULL)
-				guiTab->HandleMessage(msg, wParam, lParam);
-			break;
-		}
-		case WM_HSCROLL:
-		{
-			if (densitySlider != NULL)
-				densitySlider->HandleMessage(msg, wParam, lParam);
-			if (blendFactorSlider != NULL)
-				blendFactorSlider->HandleMessage(msg, wParam, lParam);
-			break;
-		}
+void PointCloudEngine::GUI::ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND)
+{
+	for (auto it = elements.begin(); it != elements.end(); it++)
+	{
+		(*it)->Show(SW_COMMAND);
+	}
+}
+
+void PointCloudEngine::GUI::DeleteElements(std::vector<IGUIElement*> elements)
+{
+	for (auto it = elements.begin(); it != elements.end(); it++)
+	{
+		SafeDelete(*it);
 	}
 
-	//OutputDebugString((std::to_wstring(msg) + L" " + std::to_wstring(wParam) + L" " + std::to_wstring(lParam)).c_str());
+	elements.clear();
+}
+
+void PointCloudEngine::GUI::UpdateElements(std::vector<IGUIElement*> elements)
+{
+	for (auto it = elements.begin(); it != elements.end(); it++)
+	{
+		(*it)->Update();
+	}
+}
+
+void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elements, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	for (auto it = elements.begin(); it != elements.end(); it++)
+	{
+		(*it)->HandleMessage(msg, wParam, lParam);
+	}
 }
 
 void PointCloudEngine::GUI::CreateContentGeneral()
 {
-	textDropdown = new GUIText(hwndGUI, XMUINT2(0, 50), XMUINT2(100, 20), L"View Mode: ");
-	scaleValue = new GUIValue<float>(hwndGUI, XMUINT2(300, 50), XMUINT2(50, 20), &settings->scale);
-
-	dropdown = new GUIDropdown(hwndGUI, XMUINT2(100, 50), XMUINT2(200, 200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, &settings->viewMode);
-
-	densitySlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 100), XMUINT2(200, 20), XMUINT2(0, 1000), 1000, 0, L"Point Density", &settings->density);
-	blendFactorSlider = new GUISlider<float>(hwndGUI, XMUINT2(100, 150), XMUINT2(200, 20), XMUINT2(0, 100), 10, 0, L"Blend Factor", &settings->blendFactor);
+	generalElements.push_back(new GUIText(hwndGUI, { 0, 50 }, { 100, 20 }, L"View Mode: "));
+	generalElements.push_back(new GUIValue<float>(hwndGUI, { 300, 50 }, { 50, 20 }, &settings->scale));
+	generalElements.push_back(new GUIDropdown(hwndGUI, { 100, 50 }, { 200, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, &settings->viewMode));
+	generalElements.push_back(new GUISlider<float>(hwndGUI, { 100, 100 }, { 200, 20 }, { 0, 1000 }, 1000, 0, L"Point Density", &settings->density));
+	generalElements.push_back(new GUISlider<float>(hwndGUI, { 100, 150 }, { 200, 20 }, { 0, 100 }, 10, 0, L"Blend Factor", &settings->blendFactor));
 }
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
-	button = new GUIButton(hwndGUI, { 100, 300 }, { 100, 30 }, L"Press me", GUI::ButtonOnClick);
-	checkbox = new GUICheckbox(hwndGUI, { 100, 500 }, { 100, 30 }, L"Check me out", CheckboxOnClick);
-}
-
-void PointCloudEngine::GUI::ShowContentGeneral()
-{
-	dropdown->Show(SW_SHOW);
-	densitySlider->Show(SW_SHOW);
-	blendFactorSlider->Show(SW_SHOW);
-	button->Show(SW_HIDE);
-	checkbox->Show(SW_HIDE);
-}
-
-void PointCloudEngine::GUI::ShowContentAdvanced()
-{
-	dropdown->Show(SW_HIDE);
-	densitySlider->Show(SW_HIDE);
-	blendFactorSlider->Show(SW_HIDE);
-	button->Show(SW_SHOW);
-	checkbox->Show(SW_SHOW);
+	advancedElements.push_back(new GUIButton(hwndGUI, { 100, 300 }, { 100, 30 }, L"Press me", GUI::ButtonOnClick));
+	advancedElements.push_back(new GUICheckbox(hwndGUI, { 100, 500 }, { 100, 30 }, L"Check me out", CheckboxOnClick));
 }
 
 void PointCloudEngine::GUI::TabOnSelect(int selection)
 {
 	if (selection == 0)
 	{
-		ShowContentGeneral();
+		ShowElements(generalElements, SW_SHOW);
+		ShowElements(advancedElements, SW_HIDE);
 	}
 	else
 	{
-		ShowContentAdvanced();
+		ShowElements(generalElements, SW_HIDE);
+		ShowElements(advancedElements, SW_SHOW);
 	}
 }
 

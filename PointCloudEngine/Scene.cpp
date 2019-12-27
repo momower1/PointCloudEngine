@@ -51,7 +51,7 @@ void Scene::Initialize()
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
 
-	// Show gui
+	// Show the GUI
 	GUI::Initialize();
 }
 
