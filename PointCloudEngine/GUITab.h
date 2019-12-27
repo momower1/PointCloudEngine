@@ -11,13 +11,13 @@ namespace PointCloudEngine
 	{
 	public:
 		HWND hwndTab = NULL;
-		int* value = NULL;
+		std::function<void(int)> OnSelect = NULL;
 
-		GUITab(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, int* value)
+		GUITab(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, std::function<void(int)> OnSelect)
 		{
 			// Create the tab menu
 			int counter = 0;
-			this->value = value;
+			this->OnSelect = OnSelect;
 			hwndTab = CreateWindowEx(NULL, WC_TABCONTROLW, L"", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 
 			TCITEM tcitem;
@@ -29,8 +29,6 @@ namespace PointCloudEngine
 				tcitem.pszText = (wchar_t*)it->c_str();
 				TabCtrl_InsertItem(hwndTab, counter++, &tcitem);
 			}
-
-			TabCtrl_SetCurSel(hwndTab, *value);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -42,7 +40,7 @@ namespace PointCloudEngine
 				if ((info->hwndFrom == hwndTab) && (info->code == TCN_SELCHANGE))
 				{
 					// Invoke the passed function
-					*value = TabCtrl_GetCurSel(hwndTab);
+					OnSelect(TabCtrl_GetCurSel(hwndTab));
 				}
 			}
 		}

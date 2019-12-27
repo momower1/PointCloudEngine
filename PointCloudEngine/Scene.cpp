@@ -50,6 +50,9 @@ void Scene::Initialize()
 
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
+
+	// Show gui
+	GUI::Initialize();
 }
 
 void Scene::Update(Timer &timer)
@@ -269,6 +272,7 @@ void Scene::Draw()
 void Scene::Release()
 {
 	Hierarchy::ReleaseAllSceneObjects();
+	GUI::Release();
 }
 
 void PointCloudEngine::Scene::OpenFileDialog()

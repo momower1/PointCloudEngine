@@ -3,6 +3,8 @@
 
 #pragma once
 #include "PointCloudEngine.h"
+#include "GUIButton.h"
+#include "GUICheckbox.h"
 #include "GUIDropdown.h"
 #include "GUISlider.h"
 #include "GUITab.h"
@@ -14,32 +16,37 @@ namespace PointCloudEngine
 	class GUI
 	{
 	public:
-		GUI();
-		~GUI();
-		void Update();
-		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+		static void Initialize();
+		static void Release();
+		static void Update();
+		static void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 
 	private:
-		Vector2 guiSize = Vector2(400, 800);
+		static bool initialized;
+		static Vector2 guiSize;
 
-		HWND hwndGUI = NULL;
-		GUITab* guiTab = NULL;
-		int tabSelection = 0;
+		static HWND hwndGUI;
+		static GUITab* guiTab;
 
 		// General
-		GUIText* textDropdown = NULL;
-		GUIValue<float>* scaleValue = NULL;
-		GUIDropdown* dropdown = NULL;
-		GUISlider<float>* densitySlider = NULL;
-		GUISlider<float>* blendFactorSlider = NULL;
+		static GUIText* textDropdown;
+		static GUIValue<float>* scaleValue;
+		static GUIDropdown* dropdown;
+		static GUISlider<float>* densitySlider;
+		static GUISlider<float>* blendFactorSlider;
 
 		// Advanced
-		HWND hwndButton = NULL;
+		static GUIButton* button;
+		static GUICheckbox* checkbox;
 
-		void CreateContentGeneral();
-		void CreateContentAdvanced();
-		void ShowContentGeneral();
-		void ShowContentAdvanced();
+		static void CreateContentGeneral();
+		static void CreateContentAdvanced();
+		static void ShowContentGeneral();
+		static void ShowContentAdvanced();
+
+		static void TabOnSelect(int selection);
+		static void ButtonOnClick();
+		static void CheckboxOnClick(bool checked);
 	};
 }
 #endif

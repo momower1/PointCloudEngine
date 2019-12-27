@@ -107,6 +107,12 @@
     <ClInclude Include="GUITab.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUICheckbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">

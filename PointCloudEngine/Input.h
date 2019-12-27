@@ -22,7 +22,7 @@ namespace PointCloudEngine
     {
     public:
         static void Initialize (HWND hwnd);
-        static void ProcessMessage (UINT msg, WPARAM wParam, LPARAM lParam);
+        static void HandleMessage (UINT msg, WPARAM wParam, LPARAM lParam);
         static void Update ();
 
         static bool GetKey (Keyboard::Keys key);

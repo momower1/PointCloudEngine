@@ -41,7 +41,7 @@ void Input::Initialize(HWND hwnd)
     }
 }
 
-void Input::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam)
+void Input::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 {
     keyboard.ProcessMessage(msg, wParam, lParam);
     mouse.ProcessMessage(msg, wParam, lParam);

@@ -8,7 +8,6 @@ HWND hwnd = NULL;
 LPCTSTR WndClassName = L"PointCloudEngine";
 double dt = 0;
 Timer timer;
-GUI* gui;
 Scene scene;
 Settings* settings;
 Camera* camera;
@@ -528,7 +527,7 @@ int Messageloop()
 			// Run game code
 			UpdateScene();
 			DrawScene();
-			gui->Update();
+			GUI::Update();
 		}
 	}
 
@@ -538,8 +537,8 @@ int Messageloop()
 // Check messages for events
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    Input::ProcessMessage(msg, wParam, lParam);
-	gui->HandleMessage(msg, wParam, lParam);
+    Input::HandleMessage(msg, wParam, lParam);
+	GUI::HandleMessage(msg, wParam, lParam);
 
 	switch (msg)
 	{
@@ -596,9 +595,6 @@ bool InitializeScene()
 
 	scene.Initialize();
     timer.ResetElapsedTime();
-
-	// Create the second GUI window
-	gui = new GUI();
 
 	return true;
 }
@@ -708,7 +704,6 @@ void ReleaseObjects()
     // Delete settings (also saves them to the hard drive)
     SafeDelete(settings);
     SafeDelete(camera);
-	SafeDelete(gui);
 
     // Release and delete shaders
     Shader::ReleaseAllShaders();
