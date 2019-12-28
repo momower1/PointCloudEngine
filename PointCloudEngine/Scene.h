@@ -35,10 +35,6 @@ namespace PointCloudEngine
         float cameraPitch = 0;
         float cameraYaw = 0;
 
-		// Waypoint camera trackshot
-		float waypointPreviewLocation = 0;
-		Vector3 waypointStartPosition;
-
 		// Speed up WASD, Q/E, V/N and so on for faster movement and parameter tweaking
         float inputSpeed = 0;
 

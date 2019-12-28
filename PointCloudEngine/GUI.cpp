@@ -3,7 +3,14 @@
 
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
+UINT GUI::cameraSelection = 0;
+bool GUI::waypointPreview = false;
+float GUI::waypointPreviewLocation = 0;
+WaypointRenderer* GUI::waypointRenderer = NULL;
+
 bool GUI::initialized = false;
+Vector3 GUI::waypointStartPosition;
+Matrix GUI::waypointStartRotation;
 Vector2 GUI::guiSize = Vector2(360, 440);
 
 HWND GUI::hwndGUI = NULL;
@@ -163,12 +170,25 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 40 }, { 130, 20 }, { 1, 1000 }, 100, 0, L"Scale", &settings->scale));
+	advancedElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Background RGB"));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 70 }, { 45, 20 }, { 0, 100 }, 100, 0, L"R", &settings->backgroundColor.x, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 203, 70 }, { 45, 20 }, { 0, 100 }, 100, 0, L"G", &settings->backgroundColor.y, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 245, 70 }, { 45, 20 }, { 0, 100 }, 100, 0, L"B", &settings->backgroundColor.z, 0, 0));
+	advancedElements.push_back(new GUIText(hwndGUI, { 10, 130 }, { 150, 20 }, L"Headlight "));
+	advancedElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", NULL, &settings->useHeadlight));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Ambient", &settings->ambient));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Diffuse", &settings->diffuse));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Specular", &settings->specular));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Lighting Specular Exp.", &settings->specularExponent));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 310 }, { 150, 30 }, L"Add Waypoint", OnWaypointAdd));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 310 }, { 150, 30 }, L"Remove Waypoint", OnWaypointRemove));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 350 }, { 150, 30 }, L"Toggle Waypoints", OnWaypointToggle));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 350 }, { 150, 30 }, L"Preview Waypoints", OnWaypointPreview));
 
-	// Lighting: Headlight, Ambient, Diffuse, Specular, Specular Exponent
+	// TODO: Use this to select a camera position from the HDF5 file generation
+	//advancedElements.push_back(new GUISlider<UINT>(hwndGUI, { 160, 250 }, { 130, 20 }, { 1, 100 }, 1, 0, L"Camera Position", &cameraSelection));
 
-	// Waypoints: Add, Remove, Hide, Preview
-
-	// Select camera position
+	// TODO: HDF5 file generation
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()
@@ -245,6 +265,53 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 		{
 			ShowElements(advancedElements);
 			break;
+		}
+	}
+}
+
+void PointCloudEngine::GUI::OnWaypointAdd()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
+	}
+}
+
+void PointCloudEngine::GUI::OnWaypointRemove()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->RemoveWaypoint();
+	}
+}
+
+void PointCloudEngine::GUI::OnWaypointToggle()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = !waypointRenderer->enabled;
+	}
+}
+
+void PointCloudEngine::GUI::OnWaypointPreview()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointPreview = !waypointPreview;
+
+		// Camera tracking shot using the waypoints
+		if (waypointPreview)
+		{
+			// Start preview
+			waypointPreviewLocation = 0;
+			waypointStartPosition = camera->GetPosition();
+			waypointStartRotation = camera->GetRotationMatrix();
+		}
+		else
+		{
+			// End of preview
+			camera->SetPosition(waypointStartPosition);
+			camera->SetRotationMatrix(waypointStartRotation);
 		}
 	}
 }

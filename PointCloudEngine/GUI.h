@@ -18,6 +18,10 @@ namespace PointCloudEngine
 	public:
 		static UINT fps;
 		static UINT vertexCount;
+		static UINT cameraSelection;
+		static bool waypointPreview;
+		static float waypointPreviewLocation;
+		static WaypointRenderer* waypointRenderer;
 
 		static void Initialize();
 		static void Release();
@@ -27,6 +31,8 @@ namespace PointCloudEngine
 
 	private:
 		static bool initialized;
+		static Vector3 waypointStartPosition;
+		static Matrix waypointStartRotation;
 		static Vector2 guiSize;
 
 		static HWND hwndGUI;
@@ -51,6 +57,10 @@ namespace PointCloudEngine
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
+		static void OnWaypointAdd();
+		static void OnWaypointRemove();
+		static void OnWaypointToggle();
+		static void OnWaypointPreview();
 	};
 }
 #endif

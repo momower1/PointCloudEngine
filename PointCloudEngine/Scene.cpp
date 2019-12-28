@@ -6,6 +6,7 @@ void Scene::Initialize()
     pointCloud = Hierarchy::Create(L"PointCloud");
 	waypointRenderer = new WaypointRenderer();
 	pointCloud->AddComponent(waypointRenderer);
+	GUI::waypointRenderer = waypointRenderer;
 
 	// Create text renderer to display the controls
 	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
@@ -89,7 +90,6 @@ void Scene::Update(Timer &timer)
 	// Insert a waypoint
 	if (Input::GetKeyDown(Keyboard::Insert))
 	{
-		Vector2 pitchYaw(cameraPitch, cameraYaw);
 		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
 	}
 
@@ -100,26 +100,14 @@ void Scene::Update(Timer &timer)
 	}
 
 	// Camera tracking shot using the waypoints
-	if (Input::GetKeyDown(Keyboard::Space))
-	{
-		// Start preview
-		waypointPreviewLocation = 0;
-		waypointStartPosition = camera->GetPosition();
-	}
-	else if (Input::GetKeyUp(Keyboard::Space))
-	{
-		// End of preview
-		camera->SetPosition(waypointStartPosition);
-		camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
-	}
-	else if (Input::GetKey(Keyboard::Space))
+	if (GUI::waypointPreview)
 	{
 		// While preview
 		Vector3 newCameraPosition = camera->GetPosition();
 		Matrix newCameraRotation = camera->GetRotationMatrix();
 
-		waypointRenderer->LerpWaypoints(waypointPreviewLocation, newCameraPosition, newCameraRotation);
-		waypointPreviewLocation += settings->waypointPreviewStepSize;
+		waypointRenderer->LerpWaypoints(GUI::waypointPreviewLocation, newCameraPosition, newCameraRotation);
+		GUI::waypointPreviewLocation += settings->waypointPreviewStepSize;
 
 		camera->SetPosition(newCameraPosition);
 		camera->SetRotationMatrix(newCameraRotation);
