@@ -10,12 +10,16 @@ namespace PointCloudEngine
 	class GUIDropdown : public IGUIElement
 	{
 	public:
+		XMUINT2 size;
+		int* value = NULL;
 		HWND hwndDropdown = NULL;
-		std::function<void(int)> OnSelect = NULL;
+		std::function<void()> OnSelect = NULL;
 
-		GUIDropdown(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, std::function<void(int)> OnSelect, int initialSelection = 0)
+		GUIDropdown(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, std::function<void()> OnSelect, int* value)
 		{
 			// Create the dropdown menu
+			this->size = size;
+			this->value = value;
 			this->OnSelect = OnSelect;
 			hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 
@@ -26,7 +30,7 @@ namespace PointCloudEngine
 			}
 
 			// Set initial value
-			SendMessage(hwndDropdown, CB_SETCURSEL, initialSelection, 0);
+			SendMessage(hwndDropdown, CB_SETCURSEL, *value, 0);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -36,14 +40,21 @@ namespace PointCloudEngine
 				if (((HWND)lParam == hwndDropdown) && (HIWORD(wParam) == CBN_SELCHANGE))
 				{
 					// Invoke the function
-					OnSelect(SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0));
+					*value = SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0);
+					OnSelect();
 				}
 			}
+		}
+
+		void SetPosition(XMUINT2 position)
+		{
+			MoveWindow(hwndDropdown, position.x, position.y, size.x, size.y, true);
 		}
 
 		void Show(int SW_COMMAND)
 		{
 			ShowWindow(hwndDropdown, SW_COMMAND);
+			SendMessage(hwndDropdown, CB_SETCURSEL, *value, 0);
 		}
 	};
 }

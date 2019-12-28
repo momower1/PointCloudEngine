@@ -144,6 +144,9 @@ void OctreeRenderer::Update()
 	{
 		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
 	}
+
+    // Set GUI variables
+    GUI::vertexCount = vertexBufferCount;
 }
 
 void OctreeRenderer::Draw()
@@ -208,7 +211,7 @@ void OctreeRenderer::Draw()
 	octreeConstantBufferData.localViewPlaneRightNormal.Normalize();
 	octreeConstantBufferData.localViewPlaneTopNormal.Normalize();
 	octreeConstantBufferData.localViewPlaneBottomNormal.Normalize();
-	octreeConstantBufferData.samplingRate =settings->samplingRate;
+	octreeConstantBufferData.samplingRate = settings->samplingRate;
 	octreeConstantBufferData.blendFactor = settings->blendFactor;
 
     // Draw overlapping splats to make sure that continuous surfaces without holes are drawn

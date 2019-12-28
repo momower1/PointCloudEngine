@@ -10,6 +10,7 @@ namespace PointCloudEngine
 	template <typename T> class GUIValue : public IGUIElement
 	{
 	public:
+		XMUINT2 size;
 		HWND hwndValue = NULL;
 		T* value = NULL;
 		T oldValue;
@@ -18,6 +19,7 @@ namespace PointCloudEngine
 		{
 			// Displays the value as a string
 			oldValue = *value;
+			this->size = size;
 			this->value = value;
 			hwndValue = CreateWindowEx(0, L"STATIC", std::to_wstring(*value).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 		}
@@ -30,6 +32,11 @@ namespace PointCloudEngine
 				oldValue = *value;
 				SetWindowText(hwndValue, std::to_wstring(*value).c_str());
 			}
+		}
+
+		void SetPosition(XMUINT2 position)
+		{
+			MoveWindow(hwndValue, position.x, position.y, size.x, size.y, true);
 		}
 
 		void Show(int SW_COMMAND)

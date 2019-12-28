@@ -10,6 +10,7 @@ namespace PointCloudEngine
 	class GUITab : public IGUIElement
 	{
 	public:
+		XMUINT2 size;
 		HWND hwndTab = NULL;
 		std::function<void(int)> OnSelect = NULL;
 
@@ -17,6 +18,7 @@ namespace PointCloudEngine
 		{
 			// Create the tab menu
 			int counter = 0;
+			this->size = size;
 			this->OnSelect = OnSelect;
 			hwndTab = CreateWindowEx(NULL, WC_TABCONTROLW, L"", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 
@@ -43,6 +45,11 @@ namespace PointCloudEngine
 					OnSelect(TabCtrl_GetCurSel(hwndTab));
 				}
 			}
+		}
+
+		void SetPosition(XMUINT2 position)
+		{
+			MoveWindow(hwndTab, position.x, position.y, size.x, size.y, true);
 		}
 
 		void Show(int SW_COMMAND)

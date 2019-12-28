@@ -10,6 +10,7 @@ namespace PointCloudEngine
 	template <typename T> class GUISlider : public IGUIElement
 	{
 	public:
+		XMUINT2 size;
 		HWND hwndSlider = NULL;
 		HWND hwndSliderName = NULL;
 		HWND hwndSliderValue = NULL;
@@ -21,6 +22,7 @@ namespace PointCloudEngine
 		GUISlider(HWND hwndParent, XMUINT2 pos, XMUINT2 size, XMUINT2 range, float scale, float offset, std::wstring name, T* value)
 		{
 			// The internal slider position is value * scale + offset
+			this->size = size;
 			this->name = name;
 			this->value = value;
 			this->scale = scale;
@@ -50,6 +52,13 @@ namespace PointCloudEngine
 					SetWindowText(hwndSliderValue, std::to_wstring(*value).c_str());
 				}
 			}
+		}
+
+		void SetPosition(XMUINT2 position)
+		{
+			MoveWindow(hwndSlider, position.x, position.y, size.x, size.y, true);
+			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
+			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
 		}
 
 		void Show(int SW_COMMAND)

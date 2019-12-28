@@ -50,9 +50,6 @@ void Scene::Initialize()
 
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
-
-	// Show the GUI
-	GUI::Initialize();
 }
 
 void Scene::Update(Timer &timer)
@@ -319,6 +316,9 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     {
 		pointCloudRenderer->RemoveComponentFromSceneObject();
         SetWindowTextW(hwnd, L"PointCloudEngine");
+
+		// Hide GUI
+		GUI::SetVisible(false);
     }
 
     try
@@ -372,6 +372,10 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
         pointCloudRenderer->GetBoundingCubePositionAndSize(boundingBoxPosition, boundingBoxSize);
 
         camera->SetPosition(settings->scale * (boundingBoxPosition - boundingBoxSize * Vector3::UnitZ));
+
+		// Show the GUI
+		GUI::Initialize();
+		GUI::SetVisible(true);
     }
 
 	// Show the other text

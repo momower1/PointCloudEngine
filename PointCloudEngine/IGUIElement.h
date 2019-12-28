@@ -11,6 +11,7 @@ namespace PointCloudEngine
 	public:
 		virtual void Update() {}
 		virtual void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {}
+		virtual void SetPosition(XMUINT2 position) = 0;
 		virtual void Show(int SW_COMMAND) = 0;
 	};
 }
