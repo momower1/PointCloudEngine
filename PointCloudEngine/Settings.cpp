@@ -83,9 +83,13 @@ PointCloudEngine::Settings::Settings()
 
 		// Parse octree parameters
 		TryParse(NAMEOF(useOctree), &useOctree);
+		TryParse(NAMEOF(useCulling), &useCulling);
+		TryParse(NAMEOF(useGPUTraversal), &useGPUTraversal);
 		TryParse(NAMEOF(maxOctreeDepth), &maxOctreeDepth);
 		TryParse(NAMEOF(overlapFactor), &overlapFactor);
+		TryParse(NAMEOF(splatResolution), &splatResolution);
 		TryParse(NAMEOF(appendBufferCount), &appendBufferCount);
+		TryParse(NAMEOF(octreeLevel), &octreeLevel);
 
 		// Parse input parameters
 		TryParse(NAMEOF(mouseSensitivity), &mouseSensitivity);
@@ -178,9 +182,13 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 
 	settingsStream << L"# Octree Parameters, increase " << NAMEOF(appendBufferCount) << L" when you see flickering" << std::endl;
 	settingsStream << NAMEOF(useOctree) << L"=" << useOctree << std::endl;
+	settingsStream << NAMEOF(useCulling) << L"=" << useCulling << std::endl;
+	settingsStream << NAMEOF(useGPUTraversal) << L"=" << useGPUTraversal << std::endl;
 	settingsStream << NAMEOF(maxOctreeDepth) << L"=" << maxOctreeDepth << std::endl;
 	settingsStream << NAMEOF(overlapFactor) << L"=" << overlapFactor << std::endl;
+	settingsStream << NAMEOF(splatResolution) << L"=" << splatResolution << std::endl;
 	settingsStream << NAMEOF(appendBufferCount) << L"=" << appendBufferCount << std::endl;
+	settingsStream << NAMEOF(octreeLevel) << L"=" << octreeLevel << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Input Parameters" << std::endl;

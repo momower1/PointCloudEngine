@@ -26,7 +26,6 @@ namespace PointCloudEngine
         UINT GetStructureCount(ID3D11UnorderedAccessView *UAV);
 
         int vertexBufferCount = 0;
-        bool useComputeShader = true;
 
         Octree *octree = NULL;
 

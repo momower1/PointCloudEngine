@@ -11,18 +11,20 @@ namespace PointCloudEngine
 	{
 	public:
 		XMUINT2 size;
+		bool* value = NULL;
 		HWND hwndCheckbox = NULL;
-		std::function<void(bool)> OnClick = NULL;
+		std::function<void()> OnClick = NULL;
 
-		GUICheckbox(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::wstring name, std::function<void(bool)> OnClick, bool initialChecked = false)
+		GUICheckbox(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::wstring name, std::function<void()> OnClick, bool *value)
 		{
 			// Create the checkbox
 			this->size = size;
+			this->value = value;
 			this->OnClick = OnClick;
 			hwndCheckbox = CreateWindowEx(NULL, L"BUTTON", name.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 
 			// Set initial value
-			SendMessage(hwndCheckbox, BM_SETCHECK, initialChecked ? BST_CHECKED : BST_UNCHECKED, 0);
+			SendMessage(hwndCheckbox, BM_SETCHECK, *value ? BST_CHECKED : BST_UNCHECKED, 0);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -31,7 +33,12 @@ namespace PointCloudEngine
 			{
 				if (((HWND)lParam == hwndCheckbox) && (HIWORD(wParam) == BN_CLICKED))
 				{
-					OnClick(SendMessage(hwndCheckbox, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					*value = SendMessage(hwndCheckbox, BM_GETCHECK, 0, 0) == BST_CHECKED;
+
+					if (OnClick != NULL)
+					{
+						OnClick();
+					}
 				}
 			}
 		}

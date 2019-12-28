@@ -7,9 +7,6 @@ OctreeRenderer::OctreeRenderer(const std::wstring &pointcloudFile)
 
     // Initialize constant buffer data
 	octreeConstantBufferData.fovAngleY = settings->fovAngleY;
-	octreeConstantBufferData.splatResolution = 0.01f;
-	octreeConstantBufferData.level = -1;
-	octreeConstantBufferData.useCulling = true;
 }
 
 void OctreeRenderer::Initialize()
@@ -116,33 +113,33 @@ void OctreeRenderer::Update()
     // Select octree level with arrow keys (level -1 means that the level will be ignored)
     if (Input::GetKeyDown(Keyboard::Left) && (octreeConstantBufferData.level > -1))
     {
-		octreeConstantBufferData.level--;
+        settings->octreeLevel--;
     }
     else if (Input::GetKeyDown(Keyboard::Right) && ((vertexBufferCount > 0) || (octreeConstantBufferData.level < 0)))
     {
-		octreeConstantBufferData.level++;
+        settings->octreeLevel++;
     }
 
 	// Toggle CPU / GPU octree traversal
     if (Input::GetKeyDown(Keyboard::Back))
     {
-        useComputeShader = !useComputeShader;
+        settings->useGPUTraversal = !settings->useGPUTraversal;
     }
 
 	// Toggle view frustum and backface culling
 	if (Input::GetKeyDown(Keyboard::C))
 	{
-		octreeConstantBufferData.useCulling = !octreeConstantBufferData.useCulling;
+		settings->useCulling = !settings->useCulling;
 	}
 
 	// Set splat resolution between 1 (whole screen) and 1.0f/resolutionY (one pixel)
 	if (Input::GetKey(Keyboard::Up))
 	{
-		octreeConstantBufferData.splatResolution = min(1.0f, octreeConstantBufferData.splatResolution + dt * 0.01f);
+		settings->splatResolution = min(1.0f, settings->splatResolution + dt * 0.01f);
 	}
 	else if (Input::GetKey(Keyboard::Down))
 	{
-		octreeConstantBufferData.splatResolution = max(1.0f / settings->resolutionY, octreeConstantBufferData.splatResolution - dt * 0.01f);
+		settings->splatResolution = max(1.0f / settings->resolutionY, settings->splatResolution - dt * 0.01f);
 	}
 
     // Set GUI variables
@@ -211,8 +208,11 @@ void OctreeRenderer::Draw()
 	octreeConstantBufferData.localViewPlaneRightNormal.Normalize();
 	octreeConstantBufferData.localViewPlaneTopNormal.Normalize();
 	octreeConstantBufferData.localViewPlaneBottomNormal.Normalize();
+    octreeConstantBufferData.splatResolution = settings->splatResolution;
 	octreeConstantBufferData.samplingRate = settings->samplingRate;
 	octreeConstantBufferData.blendFactor = settings->blendFactor;
+    octreeConstantBufferData.useCulling = settings->useCulling;
+    octreeConstantBufferData.level = settings->octreeLevel;
 
     // Draw overlapping splats to make sure that continuous surfaces without holes are drawn
     // Higher overlap factor reduces the spacing between tilted splats but reduces the detail (blend overlapping splats to improve this)
@@ -232,7 +232,7 @@ void OctreeRenderer::Draw()
 	d3d11DevCon->PSSetConstantBuffers(0, 1, &octreeConstantBuffer);
 
     // Get the vertex buffer and use the specified implementation
-    if (useComputeShader)
+    if (settings->useGPUTraversal)
     {
         DrawOctreeCompute();
     }
@@ -301,7 +301,7 @@ void PointCloudEngine::OctreeRenderer::SetText(Transform* textTransform, TextRen
 {
 	textTransform->position = Vector3(-1.0f, -0.635f, 0);
 	textRenderer->text = std::wstring(L"View Mode: ") + ((settings->viewMode == 0) ? L"Splats\n" : ((settings->viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
-	textRenderer->text.append(useComputeShader ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
+	textRenderer->text.append(settings->useGPUTraversal ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
 
 	int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
 	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");

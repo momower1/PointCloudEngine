@@ -26,7 +26,7 @@ namespace PointCloudEngine
 		{
 			if (msg == WM_COMMAND)
 			{
-				if (((HWND)lParam == hwndButton) && (HIWORD(wParam) == BN_CLICKED))
+				if (((HWND)lParam == hwndButton) && (HIWORD(wParam) == BN_CLICKED) && OnClick != NULL)
 				{
 					OnClick();
 				}

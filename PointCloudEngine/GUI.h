@@ -35,6 +35,7 @@ namespace PointCloudEngine
 		// General
 		static std::vector<IGUIElement*> generalElements;
 		static std::vector<IGUIElement*> splatElements;
+		static std::vector<IGUIElement*> octreeElements;
 		static std::vector<IGUIElement*> sparseElements;
 		static std::vector<IGUIElement*> neuralNetworkElements;
 
@@ -50,11 +51,6 @@ namespace PointCloudEngine
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
-		static void OnClickLighting(bool checked);
-		static void OnClickBlending(bool checked);
-
-		static void ButtonOnClick();
-		static void CheckboxOnClick(bool checked);
 	};
 }
 #endif

@@ -74,8 +74,12 @@ namespace PointCloudEngine
 
 		// Octree parameters
 		bool useOctree = false;
+		bool useCulling = true;
+		bool useGPUTraversal = true;
+		int octreeLevel = 0;
 		int maxOctreeDepth = 16;
 		float overlapFactor = 2.0f;
+		float splatResolution = 0.01f;
 		UINT appendBufferCount = 6000000;
 
         // Input parameters default values

@@ -12,6 +12,7 @@ GUITab* GUI::tab = NULL;
 // General
 std::vector<IGUIElement*> GUI::generalElements;
 std::vector<IGUIElement*> GUI::splatElements;
+std::vector<IGUIElement*> GUI::octreeElements;
 std::vector<IGUIElement*> GUI::sparseElements;
 std::vector<IGUIElement*> GUI::neuralNetworkElements;
 
@@ -53,6 +54,7 @@ void PointCloudEngine::GUI::Release()
 	// SafeDelete all GUI elements, HWNDs are released automatically
 	DeleteElements(generalElements);
 	DeleteElements(splatElements);
+	DeleteElements(octreeElements);
 	DeleteElements(sparseElements);
 	DeleteElements(neuralNetworkElements);
 	DeleteElements(advancedElements);
@@ -65,6 +67,7 @@ void PointCloudEngine::GUI::Update()
 
 	UpdateElements(generalElements);
 	UpdateElements(splatElements);
+	UpdateElements(octreeElements);
 	UpdateElements(sparseElements);
 	UpdateElements(neuralNetworkElements);
 	UpdateElements(advancedElements);
@@ -82,6 +85,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		tab->HandleMessage(msg, wParam, lParam);
 		HandleMessageElements(generalElements, msg, wParam, lParam);
 		HandleMessageElements(splatElements, msg, wParam, lParam);
+		HandleMessageElements(octreeElements, msg, wParam, lParam);
 		HandleMessageElements(sparseElements, msg, wParam, lParam);
 		HandleMessageElements(neuralNetworkElements, msg, wParam, lParam);
 		HandleMessageElements(advancedElements, msg, wParam, lParam);
@@ -137,12 +141,20 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 100 }, { 150, 20 }, L"Frames per second "));
 	generalElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 100 }, { 50, 20 }, &GUI::fps));
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 130 }, { 150, 20 }, L"Lighting "));
-	generalElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", OnClickLighting, settings->useLighting));
+	generalElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", NULL, &settings->useLighting));
 
 	splatElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Blending "));
-	splatElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", OnClickBlending, settings->useBlending));
+	splatElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->useBlending));
 	splatElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 100 }, 10, 0, L"Blend Factor", &settings->blendFactor));
 	splatElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 1000 }, 1000, 0, L"Sampling Rate", &settings->samplingRate));
+
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 4, 100 }, settings->resolutionY * 4, 0, L"Splat Resolution", &settings->splatResolution));
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 130, 20 }, { 0, 500 }, 100, -100, L"Overlap Factor", &settings->overlapFactor));
+	octreeElements.push_back(new GUISlider<int>(hwndGUI, { 160, 310 }, { 130, 20 }, { 0, 1 + (UINT)settings->maxOctreeDepth }, 1, 1, L"Octree Level", &settings->octreeLevel));
+	octreeElements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 150, 20 }, L"Culling "));
+	octreeElements.push_back(new GUICheckbox(hwndGUI, { 160, 340 }, { 20, 20 }, L"", NULL, &settings->useCulling));
+	octreeElements.push_back(new GUIText(hwndGUI, { 10, 370 }, { 150, 20 }, L"GPU Traversal "));
+	octreeElements.push_back(new GUICheckbox(hwndGUI, { 160, 370 }, { 20, 20 }, L"", NULL, &settings->useGPUTraversal));
 
 	sparseElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 1000 }, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate));
 	sparseElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 1000 }, 1000, 0, L"Density", &settings->density));
@@ -150,12 +162,12 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
-	advancedElements.push_back(new GUIButton(hwndGUI, { 100, 300 }, { 100, 30 }, L"Press me", GUI::ButtonOnClick));
-	advancedElements.push_back(new GUICheckbox(hwndGUI, { 100, 500 }, { 200, 30 }, L"Check me out", CheckboxOnClick));
+	// TODO
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()
 {
+	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(splatElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
@@ -163,6 +175,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	if (settings->useOctree)
 	{
 		ShowElements(splatElements);
+		ShowElements(octreeElements);
 	}
 	else
 	{
@@ -200,6 +213,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 {
 	ShowElements(generalElements, SW_HIDE);
 	ShowElements(splatElements, SW_HIDE);
+	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 	ShowElements(advancedElements, SW_HIDE);
@@ -227,24 +241,4 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 			break;
 		}
 	}
-}
-
-void PointCloudEngine::GUI::OnClickLighting(bool checked)
-{
-	settings->useLighting = checked;
-}
-
-void PointCloudEngine::GUI::OnClickBlending(bool checked)
-{
-	settings->useBlending = checked;
-}
-
-void PointCloudEngine::GUI::ButtonOnClick()
-{
-	OutputDebugString(L"You pressed me, well done!\n");
-}
-
-void PointCloudEngine::GUI::CheckboxOnClick(bool checked)
-{
-	OutputDebugString(checked ? L"Checked\n" : L"Unchecked!\n");
 }
