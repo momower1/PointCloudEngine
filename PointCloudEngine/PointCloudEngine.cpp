@@ -549,9 +549,35 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
 		case WM_COMMAND:
 		{
-			if (wParam == ID_FILE_OPEN)
+			switch (wParam)
 			{
-				scene.OpenFileDialog();
+				case ID_FILE_OPEN:
+				{
+					scene.OpenFileDialog();
+					break;
+				}
+				case ID_FILE_GROUNDTRUTHRENDERER:
+				{
+					settings->useOctree = false;
+					scene.LoadFile(settings->pointcloudFile);
+					break;
+				}
+				case ID_FILE_OCTREERENDERER:
+				{
+					settings->useOctree = true;
+					scene.LoadFile(settings->pointcloudFile);
+					break;
+				}
+				case ID_FILE_SCREENSHOT:
+				{
+					SaveScreenshotToFile();
+					break;
+				}
+				case ID_HELP_WEBSITE:
+				{
+					ShellExecute(0, 0, L"https://github.com/momower1/PointCloudEngine", 0, 0, SW_SHOW);
+					break;
+				}
 			}
 		}
 	}

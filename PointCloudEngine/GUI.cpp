@@ -4,7 +4,7 @@
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
 bool GUI::initialized = false;
-Vector2 GUI::guiSize = Vector2(400, 800);
+Vector2 GUI::guiSize = Vector2(360, 440);
 
 HWND GUI::hwndGUI = NULL;
 GUITab* GUI::tab = NULL;
@@ -162,7 +162,13 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
-	// TODO
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 40 }, { 130, 20 }, { 1, 1000 }, 100, 0, L"Scale", &settings->scale));
+
+	// Lighting: Headlight, Ambient, Diffuse, Specular, Specular Exponent
+
+	// Waypoints: Add, Remove, Hide, Preview
+
+	// Select camera position
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()

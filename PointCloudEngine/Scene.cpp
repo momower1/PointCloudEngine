@@ -181,7 +181,7 @@ void Scene::Update(Timer &timer)
 	}
 
     // Scale the point cloud by the value saved in the config file
-    settings->scale = max(0.1f, settings->scale + Input::mouseScrollDelta);
+    settings->scale = max(0.01f, settings->scale + Input::mouseScrollDelta);
     pointCloud->transform->scale = settings->scale * Vector3::One;
 
 	// Select a camera position and rotation

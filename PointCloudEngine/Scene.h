@@ -14,10 +14,9 @@ namespace PointCloudEngine
         void Draw();
         void Release();
 		void OpenFileDialog();
+		void LoadFile(std::wstring filepath);
 
     private:
-        void LoadFile(std::wstring filepath);
-
 		SceneObject* text = NULL;
 		SceneObject* helpText = NULL;
 		SceneObject* fpsText = NULL;

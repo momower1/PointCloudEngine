@@ -21,6 +21,7 @@
 #include <math.h>
 #include <wincodec.h>
 #include <CommCtrl.h>
+#include <shellapi.h>
 
 // Resources like menus and icons
 #include "resource.h"
