@@ -18,7 +18,7 @@ namespace PointCloudEngine
 	public:
 		static UINT fps;
 		static UINT vertexCount;
-		static UINT cameraSelection;
+		static UINT cameraRecording;
 		static bool waypointPreview;
 		static float waypointPreviewLocation;
 		static WaypointRenderer* waypointRenderer;
@@ -36,7 +36,8 @@ namespace PointCloudEngine
 		static Vector2 guiSize;
 
 		static HWND hwndGUI;
-		static GUITab* tab;
+		static GUITab* tabGroundTruth;
+		static GUITab* tabOctree;
 
 		// General
 		static std::vector<IGUIElement*> generalElements;
@@ -48,12 +49,16 @@ namespace PointCloudEngine
 		// Advanced
 		static std::vector<IGUIElement*> advancedElements;
 
+		// HDF5
+		static std::vector<IGUIElement*> hdf5Elements;
+
 		static void ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND = SW_SHOW);
 		static void DeleteElements(std::vector<IGUIElement*> elements);
 		static void UpdateElements(std::vector<IGUIElement*> elements);
 		static void HandleMessageElements(std::vector<IGUIElement*> elements, UINT msg, WPARAM wParam, LPARAM lParam);
 		static void CreateContentGeneral();
 		static void CreateContentAdvanced();
+		static void CreateContentHDF5();
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
@@ -61,6 +66,8 @@ namespace PointCloudEngine
 		static void OnWaypointRemove();
 		static void OnWaypointToggle();
 		static void OnWaypointPreview();
+		static void OnGenerateWaypointDataset();
+		static void OnGenerateSphereDataset();
 	};
 }
 #endif
