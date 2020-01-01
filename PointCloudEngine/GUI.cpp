@@ -7,6 +7,7 @@ UINT GUI::cameraRecording = 0;
 bool GUI::waypointPreview = false;
 float GUI::waypointPreviewLocation = 0;
 WaypointRenderer* GUI::waypointRenderer = NULL;
+GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
 
 bool GUI::initialized = false;
 Vector3 GUI::waypointStartPosition;
@@ -202,15 +203,19 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 
 	advancedElements.push_back(new GUIText(hwndGUI, { 10, 130 }, { 150, 20 }, L"Headlight "));
 	advancedElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", NULL, &settings->useHeadlight));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Ambient", &settings->ambient));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Diffuse", &settings->diffuse));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Specular", &settings->specular));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Lighting Specular Exp.", &settings->specularExponent));
+	advancedElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Light Direction XYZ"));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 45, 20 }, { 0, 200 }, 100, 100, L"X", &settings->lightDirection.x, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 203, 160 }, { 45, 20 }, { 0, 200 }, 100, 100, L"Y", &settings->lightDirection.y, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 245, 160 }, { 45, 20 }, { 0, 200 }, 100, 100, L"Z", &settings->lightDirection.z, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Ambient", &settings->ambient));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Diffuse", &settings->diffuse));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Specular", &settings->specular));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Lighting Specular Exp.", &settings->specularExponent));
 
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 310 }, { 150, 25 }, L"Add Waypoint", OnWaypointAdd));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 310 }, { 150, 25 }, L"Remove Waypoint", OnWaypointRemove));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 350 }, { 150, 25 }, L"Toggle Waypoints", OnWaypointToggle));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 350 }, { 150, 25 }, L"Preview Waypoints", OnWaypointPreview));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 330 }, { 150, 25 }, L"Add Waypoint", OnWaypointAdd));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 330 }, { 150, 25 }, L"Remove Waypoint", OnWaypointRemove));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 150, 25 }, L"Toggle Waypoints", OnWaypointToggle));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 365 }, { 150, 25 }, L"Preview Waypoints", OnWaypointPreview));
 }
 
 void PointCloudEngine::GUI::CreateContentHDF5()
@@ -226,15 +231,15 @@ void PointCloudEngine::GUI::CreateContentHDF5()
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 170 }, { 50, 20 }, { 0, 100 }, 100, 0, L"Max", &settings->waypointMax, 0, 28));
 	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 200 }, { 325, 25 }, L"Generate Waypoint HDF5 Dataset", OnGenerateWaypointDataset));
 
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 250 }, { 300, 20 }, L"Sphere Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 310 }, { 150, 20 }, L"Theta Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 310 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 310 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 0, 28));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 150, 20 }, L"Phi Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 340 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 340 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 0, 28));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 370 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 245 }, { 300, 20 }, L"Sphere Dataset Generation"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 275 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 305 }, { 150, 20 }, L"Theta Min/Max"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 305 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 0, 28));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 305 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 0, 28));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 335 }, { 150, 20 }, L"Phi Min/Max"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 335 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 0, 28));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 335 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 0, 28));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()
@@ -370,10 +375,16 @@ void PointCloudEngine::GUI::OnWaypointPreview()
 
 void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 {
-	// TODO
+	if (groundTruthRenderer != NULL)
+	{
+		groundTruthRenderer->GenerateWaypointDataset();
+	}
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
 {
-	// TODO
+	if (groundTruthRenderer != NULL)
+	{
+		groundTruthRenderer->GenerateSphereDataset();
+	}
 }

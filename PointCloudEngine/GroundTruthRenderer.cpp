@@ -71,34 +71,13 @@ void GroundTruthRenderer::Update()
 	settings->neuralNetworkScreenArea = min(max(0.0f, settings->neuralNetworkScreenArea), 1.0f);
 
 	// Save HDF5 file
-	if (Input::GetKeyDown(Keyboard::F7) || Input::GetKeyDown(Keyboard::F8))
+	if (Input::GetKeyDown(Keyboard::F7))
 	{
-		// Create a directory for the HDF5 files
-		CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
-
-		// Create and save the file
-		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
-
-		// Add attribute storing the settings
-		hdf5file.AddStringAttribute(L"Settings", settings->ToKeyValueString());
-
-		int startViewMode = settings->viewMode;
-		Vector3 startPosition = camera->GetPosition();
-		Matrix startRotation = camera->GetRotationMatrix();
-
-		if (Input::GetKeyDown(Keyboard::F7))
-		{
-			GenerateWaypointDataset(hdf5file);
-		}
-		else
-		{
-			GenerateSphereDataset(hdf5file);
-		}
-
-		// Reset properties
-		camera->SetPosition(startPosition);
-		camera->SetRotationMatrix(startRotation);
-		settings->viewMode = startViewMode;
+		GenerateWaypointDataset();
+	}
+	else if (Input::GetKeyDown(Keyboard::F8))
+	{
+		GenerateSphereDataset();
 	}
 }
 
@@ -286,6 +265,74 @@ void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, Te
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
+}
+
+void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset()
+{
+	HDF5File hdf5file = CreateDatasetHDF5File();
+	int startViewMode = settings->viewMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	Vector3 center = boundingCubePosition * sceneObject->transform->scale;
+	float r = Vector3::Distance(camera->GetPosition(), center);
+
+	UINT counter = 0;
+	float h = settings->sphereStepSize;
+
+	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
+	{
+		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
+		{
+			// Rotate around and look at the center
+			camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
+			camera->LookAt(center);
+
+			HDF5DrawDatasets(hdf5file, counter++);
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+}
+
+void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset()
+{
+	HDF5File hdf5file = CreateDatasetHDF5File();
+	int startViewMode = settings->viewMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	WaypointRenderer* waypointRenderer = sceneObject->GetComponent<WaypointRenderer>();
+
+	if (waypointRenderer != NULL)
+	{
+		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
+		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
+
+		UINT counter = 0;
+		float waypointLocation = start;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
+
+		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
+		{
+			camera->SetPosition(newCameraPosition);
+			camera->SetRotationMatrix(newCameraRotation);
+
+			HDF5DrawDatasets(hdf5file, counter++);
+
+			waypointLocation += settings->waypointStepSize;
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+
 }
 
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
@@ -811,51 +858,18 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	group.close();
 }
 
-void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset(HDF5File& hdf5file)
+HDF5File PointCloudEngine::GroundTruthRenderer::CreateDatasetHDF5File()
 {
-	Vector3 center = boundingCubePosition * sceneObject->transform->scale;
-	float r = Vector3::Distance(camera->GetPosition(), center);
+	// Create a directory for the HDF5 files
+	CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
 
-	UINT counter = 0;
-	float h = settings->sphereStepSize;
+	// Create and save the file
+	HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
 
-	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
-	{
-		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
-		{
-			// Rotate around and look at the center
-			camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
-			camera->LookAt(center);
+	// Add attribute storing the settings
+	hdf5file.AddStringAttribute(L"Settings", settings->ToKeyValueString());
 
-			HDF5DrawDatasets(hdf5file, counter++);
-		}
-	}
-}
-
-void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset(HDF5File& hdf5file)
-{
-	WaypointRenderer* waypointRenderer = sceneObject->GetComponent<WaypointRenderer>();
-
-	if (waypointRenderer != NULL)
-	{
-		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
-		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
-
-		UINT counter = 0;
-		float waypointLocation = start;
-		Vector3 newCameraPosition = camera->GetPosition();
-		Matrix newCameraRotation = camera->GetRotationMatrix();
-
-		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
-		{
-			camera->SetPosition(newCameraPosition);
-			camera->SetRotationMatrix(newCameraRotation);
-
-			HDF5DrawDatasets(hdf5file, counter++);
-
-			waypointLocation += settings->waypointStepSize;
-		}
-	}
+	return hdf5file;
 }
 
 std::vector<std::wstring> PointCloudEngine::GroundTruthRenderer::SplitString(std::wstring s, wchar_t delimiter)

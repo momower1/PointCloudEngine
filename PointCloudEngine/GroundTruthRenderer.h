@@ -19,6 +19,8 @@ namespace PointCloudEngine
 		void SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer);
 		void SetText(Transform* textTransform, TextRenderer* textRenderer);
 		void RemoveComponentFromSceneObject();
+		void GenerateSphereDataset();
+		void GenerateWaypointDataset();
 
     private:
 		Vector3 boundingCubePosition;
@@ -109,8 +111,7 @@ namespace PointCloudEngine
 		void OutputTensorSize(torch::Tensor &tensor);
 		void Redraw(bool present);
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
-		void GenerateSphereDataset(HDF5File& hdf5file);
-		void GenerateWaypointDataset(HDF5File& hdf5file);
+		HDF5File CreateDatasetHDF5File();
 		std::vector<std::wstring> SplitString(std::wstring s, wchar_t delimiter);
     };
 }

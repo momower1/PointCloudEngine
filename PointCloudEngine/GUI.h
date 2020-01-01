@@ -22,6 +22,7 @@ namespace PointCloudEngine
 		static bool waypointPreview;
 		static float waypointPreviewLocation;
 		static WaypointRenderer* waypointRenderer;
+		static GroundTruthRenderer* groundTruthRenderer;
 
 		static void Initialize();
 		static void Release();

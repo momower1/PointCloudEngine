@@ -336,7 +336,9 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 		}
 		else
 		{
-			pointCloudRenderer = new GroundTruthRenderer(settings->pointcloudFile);
+			GroundTruthRenderer* groundTruthRenderer = new GroundTruthRenderer(settings->pointcloudFile);
+			GUI::groundTruthRenderer = groundTruthRenderer;
+			pointCloudRenderer = groundTruthRenderer;
 		}
 
     }
