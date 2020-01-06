@@ -22,6 +22,7 @@ namespace PointCloudEngine
         Vector3 GetRight();
         Vector3 GetUp();
         Vector3 GetForward();
+        Vector3 GetYawPitchRoll();
         Matrix GetViewMatrix();
         Matrix GetProjectionMatrix();
         Matrix GetRotationMatrix();

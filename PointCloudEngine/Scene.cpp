@@ -117,11 +117,14 @@ void Scene::Update(Timer &timer)
 		// Only rotate the camera around the scene while pressing the right mouse button
 		if (Input::GetMouseButton(MouseButton::RightButton))
 		{
-			// Rotate camera with mouse, make sure that this doesn't happen with the accumulated input right after the file loaded
-			cameraYaw += Input::mouseDelta.x;
-			cameraPitch += Input::mouseDelta.y;
-			cameraPitch = cameraPitch > XM_PI / 2.1f ? XM_PI / 2.1f : (cameraPitch < -XM_PI / 2.1f ? -XM_PI / 2.1f : cameraPitch);
-			camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(cameraYaw, cameraPitch, 0));
+			Vector3 ypr = camera->GetYawPitchRoll();
+
+			// Rotate camera with mouse using yaw pitch roll representation
+			ypr.x += Input::mouseDelta.x;
+			ypr.y += Input::mouseDelta.y;
+			ypr.y = ypr.y > XM_PI / 2.1f ? XM_PI / 2.1f : (ypr.y < -XM_PI / 2.1f ? -XM_PI / 2.1f : ypr.y);
+
+			camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(ypr.x, ypr.y, 0));
 		}
 
 		// Move camera with WASD keys
@@ -171,17 +174,6 @@ void Scene::Update(Timer &timer)
     // Scale the point cloud by the value saved in the config file
     settings->scale = max(0.01f, settings->scale + Input::mouseScrollDelta);
     pointCloud->transform->scale = settings->scale * Vector3::One;
-
-	// Select a camera position and rotation
-	for (int i = 0; i < 6; i++)
-	{
-		if (Input::GetKeyDown((Keyboard::Keys)(Keyboard::F1 + i)))
-		{
-			camera->SetPosition(cameraPositions[i]);
-			cameraPitch = cameraPitchYaws[i].x;
-			cameraYaw = cameraPitchYaws[i].y;
-		}
-	}
 
     // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))
@@ -380,6 +372,4 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 
     // Reset camera rotation
 	camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(0, 0, 0));
-    cameraPitch = 0;
-    cameraYaw = 0;
 }
