@@ -280,13 +280,20 @@ void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset()
 	UINT counter = 0;
 	float h = settings->sphereStepSize;
 
+	// Clear and add the GUI camera records
+	GUI::cameraRecordingPositions.clear();
+	GUI::cameraRecordingRotations.clear();
+
 	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
 	{
 		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
 		{
 			// Rotate around and look at the center
-			camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
+			Vector3 newPosition = center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+			camera->SetPosition(newPosition);
 			camera->LookAt(center);
+			GUI::cameraRecordingPositions.push_back(newPosition);
+			GUI::cameraRecordingRotations.push_back(camera->GetRotationMatrix());
 
 			HDF5DrawDatasets(hdf5file, counter++);
 		}
@@ -307,6 +314,10 @@ void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset()
 
 	WaypointRenderer* waypointRenderer = sceneObject->GetComponent<WaypointRenderer>();
 
+	// Clear and add the GUI camera records
+	GUI::cameraRecordingPositions.clear();
+	GUI::cameraRecordingRotations.clear();
+
 	if (waypointRenderer != NULL)
 	{
 		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
@@ -321,6 +332,8 @@ void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset()
 		{
 			camera->SetPosition(newCameraPosition);
 			camera->SetRotationMatrix(newCameraRotation);
+			GUI::cameraRecordingPositions.push_back(newCameraPosition);
+			GUI::cameraRecordingRotations.push_back(newCameraRotation);
 
 			HDF5DrawDatasets(hdf5file, counter++);
 

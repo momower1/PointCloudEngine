@@ -62,6 +62,8 @@ namespace PointCloudEngine
 		static void CreateContentGeneral();
 		static void CreateContentAdvanced();
 		static void CreateContentHDF5();
+		static void LoadCameraRecording();
+		static void SaveCameraRecording();
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);

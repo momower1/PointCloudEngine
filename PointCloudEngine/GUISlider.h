@@ -69,6 +69,12 @@ namespace PointCloudEngine
 			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
 		}
 
+		void SetRange(UINT min, UINT max)
+		{
+			SendMessage(hwndSlider, TBM_SETRANGEMIN, (WPARAM)TRUE, (LPARAM)min);
+			SendMessage(hwndSlider, TBM_SETRANGEMAX, (WPARAM)TRUE, (LPARAM)max);
+		}
+
 		void Show(int SW_COMMAND)
 		{
 			ShowWindow(hwndSlider, SW_COMMAND);

@@ -1,6 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "GUI.h"
 
+#define CAMERARECORDINGS_FILENAME L"/CameraRecordings.vector"
+
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
 UINT GUI::cameraRecording = 0;
@@ -56,6 +58,8 @@ void PointCloudEngine::GUI::Initialize()
 {
 	if (!initialized)
 	{
+		LoadCameraRecording();
+
 		// Place the gui window for changing settings next to the main window
 		RECT rect;
 		GetWindowRect(hwnd, &rect);
@@ -84,6 +88,8 @@ void PointCloudEngine::GUI::Initialize()
 
 void PointCloudEngine::GUI::Release()
 {
+	SaveCameraRecording();
+
 	initialized = false;
 
 	// SafeDelete all GUI elements, HWNDs are released automatically
@@ -241,8 +247,8 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 
 void PointCloudEngine::GUI::CreateContentHDF5()
 {
-	// TODO: Use this to select a camera position from the HDF5 file generation
-	hdf5Elements.push_back(new GUISlider<UINT>(hwndGUI, { 160, 40 }, { 130, 20 }, { 1, (UINT)cameraRecordingPositions.size() }, 1, 0, L"Camera Recording", &cameraRecording, 148, 43, OnChangeCameraRecording));
+	// Use this to select a camera position from the HDF5 file generation
+	hdf5Elements.push_back(new GUISlider<UINT>(hwndGUI, { 160, 40 }, { 130, 20 }, { 0, (UINT)cameraRecordingPositions.size() - 1 }, 1, 0, L"Camera Recording", &cameraRecording, 148, 43, OnChangeCameraRecording));
 
 	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 80 }, { 300, 20 }, L"Waypoint Dataset Generation"));
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 110 }, { 130, 20 }, { 1, 1000 }, 1000, 0, L"Step Size", &settings->waypointStepSize));
@@ -261,6 +267,42 @@ void PointCloudEngine::GUI::CreateContentHDF5()
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 335 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 0, 28));
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 335 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 0, 28));
 	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
+}
+
+void PointCloudEngine::GUI::LoadCameraRecording()
+{
+	// Load the stored camera recordings from a file
+	std::ifstream file(executableDirectory + CAMERARECORDINGS_FILENAME, std::ios::in | std::ios::binary);
+
+	if (file.is_open())
+	{
+		UINT cameraRecordingSize = 0;
+
+		// Read the count
+		file.read((char*)&cameraRecordingSize, sizeof(UINT));
+
+		// Reserve memory
+		cameraRecordingPositions.resize(cameraRecordingSize);
+		cameraRecordingRotations.resize(cameraRecordingSize);
+
+		// Read the positions and rotations into the vectors
+		file.read((char*)cameraRecordingPositions.data(), sizeof(Vector3) * cameraRecordingSize);
+		file.read((char*)cameraRecordingRotations.data(), sizeof(Matrix) * cameraRecordingSize);
+	}
+}
+
+void PointCloudEngine::GUI::SaveCameraRecording()
+{
+	// Save camera recordings to file
+	std::ofstream file(executableDirectory + CAMERARECORDINGS_FILENAME, std::ios::out | std::ios::binary);
+
+	UINT cameraRecordingSize = cameraRecordingPositions.size();
+
+	file.write((char*)&cameraRecordingSize, sizeof(UINT));
+	file.write((char*)cameraRecordingPositions.data(), sizeof(Vector3) * cameraRecordingSize);
+	file.write((char*)cameraRecordingRotations.data(), sizeof(Matrix) * cameraRecordingSize);
+	file.flush();
+	file.close();
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()
@@ -400,6 +442,8 @@ void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 	{
 		groundTruthRenderer->GenerateWaypointDataset();
 	}
+
+	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
@@ -408,10 +452,12 @@ void PointCloudEngine::GUI::OnGenerateSphereDataset()
 	{
 		groundTruthRenderer->GenerateSphereDataset();
 	}
+
+	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
 }
 
 void PointCloudEngine::GUI::OnChangeCameraRecording()
 {
-	camera->SetPosition(cameraRecordingPositions[cameraRecording - 1]);
-	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording - 1]);
+	camera->SetPosition(cameraRecordingPositions[cameraRecording]);
+	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording]);
 }
