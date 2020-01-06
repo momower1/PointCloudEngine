@@ -4,6 +4,27 @@
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
 UINT GUI::cameraRecording = 0;
+
+std::vector<Vector3> GUI::cameraRecordingPositions =
+{
+	Vector3(0, 0, -10),
+	Vector3(0, 0, 10),
+	Vector3(-10, 0, 0),
+	Vector3(10, 0, 0),
+	Vector3(0, 10, 0),
+	Vector3(0, -10, 0)
+};
+
+std::vector<Matrix> GUI::cameraRecordingRotations =
+{
+	Matrix::CreateFromYawPitchRoll(0, 0, 0),
+	Matrix::CreateFromYawPitchRoll(XM_PI, 0, 0),
+	Matrix::CreateFromYawPitchRoll(XM_PI / 2, 0, 0),
+	Matrix::CreateFromYawPitchRoll(-XM_PI / 2, 0, 0),
+	Matrix::CreateFromYawPitchRoll(0, XM_PI / 2, 0),
+	Matrix::CreateFromYawPitchRoll(0, -XM_PI / 2, 0)
+};
+
 bool GUI::waypointPreview = false;
 float GUI::waypointPreviewLocation = 0;
 WaypointRenderer* GUI::waypointRenderer = NULL;
@@ -221,7 +242,7 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 void PointCloudEngine::GUI::CreateContentHDF5()
 {
 	// TODO: Use this to select a camera position from the HDF5 file generation
-	hdf5Elements.push_back(new GUISlider<UINT>(hwndGUI, { 160, 40 }, { 130, 20 }, { 1, 100 }, 1, 0, L"Camera Recording", &cameraRecording));
+	hdf5Elements.push_back(new GUISlider<UINT>(hwndGUI, { 160, 40 }, { 130, 20 }, { 1, (UINT)cameraRecordingPositions.size() }, 1, 0, L"Camera Recording", &cameraRecording, 148, 43, OnChangeCameraRecording));
 
 	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 80 }, { 300, 20 }, L"Waypoint Dataset Generation"));
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 110 }, { 130, 20 }, { 1, 1000 }, 1000, 0, L"Step Size", &settings->waypointStepSize));
@@ -387,4 +408,10 @@ void PointCloudEngine::GUI::OnGenerateSphereDataset()
 	{
 		groundTruthRenderer->GenerateSphereDataset();
 	}
+}
+
+void PointCloudEngine::GUI::OnChangeCameraRecording()
+{
+	camera->SetPosition(cameraRecordingPositions[cameraRecording - 1]);
+	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording - 1]);
 }

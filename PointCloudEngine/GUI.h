@@ -19,6 +19,8 @@ namespace PointCloudEngine
 		static UINT fps;
 		static UINT vertexCount;
 		static UINT cameraRecording;
+		static std::vector<Vector3> cameraRecordingPositions;
+		static std::vector<Matrix> cameraRecordingRotations;
 		static bool waypointPreview;
 		static float waypointPreviewLocation;
 		static WaypointRenderer* waypointRenderer;
@@ -69,6 +71,7 @@ namespace PointCloudEngine
 		static void OnWaypointPreview();
 		static void OnGenerateWaypointDataset();
 		static void OnGenerateSphereDataset();
+		static void OnChangeCameraRecording();
 	};
 }
 #endif

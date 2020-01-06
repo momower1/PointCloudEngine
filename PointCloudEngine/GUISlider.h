@@ -14,12 +14,13 @@ namespace PointCloudEngine
 		HWND hwndSlider = NULL;
 		HWND hwndSliderName = NULL;
 		HWND hwndSliderValue = NULL;
+		std::function<void()> OnChange = NULL;
 		std::wstring name;
 		T* value = NULL;
 		float scale = 1;
 		float offset = 0;
 
-		GUISlider(HWND hwndParent, XMUINT2 pos, XMUINT2 size, XMUINT2 range, float scale, float offset, std::wstring name, T* value, UINT nameWidth = 148, UINT valueWidth = 43)
+		GUISlider(HWND hwndParent, XMUINT2 pos, XMUINT2 size, XMUINT2 range, float scale, float offset, std::wstring name, T* value, UINT nameWidth = 148, UINT valueWidth = 43, std::function<void()> OnChange = NULL)
 		{
 			// The internal slider position is value * scale + offset
 			this->size = size;
@@ -27,6 +28,7 @@ namespace PointCloudEngine
 			this->value = value;
 			this->scale = scale;
 			this->offset = offset;
+			this->OnChange = OnChange;
 			hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 			
 			// Left and right buddy showing text with name and value of the slider
@@ -50,6 +52,12 @@ namespace PointCloudEngine
 					// Overwrite the value and display it next to the slider
 					*value = (SendMessage(hwndSlider, TBM_GETPOS, 0, 0) - offset) / scale;
 					SetWindowText(hwndSliderValue, std::to_wstring(*value).c_str());
+
+					// Invoke function on change
+					if (OnChange != NULL)
+					{
+						OnChange();
+					}
 				}
 			}
 		}
