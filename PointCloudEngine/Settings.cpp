@@ -118,6 +118,7 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << std::endl;
 
 	settingsStream << L"# Rendering Parameters" << std::endl;
+	settingsStream << NAMEOF(viewMode) << L"=" << (int)viewMode << std::endl;
 	settingsStream << NAMEOF(backgroundColor) << L"=" << ToString(backgroundColor) << std::endl;
 	settingsStream << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
 	settingsStream << NAMEOF(nearZ) << L"=" << nearZ << std::endl;
@@ -126,7 +127,6 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
 	settingsStream << NAMEOF(windowed) << L"=" << windowed << std::endl;
 	settingsStream << NAMEOF(help) << L"=" << help << std::endl;
-	settingsStream << NAMEOF(viewMode) << L"=" << viewMode << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Pointcloud File Parameters" << std::endl;

@@ -23,6 +23,26 @@ namespace PointCloudEngine
     class Octree;
 	class GUI;
     struct OctreeNode;
+
+	enum class ViewMode
+	{
+		OctreeSplats,
+		OctreeNodes,
+		OctreeNormalClusters,
+		Splats,
+		SparseSplats,
+		Points,
+		SparsePoints,
+		NeuralNetwork
+	};
+
+	enum class ShadingMode
+	{
+		Color,
+		Depth,
+		Normal,
+		NormalScreen
+	};
 }
 
 using namespace PointCloudEngine;

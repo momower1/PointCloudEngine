@@ -51,6 +51,12 @@ namespace PointCloudEngine
 			MoveWindow(hwndDropdown, position.x, position.y, size.x, size.y, true);
 		}
 
+		void SetSelection(int selection)
+		{
+			*value = selection;
+			SendMessage(hwndDropdown, CB_SETCURSEL, selection, 0);
+		}
+
 		void Show(int SW_COMMAND)
 		{
 			ShowWindow(hwndDropdown, SW_COMMAND);

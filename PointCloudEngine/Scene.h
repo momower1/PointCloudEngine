@@ -17,15 +17,9 @@ namespace PointCloudEngine
 		void LoadFile(std::wstring filepath);
 
     private:
-		SceneObject* text = NULL;
-		SceneObject* helpText = NULL;
-		SceneObject* fpsText = NULL;
 		SceneObject *startupText = NULL;
         SceneObject *loadingText = NULL;
         SceneObject *pointCloud = NULL;
-		TextRenderer* textRenderer = NULL;
-		TextRenderer* helpTextRenderer = NULL;
-		TextRenderer *fpsTextRenderer = NULL;
 		TextRenderer* startupTextRenderer = NULL;
 		TextRenderer* loadingTextRenderer = NULL;
 		WaypointRenderer* waypointRenderer = NULL;

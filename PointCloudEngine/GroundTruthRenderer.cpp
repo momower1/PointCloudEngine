@@ -84,12 +84,12 @@ void GroundTruthRenderer::Update()
 void GroundTruthRenderer::Draw()
 {
 	// Evaluate neural network and present the result to the screen
-	if (settings->viewMode == 4)
+	if (settings->viewMode == ViewMode::NeuralNetwork)
 	{
 		DrawNeuralNetwork();
 		return;
 	}
-	else if (settings->viewMode < 2)
+	else if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
 	{
 		// Set the splat shaders
 		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -130,11 +130,11 @@ void GroundTruthRenderer::Draw()
 	UINT vertexCount = vertices.size();
 
 	// Set different sampling rates based on the view mode
-	if (settings->viewMode == 0 || settings->viewMode == 2)
+	if (settings->viewMode == ViewMode::Splats)
 	{
 		constantBufferData.samplingRate = settings->samplingRate;
 	}
-	else
+	else if (settings->viewMode == ViewMode::SparseSplats || settings->viewMode == ViewMode::SparsePoints)
 	{
 		constantBufferData.samplingRate = settings->sparseSamplingRate;
 
@@ -149,7 +149,7 @@ void GroundTruthRenderer::Draw()
 	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
 
-	if ((settings->viewMode < 2) && settings->useBlending)
+	if ((settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats) && settings->useBlending)
 	{
 		DrawBlended(vertexCount, constantBuffer, &constantBufferData, constantBufferData.useBlending);
 	}
@@ -178,90 +178,6 @@ void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vecto
 	outSize = boundingCubeSize;
 }
 
-void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer)
-{
-	helpTextTransform->position = Vector3(-1, 1, 0.5f);
-	helpTextRenderer->text = L"[H] Toggle help\n";
-
-	if (settings->help)
-	{
-		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
-		helpTextRenderer->text.append(L"[T] Toggle text visibility\n");
-		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");
-		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
-		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
-		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
-		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease neural network screen area\n");
-		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
-		helpTextRenderer->text.append(L"[INSERT] Add camera waypoint\n");
-		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
-		helpTextRenderer->text.append(L"[SPACE] Preview camera trackshot\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[F7] Generate Waypoint HDF5 Dataset\n");
-		helpTextRenderer->text.append(L"[F8] Generate Sphere HDF5 Dataset\n");
-		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
-		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-		helpTextRenderer->text.append(L"[ESC] Quit\n");
-	}
-}
-
-void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, TextRenderer* textRenderer)
-{
-	if (settings->viewMode == 4)
-	{
-		textTransform->position = Vector3(-1.0f, -0.735f, 0);
-		textRenderer->text = std::wstring(L"View Mode: Neural Network\n");
-		textRenderer->text.append(L"Neural Network Screen Area: " + std::to_wstring(settings->neuralNetworkScreenArea) + L"\n");
-		textRenderer->text.append(L"L1 Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(l1Loss) : L"Off") + L"\n");
-		textRenderer->text.append(L"Mean Square Error Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(mseLoss) : L"Off") + L"\n");
-		textRenderer->text.append(L"Smooth L1 Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(smoothL1Loss) : L"Off") + L"\n");
-	}
-	else if (settings->viewMode % 2 == 0)
-	{
-		textTransform->position = Vector3(-1.0f, -0.735f, 0);
-
-		if (settings->viewMode == 0)
-		{
-			textRenderer->text = std::wstring(L"View Mode: Splats\n");
-		}
-		else
-		{
-			textRenderer->text = std::wstring(L"View Mode: Points\n");
-		}
-
-		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-		textRenderer->text.append(L"Vertex Count: " + std::to_wstring(vertices.size()) + L"\n");
-	}
-	else
-	{
-		textTransform->position = Vector3(-1.0f, -0.685f, 0);
-
-		if (settings->viewMode == 1)
-		{
-			textRenderer->text = std::wstring(L"View Mode: Sparse Splats\n");
-		}
-		else
-		{
-			textRenderer->text = std::wstring(L"View Mode: Sparse Points\n");
-		}
-
-		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->sparseSamplingRate) + L"\n");
-		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-		textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
-		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-		textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
-	}
-}
-
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
@@ -270,7 +186,7 @@ void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset()
 {
 	HDF5File hdf5file = CreateDatasetHDF5File();
-	int startViewMode = settings->viewMode;
+	ViewMode startViewMode = settings->viewMode;
 	Vector3 startPosition = camera->GetPosition();
 	Matrix startRotation = camera->GetRotationMatrix();
 
@@ -308,7 +224,7 @@ void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset()
 void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset()
 {
 	HDF5File hdf5file = CreateDatasetHDF5File();
-	int startViewMode = settings->viewMode;
+	ViewMode startViewMode = settings->viewMode;
 	Vector3 startPosition = camera->GetPosition();
 	Matrix startRotation = camera->GetRotationMatrix();
 
@@ -679,19 +595,19 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMode, torch::Tensor& tensor)
 {
 	// Set the view mode according to the channel
-	settings->viewMode = renderModes[renderMode].x;
+	settings->viewMode = (ViewMode)renderModes[renderMode].x;
 
 	// Render differently based on the shading mode
-	switch (renderModes[renderMode].y)
+	switch ((ShadingMode)renderModes[renderMode].y)
 	{
-		case 0:
+		case ShadingMode::Color:
 		{
 			// Color
 			Redraw(false);
 			CopyBackbufferTextureToTensor(tensor);
 			break;
 		}
-		case 1:
+		case ShadingMode::Depth:
 		{
 			// Depth without blending (depth buffer is cleared when using blending)
 			if (settings->useBlending)
@@ -708,7 +624,7 @@ void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMo
 			CopyDepthTextureToTensor(tensor);
 			break;
 		}
-		case 2:
+		case ShadingMode::Normal:
 		{
 			// Normal
 			constantBufferData.drawNormals = true;
@@ -718,7 +634,7 @@ void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMo
 			CopyBackbufferTextureToTensor(tensor);
 			break;
 		}
-		case 3:
+		case ShadingMode::NormalScreen:
 		{
 			// Normal Screen
 			constantBufferData.drawNormals = true;
@@ -731,7 +647,7 @@ void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMo
 	}
 
 	// Reset to the neural network view mode
-	settings->viewMode = 4;
+	settings->viewMode = ViewMode::NeuralNetwork;
 }
 
 void PointCloudEngine::GroundTruthRenderer::CopyBackbufferTextureToTensor(torch::Tensor& tensor)
@@ -817,19 +733,19 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	// Draw in every render mode and save it to the dataset
 	for (auto it = renderModes.begin(); it != renderModes.end(); it++)
 	{
-		settings->viewMode = it->second.x;
+		settings->viewMode = (ViewMode)it->second.x;
 
 		// Render differently based on the shading mode
-		switch (it->second.y)
+		switch ((ShadingMode)it->second.y)
 		{
-			case 0:
+			case ShadingMode::Color:
 			{
 				// Color
 				Redraw(true);
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
 			}
-			case 1:
+			case ShadingMode::Depth:
 			{
 				// Depth without blending (depth buffer is cleared when using blending)
 				if (settings->useBlending)
@@ -845,7 +761,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				hdf5file.AddDepthTextureDataset(group, it->first, depthStencilTexture);
 				break;
 			}
-			case 2:
+			case ShadingMode::Normal:
 			{
 				// Normal
 				constantBufferData.drawNormals = true;
@@ -855,7 +771,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
 			}
-			case 3:
+			case ShadingMode::NormalScreen:
 			{
 				// Normal Screen
 				constantBufferData.drawNormals = true;

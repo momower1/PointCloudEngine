@@ -33,6 +33,7 @@ WaypointRenderer* GUI::waypointRenderer = NULL;
 GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
 
 bool GUI::initialized = false;
+int GUI::viewModeSelection = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
 Vector2 GUI::guiSize = Vector2(360, 440);
@@ -147,11 +148,13 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	
 	if (settings->useOctree)
 	{
+		((GUIDropdown*)generalElements[2])->SetSelection(min((int)settings->viewMode, 2));
 		tabOctree->Show(SW_SHOW);
 		tabGroundTruth->Show(SW_HIDE);
 	}
 	else
 	{
+		((GUIDropdown*)generalElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 4)));
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
@@ -194,8 +197,8 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 void PointCloudEngine::GUI::CreateContentGeneral()
 {
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 40 }, { 100, 20 }, L"View Mode "));
-	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 130, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &settings->viewMode));
-	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 130, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &settings->viewMode));
+	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 130, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
+	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 130, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Vertex Count "));
 	generalElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 70 }, { 200, 20 }, &GUI::vertexCount));
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 100 }, { 150, 20 }, L"Frames per second "));
@@ -314,19 +317,23 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 
 	if (settings->useOctree)
 	{
+		settings->viewMode = (ViewMode)(viewModeSelection % 3);
+
 		ShowElements(splatElements);
 		ShowElements(octreeElements);
 	}
 	else
 	{
+		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 8);
+
 		switch (settings->viewMode)
 		{
-			case 0:
+			case ViewMode::Splats:
 			{
 				ShowElements(splatElements);
 				break;
 			}
-			case 1:
+			case ViewMode::SparseSplats:
 			{
 				ShowElements(splatElements);
 				ShowElements(sparseElements);
@@ -334,13 +341,13 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				sparseElements[1]->SetPosition({ 160, 250 });
 				break;
 			}
-			case 3:
+			case ViewMode::SparsePoints:
 			{
 				sparseElements[1]->Show(SW_SHOW);
 				sparseElements[1]->SetPosition({ 160, 160 });
 				break;
 			}
-			case 4:
+			case ViewMode::NeuralNetwork:
 			{
 				ShowElements(neuralNetworkElements);
 				break;

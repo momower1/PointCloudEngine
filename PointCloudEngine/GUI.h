@@ -34,6 +34,7 @@ namespace PointCloudEngine
 
 	private:
 		static bool initialized;
+		static int viewModeSelection;
 		static Vector3 waypointStartPosition;
 		static Matrix waypointStartRotation;
 		static Vector2 guiSize;

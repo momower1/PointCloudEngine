@@ -16,8 +16,6 @@ namespace PointCloudEngine
         void Release();
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
-		void SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer);
-		void SetText(Transform* textTransform, TextRenderer* textRenderer);
 		void RemoveComponentFromSceneObject();
 
     private:

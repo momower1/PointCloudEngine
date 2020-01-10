@@ -8,30 +8,6 @@ void Scene::Initialize()
 	pointCloud->AddComponent(waypointRenderer);
 	GUI::waypointRenderer = waypointRenderer;
 
-	// Create text renderer to display the controls
-	helpTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	helpTextRenderer->enabled = false;
-	helpText = Hierarchy::Create(L"Help Text");
-	helpText->AddComponent(helpTextRenderer);
-	helpText->transform->position = Vector3(-1, 1, 0.5f);
-	helpText->transform->scale = 0.35f * Vector3::One;
-
-	// Text for showing properties
-	textRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	textRenderer->enabled = false;
-	text = Hierarchy::Create(L"OctreeRendererText");
-	text->AddComponent(textRenderer);
-	text->transform->position = Vector3(-1.0f, -0.635f, 0);
-	text->transform->scale = 0.35f * Vector3::One;
-
-	// Create fps text in top right corner
-	fpsTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Consolas"), false);
-	fpsTextRenderer->enabled = false;
-	fpsText = Hierarchy::Create(L"FPS Text");
-	fpsText->AddComponent(fpsTextRenderer);
-	fpsText->transform->position = Vector3(0.825f, 1, 0.5f);
-	fpsText->transform->scale = 0.35f * Vector3::One;
-
 	// Create startup text
 	startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
 	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files.\nYou can convert .ply files with the PlyToPointcloud.exe!\nThis requires .ply files with x,y,z,nx,ny,nz,red,green,blue format.\nYou can change parameters (resolution, ...) in the Settings.txt file.\n\n\nPress [O] to open a .pointcloud file.";
@@ -61,24 +37,10 @@ void Scene::Update(Timer &timer)
 		settings->help = !settings->help;
 	}
 
-	// Toggle text visibility
-	if (Input::GetKeyDown(Keyboard::T))
-	{
-		textRenderer->enabled = !textRenderer->enabled;
-		helpTextRenderer->enabled = !helpTextRenderer->enabled;
-		fpsTextRenderer->enabled = !fpsTextRenderer->enabled;
-	}
-
 	// Screenshot on F9
 	if (Input::GetKeyDown(Keyboard::F9))
 	{
 		SaveScreenshotToFile();
-	}
-
-	// Toggle view mode depending on the renderer
-	if (Input::GetKeyDown(Keyboard::Enter))
-	{
-		settings->viewMode = (settings->viewMode + 1) % (settings->useOctree ? 3 : 5);
 	}
 
 	// Toggle lighting with L
@@ -129,30 +91,6 @@ void Scene::Update(Timer &timer)
 
 		// Move camera with WASD keys
 		camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
-	}
-
-	// Set the sampling rate (minimal distance between two points) of the loaded point cloud
-	if (Input::GetKey(Keyboard::Q))
-	{
-		if (!settings->useOctree && (settings->viewMode == 1 || settings->viewMode == 3))
-		{
-			settings->sparseSamplingRate = max(0, settings->sparseSamplingRate - dt * 0.001f * inputSpeed);
-		}
-		else
-		{
-			settings->samplingRate = max(0, settings->samplingRate - dt * 0.001f * inputSpeed);
-		}
-	}
-	else if (Input::GetKey(Keyboard::E))
-	{
-		if (!settings->useOctree && (settings->viewMode == 1 || settings->viewMode == 3))
-		{
-			settings->sparseSamplingRate += dt * 0.001f * inputSpeed;
-		}
-		else
-		{
-			settings->samplingRate += dt * 0.001f * inputSpeed;
-		}
 	}
 
 	// Toggle blending
@@ -207,22 +145,14 @@ void Scene::Update(Timer &timer)
 		LoadFile(settings->pointcloudFile);
 	}
 
-	// FPS counter
-	fpsTextRenderer->text = std::to_wstring(timer.GetFramesPerSecond()) + L" fps";
-	GUI::fps = timer.GetFramesPerSecond();
-
-	// Set the other text
-	if (pointCloudRenderer != NULL)
-	{
-		pointCloudRenderer->SetText(text->transform, textRenderer);
-		pointCloudRenderer->SetHelpText(helpText->transform, helpTextRenderer);
-	}
-
 	// Open file dialog to load another file
     if (Input::GetKeyDown(Keyboard::O))
     {
 		OpenFileDialog();
     }
+
+	// Show fps
+	GUI::fps = timer.GetFramesPerSecond();
 
     // Save config file and exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))
@@ -362,9 +292,6 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 
 	// Show the other text
 	startupTextRenderer->enabled = false;
-	helpTextRenderer->enabled = true;
-	fpsTextRenderer->enabled = true;
-	textRenderer->enabled = true;
 
     // Reset point cloud
     pointCloud->transform->position = Vector3::Zero;

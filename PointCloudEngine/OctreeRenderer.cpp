@@ -265,56 +265,6 @@ void PointCloudEngine::OctreeRenderer::GetBoundingCubePositionAndSize(Vector3 &o
 	outSize = octree->rootSize;
 }
 
-void PointCloudEngine::OctreeRenderer::SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer)
-{
-	helpTextTransform->position = Vector3(-1, 1, 0.5f);
-	helpTextRenderer->text = L"[H] Toggle help\n";
-
-	if (settings->help)
-	{
-		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
-		helpTextRenderer->text.append(L"[T] Toggle text visibility\n");
-		helpTextRenderer->text.append(L"[R] Switch to ground truth renderer\n");
-		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease splat resolution\n");
-		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
-		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
-		helpTextRenderer->text.append(L"[BACKSPACE] Toggle CPU/GPU octree traversal\n");
-		helpTextRenderer->text.append(L"[C] Toggle View Frustum & Backface Culling\n");
-		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease octree level\n");
-		helpTextRenderer->text.append(L"[ENTER] Switch node view mode\n");
-		helpTextRenderer->text.append(L"[INSERT] Add camera waypoint\n");
-		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
-		helpTextRenderer->text.append(L"[SPACE] Preview camera trackshot\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
-		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-		helpTextRenderer->text.append(L"[ESC] Quit\n");
-	}
-}
-
-void PointCloudEngine::OctreeRenderer::SetText(Transform* textTransform, TextRenderer* textRenderer)
-{
-	textTransform->position = Vector3(-1.0f, -0.635f, 0);
-	textRenderer->text = std::wstring(L"View Mode: ") + ((settings->viewMode == 0) ? L"Splats\n" : ((settings->viewMode == 1) ? L"Bounding Cubes\n" : L"Normal Clusters\n"));
-	textRenderer->text.append(settings->useGPUTraversal ? L"GPU Octree Traversal\n" : L"CPU Octree Traversal\n");
-
-	int splatResolutionPixels = settings->resolutionY * octreeConstantBufferData.splatResolution;
-	textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-	textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-	textRenderer->text.append(L"Splat Resolution: " + std::to_wstring(splatResolutionPixels) + L" Pixel\n");
-	textRenderer->text.append(L"Culling " + std::wstring(octreeConstantBufferData.useCulling ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-	textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-	textRenderer->text.append(L"Octree Level: ");
-	textRenderer->text.append((octreeConstantBufferData.level < 0) ? L"AUTO" : std::to_wstring(octreeConstantBufferData.level));
-	textRenderer->text.append(L", Vertex Count: " + std::to_wstring(vertexBufferCount));
-}
-
 void PointCloudEngine::OctreeRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
@@ -349,19 +299,19 @@ void PointCloudEngine::OctreeRenderer::DrawOctree()
 		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
         // Set the shaders
-        if (settings->viewMode == 0)
+        if (settings->viewMode == ViewMode::OctreeSplats)
         {
             d3d11DevCon->VSSetShader(octreeSplatShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
         }
-        else if (settings->viewMode == 1)
+        else if (settings->viewMode == ViewMode::OctreeNodes)
         {
             d3d11DevCon->VSSetShader(octreeCubeShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
             d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
         }
-        else if (settings->viewMode == 2)
+        else if (settings->viewMode == ViewMode::OctreeNormalClusters)
         {
             d3d11DevCon->VSSetShader(octreeClusterShader->vertexShader, 0, 0);
             d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
@@ -380,7 +330,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctree()
         d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		// Only blend splats
-		if (settings->useBlending && (settings->viewMode == 0))
+		if (settings->useBlending && (settings->viewMode == ViewMode::OctreeSplats))
 		{
 			DrawBlended(vertexBufferCount, octreeConstantBuffer, &octreeConstantBufferData, octreeConstantBufferData.useBlending);
 		}
@@ -478,17 +428,17 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     // Set the shaders, only the vertex shader is different from the CPU implementation
     d3d11DevCon->VSSetShader(octreeComputeVSShader->vertexShader, 0, 0);
 
-    if (settings->viewMode == 0)
+    if (settings->viewMode == ViewMode::OctreeSplats)
     {
         d3d11DevCon->GSSetShader(octreeSplatShader->geometryShader, 0, 0);
         d3d11DevCon->PSSetShader(octreeSplatShader->pixelShader, 0, 0);
     }
-    else if (settings->viewMode == 1)
+    else if (settings->viewMode == ViewMode::OctreeNodes)
     {
         d3d11DevCon->GSSetShader(octreeCubeShader->geometryShader, 0, 0);
         d3d11DevCon->PSSetShader(octreeCubeShader->pixelShader, 0, 0);
     }
-    else if (settings->viewMode == 2)
+    else if (settings->viewMode == ViewMode::OctreeNormalClusters)
     {
         d3d11DevCon->GSSetShader(octreeClusterShader->geometryShader, 0, 0);
         d3d11DevCon->PSSetShader(octreeClusterShader->pixelShader, 0, 0);
@@ -504,7 +454,7 @@ void PointCloudEngine::OctreeRenderer::DrawOctreeCompute()
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	// Only blend splats
-	if (settings->useBlending && (settings->viewMode == 0))
+	if (settings->useBlending && (settings->viewMode == ViewMode::OctreeSplats))
 	{
 		DrawBlended(vertexBufferCount, octreeConstantBuffer, &octreeConstantBufferData, octreeConstantBufferData.useBlending);
 	}

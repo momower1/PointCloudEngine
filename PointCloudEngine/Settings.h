@@ -18,6 +18,7 @@ namespace PointCloudEngine
 		Vector4 ToVector4(std::wstring s);
 
         // Rendering parameters default values
+		ViewMode viewMode = ViewMode::Points;
 		Vector4 backgroundColor = Vector4(0, 0, 0, 0);
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
@@ -26,7 +27,6 @@ namespace PointCloudEngine
         int resolutionY = 720;
         bool windowed = true;
 		bool help = false;
-		int viewMode = 0;
 
         // Pointcloud file parameters default values
         std::wstring pointcloudFile = L"";
@@ -120,6 +120,10 @@ namespace PointCloudEngine
 				else if (typeid(T) == typeid(Vector4))
 				{
 					*((Vector4*)outParameterValue) = ToVector4(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(ViewMode))
+				{
+					*((ViewMode*)outParameterValue) = (ViewMode)std::stoi(settingsMap[parameterName]);
 				}
 				else
 				{
