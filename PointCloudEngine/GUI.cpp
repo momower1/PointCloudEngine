@@ -404,6 +404,7 @@ void PointCloudEngine::GUI::OnWaypointAdd()
 {
 	if (waypointRenderer != NULL)
 	{
+		waypointRenderer->enabled = true;
 		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
 	}
 }
@@ -412,6 +413,7 @@ void PointCloudEngine::GUI::OnWaypointRemove()
 {
 	if (waypointRenderer != NULL)
 	{
+		waypointRenderer->enabled = true;
 		waypointRenderer->RemoveWaypoint();
 	}
 }
@@ -428,6 +430,7 @@ void PointCloudEngine::GUI::OnWaypointPreview()
 {
 	if (waypointRenderer != NULL)
 	{
+		waypointRenderer->enabled = true;
 		waypointPreview = !waypointPreview;
 
 		// Camera tracking shot using the waypoints

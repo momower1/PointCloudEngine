@@ -7,6 +7,7 @@ void Scene::Initialize()
 	waypointRenderer = new WaypointRenderer();
 	pointCloud->AddComponent(waypointRenderer);
 	GUI::waypointRenderer = waypointRenderer;
+	waypointRenderer->enabled = false;
 
 	// Create startup text
 	startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
