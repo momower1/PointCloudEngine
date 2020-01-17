@@ -20,6 +20,7 @@ namespace PointCloudEngine
 			this->size = size;
 			this->OnClick = OnClick;
 			hwndButton = CreateWindowEx(NULL, L"BUTTON", name.c_str(), WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+			SetWindowFontStyleMessage(hwndButton);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)

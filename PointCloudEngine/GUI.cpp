@@ -7,6 +7,8 @@ UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
 UINT GUI::cameraRecording = 0;
 
+HFONT IGUIElement::hFont = NULL;
+
 std::vector<Vector3> GUI::cameraRecordingPositions =
 {
 	Vector3(0, 0, -10),
@@ -67,6 +69,7 @@ void PointCloudEngine::GUI::Initialize()
 
 		// Initialize common controls library to use buttons and so on
 		InitCommonControls();
+		IGUIElement::InitializeFontHandle();
 
 		// This is the gui window
 		hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwnd, NULL, NULL, NULL);
@@ -94,6 +97,7 @@ void PointCloudEngine::GUI::Release()
 	initialized = false;
 
 	// SafeDelete all GUI elements, HWNDs are released automatically
+	IGUIElement::DeleteFontHandle();
 	SafeDelete(tabGroundTruth);
 	SafeDelete(tabOctree);
 	DeleteElements(generalElements);

@@ -20,6 +20,7 @@ namespace PointCloudEngine
 			this->size = size;
 			this->text = text;
 			hwndText = CreateWindowEx(0, L"STATIC", text.c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+			SetWindowFontStyleMessage(hwndText);
 		}
 
 		void SetText(std::wstring text)
