@@ -562,9 +562,9 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	}
 
 	// Calculate the losses
-	l1Loss = torch::l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
-	mseLoss = torch::mse_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
-	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
+	GUI::l1Loss = torch::l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
+	GUI::mseLoss = torch::mse_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
+	GUI::smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
 
 	// Convert into correct data type
 	selfTensor = selfTensor.to(torch::dtype(torch::kHalf)).cpu();

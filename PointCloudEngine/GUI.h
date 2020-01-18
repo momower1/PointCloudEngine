@@ -19,6 +19,7 @@ namespace PointCloudEngine
 		static UINT fps;
 		static UINT vertexCount;
 		static UINT cameraRecording;
+		static float l1Loss, mseLoss, smoothL1Loss;
 		static std::vector<Vector3> cameraRecordingPositions;
 		static std::vector<Matrix> cameraRecordingRotations;
 		static bool waypointPreview;
@@ -48,6 +49,7 @@ namespace PointCloudEngine
 		static std::vector<IGUIElement*> splatElements;
 		static std::vector<IGUIElement*> octreeElements;
 		static std::vector<IGUIElement*> sparseElements;
+		static std::vector<IGUIElement*> pointElements;
 		static std::vector<IGUIElement*> neuralNetworkElements;
 
 		// Advanced
@@ -75,6 +77,8 @@ namespace PointCloudEngine
 		static void OnGenerateWaypointDataset();
 		static void OnGenerateSphereDataset();
 		static void OnChangeCameraRecording();
+		static void OnLoadPytorchModel();
+		static void OnLoadDescriptionFile();
 	};
 }
 #endif

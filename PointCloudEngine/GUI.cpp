@@ -6,6 +6,9 @@
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
 UINT GUI::cameraRecording = 0;
+float GUI::l1Loss = 0;
+float GUI::mseLoss = 0;
+float GUI::smoothL1Loss = 0;
 
 HFONT IGUIElement::hFont = NULL;
 
@@ -49,6 +52,7 @@ std::vector<IGUIElement*> GUI::generalElements;
 std::vector<IGUIElement*> GUI::splatElements;
 std::vector<IGUIElement*> GUI::octreeElements;
 std::vector<IGUIElement*> GUI::sparseElements;
+std::vector<IGUIElement*> GUI::pointElements;
 std::vector<IGUIElement*> GUI::neuralNetworkElements;
 
 // Advanced
@@ -104,6 +108,7 @@ void PointCloudEngine::GUI::Release()
 	DeleteElements(splatElements);
 	DeleteElements(octreeElements);
 	DeleteElements(sparseElements);
+	DeleteElements(pointElements);
 	DeleteElements(neuralNetworkElements);
 	DeleteElements(advancedElements);
 	DeleteElements(hdf5Elements);
@@ -120,6 +125,7 @@ void PointCloudEngine::GUI::Update()
 	UpdateElements(splatElements);
 	UpdateElements(octreeElements);
 	UpdateElements(sparseElements);
+	UpdateElements(pointElements);
 	UpdateElements(neuralNetworkElements);
 	UpdateElements(advancedElements);
 	UpdateElements(hdf5Elements);
@@ -140,6 +146,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		HandleMessageElements(splatElements, msg, wParam, lParam);
 		HandleMessageElements(octreeElements, msg, wParam, lParam);
 		HandleMessageElements(sparseElements, msg, wParam, lParam);
+		HandleMessageElements(pointElements, msg, wParam, lParam);
 		HandleMessageElements(neuralNetworkElements, msg, wParam, lParam);
 		HandleMessageElements(advancedElements, msg, wParam, lParam);
 		HandleMessageElements(hdf5Elements, msg, wParam, lParam);
@@ -225,6 +232,19 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 
 	sparseElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 1000 }, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate));
 	sparseElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 1000 }, 1000, 0, L"Density", &settings->density));
+
+	pointElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Backface Culling "));
+	pointElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->backfaceCulling));
+
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"L1 Loss "));
+	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 160, 160 }, { 200, 20 }, &l1Loss));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 190 }, { 150, 20 }, L"MSE Loss "));
+	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 160, 190 }, { 200, 20 }, &mseLoss));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 150, 20 }, L"Smooth L1 Loss "));
+	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 160, 220 }, { 200, 20 }, &smoothL1Loss));
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 100 }, 100, 0, L"Neural Network Screen Area", &settings->neuralNetworkScreenArea));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 150, 25 }, L"Load Pytorch Model", OnLoadPytorchModel));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 180, 365 }, { 150, 25 }, L"Load Description File", OnLoadDescriptionFile));
 }
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
@@ -317,6 +337,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(splatElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
+	ShowElements(pointElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 
 	if (settings->useOctree)
@@ -345,10 +366,16 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				sparseElements[1]->SetPosition({ 160, 250 });
 				break;
 			}
+			case ViewMode::Points:
+			{
+				ShowElements(pointElements);
+				break;
+			}
 			case ViewMode::SparsePoints:
 			{
+				ShowElements(pointElements);
 				sparseElements[1]->Show(SW_SHOW);
-				sparseElements[1]->SetPosition({ 160, 160 });
+				sparseElements[1]->SetPosition({ 160, 190 });
 				break;
 			}
 			case ViewMode::NeuralNetwork:
@@ -474,4 +501,14 @@ void PointCloudEngine::GUI::OnChangeCameraRecording()
 {
 	camera->SetPosition(cameraRecordingPositions[cameraRecording]);
 	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording]);
+}
+
+void PointCloudEngine::GUI::OnLoadPytorchModel()
+{
+	ERROR_MESSAGE(L"TODO");
+}
+
+void PointCloudEngine::GUI::OnLoadDescriptionFile()
+{
+	ERROR_MESSAGE(L"TODO");
 }
