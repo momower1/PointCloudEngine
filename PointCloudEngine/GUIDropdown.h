@@ -22,7 +22,7 @@ namespace PointCloudEngine
 			this->value = value;
 			this->OnSelect = OnSelect;
 			hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
-			SetWindowFontStyleMessage(hwndDropdown);
+			SetCustomWindowFontStyle(hwndDropdown);
 
 			// Add items to the dropdown
 			for (auto it = entries.begin(); it != entries.end(); it++)

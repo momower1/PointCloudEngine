@@ -21,7 +21,7 @@ namespace PointCloudEngine
 			this->size = size;
 			this->OnSelect = OnSelect;
 			hwndTab = CreateWindowEx(NULL, WC_TABCONTROLW, L"", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
-			SetWindowFontStyleMessage(hwndTab);
+			SetCustomWindowFontStyle(hwndTab);
 
 			TCITEM tcitem;
 			tcitem.mask = TCIF_TEXT;
