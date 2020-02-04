@@ -62,6 +62,8 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(sparseSamplingRate), &sparseSamplingRate);
 
 		// Parse neural network parameters
+		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
+		TryParse(NAMEOF(neuralNetworkDescriptionFile), &neuralNetworkDescriptionFile);
 		TryParse(NAMEOF(useCUDA), &useCUDA);
 		TryParse(NAMEOF(neuralNetworkLossArea), &neuralNetworkLossArea);
 		TryParse(NAMEOF(neuralNetworkOutputRed), &neuralNetworkOutputRed);
@@ -159,6 +161,8 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
+	settingsStream << NAMEOF(neuralNetworkModelFile) << L"=" << neuralNetworkModelFile << std::endl;
+	settingsStream << NAMEOF(neuralNetworkDescriptionFile) << L"=" << neuralNetworkDescriptionFile << std::endl;
 	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
 	settingsStream << NAMEOF(neuralNetworkLossArea) << L"=" << neuralNetworkLossArea << std::endl;
 	settingsStream << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;

@@ -269,34 +269,32 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkPytorchModel()
 	// Set this to false in any error case
 	validPytorchModel = true;
 
-	const std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
-
 	try
 	{
 		// Load the neural network from file
 		if (settings->useCUDA && torch::cuda::is_available())
 		{
-			model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
+			model = torch::jit::load(std::string(settings->neuralNetworkModelFile.begin(), settings->neuralNetworkModelFile.end()), torch::Device(at::kCUDA));
 		}
 		else
 		{
-			model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
+			model = torch::jit::load(std::string(settings->neuralNetworkModelFile.begin(), settings->neuralNetworkModelFile.end()), torch::Device(at::kCPU));
 		}
 	}
 	catch (const std::exception & e)
 	{
-		ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
+		ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + settings->neuralNetworkDescriptionFile);
 		validPytorchModel = false;
 		return;
 	}
+
+	createInputOutputTensors = true;
 }
 
 void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 {
 	// Set this to false in any error case
 	validDescriptionFile = true;
-
-	const std::wstring modelDescriptionFilename = executableDirectory + L"\\NeuralNetworkDescription.txt";
 
 	// Load .txt file storing neural network input and output channel descriptions
 	// Each entry consists of:
@@ -305,7 +303,7 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 	// - String: Identifying if the channel is input (inp) or output (tar)
 	// - String: Transformation keywords e.g. normalization
 	// - Int: Offset of this channel from the start channel
-	std::wifstream modelDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
+	std::wifstream modelDescriptionFile(settings->neuralNetworkDescriptionFile);
 
 	if (modelDescriptionFile.is_open())
 	{
@@ -328,6 +326,8 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 
 			line = tmp;
 			modelChannels.clear();
+			inputDimensions = 0;
+			outputDimensions = 0;
 			std::vector<std::wstring> splits = SplitString(line, L',');
 			
 			// For GUI
@@ -369,17 +369,19 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 		}
 		else
 		{
-			ERROR_MESSAGE(L"Could not parse Neural Network Description file " + modelDescriptionFilename);
+			ERROR_MESSAGE(L"Could not parse Neural Network Description file " + settings->neuralNetworkDescriptionFile);
 			validDescriptionFile = false;
 			return;
 		}
 	}
 	else
 	{
-		ERROR_MESSAGE(L"Could not open Neural Network Description file " + modelDescriptionFilename);
+		ERROR_MESSAGE(L"Could not open Neural Network Description file " + settings->neuralNetworkDescriptionFile);
 		validDescriptionFile = false;
 		return;
 	}
+
+	createInputOutputTensors = true;
 }
 
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
@@ -390,32 +392,45 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		loadPytorchModel = false;
 		LoadNeuralNetworkPytorchModel();
 		LoadNeuralNetworkDescriptionFile();
-
-		// Create CPU readable and writeable textures
-		D3D11_TEXTURE2D_DESC colorTextureDesc;
-		D3D11_TEXTURE2D_DESC depthTextureDesc;
-
-		// Copy the format information and set the flags
-		backBufferTexture->GetDesc(&colorTextureDesc);
-		depthStencilTexture->GetDesc(&depthTextureDesc);
-		colorTextureDesc.CPUAccessFlags = depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-		colorTextureDesc.Usage = depthTextureDesc.Usage = D3D11_USAGE_STAGING;
-		colorTextureDesc.BindFlags = depthTextureDesc.BindFlags = 0;
-
-		hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-		hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-		// Create an input tensor for the neural network
-		inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-		// Create an output tensor for the neural network
-		outputTensor = torch::zeros({ 1, outputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
 	}
 	else if (validPytorchModel && validDescriptionFile)
 	{
+		if (createInputOutputTensors)
+		{
+			createInputOutputTensors = false;
+
+			// Create CPU readable and writeable textures
+			if (colorTexture == NULL)
+			{
+				D3D11_TEXTURE2D_DESC colorTextureDesc;
+				backBufferTexture->GetDesc(&colorTextureDesc);
+				colorTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+				colorTextureDesc.Usage = D3D11_USAGE_STAGING;
+				colorTextureDesc.BindFlags = 0;
+
+				hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
+				ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+			}
+
+			if (depthTexture == NULL)
+			{
+				D3D11_TEXTURE2D_DESC depthTextureDesc;
+				depthStencilTexture->GetDesc(&depthTextureDesc);
+				depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+				depthTextureDesc.Usage = D3D11_USAGE_STAGING;
+				depthTextureDesc.BindFlags = 0;
+
+				hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
+				ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+			}
+
+			// Create an input tensor for the neural network
+			inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+
+			// Create an output tensor for the neural network
+			outputTensor = torch::zeros({ 1, outputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+		}
+
 		// Copy the renderings to the tensors of the different input channels
 		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
 		{

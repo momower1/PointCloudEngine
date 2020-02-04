@@ -149,7 +149,7 @@ void Scene::Update(Timer &timer)
 	// Open file dialog to load another file
     if (Input::GetKeyDown(Keyboard::O))
     {
-		OpenFileDialog();
+		OpenPointcloudFile();
     }
 
 	// Show fps
@@ -184,27 +184,15 @@ void Scene::Release()
 	GUI::Release();
 }
 
-void PointCloudEngine::Scene::OpenFileDialog()
+void PointCloudEngine::Scene::OpenPointcloudFile()
 {
-	// Show windows explorer open file dialog
-	wchar_t filename[MAX_PATH];
-	OPENFILENAMEW openFileName;
-	ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
-	openFileName.lStructSize = sizeof(OPENFILENAMEW);
-	openFileName.hwndOwner = hwnd;
-	openFileName.lpstrFilter = L"Pointcloud Files\0*.pointcloud\0\0";
-	openFileName.lpstrFile = filename;
-	openFileName.lpstrFile[0] = L'\0';
-	openFileName.nMaxFile = MAX_PATH;
-	openFileName.lpstrTitle = L"Select a file to open!";
-	openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-	openFileName.nFilterIndex = 1;
-
 	// Disable fullscreen in order to avoid issues with selecting the file
 	SetFullscreen(false);
 	Input::SetMode(Mouse::MODE_ABSOLUTE);
 
-	if (GetOpenFileNameW(&openFileName))
+	std::wstring filename;
+
+	if (OpenFileDialog(L"Pointcloud Files\0*.pointcloud\0\0", filename))
 	{
 		LoadFile(filename);
 	}

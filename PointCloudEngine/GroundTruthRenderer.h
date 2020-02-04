@@ -91,6 +91,7 @@ namespace PointCloudEngine
 		bool loadPytorchModel = true;
 		bool validPytorchModel = false;
 		bool validDescriptionFile = false;
+		bool createInputOutputTensors = true;
 		torch::jit::script::Module model;
 		std::vector<ModelChannel> modelChannels;
 		UINT inputDimensions, outputDimensions;

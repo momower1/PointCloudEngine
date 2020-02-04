@@ -53,6 +53,8 @@ namespace PointCloudEngine
 		float sparseSamplingRate = 0.01f;
 
 		// Neural Network parameters
+		std::wstring neuralNetworkModelFile = L"";
+		std::wstring neuralNetworkDescriptionFile = L"";
 		bool useCUDA = true;
 		float neuralNetworkLossArea = 0.5f;
 		int neuralNetworkOutputRed = 0;

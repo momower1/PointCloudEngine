@@ -569,10 +569,16 @@ void PointCloudEngine::GUI::OnSelectNeuralNetworkLossTarget()
 
 void PointCloudEngine::GUI::OnLoadPytorchModel()
 {
-	ERROR_MESSAGE(L"TODO");
+	if (OpenFileDialog(L"Pytorch Jit Model Files\0*.pt\0\0", settings->neuralNetworkModelFile))
+	{
+		groundTruthRenderer->LoadNeuralNetworkPytorchModel();
+	}
 }
 
 void PointCloudEngine::GUI::OnLoadDescriptionFile()
 {
-	ERROR_MESSAGE(L"TODO");
+	if (OpenFileDialog(L"Model Description Files\0*.txt\0\0", settings->neuralNetworkDescriptionFile))
+	{
+		groundTruthRenderer->LoadNeuralNetworkDescriptionFile();
+	}
 }

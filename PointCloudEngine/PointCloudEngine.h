@@ -121,6 +121,7 @@ extern ID3D11Buffer* lightingConstantBuffer;
 extern LightingConstantBuffer lightingConstantBufferData;
 
 // Global function declarations
+extern bool OpenFileDialog(const wchar_t* filter, std::wstring &outFilename);
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
 extern bool LoadPointcloudFile(std::vector<Vertex> &outVertices, Vector3 &outBoundingCubePosition, float &outBoundingCubeSize, const std::wstring &pointcloudFile);
 extern void SaveScreenshotToFile();
