@@ -85,6 +85,18 @@ void PointCloudEngine::GUI::Initialize()
 		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
 		tabOctree = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced" }, OnSelectTab);
 
+		viewModeSelection = (int)settings->viewMode;
+
+		// Load view mode
+		if (settings->useOctree)
+		{
+			viewModeSelection = viewModeSelection % 3;
+		}
+		else
+		{
+			viewModeSelection = viewModeSelection - 3;
+		}
+
 		// Create and show content for each tab
 		CreateContentGeneral();
 		CreateContentAdvanced();
