@@ -305,7 +305,14 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 	// - Int: Offset of this channel from the start channel
 	std::wifstream modelDescriptionFile(settings->neuralNetworkDescriptionFile);
 
-	if (modelDescriptionFile.is_open())
+	if (!modelDescriptionFile.is_open())
+	{
+		ERROR_MESSAGE(L"Could not open Neural Network Description file " + settings->neuralNetworkDescriptionFile);
+		validDescriptionFile = false;
+		return;
+	}
+
+	try
 	{
 		std::wstring line;
 
@@ -329,7 +336,7 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 			inputDimensions = 0;
 			outputDimensions = 0;
 			std::vector<std::wstring> splits = SplitString(line, L',');
-			
+
 			// For GUI
 			std::vector<std::wstring> outputChannels;
 			std::vector<std::wstring> lossTargetChannels;
@@ -367,16 +374,10 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 			GUI::SetNeuralNetworkLossSelfChannels(renderModes);
 			GUI::SetNeuralNetworkLossTargetChannels(lossTargetChannels);
 		}
-		else
-		{
-			ERROR_MESSAGE(L"Could not parse Neural Network Description file " + settings->neuralNetworkDescriptionFile);
-			validDescriptionFile = false;
-			return;
-		}
 	}
-	else
+	catch (const std::exception &e)
 	{
-		ERROR_MESSAGE(L"Could not open Neural Network Description file " + settings->neuralNetworkDescriptionFile);
+		ERROR_MESSAGE(L"Could not parse Neural Network Description file " + settings->neuralNetworkDescriptionFile);
 		validDescriptionFile = false;
 		return;
 	}
