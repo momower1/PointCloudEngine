@@ -19,6 +19,8 @@ namespace PointCloudEngine
 		void RemoveComponentFromSceneObject();
 		void GenerateSphereDataset();
 		void GenerateWaypointDataset();
+		void LoadNeuralNetworkPytorchModel();
+		void LoadNeuralNetworkDescriptionFile();
 
     private:
 		Vector3 boundingCubePosition;
@@ -88,6 +90,7 @@ namespace PointCloudEngine
 		// Pytorch Neural Network
 		bool loadPytorchModel = true;
 		bool validPytorchModel = false;
+		bool validDescriptionFile = false;
 		torch::jit::script::Module model;
 		std::vector<ModelChannel> modelChannels;
 		UINT inputDimensions, outputDimensions;

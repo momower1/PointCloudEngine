@@ -264,89 +264,132 @@ void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset()
 
 }
 
+void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkPytorchModel()
+{
+	// Set this to false in any error case
+	validPytorchModel = true;
+
+	const std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
+
+	try
+	{
+		// Load the neural network from file
+		if (settings->useCUDA && torch::cuda::is_available())
+		{
+			model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
+		}
+		else
+		{
+			model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
+		}
+	}
+	catch (const std::exception & e)
+	{
+		ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
+		validPytorchModel = false;
+		return;
+	}
+}
+
+void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
+{
+	// Set this to false in any error case
+	validDescriptionFile = true;
+
+	const std::wstring modelDescriptionFilename = executableDirectory + L"\\NeuralNetworkDescription.txt";
+
+	// Load .txt file storing neural network input and output channel descriptions
+	// Each entry consists of:
+	// - String: Name of the channel (render mode)
+	// - Int: Dimension of channel
+	// - String: Identifying if the channel is input (inp) or output (tar)
+	// - String: Transformation keywords e.g. normalization
+	// - Int: Offset of this channel from the start channel
+	std::wifstream modelDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
+
+	if (modelDescriptionFile.is_open())
+	{
+		std::wstring line;
+
+		if (std::getline(modelDescriptionFile, line))
+		{
+			std::wstring tmp = L"";
+
+			// Remove unwanted characters
+			for (int i = 0; i < line.length(); i++)
+			{
+				wchar_t c = line.at(i);
+
+				if (c != ' ' && c != L'\'' && c != L'[' && c != L']')
+				{
+					tmp += c;
+				}
+			}
+
+			line = tmp;
+			modelChannels.clear();
+			std::vector<std::wstring> splits = SplitString(line, L',');
+			
+			// For GUI
+			std::vector<std::wstring> outputChannels;
+			std::vector<std::wstring> lossTargetChannels;
+
+			// Parse the content from the split into a struct
+			for (int i = 0; i < splits.size(); i += 5)
+			{
+				ModelChannel channel;
+				channel.name = splits[i];
+				channel.dimensions = std::stoi(splits[i + 1]);
+				channel.offset = std::stoi(splits[i + 4]);
+				channel.input = !std::wcscmp(splits[i + 2].c_str(), L"inp");
+				channel.normalize = !std::wcscmp(splits[i + 3].c_str(), L"normalize");
+
+				// Sum up to get the total dimensions of the input and output
+				if (channel.input)
+				{
+					inputDimensions += channel.dimensions;
+				}
+				else
+				{
+					outputDimensions += channel.dimensions;
+					lossTargetChannels.push_back(channel.name);
+
+					for (int j = 0; j < channel.dimensions; j++)
+					{
+						outputChannels.push_back(channel.name + std::to_wstring(j));
+					}
+				}
+
+				modelChannels.push_back(channel);
+			}
+
+			GUI::SetNeuralNetworkOutputChannels(outputChannels);
+			GUI::SetNeuralNetworkLossSelfChannels(renderModes);
+			GUI::SetNeuralNetworkLossTargetChannels(lossTargetChannels);
+		}
+		else
+		{
+			ERROR_MESSAGE(L"Could not parse Neural Network Description file " + modelDescriptionFilename);
+			validDescriptionFile = false;
+			return;
+		}
+	}
+	else
+	{
+		ERROR_MESSAGE(L"Could not open Neural Network Description file " + modelDescriptionFilename);
+		validDescriptionFile = false;
+		return;
+	}
+}
+
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
 	if (loadPytorchModel)
 	{
 		// Only do this once
 		loadPytorchModel = false;
-
-		// Set this to false in any error case
-		validPytorchModel = true;
-
-		const std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
-		const std::wstring modelDescriptionFilename = executableDirectory + L"\\NeuralNetworkDescription.txt";
-
-		// Load .txt file storing neural network input and output channel descriptions
-		// Each entry consists of:
-		// - String: Name of the channel (render mode)
-		// - Int: Dimension of channel
-		// - String: Identifying if the channel is input (inp) or output (tar)
-		// - String: Transformation keywords e.g. normalization
-		// - Int: Offset of this channel from the start channel
-		std::wifstream modelDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
-
-		if (modelDescriptionFile.is_open())
-		{
-			std::wstring line;
-
-			if (std::getline(modelDescriptionFile, line))
-			{
-				std::wstring tmp = L"";
-
-				// Remove unwanted characters
-				for (int i = 0; i < line.length(); i++)
-				{
-					wchar_t c = line.at(i);
-
-					if (c != ' ' && c != L'\'' && c != L'[' && c != L']')
-					{
-						tmp += c;
-					}
-				}
-
-				line = tmp;
-
-				std::vector<std::wstring> splits = SplitString(line, L',');
-
-				// Parse the content from the split into a struct
-				for (int i = 0; i < splits.size(); i += 5)
-				{
-					ModelChannel channel;
-					channel.name = splits[i];
-					channel.dimensions = std::stoi(splits[i + 1]);
-					channel.offset = std::stoi(splits[i + 4]);
-					channel.input = !std::wcscmp(splits[i + 2].c_str(), L"inp");
-					channel.normalize = !std::wcscmp(splits[i + 3].c_str(), L"normalize");
-
-					// Sum up to get the total dimensions of the input and output
-					if (channel.input)
-					{
-						inputDimensions += channel.dimensions;
-					}
-					else
-					{
-						outputDimensions += channel.dimensions;
-					}
-
-					modelChannels.push_back(channel);
-				}
-
-				GUI::SetNeuralNetworkDescription();
-			}
-			else
-			{
-				ERROR_MESSAGE(L"Could not parse Neural Network Description file " + modelDescriptionFilename);
-				validPytorchModel = false;
-				return;
-			}
-		}
-		else
-		{
-			ERROR_MESSAGE(L"Could not open Neural Network Description file " + modelDescriptionFilename);
-			validPytorchModel = false;
-			return;
-		}
+		LoadNeuralNetworkPytorchModel();
+		LoadNeuralNetworkDescriptionFile();
 
 		// Create CPU readable and writeable textures
 		D3D11_TEXTURE2D_DESC colorTextureDesc;
@@ -370,27 +413,8 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 		// Create an output tensor for the neural network
 		outputTensor = torch::zeros({ 1, outputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-		try
-		{
-			// Load the neural network from file
-			if (settings->useCUDA && torch::cuda::is_available())
-			{
-				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
-			}
-			else
-			{
-				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
-			}
-		}
-		catch (const std::exception &e)
-		{
-			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
-			validPytorchModel = false;
-			return;
-		}
 	}
-	else if (validPytorchModel)
+	else if (validPytorchModel && validDescriptionFile)
 	{
 		// Copy the renderings to the tensors of the different input channels
 		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)

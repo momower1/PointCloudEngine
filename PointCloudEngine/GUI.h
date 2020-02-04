@@ -33,11 +33,15 @@ namespace PointCloudEngine
 		static void Update();
 		static void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 		static void SetVisible(bool visible);
-		static void SetNeuralNetworkDescription();
+		static void SetNeuralNetworkOutputChannels(std::vector<std::wstring> outputChannels);
+		static void SetNeuralNetworkLossSelfChannels(std::map<std::wstring, XMUINT2> renderModes);
+		static void SetNeuralNetworkLossTargetChannels(std::vector<std::wstring> lossTargetChannels);
 
 	private:
 		static bool initialized;
 		static int viewModeSelection;
+		static int lossSelfSelection;
+		static int lossTargetSelection;
 		static Vector3 waypointStartPosition;
 		static Matrix waypointStartRotation;
 		static Vector2 guiSize;
@@ -80,6 +84,8 @@ namespace PointCloudEngine
 		static void OnGenerateSphereDataset();
 		static void OnChangeCameraRecording();
 		static void OnSelectNeuralNetworkLossFunction();
+		static void OnSelectNeuralNetworkLossSelf();
+		static void OnSelectNeuralNetworkLossTarget();
 		static void OnLoadPytorchModel();
 		static void OnLoadDescriptionFile();
 	};

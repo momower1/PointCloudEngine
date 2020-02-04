@@ -14,6 +14,7 @@ namespace PointCloudEngine
 		int* value = NULL;
 		HWND hwndDropdown = NULL;
 		std::function<void()> OnSelect = NULL;
+		std::vector<std::wstring> entries;
 
 		GUIDropdown(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, std::function<void()> OnSelect, int* value)
 		{
@@ -43,8 +44,10 @@ namespace PointCloudEngine
 			}
 		}
 
-		void SetEntries(std::initializer_list<std::wstring> entries)
+		void SetEntries(std::vector<std::wstring> entries)
 		{
+			this->entries = entries;
+
 			// Clear the dropdown
 			SendMessage(hwndDropdown, CB_RESETCONTENT, 0, 0);
 
@@ -56,6 +59,11 @@ namespace PointCloudEngine
 
 			// Set initial value
 			SendMessage(hwndDropdown, CB_SETCURSEL, *value, 0);
+		}
+
+		std::wstring GetSelectedString()
+		{
+			return entries[*value];
 		}
 
 		void SetPosition(XMUINT2 position)
