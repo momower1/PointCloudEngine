@@ -23,15 +23,7 @@ namespace PointCloudEngine
 			this->OnSelect = OnSelect;
 			hwndDropdown = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
 			SetCustomWindowFontStyle(hwndDropdown);
-
-			// Add items to the dropdown
-			for (auto it = entries.begin(); it != entries.end(); it++)
-			{
-				SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)it->c_str());
-			}
-
-			// Set initial value
-			SendMessage(hwndDropdown, CB_SETCURSEL, *value, 0);
+			SetEntries(entries);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -42,9 +34,28 @@ namespace PointCloudEngine
 				{
 					// Invoke the function
 					*value = SendMessage(hwndDropdown, CB_GETCURSEL, 0, 0);
-					OnSelect();
+
+					if (OnSelect != NULL)
+					{
+						OnSelect();
+					}
 				}
 			}
+		}
+
+		void SetEntries(std::initializer_list<std::wstring> entries)
+		{
+			// Clear the dropdown
+			SendMessage(hwndDropdown, CB_RESETCONTENT, 0, 0);
+
+			// Add items to the dropdown
+			for (auto it = entries.begin(); it != entries.end(); it++)
+			{
+				SendMessage(hwndDropdown, CB_ADDSTRING, 0, (LPARAM)it->c_str());
+			}
+
+			// Set initial value
+			SendMessage(hwndDropdown, CB_SETCURSEL, *value, 0);
 		}
 
 		void SetPosition(XMUINT2 position)

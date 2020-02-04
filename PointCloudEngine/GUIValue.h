@@ -17,19 +17,32 @@ namespace PointCloudEngine
 
 		GUIValue(HWND hwndParent, XMUINT2 pos, XMUINT2 size, T* value)
 		{
-			// Displays the value as a string
-			oldValue = *value;
 			this->size = size;
 			this->value = value;
-			hwndValue = CreateWindowEx(0, L"STATIC", std::to_wstring(*value).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+
+			if (value != NULL)
+			{
+				// Displays the value as a string
+				oldValue = *value;
+				hwndValue = CreateWindowEx(0, L"STATIC", std::to_wstring(*value).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+			}
+			else
+			{
+				hwndValue = CreateWindowEx(0, L"STATIC", L"", SS_LEFT | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+			}
+
 			SetCustomWindowFontStyle(hwndValue);
 		}
 
 		void Update()
 		{
-			// Only update text if the value changed
-			if (*value != oldValue)
+			if (value == NULL)
 			{
+				SetWindowText(hwndValue, L"");
+			}
+			else if (*value != oldValue)
+			{
+				// Only update text if the value changed
 				oldValue = *value;
 				SetWindowText(hwndValue, std::to_wstring(*value).c_str());
 			}

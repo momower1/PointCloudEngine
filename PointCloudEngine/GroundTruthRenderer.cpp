@@ -61,14 +61,14 @@ void GroundTruthRenderer::Update()
 	// Select the screen area of the neural network compared to the splats
 	if (Input::GetKey(Keyboard::Up))
 	{
-		settings->neuralNetworkScreenArea += 0.5f * dt;
+		settings->neuralNetworkLossArea += 0.5f * dt;
 	}
 	else if (Input::GetKey(Keyboard::Down))
 	{
-		settings->neuralNetworkScreenArea -= 0.5f * dt;
+		settings->neuralNetworkLossArea -= 0.5f * dt;
 	}
 
-	settings->neuralNetworkScreenArea = min(max(0.0f, settings->neuralNetworkScreenArea), 1.0f);
+	settings->neuralNetworkLossArea = min(max(0.0f, settings->neuralNetworkLossArea), 1.0f);
 
 	// Save HDF5 file
 	if (Input::GetKeyDown(Keyboard::F7))
@@ -331,6 +331,8 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 					modelChannels.push_back(channel);
 				}
+
+				GUI::SetNeuralNetworkDescription();
 			}
 			else
 			{
@@ -457,7 +459,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			return;
 		}
 
-		if (settings->neuralNetworkScreenArea >= 0.99f)
+		if (GUI::lossFunctionSelection == 0)
 		{
 			// Fill a four channel color tensor with the output (required due to the texture memory layout)
 			torch::Tensor colorTensor = torch::zeros({ 4, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kHalf));
@@ -573,7 +575,7 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	// Copy parts of the corresponding channels into the color tensor
 	for (int i = 0; i < targetChannel->dimensions; i++)
 	{
-		size_t numTarget = settings->neuralNetworkScreenArea * colorTensor[i].numel();
+		size_t numTarget = settings->neuralNetworkLossArea * colorTensor[i].numel();
 		size_t numSelf = colorTensor[i].numel() - numTarget;
 		memcpy(colorTensor[i].data_ptr(), selfTensor[i].data_ptr(), sizeof(short) * numSelf);
 		memcpy((short*)colorTensor[i].data_ptr() + numSelf, (short*)targetChannel->tensor[i].data_ptr() + numSelf, sizeof(short) * numTarget);

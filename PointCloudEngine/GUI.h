@@ -19,6 +19,7 @@ namespace PointCloudEngine
 		static UINT fps;
 		static UINT vertexCount;
 		static UINT cameraRecording;
+		static int lossFunctionSelection;
 		static float l1Loss, mseLoss, smoothL1Loss;
 		static std::vector<Vector3> cameraRecordingPositions;
 		static std::vector<Matrix> cameraRecordingRotations;
@@ -32,6 +33,7 @@ namespace PointCloudEngine
 		static void Update();
 		static void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 		static void SetVisible(bool visible);
+		static void SetNeuralNetworkDescription();
 
 	private:
 		static bool initialized;
@@ -77,6 +79,7 @@ namespace PointCloudEngine
 		static void OnGenerateWaypointDataset();
 		static void OnGenerateSphereDataset();
 		static void OnChangeCameraRecording();
+		static void OnSelectNeuralNetworkLossFunction();
 		static void OnLoadPytorchModel();
 		static void OnLoadDescriptionFile();
 	};

@@ -39,6 +39,7 @@ GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
 
 bool GUI::initialized = false;
 int GUI::viewModeSelection = 0;
+int GUI::lossFunctionSelection = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
 Vector2 GUI::guiSize = Vector2(380, 460);
@@ -171,6 +172,11 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	}
 }
 
+void PointCloudEngine::GUI::SetNeuralNetworkDescription()
+{
+	ERROR_MESSAGE(L"TODO");
+}
+
 void PointCloudEngine::GUI::ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND)
 {
 	for (auto it = elements.begin(); it != elements.end(); it++)
@@ -208,8 +214,8 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 void PointCloudEngine::GUI::CreateContentGeneral()
 {
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 40 }, { 100, 20 }, L"View Mode "));
-	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 130, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
-	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 130, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
+	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
+	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Vertex Count "));
 	generalElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 70 }, { 200, 20 }, &GUI::vertexCount));
 	generalElements.push_back(new GUIText(hwndGUI, { 10, 100 }, { 150, 20 }, L"Frames per second "));
@@ -236,15 +242,18 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 	pointElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Backface Culling "));
 	pointElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->backfaceCulling));
 
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"L1 Loss "));
-	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 160, 160 }, { 200, 20 }, &l1Loss));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 190 }, { 150, 20 }, L"MSE Loss "));
-	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 160, 190 }, { 200, 20 }, &mseLoss));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 150, 20 }, L"Smooth L1 Loss "));
-	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 160, 220 }, { 200, 20 }, &smoothL1Loss));
-	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 100 }, 100, 0, L"Neural Network Screen Area", &settings->neuralNetworkScreenArea));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 150, 25 }, L"Load Pytorch Model", OnLoadPytorchModel));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 180, 365 }, { 150, 25 }, L"Load Description File", OnLoadDescriptionFile));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Loss Function"));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 160 }, { 90, 200 }, { L"None", L"L1", L"MSE", L"Smooth L1" }, OnSelectNeuralNetworkLossFunction, &lossFunctionSelection));
+	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 260, 160 }, { 150, 20 }, NULL));
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 100 }, 100, 0, L"Loss Area", &settings->neuralNetworkLossArea));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 100, 20 }, L"Output Red "));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 220 }, { 180, 200 }, {}, NULL, &settings->neuralNetworkOutputRed));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 250 }, { 100, 20 }, L"Output Green "));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 250 }, { 180, 200 }, {}, NULL, &settings->neuralNetworkOutputGreen));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 280 }, { 100, 20 }, L"Output Blue "));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 280 }, { 180, 200 }, {}, NULL, &settings->neuralNetworkOutputBlue));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 150, 25 }, L"Load Model", OnLoadPytorchModel));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 180, 365 }, { 150, 25 }, L"Load Description", OnLoadDescriptionFile));
 }
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
@@ -501,6 +510,26 @@ void PointCloudEngine::GUI::OnChangeCameraRecording()
 {
 	camera->SetPosition(cameraRecordingPositions[cameraRecording]);
 	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording]);
+}
+
+void PointCloudEngine::GUI::OnSelectNeuralNetworkLossFunction()
+{
+	if (lossFunctionSelection == 1)
+	{
+		((GUIValue<float>*)neuralNetworkElements[2])->value = &l1Loss;
+	}
+	else if (lossFunctionSelection == 2)
+	{
+		((GUIValue<float>*)neuralNetworkElements[2])->value = &mseLoss;
+	}
+	else if (lossFunctionSelection == 3)
+	{
+		((GUIValue<float>*)neuralNetworkElements[2])->value = &smoothL1Loss;
+	}
+	else
+	{
+		((GUIValue<float>*)neuralNetworkElements[2])->value = NULL;
+	}
 }
 
 void PointCloudEngine::GUI::OnLoadPytorchModel()
