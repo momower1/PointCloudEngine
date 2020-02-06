@@ -77,7 +77,7 @@ namespace PointCloudEngine
 		bool useOctree = false;
 		bool useCulling = true;
 		bool useGPUTraversal = true;
-		int octreeLevel = 0;
+		int octreeLevel = -1;
 		int maxOctreeDepth = 16;
 		float overlapFactor = 2.0f;
 		float splatResolution = 0.01f;

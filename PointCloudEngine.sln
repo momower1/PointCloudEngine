@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlyToPointcloud", "PlyToPoi
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "NeuralNetwork", "NeuralNetwork\NeuralNetwork.pyproj", "{4EC35A25-47B0-4BC0-B345-2CF9873412F5}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,15 @@ Global
 		{4EC35A25-47B0-4BC0-B345-2CF9873412F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EC35A25-47B0-4BC0-B345-2CF9873412F5}.Release|x64.ActiveCfg = Release|Any CPU
 		{4EC35A25-47B0-4BC0-B345-2CF9873412F5}.Release|x86.ActiveCfg = Release|Any CPU
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Debug|Any CPU.ActiveCfg = Debug
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Debug|x64.ActiveCfg = Debug
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Debug|x86.ActiveCfg = Debug
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Profile|Any CPU.ActiveCfg = Release
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Profile|x64.ActiveCfg = Release
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Profile|x86.ActiveCfg = Release
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Release|Any CPU.ActiveCfg = Release
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Release|x64.ActiveCfg = Release
+		{83BC54D0-7A04-4D81-B18C-A1E1DCE98661}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
