@@ -25,6 +25,7 @@
   - [Cuda 10.0](https://developer.nvidia.com/cuda-10.0-download-archive?target_os=Windows&target_arch=x86_64&target_version=10)
   - [Anaconda 3.7](https://repo.anaconda.com/archive/Anaconda3-2019.07-Windows-x86_64.exe) for all users and add it to PATH
   - Python environment in Visual Studio Installer (no need to install Python 3.7)
+  - Visual Studio 2019 Extension _Microsoft Visual Studio Installer Projects_
 - Run admin command line:
   - _conda install pytorch torchvision cudatoolkit=10.0 -c pytorch_
 
