@@ -296,6 +296,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.6.1"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.6.1 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.6.1"
+                    }
+                }
             }
         }
         "Release"
@@ -326,6 +334,11 @@
                     {
                     "Name" = "8:Microsoft .NET Framework 4.6.1 (x86 and x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.6.1"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x64"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x64)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x64"
                     }
                 }
             }
@@ -1178,7 +1191,7 @@
         {
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_289244C2A67642B8BABBB3F198E921C8"
             {
-            "DefaultLocation" = "8:[ProgramFiles64Folder][Manufacturer]\\[ProductName]"
+            "DefaultLocation" = "8:[CommonAppDataFolder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -1282,7 +1295,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:PointCloudEngine"
         "ProductCode" = "8:{220294CC-3752-437E-9E74-741FD6B7C093}"
-        "PackageCode" = "8:{C6EA7149-3016-4F0A-B0A4-89AE764C4F50}"
+        "PackageCode" = "8:{ED3697FB-3EB6-40AB-8DC9-0446DC037540}"
         "UpgradeCode" = "8:{1E61FC59-33B9-4685-834E-998B1B550715}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -1299,7 +1312,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:"
         "ARPURLINFOABOUT" = "8:https://github.com/momower1/PointCloudEngine"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_4504619767454BDF87BD65EEA702B197"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
