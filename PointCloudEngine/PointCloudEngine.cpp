@@ -54,6 +54,31 @@ ID3D11Buffer* nullBuffer[1] = { NULL };
 ID3D11UnorderedAccessView* nullUAV[1] = { NULL };
 ID3D11ShaderResourceView* nullSRV[1] = { NULL };
 
+bool OpenFileDialog(const wchar_t *filter, std::wstring& outFilename)
+{
+	// Show windows explorer open file dialog
+	wchar_t filename[MAX_PATH];
+	OPENFILENAMEW openFileName;
+	ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
+	openFileName.lStructSize = sizeof(OPENFILENAMEW);
+	openFileName.hwndOwner = hwnd;
+	openFileName.lpstrFilter = filter;
+	openFileName.lpstrFile = filename;
+	openFileName.lpstrFile[0] = L'\0';
+	openFileName.nMaxFile = MAX_PATH;
+	openFileName.lpstrTitle = L"Select a file to open!";
+	openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	openFileName.nFilterIndex = 1;
+
+	if (GetOpenFileNameW(&openFileName))
+	{
+		outFilename = filename;
+		return true;
+	}
+
+	return false;
+}
+
 void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line)
 {
 	if (FAILED(hr))
@@ -206,7 +231,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	hr = CoInitialize(NULL);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CoInitialize) + L" failed!");
 
-	if (!InitializeWindow(hInstance, nShowCmd, settings->resolutionX, settings->resolutionY, true))
+	if (!InitializeWindow(hInstance, nShowCmd))
 	{
 		ERROR_MESSAGE(NAMEOF(InitializeWindow) + L" failed!");
 		return 0;
@@ -229,7 +254,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	return 0;
 }
 
-bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, bool windowed)
+bool InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 {
 	/*
 	int ShowWnd - How the window should be displayed.Some common commands are SW_SHOWMAXIMIZED, SW_SHOW, SW_SHOWMINIMIZED.
@@ -241,7 +266,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;		            // Redraw when the window is moved or changed size
-	wc.lpfnWndProc = WndProc;		                    // lpfnWndProc is a pointer to the function we want to process the windows messages
+	wc.lpfnWndProc = WindowProc;		                // lpfnWndProc is a pointer to the function we want to process the windows messages
 	wc.cbClsExtra = NULL;		                        // cbClsExtra is the number of extra bytes allocated after WNDCLASSEX.
 	wc.cbWndExtra = NULL;		                        // cbWndExtra specifies the number of bytes allocated after the windows instance.
 	wc.hInstance = hInstance;		                    // Handle to the current application, GetModuleHandle() function can be used to get the current window application by passing NUll to its 1 parameter
@@ -249,7 +274,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);		// Colors the background
 	wc.lpszMenuName = NULL;		                        // Name to the menu that is attached to our window. we don't have one so we put NULL
 	wc.lpszClassName = WndClassName;		            // Name the class here
-    wc.hIcon = wc.hIconSm = (HICON) LoadImage(NULL, L"Assets/Icon.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+	wc.hIcon = wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
 
 	if (!RegisterClassEx(&wc))
 	{
@@ -257,8 +282,11 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 		return 1;
 	}
 
+	// Load the menu that will be shown below the title bar
+	HMENU menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU));
+
 	// Create window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
-	hwnd = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, hInstance, NULL);
+	hwnd = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, settings->resolutionX, settings->resolutionY, NULL, menu, hInstance, NULL);
 
 	if (!hwnd)
 	{
@@ -517,13 +545,14 @@ int Messageloop()
 				break;
 
 			TranslateMessage(&msg);		// Translating like the keyboard's virtual keys to characters
-			DispatchMessage(&msg);		// Sends the message to our windows procedure, WndProc
+			DispatchMessage(&msg);		// Sends the message to our windows procedure, WindowProc
 		}
 		else
 		{
 			// Run game code
 			UpdateScene();
 			DrawScene();
+			GUI::Update();
 		}
 	}
 
@@ -531,9 +560,10 @@ int Messageloop()
 }
 
 // Check messages for events
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    Input::ProcessMessage(msg, wParam, lParam);
+    Input::HandleMessage(msg, wParam, lParam);
+	GUI::HandleMessage(msg, wParam, lParam);
 
 	switch (msg)
 	{
@@ -542,6 +572,39 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		    PostQuitMessage(0);
 		    return 0;
         }
+		case WM_COMMAND:
+		{
+			switch (wParam)
+			{
+				case ID_FILE_OPEN:
+				{
+					scene.OpenPointcloudFile();
+					break;
+				}
+				case ID_FILE_GROUNDTRUTHRENDERER:
+				{
+					settings->useOctree = false;
+					scene.LoadFile(settings->pointcloudFile);
+					break;
+				}
+				case ID_FILE_OCTREERENDERER:
+				{
+					settings->useOctree = true;
+					scene.LoadFile(settings->pointcloudFile);
+					break;
+				}
+				case ID_FILE_SCREENSHOT:
+				{
+					SaveScreenshotToFile();
+					break;
+				}
+				case ID_HELP_WEBSITE:
+				{
+					ShellExecute(0, 0, L"https://github.com/momower1/PointCloudEngine", 0, 0, SW_SHOW);
+					break;
+				}
+			}
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);		//Takes care of all other messages
@@ -645,7 +708,7 @@ void DrawScene()
 	camera->PrepareDraw();
 
     // Draw scene
-    scene.Draw();
+	scene.Draw();
 
 	// Gamma correction is automatically applied in full screen mode, only apply it to the texture after presenting it to the screen (then screenshots will also be gamma corrected)
 	// In window mode the gamma correction has to be done before presenting it to the screen

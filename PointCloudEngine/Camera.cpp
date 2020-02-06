@@ -111,6 +111,27 @@ Vector3 PointCloudEngine::Camera::GetForward()
     return forward;
 }
 
+Vector3 PointCloudEngine::Camera::GetYawPitchRoll()
+{
+    float roll, pitch, yaw;
+
+    pitch = asin(-rotation.m[2][1]);
+
+    // Perform a numeric test
+    if (cos(pitch) > 0.001f)
+    {
+        roll = atan2(rotation.m[0][1], rotation.m[1][1]);
+        yaw = atan2(rotation.m[2][0], rotation.m[2][2]);
+    }
+    else
+    {
+        roll = atan2(-rotation.m[1][0], rotation.m[0][0]);
+        yaw = 0;
+    }
+
+    return Vector3(yaw, pitch, roll);
+}
+
 Matrix PointCloudEngine::Camera::GetViewMatrix()
 {
     RecalculateRightUpForwardViewProjection();

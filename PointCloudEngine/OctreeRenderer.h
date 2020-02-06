@@ -16,8 +16,6 @@ namespace PointCloudEngine
         void Release();
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
-		void SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer);
-		void SetText(Transform* textTransform, TextRenderer* textRenderer);
 		void RemoveComponentFromSceneObject();
 
     private:
@@ -26,7 +24,6 @@ namespace PointCloudEngine
         UINT GetStructureCount(ID3D11UnorderedAccessView *UAV);
 
         int vertexBufferCount = 0;
-        bool useComputeShader = true;
 
         Octree *octree = NULL;
 

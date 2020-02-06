@@ -10,8 +10,6 @@ namespace PointCloudEngine
     {
     public:
         virtual void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize) = 0;
-		virtual void SetHelpText(Transform* transform, TextRenderer* textRenderer) = 0;
-		virtual void SetText(Transform* transform, TextRenderer* textRenderer) = 0;
 		virtual void RemoveComponentFromSceneObject() = 0;
     };
 }

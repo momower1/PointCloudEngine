@@ -48,91 +48,17 @@ void GroundTruthRenderer::Initialize()
 
 void GroundTruthRenderer::Update()
 {
-	// Select density of the point cloud with arrow keys
-	if (Input::GetKey(Keyboard::Right))
-	{
-		settings->density = min(1.0f, settings->density + 0.15f * dt);
-	}
-	else if (Input::GetKey(Keyboard::Left))
-	{
-		settings->density = max(0, settings->density - 0.15f * dt);
-	}
-
-	// Select the screen area of the neural network compared to the splats
-	if (Input::GetKey(Keyboard::Up))
-	{
-		settings->neuralNetworkScreenArea += 0.5f * dt;
-	}
-	else if (Input::GetKey(Keyboard::Down))
-	{
-		settings->neuralNetworkScreenArea -= 0.5f * dt;
-	}
-
-	settings->neuralNetworkScreenArea = min(max(0.0f, settings->neuralNetworkScreenArea), 1.0f);
-
-	// Save HDF5 file
-	if (Input::GetKeyDown(Keyboard::F7) || Input::GetKeyDown(Keyboard::F8))
-	{
-		// Create a directory for the HDF5 files
-		CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
-
-		// Create and save the file
-		HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
-
-		// Add attributes storing the settings
-		hdf5file.AddStringAttribute(NAMEOF(settings->pointcloudFile), settings->pointcloudFile);
-		hdf5file.AddStringAttribute(NAMEOF(settings->samplingRate), std::to_wstring(settings->samplingRate));
-		hdf5file.AddStringAttribute(NAMEOF(settings->scale), std::to_wstring(settings->scale));
-		hdf5file.AddStringAttribute(NAMEOF(settings->useLighting), std::to_wstring(settings->useLighting));
-		hdf5file.AddStringAttribute(NAMEOF(settings->useHeadlight), std::to_wstring(settings->useHeadlight));
-		hdf5file.AddStringAttribute(NAMEOF(settings->lightDirection), settings->ToString(settings->lightDirection));
-		hdf5file.AddStringAttribute(NAMEOF(settings->lightIntensity), std::to_wstring(settings->lightIntensity));
-		hdf5file.AddStringAttribute(NAMEOF(settings->ambient), std::to_wstring(settings->ambient));
-		hdf5file.AddStringAttribute(NAMEOF(settings->diffuse), std::to_wstring(settings->diffuse));
-		hdf5file.AddStringAttribute(NAMEOF(settings->specular), std::to_wstring(settings->specular));
-		hdf5file.AddStringAttribute(NAMEOF(settings->specularExponent), std::to_wstring(settings->specularExponent));
-		hdf5file.AddStringAttribute(NAMEOF(settings->blendFactor), std::to_wstring(settings->blendFactor));
-		hdf5file.AddStringAttribute(NAMEOF(settings->backfaceCulling), std::to_wstring(settings->backfaceCulling));
-		hdf5file.AddStringAttribute(NAMEOF(settings->density), std::to_wstring(settings->density));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sparseSamplingRate), std::to_wstring(settings->sparseSamplingRate));
-		hdf5file.AddStringAttribute(NAMEOF(settings->waypointStepSize), std::to_wstring(settings->waypointStepSize));
-		hdf5file.AddStringAttribute(NAMEOF(settings->waypointMin), std::to_wstring(settings->waypointMin));
-		hdf5file.AddStringAttribute(NAMEOF(settings->waypointMax), std::to_wstring(settings->waypointMax));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereStepSize), std::to_wstring(settings->sphereStepSize));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinTheta), std::to_wstring(settings->sphereMinTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxTheta), std::to_wstring(settings->sphereMaxTheta));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMinPhi), std::to_wstring(settings->sphereMinPhi));
-		hdf5file.AddStringAttribute(NAMEOF(settings->sphereMaxPhi), std::to_wstring(settings->sphereMaxPhi));
-
-		int startViewMode = settings->viewMode;
-		Vector3 startPosition = camera->GetPosition();
-		Matrix startRotation = camera->GetRotationMatrix();
-
-		if (Input::GetKeyDown(Keyboard::F7))
-		{
-			GenerateWaypointDataset(hdf5file);
-		}
-		else
-		{
-			GenerateSphereDataset(hdf5file);
-		}
-
-		// Reset properties
-		camera->SetPosition(startPosition);
-		camera->SetRotationMatrix(startRotation);
-		settings->viewMode = startViewMode;
-	}
 }
 
 void GroundTruthRenderer::Draw()
 {
 	// Evaluate neural network and present the result to the screen
-	if (settings->viewMode == 4)
+	if (settings->viewMode == ViewMode::NeuralNetwork)
 	{
 		DrawNeuralNetwork();
 		return;
 	}
-	else if (settings->viewMode < 2)
+	else if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
 	{
 		// Set the splat shaders
 		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -173,11 +99,11 @@ void GroundTruthRenderer::Draw()
 	UINT vertexCount = vertices.size();
 
 	// Set different sampling rates based on the view mode
-	if (settings->viewMode == 0 || settings->viewMode == 2)
+	if (settings->viewMode == ViewMode::Splats)
 	{
 		constantBufferData.samplingRate = settings->samplingRate;
 	}
-	else
+	else if (settings->viewMode == ViewMode::SparseSplats || settings->viewMode == ViewMode::SparsePoints)
 	{
 		constantBufferData.samplingRate = settings->sparseSamplingRate;
 
@@ -192,7 +118,7 @@ void GroundTruthRenderer::Draw()
 	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
 
-	if ((settings->viewMode < 2) && settings->useBlending)
+	if ((settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats) && settings->useBlending)
 	{
 		DrawBlended(vertexCount, constantBuffer, &constantBufferData, constantBufferData.useBlending);
 	}
@@ -200,6 +126,9 @@ void GroundTruthRenderer::Draw()
 	{
 		d3d11DevCon->Draw(vertexCount, 0);
 	}
+
+	// Show vertex count on GUI
+	GUI::vertexCount = vertexCount;
 }
 
 void GroundTruthRenderer::Release()
@@ -218,93 +147,211 @@ void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vecto
 	outSize = boundingCubeSize;
 }
 
-void PointCloudEngine::GroundTruthRenderer::SetHelpText(Transform* helpTextTransform, TextRenderer* helpTextRenderer)
-{
-	helpTextTransform->position = Vector3(-1, 1, 0.5f);
-	helpTextRenderer->text = L"[H] Toggle help\n";
-
-	if (settings->help)
-	{
-		helpTextRenderer->text.append(L"[O] Open .pointcloud file\n");
-		helpTextRenderer->text.append(L"[T] Toggle text visibility\n");
-		helpTextRenderer->text.append(L"[R] Switch to octree renderer\n");
-		helpTextRenderer->text.append(L"[E/Q] Increase/decrease sampling rate\n");
-		helpTextRenderer->text.append(L"[N/V] Increase/decrease blend factor\n");
-		helpTextRenderer->text.append(L"[SHIFT] Increase WASD and Q/E input speed\n");
-		helpTextRenderer->text.append(L"[RIGHT/LEFT] Increase/decrease point cloud density\n");
-		helpTextRenderer->text.append(L"[UP/DOWN] Increase/decrease neural network screen area\n");
-		helpTextRenderer->text.append(L"[ENTER] Switch view mode\n");
-		helpTextRenderer->text.append(L"[INSERT] Add camera waypoint\n");
-		helpTextRenderer->text.append(L"[DELETE] Remove camera waypoint\n");
-		helpTextRenderer->text.append(L"[SPACE] Preview camera trackshot\n");
-		helpTextRenderer->text.append(L"[F1-F6] Select camera position\n");
-		helpTextRenderer->text.append(L"[F7] Generate Waypoint HDF5 Dataset\n");
-		helpTextRenderer->text.append(L"[F8] Generate Sphere HDF5 Dataset\n");
-		helpTextRenderer->text.append(L"[MOUSE WHEEL] Scale\n");
-		helpTextRenderer->text.append(L"[MOUSE] Rotate Camera\n");
-		helpTextRenderer->text.append(L"[WASD] Move Camera\n");
-		helpTextRenderer->text.append(L"[L] Toggle Lighting\n");
-		helpTextRenderer->text.append(L"[B] Toggle Blending\n");
-		helpTextRenderer->text.append(L"[F9] Screenshot\n");
-		helpTextRenderer->text.append(L"[ESC] Quit\n");
-	}
-}
-
-void PointCloudEngine::GroundTruthRenderer::SetText(Transform* textTransform, TextRenderer* textRenderer)
-{
-	if (settings->viewMode == 4)
-	{
-		textTransform->position = Vector3(-1.0f, -0.735f, 0);
-		textRenderer->text = std::wstring(L"View Mode: Neural Network\n");
-		textRenderer->text.append(L"Neural Network Screen Area: " + std::to_wstring(settings->neuralNetworkScreenArea) + L"\n");
-		textRenderer->text.append(L"L1 Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(l1Loss) : L"Off") + L"\n");
-		textRenderer->text.append(L"Mean Square Error Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(mseLoss) : L"Off") + L"\n");
-		textRenderer->text.append(L"Smooth L1 Loss: " + ((settings->neuralNetworkScreenArea < 1.0f) ? std::to_wstring(smoothL1Loss) : L"Off") + L"\n");
-	}
-	else if (settings->viewMode % 2 == 0)
-	{
-		textTransform->position = Vector3(-1.0f, -0.735f, 0);
-
-		if (settings->viewMode == 0)
-		{
-			textRenderer->text = std::wstring(L"View Mode: Splats\n");
-		}
-		else
-		{
-			textRenderer->text = std::wstring(L"View Mode: Points\n");
-		}
-
-		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->samplingRate) + L"\n");
-		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-		textRenderer->text.append(L"Vertex Count: " + std::to_wstring(vertices.size()) + L"\n");
-	}
-	else
-	{
-		textTransform->position = Vector3(-1.0f, -0.685f, 0);
-
-		if (settings->viewMode == 1)
-		{
-			textRenderer->text = std::wstring(L"View Mode: Sparse Splats\n");
-		}
-		else
-		{
-			textRenderer->text = std::wstring(L"View Mode: Sparse Points\n");
-		}
-
-		textRenderer->text.append(L"Sampling Rate: " + std::to_wstring(settings->sparseSamplingRate) + L"\n");
-		textRenderer->text.append(L"Blend Factor: " + std::to_wstring(settings->blendFactor) + L"\n");
-		textRenderer->text.append(L"Point Density: " + std::to_wstring(settings->density * 100) + L"%\n");
-		textRenderer->text.append(L"Blending " + std::wstring(settings->useBlending ? L"On, " : L"Off, "));
-		textRenderer->text.append(L"Lighting " + std::wstring(settings->useLighting ? L"On\n" : L"Off\n"));
-		textRenderer->text.append(L"Vertex Count: " + std::to_wstring((UINT)(vertices.size() * settings->density)) + L"\n");
-	}
-}
-
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
+}
+
+void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset()
+{
+	HDF5File hdf5file = CreateDatasetHDF5File();
+	ViewMode startViewMode = settings->viewMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	Vector3 center = boundingCubePosition * sceneObject->transform->scale;
+	float r = Vector3::Distance(camera->GetPosition(), center);
+
+	UINT counter = 0;
+	float h = settings->sphereStepSize;
+
+	// Clear and add the GUI camera records
+	GUI::cameraRecordingPositions.clear();
+	GUI::cameraRecordingRotations.clear();
+
+	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
+	{
+		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
+		{
+			// Rotate around and look at the center
+			Vector3 newPosition = center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+			camera->SetPosition(newPosition);
+			camera->LookAt(center);
+			GUI::cameraRecordingPositions.push_back(newPosition);
+			GUI::cameraRecordingRotations.push_back(camera->GetRotationMatrix());
+
+			HDF5DrawDatasets(hdf5file, counter++);
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+}
+
+void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset()
+{
+	HDF5File hdf5file = CreateDatasetHDF5File();
+	ViewMode startViewMode = settings->viewMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	WaypointRenderer* waypointRenderer = sceneObject->GetComponent<WaypointRenderer>();
+
+	// Clear and add the GUI camera records
+	GUI::cameraRecordingPositions.clear();
+	GUI::cameraRecordingRotations.clear();
+
+	if (waypointRenderer != NULL)
+	{
+		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
+		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
+
+		UINT counter = 0;
+		float waypointLocation = start;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
+
+		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
+		{
+			camera->SetPosition(newCameraPosition);
+			camera->SetRotationMatrix(newCameraRotation);
+			GUI::cameraRecordingPositions.push_back(newCameraPosition);
+			GUI::cameraRecordingRotations.push_back(newCameraRotation);
+
+			HDF5DrawDatasets(hdf5file, counter++);
+
+			waypointLocation += settings->waypointStepSize;
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+
+}
+
+void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkPytorchModel()
+{
+	// Set this to false in any error case
+	validPytorchModel = true;
+
+	try
+	{
+		// Load the neural network from file
+		if (settings->useCUDA && torch::cuda::is_available())
+		{
+			model = torch::jit::load(std::string(settings->neuralNetworkModelFile.begin(), settings->neuralNetworkModelFile.end()), torch::Device(at::kCUDA));
+		}
+		else
+		{
+			model = torch::jit::load(std::string(settings->neuralNetworkModelFile.begin(), settings->neuralNetworkModelFile.end()), torch::Device(at::kCPU));
+		}
+	}
+	catch (const std::exception & e)
+	{
+		ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + settings->neuralNetworkDescriptionFile);
+		validPytorchModel = false;
+		return;
+	}
+
+	createInputOutputTensors = true;
+}
+
+void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
+{
+	// Set this to false in any error case
+	validDescriptionFile = true;
+
+	// Load .txt file storing neural network input and output channel descriptions
+	// Each entry consists of:
+	// - String: Name of the channel (render mode)
+	// - Int: Dimension of channel
+	// - String: Identifying if the channel is input (inp) or output (tar)
+	// - String: Transformation keywords e.g. normalization
+	// - Int: Offset of this channel from the start channel
+	std::wifstream modelDescriptionFile(settings->neuralNetworkDescriptionFile);
+
+	if (!modelDescriptionFile.is_open())
+	{
+		ERROR_MESSAGE(L"Could not open Neural Network Description file " + settings->neuralNetworkDescriptionFile);
+		validDescriptionFile = false;
+		return;
+	}
+
+	try
+	{
+		std::wstring line;
+
+		if (std::getline(modelDescriptionFile, line))
+		{
+			std::wstring tmp = L"";
+
+			// Remove unwanted characters
+			for (int i = 0; i < line.length(); i++)
+			{
+				wchar_t c = line.at(i);
+
+				if (c != ' ' && c != L'\'' && c != L'[' && c != L']')
+				{
+					tmp += c;
+				}
+			}
+
+			line = tmp;
+			modelChannels.clear();
+			inputDimensions = 0;
+			outputDimensions = 0;
+			std::vector<std::wstring> splits = SplitString(line, L',');
+
+			// For GUI
+			std::vector<std::wstring> outputChannels;
+			std::vector<std::wstring> lossTargetChannels;
+
+			// Parse the content from the split into a struct
+			for (int i = 0; i < splits.size(); i += 5)
+			{
+				ModelChannel channel;
+				channel.name = splits[i];
+				channel.dimensions = std::stoi(splits[i + 1]);
+				channel.offset = std::stoi(splits[i + 4]);
+				channel.input = !std::wcscmp(splits[i + 2].c_str(), L"inp");
+				channel.normalize = !std::wcscmp(splits[i + 3].c_str(), L"normalize");
+
+				// Sum up to get the total dimensions of the input and output
+				if (channel.input)
+				{
+					inputDimensions += channel.dimensions;
+				}
+				else
+				{
+					outputDimensions += channel.dimensions;
+					lossTargetChannels.push_back(channel.name);
+
+					for (int j = 0; j < channel.dimensions; j++)
+					{
+						outputChannels.push_back(channel.name + std::to_wstring(j));
+					}
+				}
+
+				modelChannels.push_back(channel);
+			}
+
+			GUI::SetNeuralNetworkOutputChannels(outputChannels);
+			GUI::SetNeuralNetworkLossSelfChannels(renderModes);
+			GUI::SetNeuralNetworkLossTargetChannels(lossTargetChannels);
+		}
+	}
+	catch (const std::exception &e)
+	{
+		ERROR_MESSAGE(L"Could not parse Neural Network Description file " + settings->neuralNetworkDescriptionFile);
+		validDescriptionFile = false;
+		return;
+	}
+
+	createInputOutputTensors = true;
 }
 
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
@@ -313,126 +360,47 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	{
 		// Only do this once
 		loadPytorchModel = false;
-
-		// Set this to false in any error case
-		validPytorchModel = true;
-
-		const std::wstring modelFilename = executableDirectory + L"\\NeuralNetwork.pt";
-		const std::wstring modelDescriptionFilename = executableDirectory + L"\\NeuralNetworkDescription.txt";
-
-		// Load .txt file storing neural network input and output channel descriptions
-		// Each entry consists of:
-		// - String: Name of the channel (render mode)
-		// - Int: Dimension of channel
-		// - String: Identifying if the channel is input (inp) or output (tar)
-		// - String: Transformation keywords e.g. normalization
-		// - Int: Offset of this channel from the start channel
-		std::wifstream modelDescriptionFile(executableDirectory + L"\\NeuralNetworkDescription.txt");
-
-		if (modelDescriptionFile.is_open())
-		{
-			std::wstring line;
-
-			if (std::getline(modelDescriptionFile, line))
-			{
-				std::wstring tmp = L"";
-
-				// Remove unwanted characters
-				for (int i = 0; i < line.length(); i++)
-				{
-					wchar_t c = line.at(i);
-
-					if (c != ' ' && c != L'\'' && c != L'[' && c != L']')
-					{
-						tmp += c;
-					}
-				}
-
-				line = tmp;
-
-				std::vector<std::wstring> splits = SplitString(line, L',');
-
-				// Parse the content from the split into a struct
-				for (int i = 0; i < splits.size(); i += 5)
-				{
-					ModelChannel channel;
-					channel.name = splits[i];
-					channel.dimensions = std::stoi(splits[i + 1]);
-					channel.offset = std::stoi(splits[i + 4]);
-					channel.input = !std::wcscmp(splits[i + 2].c_str(), L"inp");
-					channel.normalize = !std::wcscmp(splits[i + 3].c_str(), L"normalize");
-
-					// Sum up to get the total dimensions of the input and output
-					if (channel.input)
-					{
-						inputDimensions += channel.dimensions;
-					}
-					else
-					{
-						outputDimensions += channel.dimensions;
-					}
-
-					modelChannels.push_back(channel);
-				}
-			}
-			else
-			{
-				ERROR_MESSAGE(L"Could not parse Neural Network Description file " + modelDescriptionFilename);
-				validPytorchModel = false;
-				return;
-			}
-		}
-		else
-		{
-			ERROR_MESSAGE(L"Could not open Neural Network Description file " + modelDescriptionFilename);
-			validPytorchModel = false;
-			return;
-		}
-
-		// Create CPU readable and writeable textures
-		D3D11_TEXTURE2D_DESC colorTextureDesc;
-		D3D11_TEXTURE2D_DESC depthTextureDesc;
-
-		// Copy the format information and set the flags
-		backBufferTexture->GetDesc(&colorTextureDesc);
-		depthStencilTexture->GetDesc(&depthTextureDesc);
-		colorTextureDesc.CPUAccessFlags = depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-		colorTextureDesc.Usage = depthTextureDesc.Usage = D3D11_USAGE_STAGING;
-		colorTextureDesc.BindFlags = depthTextureDesc.BindFlags = 0;
-
-		hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-		hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-
-		// Create an input tensor for the neural network
-		inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-		// Create an output tensor for the neural network
-		outputTensor = torch::zeros({ 1, outputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
-
-		try
-		{
-			// Load the neural network from file
-			if (settings->useCUDA && torch::cuda::is_available())
-			{
-				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCUDA));
-			}
-			else
-			{
-				model = torch::jit::load(std::string(modelFilename.begin(), modelFilename.end()), torch::Device(at::kCPU));
-			}
-		}
-		catch (const std::exception &e)
-		{
-			ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + modelFilename);
-			validPytorchModel = false;
-			return;
-		}
+		LoadNeuralNetworkPytorchModel();
+		LoadNeuralNetworkDescriptionFile();
 	}
-	else if (validPytorchModel)
+	else if (validPytorchModel && validDescriptionFile)
 	{
+		if (createInputOutputTensors)
+		{
+			createInputOutputTensors = false;
+
+			// Create CPU readable and writeable textures
+			if (colorTexture == NULL)
+			{
+				D3D11_TEXTURE2D_DESC colorTextureDesc;
+				backBufferTexture->GetDesc(&colorTextureDesc);
+				colorTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+				colorTextureDesc.Usage = D3D11_USAGE_STAGING;
+				colorTextureDesc.BindFlags = 0;
+
+				hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
+				ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+			}
+
+			if (depthTexture == NULL)
+			{
+				D3D11_TEXTURE2D_DESC depthTextureDesc;
+				depthStencilTexture->GetDesc(&depthTextureDesc);
+				depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+				depthTextureDesc.Usage = D3D11_USAGE_STAGING;
+				depthTextureDesc.BindFlags = 0;
+
+				hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
+				ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+			}
+
+			// Create an input tensor for the neural network
+			inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+
+			// Create an output tensor for the neural network
+			outputTensor = torch::zeros({ 1, outputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
+		}
+
 		// Copy the renderings to the tensors of the different input channels
 		for (auto it = modelChannels.begin(); it != modelChannels.end(); it++)
 		{
@@ -500,7 +468,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			return;
 		}
 
-		if (settings->neuralNetworkScreenArea >= 0.99f)
+		if (GUI::lossFunctionSelection == 0)
 		{
 			// Fill a four channel color tensor with the output (required due to the texture memory layout)
 			torch::Tensor colorTensor = torch::zeros({ 4, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kHalf));
@@ -605,9 +573,9 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	}
 
 	// Calculate the losses
-	l1Loss = torch::l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
-	mseLoss = torch::mse_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
-	smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
+	GUI::l1Loss = torch::l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
+	GUI::mseLoss = torch::mse_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
+	GUI::smoothL1Loss = torch::smooth_l1_loss(selfTensor, targetChannel->tensor).cpu().data<float>()[0];
 
 	// Convert into correct data type
 	selfTensor = selfTensor.to(torch::dtype(torch::kHalf)).cpu();
@@ -616,7 +584,7 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 	// Copy parts of the corresponding channels into the color tensor
 	for (int i = 0; i < targetChannel->dimensions; i++)
 	{
-		size_t numTarget = settings->neuralNetworkScreenArea * colorTensor[i].numel();
+		size_t numTarget = settings->neuralNetworkLossArea * colorTensor[i].numel();
 		size_t numSelf = colorTensor[i].numel() - numTarget;
 		memcpy(colorTensor[i].data_ptr(), selfTensor[i].data_ptr(), sizeof(short) * numSelf);
 		memcpy((short*)colorTensor[i].data_ptr() + numSelf, (short*)targetChannel->tensor[i].data_ptr() + numSelf, sizeof(short) * numTarget);
@@ -638,19 +606,19 @@ void PointCloudEngine::GroundTruthRenderer::CalculateLosses()
 void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMode, torch::Tensor& tensor)
 {
 	// Set the view mode according to the channel
-	settings->viewMode = renderModes[renderMode].x;
+	settings->viewMode = (ViewMode)renderModes[renderMode].x;
 
 	// Render differently based on the shading mode
-	switch (renderModes[renderMode].y)
+	switch ((ShadingMode)renderModes[renderMode].y)
 	{
-		case 0:
+		case ShadingMode::Color:
 		{
 			// Color
 			Redraw(false);
 			CopyBackbufferTextureToTensor(tensor);
 			break;
 		}
-		case 1:
+		case ShadingMode::Depth:
 		{
 			// Depth without blending (depth buffer is cleared when using blending)
 			if (settings->useBlending)
@@ -667,7 +635,7 @@ void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMo
 			CopyDepthTextureToTensor(tensor);
 			break;
 		}
-		case 2:
+		case ShadingMode::Normal:
 		{
 			// Normal
 			constantBufferData.drawNormals = true;
@@ -677,7 +645,7 @@ void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMo
 			CopyBackbufferTextureToTensor(tensor);
 			break;
 		}
-		case 3:
+		case ShadingMode::NormalScreen:
 		{
 			// Normal Screen
 			constantBufferData.drawNormals = true;
@@ -690,7 +658,7 @@ void PointCloudEngine::GroundTruthRenderer::RenderToTensor(std::wstring renderMo
 	}
 
 	// Reset to the neural network view mode
-	settings->viewMode = 4;
+	settings->viewMode = ViewMode::NeuralNetwork;
 }
 
 void PointCloudEngine::GroundTruthRenderer::CopyBackbufferTextureToTensor(torch::Tensor& tensor)
@@ -776,19 +744,19 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	// Draw in every render mode and save it to the dataset
 	for (auto it = renderModes.begin(); it != renderModes.end(); it++)
 	{
-		settings->viewMode = it->second.x;
+		settings->viewMode = (ViewMode)it->second.x;
 
 		// Render differently based on the shading mode
-		switch (it->second.y)
+		switch ((ShadingMode)it->second.y)
 		{
-			case 0:
+			case ShadingMode::Color:
 			{
 				// Color
 				Redraw(true);
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
 			}
-			case 1:
+			case ShadingMode::Depth:
 			{
 				// Depth without blending (depth buffer is cleared when using blending)
 				if (settings->useBlending)
@@ -804,7 +772,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				hdf5file.AddDepthTextureDataset(group, it->first, depthStencilTexture);
 				break;
 			}
-			case 2:
+			case ShadingMode::Normal:
 			{
 				// Normal
 				constantBufferData.drawNormals = true;
@@ -814,7 +782,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
 				break;
 			}
-			case 3:
+			case ShadingMode::NormalScreen:
 			{
 				// Normal Screen
 				constantBufferData.drawNormals = true;
@@ -830,51 +798,18 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	group.close();
 }
 
-void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset(HDF5File& hdf5file)
+HDF5File PointCloudEngine::GroundTruthRenderer::CreateDatasetHDF5File()
 {
-	Vector3 center = boundingCubePosition * sceneObject->transform->scale;
-	float r = Vector3::Distance(camera->GetPosition(), center);
+	// Create a directory for the HDF5 files
+	CreateDirectory((executableDirectory + L"/HDF5").c_str(), NULL);
 
-	UINT counter = 0;
-	float h = settings->sphereStepSize;
+	// Create and save the file
+	HDF5File hdf5file(executableDirectory + L"/HDF5/" + std::to_wstring(time(0)) + L".hdf5");
 
-	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
-	{
-		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
-		{
-			// Rotate around and look at the center
-			camera->SetPosition(center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)));
-			camera->LookAt(center);
+	// Add attribute storing the settings
+	hdf5file.AddStringAttribute(L"Settings", settings->ToKeyValueString());
 
-			HDF5DrawDatasets(hdf5file, counter++);
-		}
-	}
-}
-
-void PointCloudEngine::GroundTruthRenderer::GenerateWaypointDataset(HDF5File& hdf5file)
-{
-	WaypointRenderer* waypointRenderer = sceneObject->GetComponent<WaypointRenderer>();
-
-	if (waypointRenderer != NULL)
-	{
-		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
-		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
-
-		UINT counter = 0;
-		float waypointLocation = start;
-		Vector3 newCameraPosition = camera->GetPosition();
-		Matrix newCameraRotation = camera->GetRotationMatrix();
-
-		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
-		{
-			camera->SetPosition(newCameraPosition);
-			camera->SetRotationMatrix(newCameraRotation);
-
-			HDF5DrawDatasets(hdf5file, counter++);
-
-			waypointLocation += settings->waypointStepSize;
-		}
-	}
+	return hdf5file;
 }
 
 std::vector<std::wstring> PointCloudEngine::GroundTruthRenderer::SplitString(std::wstring s, wchar_t delimiter)

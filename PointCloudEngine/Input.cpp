@@ -18,7 +18,6 @@ void Input::Initialize(HWND hwnd)
 {
     // Basic mouse input and absolute position
     mouse.SetWindow(hwnd);
-    mouse.SetMode(Mouse::MODE_RELATIVE);
     mouseButtonStateTracker.Reset();
 
     // Set position
@@ -42,7 +41,7 @@ void Input::Initialize(HWND hwnd)
     }
 }
 
-void Input::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam)
+void Input::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 {
     keyboard.ProcessMessage(msg, wParam, lParam);
     mouse.ProcessMessage(msg, wParam, lParam);

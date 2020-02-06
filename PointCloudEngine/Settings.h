@@ -11,8 +11,14 @@ namespace PointCloudEngine
     public:
         Settings();
         ~Settings();
+		std::wstring ToKeyValueString();
+		std::wstring ToString(Vector3 v);
+		std::wstring ToString(Vector4 v);
+		Vector3 ToVector3(std::wstring s);
+		Vector4 ToVector4(std::wstring s);
 
         // Rendering parameters default values
+		ViewMode viewMode = ViewMode::Points;
 		Vector4 backgroundColor = Vector4(0, 0, 0, 0);
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
@@ -20,8 +26,6 @@ namespace PointCloudEngine
         int resolutionX = 1280;
         int resolutionY = 720;
         bool windowed = true;
-		bool help = false;
-		int viewMode = 0;
 
         // Pointcloud file parameters default values
         std::wstring pointcloudFile = L"";
@@ -48,8 +52,10 @@ namespace PointCloudEngine
 		float sparseSamplingRate = 0.01f;
 
 		// Neural Network parameters
+		std::wstring neuralNetworkModelFile = L"";
+		std::wstring neuralNetworkDescriptionFile = L"";
 		bool useCUDA = true;
-		float neuralNetworkScreenArea = 0.5f;
+		float neuralNetworkLossArea = 0.5f;
 		int neuralNetworkOutputRed = 0;
 		int neuralNetworkOutputGreen = 1;
 		int neuralNetworkOutputBlue = 2;
@@ -69,18 +75,17 @@ namespace PointCloudEngine
 
 		// Octree parameters
 		bool useOctree = false;
+		bool useCulling = true;
+		bool useGPUTraversal = true;
+		int octreeLevel = 0;
 		int maxOctreeDepth = 16;
 		float overlapFactor = 2.0f;
+		float splatResolution = 0.01f;
 		UINT appendBufferCount = 6000000;
 
         // Input parameters default values
         float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;
-
-		std::wstring ToString(Vector3 v);
-		std::wstring ToString(Vector4 v);
-		Vector3 ToVector3(std::wstring s);
-		Vector4 ToVector4(std::wstring s);
 
 	private:
 		std::map<std::wstring, std::wstring> settingsMap;
@@ -116,6 +121,10 @@ namespace PointCloudEngine
 				else if (typeid(T) == typeid(Vector4))
 				{
 					*((Vector4*)outParameterValue) = ToVector4(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(ViewMode))
+				{
+					*((ViewMode*)outParameterValue) = (ViewMode)std::stoi(settingsMap[parameterName]);
 				}
 				else
 				{

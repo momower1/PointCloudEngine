@@ -21,7 +21,28 @@ namespace PointCloudEngine
     class Settings;
     class Camera;
     class Octree;
+	class GUI;
     struct OctreeNode;
+
+	enum class ViewMode
+	{
+		OctreeSplats,
+		OctreeNodes,
+		OctreeNormalClusters,
+		Splats,
+		SparseSplats,
+		Points,
+		SparsePoints,
+		NeuralNetwork
+	};
+
+	enum class ShadingMode
+	{
+		Color,
+		Depth,
+		Normal,
+		NormalScreen
+	};
 }
 
 using namespace PointCloudEngine;
@@ -43,6 +64,7 @@ using namespace PointCloudEngine;
 #include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
 #include "WaypointRenderer.h"
+#include "GUI.h"
 #include "Scene.h"
 #include "HDF5File.h"
 
@@ -99,6 +121,7 @@ extern ID3D11Buffer* lightingConstantBuffer;
 extern LightingConstantBuffer lightingConstantBufferData;
 
 // Global function declarations
+extern bool OpenFileDialog(const wchar_t* filter, std::wstring &outFilename);
 extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
 extern bool LoadPointcloudFile(std::vector<Vertex> &outVertices, Vector3 &outBoundingCubePosition, float &outBoundingCubeSize, const std::wstring &pointcloudFile);
 extern void SaveScreenshotToFile();
@@ -106,9 +129,9 @@ extern void SetFullscreen(bool fullscreen);
 extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending);
 
 // Function declarations
-bool InitializeWindow(HINSTANCE hInstancem, int ShowWnd, int width, int hight, bool windowed);
+bool InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 int Messageloop();
-LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 bool InitializeDirect3d11App(HINSTANCE hInstance);
 void ReleaseObjects();
 bool InitializeScene();
