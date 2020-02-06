@@ -48,4 +48,4 @@ end_header
 0 0 1 0 0 1 0 0 255
 ```
 
-Copyright © 2019 Moritz Schöpf. All rights reserved. The use, distribution and change of this software and the source code without written permission of the author is prohibited.
+Copyright © 2019-2020 Moritz Schöpf. All rights reserved. The use, distribution and change of this software and the source code without written permission of the author is prohibited.
