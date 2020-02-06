@@ -11,7 +11,7 @@ void Scene::Initialize()
 
 	// Create startup text
 	startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
-	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files.\nYou can convert .ply files with the PlyToPointcloud.exe!\nThis requires .ply files with x,y,z,nx,ny,nz,red,green,blue format.\nYou can change parameters (resolution, ...) in the Settings.txt file.\n\n\nPress [O] to open a .pointcloud file.";
+	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files.\nYou can convert .ply files with the PlyToPointcloud.exe!\nThis requires .ply files with x,y,z,nx,ny,nz,red,green,blue format.\nYou can change parameters (resolution, ...) in the Settings.txt file.\n\n\nPress File->Open to open a .pointcloud file.";
 	startupText = Hierarchy::Create(L"Startup Text");
 	startupText->AddComponent(startupTextRenderer);
 	startupText->transform->scale = Vector3(0.25, 0.35, 1);
@@ -32,36 +32,6 @@ void Scene::Initialize()
 
 void Scene::Update(Timer &timer)
 {
-	// Toggle help
-	if (Input::GetKeyDown(Keyboard::H))
-	{
-		settings->help = !settings->help;
-	}
-
-	// Screenshot on F9
-	if (Input::GetKeyDown(Keyboard::F9))
-	{
-		SaveScreenshotToFile();
-	}
-
-	// Toggle lighting with L
-	if (Input::GetKeyDown(Keyboard::L))
-	{
-		settings->useLighting = !settings->useLighting;
-	}
-
-	// Insert a waypoint
-	if (Input::GetKeyDown(Keyboard::Insert))
-	{
-		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
-	}
-
-	// Remove a waypoint
-	if (Input::GetKeyDown(Keyboard::Delete))
-	{
-		waypointRenderer->RemoveWaypoint();
-	}
-
 	// Camera tracking shot using the waypoints
 	if (GUI::waypointPreview)
 	{
@@ -94,30 +64,13 @@ void Scene::Update(Timer &timer)
 		camera->TranslateRUF(inputSpeed * dt * (Input::GetKey(Keyboard::D) - Input::GetKey(Keyboard::A)), 0, inputSpeed * dt * (Input::GetKey(Keyboard::W) - Input::GetKey(Keyboard::S)));
 	}
 
-	// Toggle blending
-	if (Input::GetKeyDown(Keyboard::B))
-	{
-		settings->useBlending = !settings->useBlending;
-	}
-
-	// Change the blend factor
-	if (Input::GetKey(Keyboard::V))
-	{
-		settings->blendFactor = max(0, settings->blendFactor - dt * 0.5f);
-	}
-	else if (Input::GetKey(Keyboard::N))
-	{
-		settings->blendFactor += dt * 0.5f;
-	}
-
     // Scale the point cloud by the value saved in the config file
-    settings->scale = max(0.01f, settings->scale + Input::mouseScrollDelta);
     pointCloud->transform->scale = settings->scale * Vector3::One;
 
     // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))
     {
-		if (Input::GetKey(Keyboard::W) || Input::GetKey(Keyboard::A) || Input::GetKey(Keyboard::S) || Input::GetKey(Keyboard::D) || Input::GetKey(Keyboard::Q) || Input::GetKey(Keyboard::E))
+		if (Input::GetKey(Keyboard::W) || Input::GetKey(Keyboard::A) || Input::GetKey(Keyboard::S) || Input::GetKey(Keyboard::D))
 		{
 			inputSpeed += 20 * dt;
 		}
@@ -138,19 +91,6 @@ void Scene::Update(Timer &timer)
 		// Show cursor
 		Input::SetMode(Mouse::MODE_ABSOLUTE);
 	}
-
-	// Switch between the two renderers at runtime
-	if (Input::GetKeyDown(Keyboard::R))
-	{
-		settings->useOctree = !settings->useOctree;
-		LoadFile(settings->pointcloudFile);
-	}
-
-	// Open file dialog to load another file
-    if (Input::GetKeyDown(Keyboard::O))
-    {
-		OpenPointcloudFile();
-    }
 
 	// Show fps
 	GUI::fps = timer.GetFramesPerSecond();

@@ -26,7 +26,6 @@ namespace PointCloudEngine
         int resolutionX = 1280;
         int resolutionY = 720;
         bool windowed = true;
-		bool help = false;
 
         // Pointcloud file parameters default values
         std::wstring pointcloudFile = L"";

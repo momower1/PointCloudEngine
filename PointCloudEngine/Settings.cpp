@@ -34,7 +34,6 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(resolutionX), &resolutionX);
 		TryParse(NAMEOF(resolutionY), &resolutionY);
 		TryParse(NAMEOF(windowed), &windowed);
-		TryParse(NAMEOF(help), &help);
 		TryParse(NAMEOF(viewMode), &viewMode);
 
 		// Parse pointcloud file parameters
@@ -128,7 +127,6 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(resolutionX) << L"=" << resolutionX << std::endl;
 	settingsStream << NAMEOF(resolutionY) << L"=" << resolutionY << std::endl;
 	settingsStream << NAMEOF(windowed) << L"=" << windowed << std::endl;
-	settingsStream << NAMEOF(help) << L"=" << help << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Pointcloud File Parameters" << std::endl;

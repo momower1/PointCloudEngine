@@ -48,37 +48,6 @@ void GroundTruthRenderer::Initialize()
 
 void GroundTruthRenderer::Update()
 {
-	// Select density of the point cloud with arrow keys
-	if (Input::GetKey(Keyboard::Right))
-	{
-		settings->density = min(1.0f, settings->density + 0.15f * dt);
-	}
-	else if (Input::GetKey(Keyboard::Left))
-	{
-		settings->density = max(0, settings->density - 0.15f * dt);
-	}
-
-	// Select the screen area of the neural network compared to the splats
-	if (Input::GetKey(Keyboard::Up))
-	{
-		settings->neuralNetworkLossArea += 0.5f * dt;
-	}
-	else if (Input::GetKey(Keyboard::Down))
-	{
-		settings->neuralNetworkLossArea -= 0.5f * dt;
-	}
-
-	settings->neuralNetworkLossArea = min(max(0.0f, settings->neuralNetworkLossArea), 1.0f);
-
-	// Save HDF5 file
-	if (Input::GetKeyDown(Keyboard::F7))
-	{
-		GenerateWaypointDataset();
-	}
-	else if (Input::GetKeyDown(Keyboard::F8))
-	{
-		GenerateSphereDataset();
-	}
 }
 
 void GroundTruthRenderer::Draw()

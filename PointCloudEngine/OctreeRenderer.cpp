@@ -110,38 +110,6 @@ void OctreeRenderer::Initialize()
 
 void OctreeRenderer::Update()
 {
-    // Select octree level with arrow keys (level -1 means that the level will be ignored)
-    if (Input::GetKeyDown(Keyboard::Left) && (octreeConstantBufferData.level > -1))
-    {
-        settings->octreeLevel--;
-    }
-    else if (Input::GetKeyDown(Keyboard::Right) && ((vertexBufferCount > 0) || (octreeConstantBufferData.level < 0)))
-    {
-        settings->octreeLevel++;
-    }
-
-	// Toggle CPU / GPU octree traversal
-    if (Input::GetKeyDown(Keyboard::Back))
-    {
-        settings->useGPUTraversal = !settings->useGPUTraversal;
-    }
-
-	// Toggle view frustum and backface culling
-	if (Input::GetKeyDown(Keyboard::C))
-	{
-		settings->useCulling = !settings->useCulling;
-	}
-
-	// Set splat resolution between 1 (whole screen) and 1.0f/resolutionY (one pixel)
-	if (Input::GetKey(Keyboard::Up))
-	{
-		settings->splatResolution = min(1.0f, settings->splatResolution + dt * 0.01f);
-	}
-	else if (Input::GetKey(Keyboard::Down))
-	{
-		settings->splatResolution = max(1.0f / settings->resolutionY, settings->splatResolution - dt * 0.01f);
-	}
-
     // Set GUI variables
     GUI::vertexCount = vertexBufferCount;
 }
