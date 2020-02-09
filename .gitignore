@@ -1,5 +1,5 @@
 ## Custom PointCloudEngine files
-*.pointcloudengine
+*.pointcloud
 *.octree
 
 ## Folder containing dataset for the Python neural network project
