@@ -1,6 +1,8 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#define SETTINGS_FILENAME L"/Settings.txt"
+
 #pragma once
 #include "PointCloudEngine.h"
 

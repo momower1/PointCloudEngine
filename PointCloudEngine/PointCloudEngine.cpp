@@ -598,6 +598,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					SaveScreenshotToFile();
 					break;
 				}
+				case ID_EDIT_SETTINGS:
+				{
+					ShellExecute(0, L"open", (executableDirectory + SETTINGS_FILENAME).c_str(), 0, 0, SW_SHOW);
+					break;
+				}
+				case ID_HELP_README:
+				{
+					ShellExecute(0, L"open", (executableDirectory + L"/Readme.txt").c_str(), 0, 0, SW_SHOW);
+					break;
+				}
 				case ID_HELP_WEBSITE:
 				{
 					ShellExecute(0, 0, L"https://github.com/momower1/PointCloudEngine", 0, 0, SW_SHOW);

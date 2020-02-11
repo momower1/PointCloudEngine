@@ -1,7 +1,5 @@
 #include "Settings.h"
 
-#define SETTINGS_FILENAME L"/Settings.txt"
-
 PointCloudEngine::Settings::Settings()
 {
     // Check if the config file exists that stores the last pointcloudFile path
@@ -115,7 +113,9 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 {
 	std::wstringstream settingsStream;
 
-	settingsStream << L"# Parameters only apply when restarting the engine!" << std::endl;
+	settingsStream << L"# Parameters only apply when restarting the engine." << std::endl;
+	settingsStream << L"# This file is overwritten when PointCloudEngine exits." << std::endl;
+	settingsStream << L"# Make sure to close the engine before editing this file." << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Rendering Parameters" << std::endl;

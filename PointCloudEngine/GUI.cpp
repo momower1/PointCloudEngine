@@ -439,6 +439,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	ShowElements(splatElements, SW_HIDE);
 	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
+	ShowElements(pointElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 	ShowElements(advancedElements, SW_HIDE);
 	ShowElements(hdf5Elements, SW_HIDE);
