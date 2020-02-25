@@ -22,7 +22,7 @@ namespace PointCloudEngine
 
         bool worldSpace = false;
         std::wstring text = L"Text";
-        Color color = Color (1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4 color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
     private:
         static std::map<std::wstring, SpriteFont*> fonts;
@@ -43,7 +43,7 @@ namespace PointCloudEngine
         {
             int worldSpace;
             int padding[3];
-            Color color;
+            Vector4 color;
             Matrix World;
             Matrix View;
             Matrix Projection;

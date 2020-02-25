@@ -11,6 +11,7 @@ void Scene::Initialize()
 
 	// Create startup text
 	startupTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
+	startupTextRenderer->color = Vector4(1, 1, 1, 1) - settings->backgroundColor;
 	startupTextRenderer->text = L"Welcome to PointCloudEngine!\nThis engine renders .pointcloud files.\nYou can convert .ply files with the PlyToPointcloud.exe!\nThis requires .ply files with x,y,z,nx,ny,nz,red,green,blue format.\nYou can change parameters (resolution, ...) in the Settings.txt file.\n\n\nPress File->Open to open a .pointcloud file.";
 	startupText = Hierarchy::Create(L"Startup Text");
 	startupText->AddComponent(startupTextRenderer);
@@ -19,6 +20,7 @@ void Scene::Initialize()
 
     // Create loading text and hide it
     loadingTextRenderer = new TextRenderer(TextRenderer::GetSpriteFont(L"Arial"), false);
+	loadingTextRenderer->color = Vector4(1, 1, 1, 1) - settings->backgroundColor;
 	loadingTextRenderer->enabled = false;
     loadingTextRenderer->text = L"Loading...";
     loadingText = Hierarchy::Create(L"Loading Text");

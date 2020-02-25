@@ -124,5 +124,12 @@ float4 PS(GS_OUTPUT input) : SV_TARGET
     uv.x = (input.Rect.x + input.UV.x * width) / spritesheetWidth;
     uv.y = (input.Rect.y + input.UV.y * height) / spritesheetHeight;
 
-    return color * spritesheet.Sample(SpritesheetSampler, uv);
+    float4 s = spritesheet.Sample(SpritesheetSampler, uv);
+
+    if (s.a == 0)
+    {
+        discard;
+    }
+
+    return color;
 }
