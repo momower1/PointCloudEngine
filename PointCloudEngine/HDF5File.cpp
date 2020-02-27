@@ -118,8 +118,9 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 	std::vector<BYTE> buffer;
 
 	// Convert from 32bit float to 8bit and ignore alpha component
-	for (UINT i = 0; i < subresource.DepthPitch / 4; i++)
+	for (UINT i = 0; i < 4 * readableTextureDesc.Width * readableTextureDesc.Height; i++)
 	{
+		// Ignore alpha channel
 		if ((i + 1) % 4 != 0)
 		{
 			float f = ((float*)subresource.pData)[i];

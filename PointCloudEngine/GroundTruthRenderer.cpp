@@ -742,6 +742,21 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 		d3d11DevCon->UpdateSubresource(lightingConstantBuffer, 0, NULL, &lightingConstantBufferData, 0, 0);
 	}
 
+	HDF5DrawRenderModes(hdf5file, group, L"");
+
+	// Render again but with lower resolution
+	int resolutionX = settings->resolutionX;
+	int resolutionY = settings->resolutionY;
+	ChangeRenderingResolution(resolutionX / 2, resolutionY / 2);
+
+	HDF5DrawRenderModes(hdf5file, group, L"LowRes");
+
+	// Reset to full resolution
+	ChangeRenderingResolution(resolutionX, resolutionY);
+}
+
+void PointCloudEngine::GroundTruthRenderer::HDF5DrawRenderModes(HDF5File& hdf5file, H5::Group group, std::wstring comment)
+{
 	// Calculates view and projection matrices and sets the viewport
 	camera->PrepareDraw();
 
@@ -757,7 +772,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 			{
 				// Color
 				Redraw(true);
-				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
+				hdf5file.AddColorTextureDataset(group, it->first + comment, backBufferTexture);
 				break;
 			}
 			case ShadingMode::Depth:
@@ -773,7 +788,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				{
 					Redraw(true);
 				}
-				hdf5file.AddDepthTextureDataset(group, it->first, depthStencilTexture);
+				hdf5file.AddDepthTextureDataset(group, it->first + comment, depthStencilTexture);
 				break;
 			}
 			case ShadingMode::Normal:
@@ -783,7 +798,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				constantBufferData.normalsInScreenSpace = false;
 				Redraw(true);
 				constantBufferData.drawNormals = false;
-				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
+				hdf5file.AddColorTextureDataset(group, it->first + comment, backBufferTexture);
 				break;
 			}
 			case ShadingMode::NormalScreen:
@@ -793,7 +808,7 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 				constantBufferData.normalsInScreenSpace = true;
 				Redraw(true);
 				constantBufferData.drawNormals = false;
-				hdf5file.AddColorTextureDataset(group, it->first, backBufferTexture);
+				hdf5file.AddColorTextureDataset(group, it->first + comment, backBufferTexture);
 				break;
 			}
 		}

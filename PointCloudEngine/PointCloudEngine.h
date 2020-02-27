@@ -9,6 +9,11 @@ using namespace DirectX::SimpleMath;
 // Forward declarations
 class HDF5File;
 
+namespace H5
+{
+	class Group;
+}
+
 namespace PointCloudEngine
 {
     class SceneObject;
@@ -126,6 +131,7 @@ extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring fi
 extern bool LoadPointcloudFile(std::vector<Vertex> &outVertices, Vector3 &outBoundingCubePosition, float &outBoundingCubeSize, const std::wstring &pointcloudFile);
 extern void SaveScreenshotToFile();
 extern void SetFullscreen(bool fullscreen);
+extern void ChangeRenderingResolution(int newResolutionX, int newResolutionY);
 extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending);
 extern void InitializeRenderingResources();
 

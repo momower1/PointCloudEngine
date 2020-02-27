@@ -113,6 +113,7 @@ namespace PointCloudEngine
 		void OutputTensorSize(torch::Tensor &tensor);
 		void Redraw(bool present);
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
+		void HDF5DrawRenderModes(HDF5File& hdf5file, H5::Group group, std::wstring comment);
 		HDF5File CreateDatasetHDF5File();
 		std::vector<std::wstring> SplitString(std::wstring s, wchar_t delimiter);
     };

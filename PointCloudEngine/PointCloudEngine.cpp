@@ -167,6 +167,20 @@ void SetFullscreen(bool fullscreen)
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->SetFullscreenState) + L" failed!");
 }
 
+void ChangeRenderingResolution(int newResolutionX, int newResolutionY)
+{
+	settings->resolutionX = newResolutionX;
+	settings->resolutionY = newResolutionY;
+	InitializeRenderingResources();
+	camera->Initialize();
+
+	d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
+	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
+}
+
 void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending)
 {
 	// Draw with blending

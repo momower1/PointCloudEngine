@@ -42,8 +42,8 @@ bool GUI::initialized = false;
 int GUI::viewModeSelection = 0;
 int GUI::lossSelfSelection = 0;
 int GUI::lossTargetSelection = 0;
-int GUI::newResolutionX = 0;
-int GUI::newResolutionY = 0;
+int GUI::resolutionScaleX = 0;
+int GUI::resolutionScaleY = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
 Vector2 GUI::guiSize = Vector2(380, 580);
@@ -297,12 +297,12 @@ void PointCloudEngine::GUI::CreateContentGeneral()
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
-	newResolutionX = settings->resolutionX;
-	newResolutionY = settings->resolutionY;
+	resolutionScaleX = log2(settings->resolutionX);
+	resolutionScaleY = log2(settings->resolutionY);
 
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 32, 4096 }, 1, 0, L"Resolution X", &newResolutionX));
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 32, 4096 }, 1, 0, L"Resolution Y", &newResolutionY));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 100 }, { 325, 25 }, L"Apply Resolution", OnApplyResolution));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale X", &resolutionScaleX));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale Y", &resolutionScaleY));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 100 }, { 325, 25 }, L"Apply Resolution (Power of 2)", OnApplyResolution));
 
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 130, 20 }, { 1, 100 }, 10, 0, L"Scale", &settings->scale));
 	advancedElements.push_back(new GUIText(hwndGUI, { 10, 190 }, { 150, 20 }, L"Background RGB"));
@@ -485,11 +485,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 
 void PointCloudEngine::GUI::OnApplyResolution()
 {
-	// Reallocate the rendering resources
-	settings->resolutionX = newResolutionX;
-	settings->resolutionY = newResolutionY;
-	InitializeRenderingResources();
-	camera->Initialize();
+	ChangeRenderingResolution(pow(2, resolutionScaleX), pow(2, resolutionScaleY));
 	
 	// Resize the window
 	RECT rect;

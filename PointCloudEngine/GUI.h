@@ -42,8 +42,8 @@ namespace PointCloudEngine
 		static int viewModeSelection;
 		static int lossSelfSelection;
 		static int lossTargetSelection;
-		static int newResolutionX;
-		static int newResolutionY;
+		static int resolutionScaleX;
+		static int resolutionScaleY;
 		static Vector3 waypointStartPosition;
 		static Matrix waypointStartRotation;
 		static Vector2 guiSize;
