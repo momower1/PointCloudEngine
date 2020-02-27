@@ -285,85 +285,110 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 
 void InitializeRenderingResources()
 {
-	DXGI_MODE_DESC bufferDesc;																	// Describe the backbuffer
-	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));											// Clear everything for safety
-	bufferDesc.Width = settings->resolutionX;													// Resolution X
-	bufferDesc.Height = settings->resolutionY;													// Resolution Y
-	bufferDesc.RefreshRate.Numerator = 144;														// Hertz
-	bufferDesc.RefreshRate.Denominator = 1;
-	bufferDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;											// Describes the display format
-	bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;							// Describes the order in which the rasterizer renders - not used since we use double buffering
-	bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;											// Descibes how window scaling is handled
+	// This can be called after the first initialization in order to change the rendering resolution
+	// Therefore some of the already existing resources need to be released
+	SAFE_RELEASE(backBufferTexture);
+	SAFE_RELEASE(renderTargetView);
+	SAFE_RELEASE(backBufferTextureUAV);
+	SAFE_RELEASE(depthStencilTexture);
+	SAFE_RELEASE(depthTextureSRV);
+	SAFE_RELEASE(depthStencilView);
+	SAFE_RELEASE(depthStencilState);
+	SAFE_RELEASE(blendState);
+	SAFE_RELEASE(rasterizerState);
+	SAFE_RELEASE(blendingDepthTexture);
+	SAFE_RELEASE(blendingDepthView);
+	SAFE_RELEASE(blendingDepthTextureSRV);
+	SAFE_RELEASE(additiveBlendState);
+	SAFE_RELEASE(disabledDepthStencilState);
 
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;															// Describe the spaw chain
-	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-	swapChainDesc.BufferDesc = bufferDesc;
-	swapChainDesc.SampleDesc.Count = 1;															// Possibly 2x, 4x 8x Multisampling -> Smooth choppiness in edges and lines
-    swapChainDesc.SampleDesc.Quality = 0;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
-	swapChainDesc.BufferCount = 1;																// 1 for double buffering, 2 for triple buffering and so on
-	swapChainDesc.OutputWindow = hwnd;
-	swapChainDesc.Windowed = settings->windowed;												// Fullscreen might freeze the programm -> set windowed before exit
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;										// Let display driver decide what to do when swapping buffers
-
-	// Create a factory that is used to find out information about the available GPUs
-	IDXGIFactory* dxgiFactory = NULL;
-	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgiFactory));
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CreateDXGIFactory) + L" failed!");
-
-	// Store all the adapters and their descriptions
-	std::vector<IDXGIAdapter*> adapters;
-	std::vector<DXGI_ADAPTER_DESC> adapterDescriptions;
-	
-	// Query for all the available adapters (includes hardware and software)
-	for (UINT adapterIndex = 0; true; adapterIndex++)
+	if (d3d11Device == NULL)
 	{
-		IDXGIAdapter* adapter = NULL;
+		DXGI_MODE_DESC bufferDesc;																	// Describe the backbuffer
+		ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));											// Clear everything for safety
+		bufferDesc.Width = settings->resolutionX;													// Resolution X
+		bufferDesc.Height = settings->resolutionY;													// Resolution Y
+		bufferDesc.RefreshRate.Numerator = 144;														// Hertz
+		bufferDesc.RefreshRate.Denominator = 1;
+		bufferDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;											// Describes the display format
+		bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;							// Describes the order in which the rasterizer renders - not used since we use double buffering
+		bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;											// Descibes how window scaling is handled
 
-		if (dxgiFactory->EnumAdapters(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+		DXGI_SWAP_CHAIN_DESC swapChainDesc;															// Describe the spaw chain
+		ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
+		swapChainDesc.BufferDesc = bufferDesc;
+		swapChainDesc.SampleDesc.Count = 1;															// Possibly 2x, 4x 8x Multisampling -> Smooth choppiness in edges and lines
+		swapChainDesc.SampleDesc.Quality = 0;
+		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
+		swapChainDesc.BufferCount = 1;																// 1 for double buffering, 2 for triple buffering and so on
+		swapChainDesc.OutputWindow = hwnd;
+		swapChainDesc.Windowed = settings->windowed;												// Fullscreen might freeze the programm -> set windowed before exit
+		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;										// Let display driver decide what to do when swapping buffers
+
+		// Create a factory that is used to find out information about the available GPUs
+		IDXGIFactory* dxgiFactory = NULL;
+		hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgiFactory));
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CreateDXGIFactory) + L" failed!");
+
+		// Store all the adapters and their descriptions
+		std::vector<IDXGIAdapter*> adapters;
+		std::vector<DXGI_ADAPTER_DESC> adapterDescriptions;
+
+		// Query for all the available adapters (includes hardware and software)
+		for (UINT adapterIndex = 0; true; adapterIndex++)
 		{
-			DXGI_ADAPTER_DESC adapterDesc;
-			adapter->GetDesc(&adapterDesc);
-			adapterDescriptions.push_back(adapterDesc);
-			adapters.push_back(adapter);
+			IDXGIAdapter* adapter = NULL;
+
+			if (dxgiFactory->EnumAdapters(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+			{
+				DXGI_ADAPTER_DESC adapterDesc;
+				adapter->GetDesc(&adapterDesc);
+				adapterDescriptions.push_back(adapterDesc);
+				adapters.push_back(adapter);
+			}
+			else
+			{
+				break;
+			}
 		}
-		else
+
+		// Find the adapter with the most available video memory (makes sure that e.g. laptop does not use integrated graphics)
+		UINT adapterWithMostDedicatedVideoMemory = 0;
+
+		for (UINT i = 1; i < adapters.size(); i++)
 		{
-			break;
+			if (adapterDescriptions[i].DedicatedVideoMemory > adapterDescriptions[adapterWithMostDedicatedVideoMemory].DedicatedVideoMemory)
+			{
+				adapterWithMostDedicatedVideoMemory = i;
+			}
 		}
-	}
 
-	// Find the adapter with the most available video memory (makes sure that e.g. laptop does not use integrated graphics)
-	UINT adapterWithMostDedicatedVideoMemory = 0;
-
-	for (UINT i = 1; i < adapters.size(); i++)
-	{
-		if (adapterDescriptions[i].DedicatedVideoMemory > adapterDescriptions[adapterWithMostDedicatedVideoMemory].DedicatedVideoMemory)
-		{
-			adapterWithMostDedicatedVideoMemory = i;
-		}
-	}
-
-	// Use this adapter for the device creation
-	IDXGIAdapter *adapterToUse = adapters[adapterWithMostDedicatedVideoMemory];
+		// Use this adapter for the device creation
+		IDXGIAdapter* adapterToUse = adapters[adapterWithMostDedicatedVideoMemory];
 
 #ifdef _DEBUG
-    UINT flags = D3D11_CREATE_DEVICE_DEBUG;
+		UINT flags = D3D11_CREATE_DEVICE_DEBUG;
 #else
-	UINT flags = 0;
+		UINT flags = 0;
 #endif
 
-	// Create device and swap chain
-	hr = D3D11CreateDeviceAndSwapChain(adapterToUse, D3D_DRIVER_TYPE_UNKNOWN, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
+		// Create device and swap chain
+		hr = D3D11CreateDeviceAndSwapChain(adapterToUse, D3D_DRIVER_TYPE_UNKNOWN, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
+		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
 
-	// Release no longer needed resources
-	for (auto it = adapters.begin(); it != adapters.end(); it++)
-	{
-		SAFE_RELEASE(*it);
+		// Release no longer needed resources
+		for (auto it = adapters.begin(); it != adapters.end(); it++)
+		{
+			SAFE_RELEASE(*it);
+		}
+
+		SAFE_RELEASE(dxgiFactory);
 	}
-
-	SAFE_RELEASE(dxgiFactory);
+	else
+	{
+		// There is already an exisiting device, context and swap chain, just resize the buffer
+		swapChain->ResizeBuffers(0, settings->resolutionX, settings->resolutionY, DXGI_FORMAT_R16G16B16A16_FLOAT, 0);
+	}
 
 	// Create backbuffer for the render target view
 	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
@@ -375,7 +400,7 @@ void InitializeRenderingResources()
 	// Create an unordered acces view in order to access and manipulate the texture in shaders
 	D3D11_UNORDERED_ACCESS_VIEW_DESC backBufferTextureUAVDesc;
 	ZeroMemory(&backBufferTextureUAVDesc, sizeof(backBufferTextureUAVDesc));
-	backBufferTextureUAVDesc.Format = bufferDesc.Format;
+	backBufferTextureUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	backBufferTextureUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 
 	hr = d3d11Device->CreateUnorderedAccessView(backBufferTexture, &backBufferTextureUAVDesc, &backBufferTextureUAV);

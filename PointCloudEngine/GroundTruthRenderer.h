@@ -21,6 +21,7 @@ namespace PointCloudEngine
 		void GenerateWaypointDataset();
 		void LoadNeuralNetworkPytorchModel();
 		void LoadNeuralNetworkDescriptionFile();
+		void ApplyNeuralNetworkResolution();
 
     private:
 		Vector3 boundingCubePosition;

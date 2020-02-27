@@ -252,7 +252,7 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkPytorchModel()
 	}
 	catch (const std::exception & e)
 	{
-		ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + settings->neuralNetworkDescriptionFile);
+		ERROR_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + settings->neuralNetworkModelFile);
 		validPytorchModel = false;
 		return;
 	}
@@ -354,6 +354,13 @@ void PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkDescriptionFile()
 	createInputOutputTensors = true;
 }
 
+void PointCloudEngine::GroundTruthRenderer::ApplyNeuralNetworkResolution()
+{
+	// This is called when the rendering resolution changes
+	createInputOutputTensors = true;
+	loadPytorchModel = true;
+}
+
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
 	if (loadPytorchModel)
@@ -369,30 +376,27 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		{
 			createInputOutputTensors = false;
 
-			// Create CPU readable and writeable textures
-			if (colorTexture == NULL)
-			{
-				D3D11_TEXTURE2D_DESC colorTextureDesc;
-				backBufferTexture->GetDesc(&colorTextureDesc);
-				colorTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-				colorTextureDesc.Usage = D3D11_USAGE_STAGING;
-				colorTextureDesc.BindFlags = 0;
+			// (Re)create CPU readable and writeable textures
+			SAFE_RELEASE(colorTexture);
+			SAFE_RELEASE(depthTexture);
 
-				hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
-				ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-			}
+			D3D11_TEXTURE2D_DESC colorTextureDesc;
+			backBufferTexture->GetDesc(&colorTextureDesc);
+			colorTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+			colorTextureDesc.Usage = D3D11_USAGE_STAGING;
+			colorTextureDesc.BindFlags = 0;
 
-			if (depthTexture == NULL)
-			{
-				D3D11_TEXTURE2D_DESC depthTextureDesc;
-				depthStencilTexture->GetDesc(&depthTextureDesc);
-				depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-				depthTextureDesc.Usage = D3D11_USAGE_STAGING;
-				depthTextureDesc.BindFlags = 0;
+			hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
+			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-				hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
-				ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
-			}
+			D3D11_TEXTURE2D_DESC depthTextureDesc;
+			depthStencilTexture->GetDesc(&depthTextureDesc);
+			depthTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+			depthTextureDesc.Usage = D3D11_USAGE_STAGING;
+			depthTextureDesc.BindFlags = 0;
+
+			hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
+			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 			// Create an input tensor for the neural network
 			inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));
@@ -692,7 +696,7 @@ void PointCloudEngine::GroundTruthRenderer::CopyDepthTextureToTensor(torch::Tens
 	// Copy the data from the depth texture to the cpu tensor
 	D3D11_MAPPED_SUBRESOURCE subresource;
 	d3d11DevCon->Map(depthTexture, 0, D3D11_MAP_READ, 0, &subresource);
-	memcpy(tensor.data_ptr(), subresource.pData, subresource.DepthPitch);
+	memcpy(tensor.data_ptr(), subresource.pData, sizeof(float) * settings->resolutionX * settings->resolutionY);
 	d3d11DevCon->Unmap(depthTexture, 0);
 }
 

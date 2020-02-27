@@ -485,7 +485,22 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 
 void PointCloudEngine::GUI::OnApplyResolution()
 {
+	// Reallocate the rendering resources
+	settings->resolutionX = newResolutionX;
+	settings->resolutionY = newResolutionY;
 	InitializeRenderingResources();
+	camera->Initialize();
+	
+	// Resize the window
+	RECT rect;
+	GetWindowRect(hwnd, &rect);
+	MoveWindow(hwnd, rect.left, rect.top, settings->resolutionX, settings->resolutionY, true);
+
+	// Make sure the neural network renderer reallocates resources as well
+	if (groundTruthRenderer != NULL)
+	{
+		groundTruthRenderer->ApplyNeuralNetworkResolution();
+	}
 }
 
 void PointCloudEngine::GUI::OnWaypointAdd()
