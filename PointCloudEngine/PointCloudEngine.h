@@ -127,14 +127,14 @@ extern bool LoadPointcloudFile(std::vector<Vertex> &outVertices, Vector3 &outBou
 extern void SaveScreenshotToFile();
 extern void SetFullscreen(bool fullscreen);
 extern void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending);
+extern void InitializeRenderingResources();
 
 // Function declarations
-bool InitializeWindow(HINSTANCE hInstance, int ShowWnd);
+void InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 int Messageloop();
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-bool InitializeDirect3d11App(HINSTANCE hInstance);
 void ReleaseObjects();
-bool InitializeScene();
+void InitializeScene();
 void UpdateScene();
 void DrawScene();
 

@@ -231,30 +231,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	hr = CoInitialize(NULL);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CoInitialize) + L" failed!");
 
-	if (!InitializeWindow(hInstance, nShowCmd))
-	{
-		ERROR_MESSAGE(NAMEOF(InitializeWindow) + L" failed!");
-		return 0;
-	}
-
-	if (!InitializeDirect3d11App(hInstance))
-	{
-		ERROR_MESSAGE(NAMEOF(InitializeDirect3d11App) + L" failed!");
-		return 0;
-	}
-
-	if (!InitializeScene())
-	{
-		ERROR_MESSAGE(NAMEOF(InitializeScene) + L" failed!");
-		return 0;
-	}
+	InitializeWindow(hInstance, nShowCmd);
+	InitializeRenderingResources();
+	InitializeScene();
 
 	Messageloop();
 	ReleaseObjects();
 	return 0;
 }
 
-bool InitializeWindow(HINSTANCE hInstance, int ShowWnd)
+void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 {
 	/*
 	int ShowWnd - How the window should be displayed.Some common commands are SW_SHOWMAXIMIZED, SW_SHOW, SW_SHOWMINIMIZED.
@@ -279,7 +265,6 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	if (!RegisterClassEx(&wc))
 	{
 		ERROR_MESSAGE(NAMEOF(RegisterClassEx) + L" failed!");
-		return 1;
 	}
 
 	// Load the menu that will be shown below the title bar
@@ -291,17 +276,14 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	if (!hwnd)
 	{
 		ERROR_MESSAGE(NAMEOF(CreateWindowEx) + L" failed!");
-		return 1;
 	}
 
 	ShowWindow(hwnd, ShowWnd);
 	UpdateWindow(hwnd);
     Input::Initialize(hwnd);
-
-	return true;
 }
 
-bool InitializeDirect3d11App(HINSTANCE hInstance)
+void InitializeRenderingResources()
 {
 	DXGI_MODE_DESC bufferDesc;																	// Describe the backbuffer
 	ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));											// Clear everything for safety
@@ -525,8 +507,6 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 
 	hr = d3d11Device->CreateDepthStencilState(&disabledDepthStencilStateDesc, &disabledDepthStencilState);
 	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed for the " + NAMEOF(disabledDepthStencilState));
-
-	return true;
 }
 
 // Main part of the program
@@ -620,7 +600,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, msg, wParam, lParam);		//Takes care of all other messages
 }
 
-bool InitializeScene()
+void InitializeScene()
 {
     // Create and initialize the camera
     camera = new Camera();
@@ -656,8 +636,6 @@ bool InitializeScene()
 
 	scene.Initialize();
     timer.ResetElapsedTime();
-
-	return true;
 }
 
 void UpdateScene()
