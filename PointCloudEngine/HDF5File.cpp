@@ -236,8 +236,8 @@ void HDF5File::AddStringAttribute(std::wstring name, std::wstring value)
 void HDF5File::AddSparseUpsampleOfColorTexture(H5::Group& group, std::string name, int width, int height, std::vector<byte> data)
 {
 	// Create an upscaled texture with blank pixels around each RGB input pixel
-	size_t newWidth = 2 * width;
-	size_t newHeight = 2 * height;
+	size_t newWidth = settings->downsampleFactor * width;
+	size_t newHeight = settings->downsampleFactor * height;
 
 	byte* newData = new byte[3 * newWidth * newHeight];
 
@@ -250,11 +250,11 @@ void HDF5File::AddSparseUpsampleOfColorTexture(H5::Group& group, std::string nam
 			int g = r + 1;
 			int b = g + 1;
 
-			if ((y % 2 == 1) && (x % 2 == 1))
+			if ((y % settings->downsampleFactor == 1) && (x % settings->downsampleFactor == 1))
 			{
 				// Write the original pixel
-				int originalX = x / 2;
-				int originalY = y / 2;
+				int originalX = x / settings->downsampleFactor;
+				int originalY = y / settings->downsampleFactor;
 				int originalIndex = originalX + originalY * width;
 				int originalR = 3 * originalIndex;
 				int originalG = originalR + 1;
@@ -286,8 +286,8 @@ void HDF5File::AddSparseUpsampleOfColorTexture(H5::Group& group, std::string nam
 void HDF5File::AddSparseUpsampleOfDepthTexture(H5::Group& group, std::string name, int width, int height, float* data)
 {
 	// Create an upscaled texture with blank pixels around each input pixel
-	size_t newWidth = 2 * width;
-	size_t newHeight = 2 * height;
+	size_t newWidth = settings->downsampleFactor * width;
+	size_t newHeight = settings->downsampleFactor * height;
 
 	float* newData = new float[newWidth * newHeight];
 
@@ -297,11 +297,11 @@ void HDF5File::AddSparseUpsampleOfDepthTexture(H5::Group& group, std::string nam
 		{
 			int index = x + y * newWidth;
 
-			if ((y % 2 == 1) && (x % 2 == 1))
+			if ((y % settings->downsampleFactor == 1) && (x % settings->downsampleFactor == 1))
 			{
 				// Write the original pixel
-				int originalX = x / 2;
-				int originalY = y / 2;
+				int originalX = x / settings->downsampleFactor;
+				int originalY = y / settings->downsampleFactor;
 				int originalIndex = originalX + originalY * width;
 
 				newData[index] = data[originalIndex];

@@ -747,8 +747,10 @@ void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file,
 	// Render again but with lower resolution
 	int resolutionX = settings->resolutionX;
 	int resolutionY = settings->resolutionY;
-	ChangeRenderingResolution(resolutionX / 2, resolutionY / 2);
+	ChangeRenderingResolution(resolutionX / settings->downsampleFactor, resolutionY / settings->downsampleFactor);
 
+	// Also upsample the low resolution rendering with blank pixel padding and save it to the hdf5 file
+	// The downsample factor should be a power of 2 to avoid image stretching
 	HDF5DrawRenderModes(hdf5file, group, L"LowRes", true);
 
 	// Reset to full resolution

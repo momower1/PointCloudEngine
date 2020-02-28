@@ -70,6 +70,7 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(lossCalculationTarget), &lossCalculationTarget);
 
 		// Parse HDF5 dataset generation parameters
+		TryParse(NAMEOF(downsampleFactor), &downsampleFactor);
 		TryParse(NAMEOF(waypointStepSize), &waypointStepSize);
 		TryParse(NAMEOF(waypointPreviewStepSize), &waypointPreviewStepSize);
 		TryParse(NAMEOF(waypointMin), &waypointMin);
@@ -171,6 +172,7 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << std::endl;
 
 	settingsStream << L"# HDF5 Dataset Generation Parameters" << std::endl;
+	settingsStream << NAMEOF(downsampleFactor) << L"=" << downsampleFactor << std::endl;
 	settingsStream << NAMEOF(waypointStepSize) << L"=" << waypointStepSize << std::endl;
 	settingsStream << NAMEOF(waypointPreviewStepSize) << L"=" << waypointPreviewStepSize << std::endl;
 	settingsStream << NAMEOF(waypointMin) << L"=" << waypointMin << std::endl;
