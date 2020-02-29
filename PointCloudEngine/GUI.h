@@ -39,6 +39,7 @@ namespace PointCloudEngine
 
 	private:
 		static bool initialized;
+		static bool sameOutputChannel;
 		static int viewModeSelection;
 		static int lossSelfSelection;
 		static int lossTargetSelection;
@@ -90,6 +91,9 @@ namespace PointCloudEngine
 		static void OnSelectNeuralNetworkLossFunction();
 		static void OnSelectNeuralNetworkLossSelf();
 		static void OnSelectNeuralNetworkLossTarget();
+		static void OnSelectNeuralNetworkOutputRed();
+		static void OnSelectNeuralNetworkOutputGreen();
+		static void OnSelectNeuralNetworkOutputBlue();
 		static void OnLoadPytorchModel();
 		static void OnLoadDescriptionFile();
 	};

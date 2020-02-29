@@ -39,6 +39,7 @@ WaypointRenderer* GUI::waypointRenderer = NULL;
 GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
 
 bool GUI::initialized = false;
+bool GUI::sameOutputChannel = false;
 int GUI::viewModeSelection = 0;
 int GUI::lossSelfSelection = 0;
 int GUI::lossTargetSelection = 0;
@@ -190,9 +191,9 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 
 void PointCloudEngine::GUI::SetNeuralNetworkOutputChannels(std::vector<std::wstring> outputChannels)
 {
-	((GUIDropdown*)neuralNetworkElements[9])->SetEntries(outputChannels);
 	((GUIDropdown*)neuralNetworkElements[11])->SetEntries(outputChannels);
 	((GUIDropdown*)neuralNetworkElements[13])->SetEntries(outputChannels);
+	((GUIDropdown*)neuralNetworkElements[15])->SetEntries(outputChannels);
 }
 
 void PointCloudEngine::GUI::SetNeuralNetworkLossSelfChannels(std::map<std::wstring, XMUINT2> renderModes)
@@ -280,19 +281,21 @@ void PointCloudEngine::GUI::CreateContentRenderer()
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Loss Function"));
 	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 160 }, { 90, 200 }, { L"None", L"L1", L"MSE", L"Smooth L1" }, OnSelectNeuralNetworkLossFunction, &lossFunctionSelection));
 	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 260, 160 }, { 150, 20 }, NULL));
-	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 100 }, 100, 0, L"Loss Area", &settings->neuralNetworkLossArea));
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 10 }, 10, 0, L"Loss Area", &settings->neuralNetworkLossArea));
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 100, 20 }, L"Loss Self "));
 	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 220 }, { 180, 200 }, {}, OnSelectNeuralNetworkLossSelf, &lossSelfSelection));
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 250 }, { 100, 20 }, L"Loss Target "));
 	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 250 }, { 180, 200 }, {}, OnSelectNeuralNetworkLossTarget, &lossTargetSelection));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 280 }, { 100, 20 }, L"Output Red "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 280 }, { 180, 200 }, {}, NULL, &settings->neuralNetworkOutputRed));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 310 }, { 100, 20 }, L"Output Green "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 310 }, { 180, 200 }, {}, NULL, &settings->neuralNetworkOutputGreen));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 100, 20 }, L"Output Blue "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 340 }, { 180, 200 }, {}, NULL, &settings->neuralNetworkOutputBlue));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 10, 385 }, { 150, 25 }, L"Load Model", OnLoadPytorchModel));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 180, 385 }, { 150, 25 }, L"Load Description", OnLoadDescriptionFile));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 280 }, { 150, 20 }, L"Output Same"));
+	neuralNetworkElements.push_back(new GUICheckbox(hwndGUI, { 160, 280 }, { 20, 20 }, L"", NULL, &sameOutputChannel));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 310 }, { 100, 20 }, L"Output Red "));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 310 }, { 180, 200 }, {}, OnSelectNeuralNetworkOutputRed, &settings->neuralNetworkOutputRed));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 100, 20 }, L"Output Green "));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 340 }, { 180, 200 }, {}, OnSelectNeuralNetworkOutputGreen, &settings->neuralNetworkOutputGreen));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 370 }, { 100, 20 }, L"Output Blue "));
+	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 370 }, { 180, 200 }, {}, OnSelectNeuralNetworkOutputBlue, &settings->neuralNetworkOutputBlue));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 10, 415 }, { 150, 25 }, L"Load Model", OnLoadPytorchModel));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 180, 415 }, { 150, 25 }, L"Load Description", OnLoadDescriptionFile));
 }
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
@@ -612,6 +615,33 @@ void PointCloudEngine::GUI::OnSelectNeuralNetworkLossSelf()
 void PointCloudEngine::GUI::OnSelectNeuralNetworkLossTarget()
 {
 	settings->lossCalculationTarget = ((GUIDropdown*)neuralNetworkElements[7])->GetSelectedString();
+}
+
+void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputRed()
+{
+	if (sameOutputChannel)
+	{
+		((GUIDropdown*)neuralNetworkElements[13])->SetSelection(settings->neuralNetworkOutputRed);
+		((GUIDropdown*)neuralNetworkElements[15])->SetSelection(settings->neuralNetworkOutputRed);
+	}
+}
+
+void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputGreen()
+{
+	if (sameOutputChannel)
+	{
+		((GUIDropdown*)neuralNetworkElements[11])->SetSelection(settings->neuralNetworkOutputGreen);
+		((GUIDropdown*)neuralNetworkElements[15])->SetSelection(settings->neuralNetworkOutputGreen);
+	}
+}
+
+void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputBlue()
+{
+	if (sameOutputChannel)
+	{
+		((GUIDropdown*)neuralNetworkElements[11])->SetSelection(settings->neuralNetworkOutputBlue);
+		((GUIDropdown*)neuralNetworkElements[13])->SetSelection(settings->neuralNetworkOutputBlue);
+	}
 }
 
 void PointCloudEngine::GUI::OnLoadPytorchModel()
