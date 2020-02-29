@@ -2,6 +2,11 @@
 
 PointCloudEngine::Camera::Camera()
 {
+    Initialize();
+}
+
+void PointCloudEngine::Camera::Initialize()
+{
     // Create the viewport
     ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
     viewport.TopLeftX = 0;

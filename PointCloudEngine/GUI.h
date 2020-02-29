@@ -39,9 +39,12 @@ namespace PointCloudEngine
 
 	private:
 		static bool initialized;
+		static bool sameOutputChannel;
 		static int viewModeSelection;
 		static int lossSelfSelection;
 		static int lossTargetSelection;
+		static int resolutionScaleX;
+		static int resolutionScaleY;
 		static Vector3 waypointStartPosition;
 		static Matrix waypointStartRotation;
 		static Vector2 guiSize;
@@ -51,7 +54,7 @@ namespace PointCloudEngine
 		static GUITab* tabOctree;
 
 		// General
-		static std::vector<IGUIElement*> generalElements;
+		static std::vector<IGUIElement*> rendererElements;
 		static std::vector<IGUIElement*> splatElements;
 		static std::vector<IGUIElement*> octreeElements;
 		static std::vector<IGUIElement*> sparseElements;
@@ -68,7 +71,7 @@ namespace PointCloudEngine
 		static void DeleteElements(std::vector<IGUIElement*> elements);
 		static void UpdateElements(std::vector<IGUIElement*> elements);
 		static void HandleMessageElements(std::vector<IGUIElement*> elements, UINT msg, WPARAM wParam, LPARAM lParam);
-		static void CreateContentGeneral();
+		static void CreateContentRenderer();
 		static void CreateContentAdvanced();
 		static void CreateContentHDF5();
 		static void LoadCameraRecording();
@@ -76,6 +79,8 @@ namespace PointCloudEngine
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
+		static void OnChangeResolutionScale();
+		static void OnApplyResolution();
 		static void OnWaypointAdd();
 		static void OnWaypointRemove();
 		static void OnWaypointToggle();
@@ -86,6 +91,9 @@ namespace PointCloudEngine
 		static void OnSelectNeuralNetworkLossFunction();
 		static void OnSelectNeuralNetworkLossSelf();
 		static void OnSelectNeuralNetworkLossTarget();
+		static void OnSelectNeuralNetworkOutputRed();
+		static void OnSelectNeuralNetworkOutputGreen();
+		static void OnSelectNeuralNetworkOutputBlue();
 		static void OnLoadPytorchModel();
 		static void OnLoadDescriptionFile();
 	};

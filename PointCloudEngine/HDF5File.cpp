@@ -25,12 +25,12 @@ H5::Group HDF5File::CreateGroup(std::string name)
 	return file->createGroup(name);
 }
 
-void HDF5File::AddColorTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture, float gammaCorrection)
+void HDF5File::AddColorTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture, bool sparseUpsample, float gammaCorrection)
 {
-	AddColorTextureDataset(group, std::string(name.begin(), name.end()), texture, gammaCorrection);
+	AddColorTextureDataset(group, std::string(name.begin(), name.end()), texture, sparseUpsample, gammaCorrection);
 }
 
-void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture, float gammaCorrection)
+void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture, bool sparseUpsample, float gammaCorrection)
 {
 	// 1. Convert the input RGBA texture into a 32bit RGBA texture
 	// 2. Make it readable by the CPU and convert only the RGB content to a 8bit buffer (skip alpha)
@@ -118,8 +118,9 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 	std::vector<BYTE> buffer;
 
 	// Convert from 32bit float to 8bit and ignore alpha component
-	for (UINT i = 0; i < subresource.DepthPitch / 4; i++)
+	for (UINT i = 0; i < 4 * readableTextureDesc.Width * readableTextureDesc.Height; i++)
 	{
+		// Ignore alpha channel
 		if ((i + 1) % 4 != 0)
 		{
 			float f = ((float*)subresource.pData)[i];
@@ -157,14 +158,20 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 
 	// Write the data
 	dataSet.write(buffer.data(), H5::PredType::STD_U8BE);
+
+	// Save a texture with twice the width and height where each original pixel is just surrounded by 8 blank pixels
+	if (sparseUpsample)
+	{
+		AddSparseUpsampleOfColorTexture(group, (name + "Upsampled").c_str(), readableTextureDesc.Width, readableTextureDesc.Height, buffer);
+	}
 }
 
-void HDF5File::AddDepthTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture)
+void HDF5File::AddDepthTextureDataset(H5::Group& group, std::wstring name, ID3D11Texture2D* texture, bool sparseUpsample)
 {
-	AddDepthTextureDataset(group, std::string(name.begin(), name.end()), texture);
+	AddDepthTextureDataset(group, std::string(name.begin(), name.end()), texture, sparseUpsample);
 }
 
-void HDF5File::AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture)
+void HDF5File::AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11Texture2D* texture, bool sparseUpsample)
 {
 	ID3D11Texture2D* readableTexture = NULL;
 
@@ -208,6 +215,12 @@ void HDF5File::AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11
 
 	// Write the data
 	dataSet.write(subresource.pData, H5::PredType::NATIVE_FLOAT);
+
+	// Save a texture with twice the width and height where each original pixel is just surrounded by 8 blank pixels
+	if (sparseUpsample)
+	{
+		AddSparseUpsampleOfDepthTexture(group, (name + "Upsampled").c_str(), textureDesc.Width, textureDesc.Height, (float*)subresource.pData);
+	}
 	
 	// Unmap the texture
 	d3d11DevCon->Unmap(readableTexture, 0);
@@ -218,6 +231,96 @@ void HDF5File::AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11
 void HDF5File::AddStringAttribute(std::wstring name, std::wstring value)
 {
 	AddStringAttribute(file, name, value);
+}
+
+void HDF5File::AddSparseUpsampleOfColorTexture(H5::Group& group, std::string name, int width, int height, std::vector<byte> data)
+{
+	// Create an upscaled texture with blank pixels around each RGB input pixel
+	size_t newWidth = settings->downsampleFactor * width;
+	size_t newHeight = settings->downsampleFactor * height;
+
+	byte* newData = new byte[3 * newWidth * newHeight];
+
+	for (int y = 0; y < newHeight; y++)
+	{
+		for (int x = 0; x < newWidth; x++)
+		{
+			int index = x + y * newWidth;
+			int r = 3 * index;
+			int g = r + 1;
+			int b = g + 1;
+
+			if ((y % settings->downsampleFactor == 1) && (x % settings->downsampleFactor == 1))
+			{
+				// Write the original pixel
+				int originalX = x / settings->downsampleFactor;
+				int originalY = y / settings->downsampleFactor;
+				int originalIndex = originalX + originalY * width;
+				int originalR = 3 * originalIndex;
+				int originalG = originalR + 1;
+				int originalB = originalG + 1;
+
+				newData[r] = data[originalR];
+				newData[g] = data[originalG];
+				newData[b] = data[originalB];
+			}
+			else
+			{
+				// Write blank (background color)
+				newData[r] = settings->backgroundColor.x * 255;
+				newData[g] = settings->backgroundColor.y * 255;
+				newData[b] = settings->backgroundColor.z * 255;
+			}
+		}
+	}
+
+	H5::DataSpace dataSpace = CreateDataspace({ newHeight, newWidth, 3 });
+	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 64, 64, 3 });
+	H5::DataSet dataSet = group.createDataSet(name.c_str(), H5::PredType::STD_U8BE, dataSpace, propList);
+	SetImageAttributes(dataSet);
+	dataSet.write(newData, H5::PredType::STD_U8BE);
+
+	delete[] newData;
+}
+
+void HDF5File::AddSparseUpsampleOfDepthTexture(H5::Group& group, std::string name, int width, int height, float* data)
+{
+	// Create an upscaled texture with blank pixels around each input pixel
+	size_t newWidth = settings->downsampleFactor * width;
+	size_t newHeight = settings->downsampleFactor * height;
+
+	float* newData = new float[newWidth * newHeight];
+
+	for (int y = 0; y < newHeight; y++)
+	{
+		for (int x = 0; x < newWidth; x++)
+		{
+			int index = x + y * newWidth;
+
+			if ((y % settings->downsampleFactor == 1) && (x % settings->downsampleFactor == 1))
+			{
+				// Write the original pixel
+				int originalX = x / settings->downsampleFactor;
+				int originalY = y / settings->downsampleFactor;
+				int originalIndex = originalX + originalY * width;
+
+				newData[index] = data[originalIndex];
+			}
+			else
+			{
+				// Write blank
+				newData[index] = 1.0f;
+			}
+		}
+	}
+
+	H5::DataSpace dataSpace = CreateDataspace({ newHeight, newWidth });
+	H5::DSetCreatPropList propList = CreateDeflateCompressionPropList({ 64, 64 });
+	H5::DataSet dataSet = group.createDataSet(name.c_str(), H5::PredType::NATIVE_FLOAT, dataSpace, propList);
+	SetImageAttributes(dataSet);
+	dataSet.write(newData, H5::PredType::NATIVE_FLOAT);
+
+	delete[] newData;
 }
 
 H5::DataSpace HDF5File::CreateDataspace(std::initializer_list<hsize_t> dimensions)

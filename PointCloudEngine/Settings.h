@@ -25,8 +25,8 @@ namespace PointCloudEngine
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
         float farZ = 1000.0f;
-        int resolutionX = 1280;
-        int resolutionY = 720;
+        int resolutionX = 512;
+        int resolutionY = 512;
         bool windowed = true;
 
         // Pointcloud file parameters default values
@@ -65,6 +65,7 @@ namespace PointCloudEngine
 		std::wstring lossCalculationTarget = L"SplatsColor";
 
 		// HDF5 dataset generation parameters
+		int downsampleFactor = 2;
 		float waypointStepSize = 0.5f;
 		float waypointPreviewStepSize = 0.1f;
 		float waypointMin = 0.0f;

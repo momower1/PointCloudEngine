@@ -10,6 +10,7 @@ namespace PointCloudEngine
     {
     public:
         Camera();
+        void Initialize();
         void PrepareDraw();
         void SetRotationMatrix(Matrix rotation);
         void Rotate(float x, float y, float z);
