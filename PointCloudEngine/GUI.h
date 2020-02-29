@@ -53,7 +53,7 @@ namespace PointCloudEngine
 		static GUITab* tabOctree;
 
 		// General
-		static std::vector<IGUIElement*> generalElements;
+		static std::vector<IGUIElement*> rendererElements;
 		static std::vector<IGUIElement*> splatElements;
 		static std::vector<IGUIElement*> octreeElements;
 		static std::vector<IGUIElement*> sparseElements;
@@ -70,7 +70,7 @@ namespace PointCloudEngine
 		static void DeleteElements(std::vector<IGUIElement*> elements);
 		static void UpdateElements(std::vector<IGUIElement*> elements);
 		static void HandleMessageElements(std::vector<IGUIElement*> elements, UINT msg, WPARAM wParam, LPARAM lParam);
-		static void CreateContentGeneral();
+		static void CreateContentRenderer();
 		static void CreateContentAdvanced();
 		static void CreateContentHDF5();
 		static void LoadCameraRecording();

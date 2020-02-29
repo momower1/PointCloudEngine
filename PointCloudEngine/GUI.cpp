@@ -46,14 +46,14 @@ int GUI::resolutionScaleX = 0;
 int GUI::resolutionScaleY = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
-Vector2 GUI::guiSize = Vector2(380, 580);
+Vector2 GUI::guiSize = Vector2(380, 550);
 
 HWND GUI::hwndGUI = NULL;
 GUITab* GUI::tabGroundTruth = NULL;
 GUITab* GUI::tabOctree = NULL;
 
-// General
-std::vector<IGUIElement*> GUI::generalElements;
+// Renderer
+std::vector<IGUIElement*> GUI::rendererElements;
 std::vector<IGUIElement*> GUI::splatElements;
 std::vector<IGUIElement*> GUI::octreeElements;
 std::vector<IGUIElement*> GUI::sparseElements;
@@ -84,8 +84,8 @@ void PointCloudEngine::GUI::Initialize()
 		hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwnd, NULL, NULL, NULL);
 
 		// Tab inside the gui window for choosing different groups of settings
-		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
-		tabOctree = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"General", L"Advanced" }, OnSelectTab);
+		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
+		tabOctree = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced" }, OnSelectTab);
 
 		viewModeSelection = (int)settings->viewMode;
 
@@ -100,7 +100,7 @@ void PointCloudEngine::GUI::Initialize()
 		}
 
 		// Create and show content for each tab
-		CreateContentGeneral();
+		CreateContentRenderer();
 		CreateContentAdvanced();
 		CreateContentHDF5();
 
@@ -121,7 +121,7 @@ void PointCloudEngine::GUI::Release()
 	IGUIElement::DeleteFontHandle();
 	SafeDelete(tabGroundTruth);
 	SafeDelete(tabOctree);
-	DeleteElements(generalElements);
+	DeleteElements(rendererElements);
 	DeleteElements(splatElements);
 	DeleteElements(octreeElements);
 	DeleteElements(sparseElements);
@@ -138,7 +138,7 @@ void PointCloudEngine::GUI::Update()
 
 	tabGroundTruth->Update();
 	tabOctree->Update();
-	UpdateElements(generalElements);
+	UpdateElements(rendererElements);
 	UpdateElements(splatElements);
 	UpdateElements(octreeElements);
 	UpdateElements(sparseElements);
@@ -159,7 +159,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 	{
 		tabGroundTruth->HandleMessage(msg, wParam, lParam);
 		tabOctree->HandleMessage(msg, wParam, lParam);
-		HandleMessageElements(generalElements, msg, wParam, lParam);
+		HandleMessageElements(rendererElements, msg, wParam, lParam);
 		HandleMessageElements(splatElements, msg, wParam, lParam);
 		HandleMessageElements(octreeElements, msg, wParam, lParam);
 		HandleMessageElements(sparseElements, msg, wParam, lParam);
@@ -176,13 +176,13 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	
 	if (settings->useOctree)
 	{
-		((GUIDropdown*)generalElements[2])->SetSelection(min((int)settings->viewMode, 2));
+		((GUIDropdown*)rendererElements[2])->SetSelection(min((int)settings->viewMode, 2));
 		tabOctree->Show(SW_SHOW);
 		tabGroundTruth->Show(SW_HIDE);
 	}
 	else
 	{
-		((GUIDropdown*)generalElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 4)));
+		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 4)));
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
@@ -246,17 +246,17 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 	}
 }
 
-void PointCloudEngine::GUI::CreateContentGeneral()
+void PointCloudEngine::GUI::CreateContentRenderer()
 {
-	generalElements.push_back(new GUIText(hwndGUI, { 10, 40 }, { 100, 20 }, L"View Mode "));
-	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
-	generalElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
-	generalElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Vertex Count "));
-	generalElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 70 }, { 200, 20 }, &GUI::vertexCount));
-	generalElements.push_back(new GUIText(hwndGUI, { 10, 100 }, { 150, 20 }, L"Frames per second "));
-	generalElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 100 }, { 50, 20 }, &GUI::fps));
-	generalElements.push_back(new GUIText(hwndGUI, { 10, 130 }, { 150, 20 }, L"Lighting "));
-	generalElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", NULL, &settings->useLighting));
+	rendererElements.push_back(new GUIText(hwndGUI, { 10, 40 }, { 100, 20 }, L"View Mode "));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
+	rendererElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Vertex Count "));
+	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 70 }, { 200, 20 }, &GUI::vertexCount));
+	rendererElements.push_back(new GUIText(hwndGUI, { 10, 100 }, { 150, 20 }, L"Frames per second "));
+	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 100 }, { 50, 20 }, &GUI::fps));
+	rendererElements.push_back(new GUIText(hwndGUI, { 10, 130 }, { 150, 20 }, L"Lighting "));
+	rendererElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", NULL, &settings->useLighting));
 
 	splatElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Blending "));
 	splatElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->useBlending));
@@ -320,11 +320,6 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 340 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Diffuse", &settings->diffuse, 2));
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 370 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Specular", &settings->specular, 2));
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 400 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Lighting Specular Exp.", &settings->specularExponent, 2));
-
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 450 }, { 150, 25 }, L"Add Waypoint", OnWaypointAdd));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 450 }, { 150, 25 }, L"Remove Waypoint", OnWaypointRemove));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 485 }, { 150, 25 }, L"Toggle Waypoints", OnWaypointToggle));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 180, 485 }, { 150, 25 }, L"Preview Waypoints", OnWaypointPreview));
 }
 
 void PointCloudEngine::GUI::CreateContentHDF5()
@@ -338,17 +333,21 @@ void PointCloudEngine::GUI::CreateContentHDF5()
 	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 170 }, { 150, 20 }, L"Range Min/Max"));
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 170 }, { 50, 20 }, { 0, 100 }, 100, 0, L"Min", &settings->waypointMin, 1, 0, 28));
 	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 170 }, { 50, 20 }, { 0, 100 }, 100, 0, L"Max", &settings->waypointMax, 1, 0, 28));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 200 }, { 325, 25 }, L"Generate Waypoint HDF5 Dataset", OnGenerateWaypointDataset));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 200 }, { 150, 25 }, L"Add Waypoint", OnWaypointAdd));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 185, 200 }, { 150, 25 }, L"Remove Waypoint", OnWaypointRemove));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 235 }, { 150, 25 }, L"Toggle Waypoints", OnWaypointToggle));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 185, 235 }, { 150, 25 }, L"Preview Waypoints", OnWaypointPreview));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 270 }, { 325, 25 }, L"Generate Waypoint HDF5 Dataset", OnGenerateWaypointDataset));
 
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 245 }, { 300, 20 }, L"Sphere Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 275 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 305 }, { 150, 20 }, L"Theta Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 305 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 305 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, 28));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 335 }, { 150, 20 }, L"Phi Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 335 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 335 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, 28));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 365 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 330 }, { 300, 20 }, L"Sphere Dataset Generation"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 370 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 400 }, { 150, 20 }, L"Theta Min/Max"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 400 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, 28));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 400 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, 28));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 430 }, { 150, 20 }, L"Phi Min/Max"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 430 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, 28));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 430 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, 28));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 460 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
 }
 
 void PointCloudEngine::GUI::LoadCameraRecording()
@@ -444,7 +443,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 
 void PointCloudEngine::GUI::OnSelectTab(int selection)
 {
-	ShowElements(generalElements, SW_HIDE);
+	ShowElements(rendererElements, SW_HIDE);
 	ShowElements(splatElements, SW_HIDE);
 	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
@@ -457,16 +456,16 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	{
 		case 0:
 		{
-			ShowElements(generalElements);
+			ShowElements(rendererElements);
 			OnSelectViewMode();
 
 			if (settings->useOctree)
 			{
-				generalElements[1]->Show(SW_HIDE);
+				rendererElements[1]->Show(SW_HIDE);
 			}
 			else
 			{
-				generalElements[2]->Show(SW_HIDE);
+				rendererElements[2]->Show(SW_HIDE);
 			}
 			break;
 		}
