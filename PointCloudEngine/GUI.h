@@ -78,6 +78,7 @@ namespace PointCloudEngine
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
+		static void OnChangeResolutionScale();
 		static void OnApplyResolution();
 		static void OnWaypointAdd();
 		static void OnWaypointRemove();

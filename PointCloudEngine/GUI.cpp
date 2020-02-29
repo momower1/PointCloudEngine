@@ -46,7 +46,7 @@ int GUI::resolutionScaleX = 0;
 int GUI::resolutionScaleY = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
-Vector2 GUI::guiSize = Vector2(380, 550);
+Vector2 GUI::guiSize = Vector2(380, 540);
 
 HWND GUI::hwndGUI = NULL;
 GUITab* GUI::tabGroundTruth = NULL;
@@ -300,9 +300,10 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 	resolutionScaleX = log2(settings->resolutionX);
 	resolutionScaleY = log2(settings->resolutionY);
 
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale X", &resolutionScaleX));
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale Y", &resolutionScaleY));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 100 }, { 325, 25 }, L"Apply Resolution (Power of 2)", OnApplyResolution));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale X", &resolutionScaleX, 1, 148, 40, OnChangeResolutionScale));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale Y", &resolutionScaleY, 1, 148, 40, OnChangeResolutionScale));
+	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 100 }, { 325, 25 }, L"Apply Resolution", OnApplyResolution));
+	OnChangeResolutionScale();
 
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 130, 20 }, { 1, 100 }, 10, 0, L"Scale", &settings->scale));
 	advancedElements.push_back(new GUIText(hwndGUI, { 10, 190 }, { 150, 20 }, L"Background RGB"));
@@ -340,14 +341,14 @@ void PointCloudEngine::GUI::CreateContentHDF5()
 	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 270 }, { 325, 25 }, L"Generate Waypoint HDF5 Dataset", OnGenerateWaypointDataset));
 
 	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 330 }, { 300, 20 }, L"Sphere Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 370 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 400 }, { 150, 20 }, L"Theta Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 400 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 400 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, 28));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 430 }, { 150, 20 }, L"Phi Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 430 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 430 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, 28));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 460 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 360 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 390 }, { 150, 20 }, L"Theta Min/Max"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 390 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, 28));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 390 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, 28));
+	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 420 }, { 150, 20 }, L"Phi Min/Max"));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 420 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, 28));
+	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 420 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, 28));
+	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 450 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
 }
 
 void PointCloudEngine::GUI::LoadCameraRecording()
@@ -480,6 +481,12 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 			break;
 		}
 	}
+}
+
+void PointCloudEngine::GUI::OnChangeResolutionScale()
+{
+	std::wstring buttonText = L"Apply Resolution " + std::to_wstring((int)pow(2, resolutionScaleX)) + L"x" + std::to_wstring((int)pow(2, resolutionScaleY));
+	SetWindowText(((GUIButton*)advancedElements[2])->hwndButton, buttonText.c_str());
 }
 
 void PointCloudEngine::GUI::OnApplyResolution()
