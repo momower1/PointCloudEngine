@@ -263,7 +263,7 @@ void PointCloudEngine::GUI::CreateContentRenderer()
 	splatElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 100 }, 10, 0, L"Blend Factor", &settings->blendFactor));
 	splatElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 1000 }, 1000, 0, L"Sampling Rate", &settings->samplingRate, 3));
 
-	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 4, 100 }, settings->resolutionY * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, 148, 50));
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 4, 100 }, max(settings->resolutionX, settings->resolutionY) * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, 148, 50));
 	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 130, 20 }, { 0, 500 }, 100, -100, L"Overlap Factor", &settings->overlapFactor, 2));
 	octreeElements.push_back(new GUISlider<int>(hwndGUI, { 160, 310 }, { 130, 20 }, { 0, 1 + (UINT)settings->maxOctreeDepth }, 1, 1, L"Octree Level", &settings->octreeLevel));
 	octreeElements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 150, 20 }, L"Culling "));
@@ -503,6 +503,9 @@ void PointCloudEngine::GUI::OnApplyResolution()
 	{
 		groundTruthRenderer->ApplyNeuralNetworkResolution();
 	}
+
+	// Octree maximal splat resolution should increase/decrease when changing the resolution
+	((GUISlider<float>*)octreeElements[0])->scale = max(settings->resolutionX, settings->resolutionY) * 4;
 }
 
 void PointCloudEngine::GUI::OnWaypointAdd()
