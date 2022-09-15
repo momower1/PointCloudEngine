@@ -499,7 +499,11 @@ void PointCloudEngine::GUI::OnApplyResolution()
 	// Resize the window
 	RECT rect;
 	GetWindowRect(hwndScene, &rect);
-	MoveWindow(hwndScene, rect.left, rect.top, settings->resolutionX, settings->resolutionY, true);
+	rect.right = rect.left + settings->resolutionX;
+	rect.bottom = rect.top + settings->resolutionY;
+
+	AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, NULL);
+	MoveWindow(hwndScene, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, true);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Make sure the neural network renderer reallocates resources as well

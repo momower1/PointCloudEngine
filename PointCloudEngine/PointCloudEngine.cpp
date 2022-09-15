@@ -287,8 +287,17 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	// Load the menu that will be shown below the title bar
 	HMENU menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU));
 
+	// Calculate the required size for the window such that the scene is rendered at native resolution
+	RECT rect;
+	rect.left = 0;
+	rect.top = 0;
+	rect.right = settings->resolutionX;
+	rect.bottom = settings->resolutionY;
+
+	AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, NULL);
+
 	// Create window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
-	hwndScene = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, settings->resolutionX, settings->resolutionY, NULL, menu, hInstance, NULL);
+	hwndScene = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, NULL, menu, hInstance, NULL);
 
 	if (!hwndScene)
 	{
@@ -598,7 +607,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if ((hwnd == hwndScene) && (camera != NULL))
 			{
-				ChangeRenderingResolution(LOWORD(lParam), HIWORD(lParam));
+				RECT rectClient;
+				GetClientRect(hwndScene, &rectClient);
+				ChangeRenderingResolution(rectClient.right - rectClient.left, rectClient.bottom - rectClient.top);
 			}
 
 			return 0;
