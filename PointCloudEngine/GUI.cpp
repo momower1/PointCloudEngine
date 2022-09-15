@@ -43,8 +43,8 @@ bool GUI::sameOutputChannel = false;
 int GUI::viewModeSelection = 0;
 int GUI::lossSelfSelection = 0;
 int GUI::lossTargetSelection = 0;
-int GUI::resolutionScaleX = 0;
-int GUI::resolutionScaleY = 0;
+int GUI::resolutionX = 0;
+int GUI::resolutionY = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
 Vector2 GUI::guiSize = Vector2(380, 540);
@@ -300,13 +300,13 @@ void PointCloudEngine::GUI::CreateContentRenderer()
 
 void PointCloudEngine::GUI::CreateContentAdvanced()
 {
-	resolutionScaleX = log2(settings->resolutionX);
-	resolutionScaleY = log2(settings->resolutionY);
+	resolutionX = settings->resolutionX;
+	resolutionY = settings->resolutionY;
 
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale X", &resolutionScaleX, 1, 148, 40, OnChangeResolutionScale));
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale Y", &resolutionScaleY, 1, 148, 40, OnChangeResolutionScale));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 1, (uint32_t)GetSystemMetrics(SM_CXSCREEN) }, 1, 0, L"Resolution X", &resolutionX, 1, 148, 40, OnChangeResolution));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 1, (uint32_t)GetSystemMetrics(SM_CYSCREEN) }, 1, 0, L"Resolution Y", &resolutionY, 1, 148, 40, OnChangeResolution));
 	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 100 }, { 325, 25 }, L"Apply Resolution", OnApplyResolution));
-	OnChangeResolutionScale();
+	OnChangeResolution();
 
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 130, 20 }, { 1, 100 }, 10, 0, L"Scale", &settings->scale));
 	advancedElements.push_back(new GUIText(hwndGUI, { 10, 190 }, { 150, 20 }, L"Background RGB"));
@@ -486,15 +486,15 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	}
 }
 
-void PointCloudEngine::GUI::OnChangeResolutionScale()
+void PointCloudEngine::GUI::OnChangeResolution()
 {
-	std::wstring buttonText = L"Apply Resolution " + std::to_wstring((int)pow(2, resolutionScaleX)) + L"x" + std::to_wstring((int)pow(2, resolutionScaleY));
+	std::wstring buttonText = L"Apply Resolution " + std::to_wstring(resolutionX) + L"x" + std::to_wstring(resolutionY);
 	SetWindowText(((GUIButton*)advancedElements[2])->hwndButton, buttonText.c_str());
 }
 
 void PointCloudEngine::GUI::OnApplyResolution()
 {
-	ChangeRenderingResolution(pow(2, resolutionScaleX), pow(2, resolutionScaleY));
+	ChangeRenderingResolution(resolutionX, resolutionY);
 	
 	// Resize the window
 	RECT rect;

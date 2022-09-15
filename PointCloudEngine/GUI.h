@@ -43,8 +43,8 @@ namespace PointCloudEngine
 		static int viewModeSelection;
 		static int lossSelfSelection;
 		static int lossTargetSelection;
-		static int resolutionScaleX;
-		static int resolutionScaleY;
+		static int resolutionX;
+		static int resolutionY;
 		static Vector3 waypointStartPosition;
 		static Matrix waypointStartRotation;
 		static Vector2 guiSize;
@@ -79,7 +79,7 @@ namespace PointCloudEngine
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
-		static void OnChangeResolutionScale();
+		static void OnChangeResolution();
 		static void OnApplyResolution();
 		static void OnWaypointAdd();
 		static void OnWaypointRemove();
