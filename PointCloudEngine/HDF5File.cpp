@@ -1,5 +1,7 @@
 #include "HDF5File.h"
 
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
+
 HDF5File::HDF5File(std::wstring filename)
 {
 	file = new H5::H5File(std::string(filename.begin(), filename.end()).c_str(), H5F_ACC_TRUNC);
@@ -357,3 +359,5 @@ void HDF5File::SetImageAttributes(H5::DataSet& dataSet)
 	AddStringAttribute(&dataSet, L"IMAGE_SUBCLASS", L"IMAGE_TRUECOLOR");
 	AddStringAttribute(&dataSet, L"INTERLACE_MODE", L"INTERLACE_PIXEL");
 }
+
+#endif

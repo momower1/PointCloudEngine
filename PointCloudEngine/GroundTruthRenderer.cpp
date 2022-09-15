@@ -52,13 +52,16 @@ void GroundTruthRenderer::Update()
 
 void GroundTruthRenderer::Draw()
 {
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Evaluate neural network and present the result to the screen
 	if (settings->viewMode == ViewMode::NeuralNetwork)
 	{
 		DrawNeuralNetwork();
 		return;
 	}
-	else if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
+	else
+#endif
+	if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
 	{
 		// Set the splat shaders
 		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -136,9 +139,11 @@ void GroundTruthRenderer::Release()
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
 
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Neural Network
 	SAFE_RELEASE(colorTexture);
 	SAFE_RELEASE(depthTexture);
+#endif
 }
 
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
@@ -152,6 +157,22 @@ void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 	sceneObject->RemoveComponent(this);
 }
 
+void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)
+{
+	// Clear the render target and depth/stencil view
+	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	Draw();
+
+	if (present)
+	{
+		// Present the result to the screen
+		swapChain->Present(0, 0);
+	}
+}
+
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 void PointCloudEngine::GroundTruthRenderer::GenerateSphereDataset()
 {
 	HDF5File hdf5file = CreateDatasetHDF5File();
@@ -712,21 +733,6 @@ void PointCloudEngine::GroundTruthRenderer::OutputTensorSize(torch::Tensor &tens
 	OutputDebugString(L"\n");
 }
 
-void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)
-{
-	// Clear the render target and depth/stencil view
-	d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
-	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	Draw();
-
-	if (present)
-	{
-		// Present the result to the screen
-		swapChain->Present(0, 0);
-	}
-}
-
 void PointCloudEngine::GroundTruthRenderer::HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex)
 {
 	// Save the viewports in numbered groups with leading zeros
@@ -852,3 +858,4 @@ std::vector<std::wstring> PointCloudEngine::GroundTruthRenderer::SplitString(std
 
 	return output;
 }
+#endif

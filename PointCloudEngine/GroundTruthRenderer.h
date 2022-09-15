@@ -17,11 +17,14 @@ namespace PointCloudEngine
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
+
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		void GenerateSphereDataset();
 		void GenerateWaypointDataset();
 		void LoadNeuralNetworkPytorchModel();
 		void LoadNeuralNetworkDescriptionFile();
 		void ApplyNeuralNetworkResolution();
+#endif
 
     private:
 		Vector3 boundingCubePosition;
@@ -53,6 +56,9 @@ namespace PointCloudEngine
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
         ID3D11Buffer* constantBuffer;
 
+		void Redraw(bool present);
+
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		// Maps from the name of the render mode to the view mode (x) and the shading mode (y)
 		std::map<std::wstring, XMUINT2> renderModes =
 		{
@@ -111,11 +117,11 @@ namespace PointCloudEngine
 		void CopyBackbufferTextureToTensor(torch::Tensor &tensor);
 		void CopyDepthTextureToTensor(torch::Tensor &tensor);
 		void OutputTensorSize(torch::Tensor &tensor);
-		void Redraw(bool present);
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
 		void HDF5DrawRenderModes(HDF5File& hdf5file, H5::Group group, std::wstring comment, bool sparseUpsample = false);
 		HDF5File CreateDatasetHDF5File();
 		std::vector<std::wstring> SplitString(std::wstring s, wchar_t delimiter);
+#endif
     };
 }
 #endif

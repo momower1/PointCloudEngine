@@ -145,7 +145,7 @@ void OctreeRenderer::Draw()
 		transformed = Vector4::Transform(transformed, worldViewProjectionInverse);
 
 		// Normalize by dividing by w
-		localViewFrustum[i] = transformed / transformed.w;
+		localViewFrustum[i] = (1.0 / transformed.w) * Vector3(transformed.x, transformed.y, transformed.z);
 	}
 
     // Set shader constant buffer variables

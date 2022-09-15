@@ -98,7 +98,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -108,27 +108,7 @@
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -151,7 +131,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;c10.lib;c10_cuda.lib;torch.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -161,27 +141,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -208,7 +168,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -218,27 +178,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -265,7 +205,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;c10.lib;c10_cuda.lib;torch.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -275,27 +215,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
-copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>

@@ -7,12 +7,14 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 // Forward declarations
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 class HDF5File;
 
 namespace H5
 {
 	class Group;
 }
+#endif
 
 namespace PointCloudEngine
 {

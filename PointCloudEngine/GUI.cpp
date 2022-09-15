@@ -501,11 +501,14 @@ void PointCloudEngine::GUI::OnApplyResolution()
 	GetWindowRect(hwnd, &rect);
 	MoveWindow(hwnd, rect.left, rect.top, settings->resolutionX, settings->resolutionY, true);
 
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Make sure the neural network renderer reallocates resources as well
 	if (groundTruthRenderer != NULL)
 	{
 		groundTruthRenderer->ApplyNeuralNetworkResolution();
 	}
+#endif
+
 
 	// Octree maximal splat resolution should increase/decrease when changing the resolution
 	((GUISlider<float>*)octreeElements[0])->scale = max(settings->resolutionX, settings->resolutionY) * 4;
@@ -563,21 +566,23 @@ void PointCloudEngine::GUI::OnWaypointPreview()
 
 void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 {
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	if (groundTruthRenderer != NULL)
 	{
 		groundTruthRenderer->GenerateWaypointDataset();
 	}
-
+#endif
 	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
 {
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	if (groundTruthRenderer != NULL)
 	{
 		groundTruthRenderer->GenerateSphereDataset();
 	}
-
+#endif
 	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
 }
 
@@ -646,16 +651,20 @@ void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputBlue()
 
 void PointCloudEngine::GUI::OnLoadPytorchModel()
 {
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	if (OpenFileDialog(L"Pytorch Jit Model Files\0*.pt\0\0", settings->neuralNetworkModelFile))
 	{
 		groundTruthRenderer->LoadNeuralNetworkPytorchModel();
 	}
+#endif
 }
 
 void PointCloudEngine::GUI::OnLoadDescriptionFile()
 {
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	if (OpenFileDialog(L"Model Description Files\0*.txt\0\0", settings->neuralNetworkDescriptionFile))
 	{
 		groundTruthRenderer->LoadNeuralNetworkDescriptionFile();
 	}
+#endif
 }
