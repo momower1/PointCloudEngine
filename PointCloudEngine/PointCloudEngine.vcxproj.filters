@@ -239,4 +239,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="PointCloudEngine.manifest" />
+  </ItemGroup>
 </Project>
