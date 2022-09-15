@@ -96,7 +96,7 @@ extern std::wstring executablePath;
 extern std::wstring executableDirectory;
 extern double dt;
 extern HRESULT hr;
-extern HWND hwnd;
+extern HWND hwndScene;
 extern Settings* settings;
 extern Camera* camera;
 extern Shader* textShader;

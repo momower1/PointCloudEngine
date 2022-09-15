@@ -75,14 +75,14 @@ void PointCloudEngine::GUI::Initialize()
 
 		// Place the gui window for changing settings next to the main window
 		RECT rect;
-		GetWindowRect(hwnd, &rect);
+		GetWindowRect(hwndScene, &rect);
 
 		// Initialize common controls library to use buttons and so on
 		InitCommonControls();
 		IGUIElement::InitializeFontHandle();
 
 		// This is the gui window
-		hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwnd, NULL, NULL, NULL);
+		hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwndScene, NULL, NULL, NULL);
 
 		// Tab inside the gui window for choosing different groups of settings
 		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
@@ -498,8 +498,8 @@ void PointCloudEngine::GUI::OnApplyResolution()
 	
 	// Resize the window
 	RECT rect;
-	GetWindowRect(hwnd, &rect);
-	MoveWindow(hwnd, rect.left, rect.top, settings->resolutionX, settings->resolutionY, true);
+	GetWindowRect(hwndScene, &rect);
+	MoveWindow(hwndScene, rect.left, rect.top, settings->resolutionX, settings->resolutionY, true);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Make sure the neural network renderer reallocates resources as well

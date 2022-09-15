@@ -4,7 +4,7 @@
 std::wstring executablePath;
 std::wstring executableDirectory;
 HRESULT hr;
-HWND hwnd = NULL;
+HWND hwndScene = NULL;
 LPCTSTR WndClassName = L"PointCloudEngine";
 double dt = 0;
 Timer timer;
@@ -61,7 +61,7 @@ bool OpenFileDialog(const wchar_t *filter, std::wstring& outFilename)
 	OPENFILENAMEW openFileName;
 	ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
 	openFileName.lStructSize = sizeof(OPENFILENAMEW);
-	openFileName.hwndOwner = hwnd;
+	openFileName.hwndOwner = hwndScene;
 	openFileName.lpstrFilter = filter;
 	openFileName.lpstrFile = filename;
 	openFileName.lpstrFile[0] = L'\0';
@@ -91,7 +91,7 @@ void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int
 		messageStream << message << L"\n\n" << error.ErrorMessage() << L" in " << filename << " at line " << line;
 		std::wstring header = std::wstring(headerStream.str());
 		message = std::wstring(messageStream.str());
-		MessageBox(hwnd, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
+		MessageBox(hwndScene, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
 	}
 }
 
@@ -179,6 +179,9 @@ void ChangeRenderingResolution(int newResolutionX, int newResolutionY)
 	d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
 	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
+
+	UpdateScene();
+	DrawScene();
 }
 
 void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* constantBufferData, int &useBlending)
@@ -285,16 +288,16 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	HMENU menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU));
 
 	// Create window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
-	hwnd = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, settings->resolutionX, settings->resolutionY, NULL, menu, hInstance, NULL);
+	hwndScene = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, settings->resolutionX, settings->resolutionY, NULL, menu, hInstance, NULL);
 
-	if (!hwnd)
+	if (!hwndScene)
 	{
 		ERROR_MESSAGE(NAMEOF(CreateWindowEx) + L" failed!");
 	}
 
-	ShowWindow(hwnd, ShowWnd);
-	UpdateWindow(hwnd);
-    Input::Initialize(hwnd);
+	ShowWindow(hwndScene, ShowWnd);
+	UpdateWindow(hwndScene);
+    Input::Initialize(hwndScene);
 }
 
 void InitializeRenderingResources()
@@ -335,7 +338,7 @@ void InitializeRenderingResources()
 		swapChainDesc.SampleDesc.Quality = 0;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
 		swapChainDesc.BufferCount = 1;																// 1 for double buffering, 2 for triple buffering and so on
-		swapChainDesc.OutputWindow = hwnd;
+		swapChainDesc.OutputWindow = hwndScene;
 		swapChainDesc.Windowed = settings->windowed;												// Fullscreen might freeze the programm -> set windowed before exit
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;										// Let display driver decide what to do when swapping buffers
 
@@ -591,6 +594,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		    PostQuitMessage(0);
 		    return 0;
         }
+		case WM_SIZE:
+		{
+			if ((hwnd == hwndScene) && (camera != NULL))
+			{
+				ChangeRenderingResolution(LOWORD(lParam), HIWORD(lParam));
+			}
+
+			return 0;
+		}
 		case WM_COMMAND:
 		{
 			switch (wParam)

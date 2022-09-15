@@ -85,7 +85,7 @@ void Scene::Update(Timer &timer)
 	if (Input::GetMouseButtonDown(MouseButton::RightButton))
 	{
 		// Hide cursor and focus main window
-		SetFocus(hwnd);
+		SetFocus(hwndScene);
 		Input::SetMode(Mouse::MODE_RELATIVE);
 	}
 	else if (Input::GetMouseButtonUp(MouseButton::RightButton))
@@ -100,7 +100,7 @@ void Scene::Update(Timer &timer)
     // Save config file and exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))
     {
-        DestroyWindow(hwnd);
+        DestroyWindow(hwndScene);
     }
 
 	Hierarchy::UpdateAllSceneObjects();
@@ -156,7 +156,7 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     if (pointCloudRenderer != NULL)
     {
 		pointCloudRenderer->RemoveComponentFromSceneObject();
-        SetWindowTextW(hwnd, L"PointCloudEngine");
+        SetWindowTextW(hwndScene, L"PointCloudEngine");
 
 		// Hide GUI
 		GUI::SetVisible(false);
@@ -206,7 +206,7 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     if (pointCloudRenderer != NULL)
     {
         pointCloud->AddComponent(pointCloudRenderer);
-        SetWindowTextW(hwnd, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
+        SetWindowTextW(hwndScene, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
 
         // Set camera position in front of the object
         Vector3 boundingBoxPosition;
