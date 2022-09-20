@@ -33,7 +33,7 @@ void PointCloudEngine::WaypointRenderer::Initialize()
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
 }
 
 void PointCloudEngine::WaypointRenderer::Update()
@@ -165,6 +165,6 @@ void PointCloudEngine::WaypointRenderer::UpdateVertexBuffer()
 
 		// Create the vertex buffer
 		hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 	}
 }

@@ -77,8 +77,6 @@ void PointCloudEngine::GUI::Initialize()
 		RECT rect;
 		GetWindowRect(hwndScene, &rect);
 
-		// Initialize common controls library to use buttons and so on
-		InitCommonControls();
 		IGUIElement::InitializeFontHandle();
 
 		// This is the gui window
@@ -120,8 +118,8 @@ void PointCloudEngine::GUI::Release()
 
 	// SafeDelete all GUI elements, HWNDs are released automatically
 	IGUIElement::DeleteFontHandle();
-	SafeDelete(tabGroundTruth);
-	SafeDelete(tabOctree);
+	SAFE_DELETE(tabGroundTruth);
+	SAFE_DELETE(tabOctree);
 	DeleteElements(rendererElements);
 	DeleteElements(splatElements);
 	DeleteElements(octreeElements);
@@ -225,7 +223,7 @@ void PointCloudEngine::GUI::DeleteElements(std::vector<IGUIElement*> elements)
 {
 	for (auto it = elements.begin(); it != elements.end(); it++)
 	{
-		SafeDelete(*it);
+		SAFE_DELETE(*it);
 	}
 
 	elements.clear();

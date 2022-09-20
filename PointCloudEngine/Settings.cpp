@@ -1,9 +1,11 @@
 #include "Settings.h"
 
-PointCloudEngine::Settings::Settings()
+PointCloudEngine::Settings::Settings(std::wstring filename)
 {
-    // Check if the config file exists that stores the last pointcloudFile path
-    std::wifstream settingsFile(executableDirectory + SETTINGS_FILENAME);
+	this->filename = filename;
+
+    // Check if the file exists (otherwise use default values)
+    std::wifstream settingsFile(filename);
 
     if (settingsFile.is_open())
     {
@@ -23,6 +25,15 @@ PointCloudEngine::Settings::Settings()
 				settingsMap[variableName] = variableValue;
             }
         }
+
+		// Parse engine window parameters
+		TryParse(NAMEOF(guiScaleFactor), &guiScaleFactor);
+		TryParse(NAMEOF(engineWidth), &engineWidth);
+		TryParse(NAMEOF(engineHeight), &engineHeight);
+		TryParse(NAMEOF(enginePositionX), &enginePositionX);
+		TryParse(NAMEOF(enginePositionY), &enginePositionY);
+		TryParse(NAMEOF(userInterfaceWidth), &userInterfaceWidth);
+		TryParse(NAMEOF(userInterfaceHeight), &userInterfaceHeight);
 
 		// Parse rendering parameters
 		TryParse(NAMEOF(backgroundColor), &backgroundColor);
@@ -103,8 +114,7 @@ PointCloudEngine::Settings::Settings()
 PointCloudEngine::Settings::~Settings()
 {
     // Save values as lines with "variableKey=variableValue" to file with comments
-    std::wofstream settingsFile(executableDirectory + SETTINGS_FILENAME);
-
+    std::wofstream settingsFile(this->filename);
 	settingsFile << ToKeyValueString();
     settingsFile.flush();
     settingsFile.close();
@@ -117,6 +127,16 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << L"# Parameters only apply when restarting the engine." << std::endl;
 	settingsStream << L"# This file is overwritten when PointCloudEngine exits." << std::endl;
 	settingsStream << L"# Make sure to close the engine before editing this file." << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Engine Window Parameters" << std::endl;
+	settingsStream << NAMEOF(guiScaleFactor) << L"=" << guiScaleFactor << std::endl;
+	settingsStream << NAMEOF(engineWidth) << L"=" << engineWidth << std::endl;
+	settingsStream << NAMEOF(engineHeight) << L"=" << engineHeight << std::endl;
+	settingsStream << NAMEOF(enginePositionX) << L"=" << enginePositionX << std::endl;
+	settingsStream << NAMEOF(enginePositionY) << L"=" << enginePositionY << std::endl;
+	settingsStream << NAMEOF(userInterfaceWidth) << L"=" << userInterfaceWidth << std::endl;
+	settingsStream << NAMEOF(userInterfaceHeight) << L"=" << userInterfaceHeight << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Rendering Parameters" << std::endl;

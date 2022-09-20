@@ -16,7 +16,7 @@ void TextRenderer::ReleaseAllSpriteFonts()
 {
     for (auto it = fonts.begin(); it != fonts.end(); it++)
     {
-		SafeDelete((*it).second);
+		SAFE_DELETE((*it).second);
     }
 
     fonts.clear();
@@ -44,7 +44,7 @@ void TextRenderer::Initialize()
     constantBufferTextDesc.MiscFlags = 0;
 
     hr = d3d11Device->CreateBuffer(&constantBufferTextDesc, NULL, &constantBufferText);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBufferText));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBufferText));
 }
 
 void TextRenderer::Update()
@@ -101,7 +101,7 @@ void TextRenderer::Draw()
 
 		// Create the buffer
 		hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
 		oldText = text;
 	}

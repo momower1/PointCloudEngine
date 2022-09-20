@@ -52,7 +52,7 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 
 	// Create the input texture
 	hr = d3d11Device->CreateTexture2D(&inputTextureDesc, NULL, &inputTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 	// Create a shader resource view for the input texture
 	D3D11_SHADER_RESOURCE_VIEW_DESC inputTextureSRVDesc;
@@ -62,7 +62,7 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 	inputTextureSRVDesc.Texture2D.MipLevels = 1;
 
 	hr = d3d11Device->CreateShaderResourceView(inputTexture, &inputTextureSRVDesc, &inputTextureSRV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(inputTexture));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(inputTexture));
 
 	// Copy the content to the input texture
 	d3d11DevCon->CopyResource(inputTexture, texture);
@@ -76,11 +76,11 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 
 	// Create a temporary texure with that format
 	hr = d3d11Device->CreateTexture2D(&outputTextureDesc, NULL, &outputTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 	// Create render target view for this texture
 	hr = d3d11Device->CreateRenderTargetView(outputTexture, NULL, &outputTextureRTV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
 
 	// Set the shader and resources that will be used for the texture conversion
 	d3d11DevCon->VSSetShader(textureConversionShader->vertexShader, NULL, 0);
@@ -107,7 +107,7 @@ void HDF5File::AddColorTextureDataset(H5::Group& group, std::string name, ID3D11
 
 	// Create a temporary CPU readable texure with that format
 	hr = d3d11Device->CreateTexture2D(&readableTextureDesc, NULL, &readableTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 	// Copy the data from the output texture to the readable texture
 	d3d11DevCon->CopyResource(readableTexture, outputTexture);
@@ -194,7 +194,7 @@ void HDF5File::AddDepthTextureDataset(H5::Group& group, std::string name, ID3D11
 
 	// Create a readable temporary texture
 	hr = d3d11Device->CreateTexture2D(&textureDesc, NULL, &readableTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 	// Copy the content of the original texture
 	d3d11DevCon->CopyResource(readableTexture, texture);

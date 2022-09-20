@@ -18,7 +18,7 @@ void PointCloudEngine::Hierarchy::ReleaseSceneObject(SceneObject *sceneObjectToR
     // Remove from scene objects
     sceneObjects.erase(std::remove(sceneObjects.begin(), sceneObjects.end(), sceneObjectToRemove), sceneObjects.end());
     sceneObjectToRemove->Release();
-    SafeDelete(sceneObjectToRemove);
+    SAFE_DELETE(sceneObjectToRemove);
 }
 
 void PointCloudEngine::Hierarchy::CalculateWorldMatrices()
@@ -48,7 +48,7 @@ void Hierarchy::ReleaseAllSceneObjects()
     {
         SceneObject* sceneObject = *it;
         sceneObject->Release();
-        SafeDelete(sceneObject);
+        SAFE_DELETE(sceneObject);
     }
 
     sceneObjects.clear();

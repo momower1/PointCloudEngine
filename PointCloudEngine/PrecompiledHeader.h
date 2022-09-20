@@ -27,6 +27,9 @@
 #include <wincodec.h>
 #include <CommCtrl.h>
 #include <shellapi.h>
+#include <gdiplus.h>
+#include <Shlwapi.h>
+#include <ShlObj.h>
 
 // Resources like menus and icons
 #include "resource.h"

@@ -63,6 +63,7 @@ using namespace PointCloudEngine;
 #include "SceneObject.h"
 #include "Hierarchy.h"
 #include "Structures.h"
+#include "Utils.h"
 #include "Settings.h"
 #include "IRenderer.h"
 #include "OctreeNode.h"
@@ -75,28 +76,15 @@ using namespace PointCloudEngine;
 #include "Scene.h"
 #include "HDF5File.h"
 
-// Preprocessor macros
-#define NAMEOF(variable) std::wstring(L#variable)
-#define ERROR_MESSAGE(message) ErrorMessageOnFail(E_FAIL, message, __FILEW__, __LINE__)
-#define ERROR_MESSAGE_ON_FAIL(hr, message) ErrorMessageOnFail(hr, message, __FILEW__, __LINE__)
-#define SAFE_RELEASE(resource) if((resource) != NULL) { (resource)->Release(); (resource) = NULL; }
-
-// Template function definitions
-template<typename T> void SafeDelete(T*& pointer)
-{
-	if (pointer != NULL)
-	{
-		delete pointer;
-		pointer = NULL;
-	}
-}
-
 // Global variables, accessable in other files
 extern std::wstring executablePath;
 extern std::wstring executableDirectory;
 extern double dt;
+extern bool success;
 extern HRESULT hr;
+extern HWND hwndEngine;
 extern HWND hwndScene;
+//extern HWND hwndGui;
 extern Settings* settings;
 extern Camera* camera;
 extern Shader* textShader;
@@ -139,8 +127,9 @@ extern void InitializeRenderingResources();
 
 // Function declarations
 void InitializeWindow(HINSTANCE hInstance, int ShowWnd);
+void ResizeSceneAndUserInterface();
 int Messageloop();
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WindowProcEngine(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void ReleaseObjects();
 void InitializeScene();
 void UpdateScene();

@@ -31,7 +31,7 @@ void GroundTruthRenderer::Initialize()
 
     // Create the buffer
     hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
     // Create the constant buffer for WVP
     D3D11_BUFFER_DESC constantBufferDesc;
@@ -43,7 +43,7 @@ void GroundTruthRenderer::Initialize()
 	constantBufferDesc.MiscFlags = 0;
 
     hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
 }
 
 void GroundTruthRenderer::Update()
@@ -408,7 +408,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			colorTextureDesc.BindFlags = 0;
 
 			hr = d3d11Device->CreateTexture2D(&colorTextureDesc, NULL, &colorTexture);
-			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+			ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 			D3D11_TEXTURE2D_DESC depthTextureDesc;
 			depthStencilTexture->GetDesc(&depthTextureDesc);
@@ -417,7 +417,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 			depthTextureDesc.BindFlags = 0;
 
 			hr = d3d11Device->CreateTexture2D(&depthTextureDesc, NULL, &depthTexture);
-			ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+			ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 			// Create an input tensor for the neural network
 			inputTensor = torch::zeros({ 1, inputDimensions, settings->resolutionX, settings->resolutionY }, torch::dtype(torch::kFloat32));

@@ -3,9 +3,12 @@
 // Variables for window creation and global access
 std::wstring executablePath;
 std::wstring executableDirectory;
+bool success;
 HRESULT hr;
+ULONG_PTR gdiplusToken = NULL;
+HWND hwndEngine = NULL;
 HWND hwndScene = NULL;
-LPCTSTR WndClassName = L"PointCloudEngine";
+HWND hwndUserInterface = NULL;
 double dt = 0;
 Timer timer;
 Scene scene;
@@ -61,7 +64,7 @@ bool OpenFileDialog(const wchar_t *filter, std::wstring& outFilename)
 	OPENFILENAMEW openFileName;
 	ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
 	openFileName.lStructSize = sizeof(OPENFILENAMEW);
-	openFileName.hwndOwner = hwndScene;
+	openFileName.hwndOwner = hwndEngine;
 	openFileName.lpstrFilter = filter;
 	openFileName.lpstrFile = filename;
 	openFileName.lpstrFile[0] = L'\0';
@@ -91,7 +94,7 @@ void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int
 		messageStream << message << L"\n\n" << error.ErrorMessage() << L" in " << filename << " at line " << line;
 		std::wstring header = std::wstring(headerStream.str());
 		message = std::wstring(messageStream.str());
-		MessageBox(hwndScene, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
+		MessageBox(hwndEngine, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
 	}
 }
 
@@ -151,7 +154,7 @@ void SaveScreenshotToFile()
 	// Save the texture to the hard drive
 	CreateDirectory((executableDirectory + L"/Screenshots").c_str(), NULL);
 	hr = SaveWICTextureToFile(d3d11DevCon, backBufferTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L".png").c_str());
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
 
 	if (SUCCEEDED(hr))
 	{
@@ -164,7 +167,7 @@ void SaveScreenshotToFile()
 void SetFullscreen(bool fullscreen)
 {
 	hr = swapChain->SetFullscreenState(fullscreen, NULL);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->SetFullscreenState) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(swapChain->SetFullscreenState) + L" failed!");
 }
 
 void ChangeRenderingResolution(int newResolutionX, int newResolutionY)
@@ -233,8 +236,45 @@ void DrawBlended(UINT vertexCount, ID3D11Buffer* constantBuffer, const void* con
 	d3d11DevCon->OMSetBlendState(blendState, NULL, 0xffffffff);
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
+#ifdef _DEBUG
+	// Allocate a console and redirect std::cout to it
+	AllocConsole();
+	FILE* fileStdout = NULL;
+	freopen_s(&fileStdout, "CONOUT$", "w", stdout);
+#endif
+
+	// First make sure that the window looks the same with different DPI scaling
+	// This also scales the overlay window correctly when using a custom DPI
+	// Required for the custom scale factor based on the DPI in the settings file
+	success = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(SetProcessDpiAwarenessContext) + L" failed");
+
+	// Initialize common controls
+	InitCommonControls();
+
+	// Initialize COM
+	hr = CoInitializeEx(NULL, COINITBASE_MULTITHREADED);
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(CoInitializeEx) + L" failed");
+
+	// Setup Gdiplus to draw the GUI with high quality
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+	// Get the path to the documents directory
+	PWSTR pathDocuments = NULL;
+	hr = SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DEFAULT, NULL, &pathDocuments);
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SHGetKnownFolderPath) + L" failed!");
+	std::wstring pathPointCloudEngine = std::wstring(pathDocuments) + L"\\PointCloudEngine";
+	CoTaskMemFree(pathDocuments);
+
+	// Create the Anihance directory in the documents folder
+	if (!PathFileExists(pathPointCloudEngine.c_str()))
+	{
+		CreateDirectory(pathPointCloudEngine.c_str(), NULL);
+	}
+
     // Save the executable directory path
     wchar_t buffer [MAX_PATH];
     GetModuleFileNameW(NULL, buffer, MAX_PATH);
@@ -242,11 +282,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     executableDirectory = executablePath.substr(0, executablePath.find_last_of(L"\\/"));
 
     // Load the settings
-    settings = new Settings();
-
-	// Initialize the COM interface
-	hr = CoInitialize(NULL);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CoInitialize) + L" failed!");
+    settings = new Settings(pathPointCloudEngine + L"\\Settings.txt");
 
 	InitializeWindow(hInstance, nShowCmd);
 	InitializeRenderingResources();
@@ -254,7 +290,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	Messageloop();
 	ReleaseObjects();
-	return 0;
+
+#ifdef _DEBUG
+	// Release the std::cout console
+	std::cout.clear();
+	fclose(fileStdout);
+	FreeConsole();
+#endif
+
+	// Release Gdiplus and COM
+	Gdiplus::GdiplusShutdown(gdiplusToken);
+	CoUninitialize();
+
+	return S_OK;
 }
 
 void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
@@ -269,44 +317,52 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;		            // Redraw when the window is moved or changed size
-	wc.lpfnWndProc = WindowProc;		                // lpfnWndProc is a pointer to the function we want to process the windows messages
+	wc.lpfnWndProc = WindowProcEngine;		                // lpfnWndProc is a pointer to the function we want to process the windows messages
 	wc.cbClsExtra = NULL;		                        // cbClsExtra is the number of extra bytes allocated after WNDCLASSEX.
 	wc.cbWndExtra = NULL;		                        // cbWndExtra specifies the number of bytes allocated after the windows instance.
 	wc.hInstance = hInstance;		                    // Handle to the current application, GetModuleHandle() function can be used to get the current window application by passing NUll to its 1 parameter
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);		    // Cursor icon
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 2);		// Colors the background
 	wc.lpszMenuName = NULL;		                        // Name to the menu that is attached to our window. we don't have one so we put NULL
-	wc.lpszClassName = WndClassName;		            // Name the class here
+	wc.lpszClassName = L"PointCloudEngine";		        // Name the class here
 	wc.hIcon = wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
 
-	if (!RegisterClassEx(&wc))
-	{
-		ERROR_MESSAGE(NAMEOF(RegisterClassEx) + L" failed!");
-	}
+	success = RegisterClassEx(&wc);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(RegisterClassEx) + L" failed!");
 
 	// Load the menu that will be shown below the title bar
 	HMENU menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU));
 
-	// Calculate the required size for the window such that the scene is rendered at native resolution
-	RECT rect;
-	rect.left = 0;
-	rect.top = 0;
-	rect.right = settings->resolutionX;
-	rect.bottom = settings->resolutionY;
+	// Create main engine window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
+	hwndEngine = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW, settings->enginePositionX - (settings->engineWidth / 2), settings->enginePositionY - (settings->engineHeight / 2), settings->engineWidth, settings->engineHeight, NULL, menu, hInstance, NULL);
+	ERROR_MESSAGE_ON_NULL(hwndEngine, NAMEOF(CreateWindowEx) + L" failed!");
 
-	AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, NULL);
+	// Create scene window (where the swap chain renders to)
+	hwndScene = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine Scene", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwndEngine, NULL, hInstance, NULL);
+	ERROR_MESSAGE_ON_NULL(hwndScene, NAMEOF(CreateWindowEx) + L" failed!");
 
-	// Create window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
-	hwndScene = CreateWindowEx(NULL, WndClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, NULL, menu, hInstance, NULL);
+	// Create user interface window (where all the buttons and sliders are attached to)
+	hwndUserInterface = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine User Interface", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwndEngine, NULL, hInstance, NULL);
+	ERROR_MESSAGE_ON_NULL(hwndUserInterface, NAMEOF(CreateWindowEx) + L" failed!");
 
-	if (!hwndScene)
-	{
-		ERROR_MESSAGE(NAMEOF(CreateWindowEx) + L" failed!");
-	}
+	ResizeSceneAndUserInterface();
 
-	ShowWindow(hwndScene, ShowWnd);
-	UpdateWindow(hwndScene);
+	ShowWindow(hwndEngine, ShowWnd);
     Input::Initialize(hwndScene);
+}
+
+void ResizeSceneAndUserInterface()
+{
+	// Get the size of the engine window in order to split it into the rendered scene and the GUI
+	RECT rectClient;
+	success = GetClientRect(hwndEngine, &rectClient);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(GetClientRect) + L" failed!");
+
+	int w = rectClient.right - rectClient.left;
+	int h = rectClient.bottom - rectClient.top;
+
+	MoveWindow(hwndScene, rectClient.left, rectClient.top, w - settings->userInterfaceWidth, h, true);
+	MoveWindow(hwndUserInterface, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
 }
 
 void InitializeRenderingResources()
@@ -354,7 +410,7 @@ void InitializeRenderingResources()
 		// Create a factory that is used to find out information about the available GPUs
 		IDXGIFactory* dxgiFactory = NULL;
 		hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&dxgiFactory));
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(CreateDXGIFactory) + L" failed!");
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(CreateDXGIFactory) + L" failed!");
 
 		// Store all the adapters and their descriptions
 		std::vector<IDXGIAdapter*> adapters;
@@ -400,12 +456,12 @@ void InitializeRenderingResources()
 
 		// Create device and swap chain
 		hr = D3D11CreateDeviceAndSwapChain(adapterToUse, D3D_DRIVER_TYPE_UNKNOWN, NULL, flags, NULL, 0, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &d3d11Device, NULL, &d3d11DevCon);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(D3D11CreateDeviceAndSwapChain) + L" failed!");
 
 		// Release no longer needed resources
 		for (auto it = adapters.begin(); it != adapters.end(); it++)
 		{
-			SAFE_RELEASE(*it);
+			(*it)->Release();
 		}
 
 		SAFE_RELEASE(dxgiFactory);
@@ -421,7 +477,7 @@ void InitializeRenderingResources()
 
 	// Create render target view, will be sended to the output merger stage of the pipeline
 	hr = d3d11Device->CreateRenderTargetView(backBufferTexture, NULL, &renderTargetView);		// NULL -> view accesses all subresources in mipmap level 0
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateRenderTargetView) + L" failed!");
 
 	// Create an unordered acces view in order to access and manipulate the texture in shaders
 	D3D11_UNORDERED_ACCESS_VIEW_DESC backBufferTextureUAVDesc;
@@ -430,7 +486,7 @@ void InitializeRenderingResources()
 	backBufferTextureUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 
 	hr = d3d11Device->CreateUnorderedAccessView(backBufferTexture, &backBufferTextureUAVDesc, &backBufferTextureUAV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(backBufferTextureUAV));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(backBufferTextureUAV));
 
 	// Depth/Stencil buffer description (needed for 3D Scenes + mirrors and such)
 	D3D11_TEXTURE2D_DESC depthStencilTextureDesc;
@@ -448,7 +504,7 @@ void InitializeRenderingResources()
 
 	// Create the depth/stencil texture
 	hr = d3d11Device->CreateTexture2D(&depthStencilTextureDesc, NULL, &depthStencilTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
 	// Create a shader resource view in order to bind the depth part of the texture to a shader
 	D3D11_SHADER_RESOURCE_VIEW_DESC depthTextureSRVDesc;
@@ -458,7 +514,7 @@ void InitializeRenderingResources()
 	depthTextureSRVDesc.Texture2D.MipLevels = 1;
 
 	hr = d3d11Device->CreateShaderResourceView(depthStencilTexture, &depthTextureSRVDesc, &depthTextureSRV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(depthTextureSRV));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(depthTextureSRV));
 
 	// Create Depth / Stencil View
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -467,7 +523,7 @@ void InitializeRenderingResources()
 	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 	hr = d3d11Device->CreateDepthStencilView(depthStencilTexture, &depthStencilViewDesc, &depthStencilView);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed!");
 
     // Depth / Stencil description with disabled incremental stencil buffer
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
@@ -488,7 +544,7 @@ void InitializeRenderingResources()
 
     // Create depth stencil state
     hr = d3d11Device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed!");
 
     // Create blend state for transparency
     D3D11_BLEND_DESC blendStateDesc;
@@ -503,7 +559,7 @@ void InitializeRenderingResources()
     blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
     hr = d3d11Device->CreateBlendState(&blendStateDesc, &blendState);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed!");
 
 	// Describing the render state
 	D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -520,22 +576,22 @@ void InitializeRenderingResources()
     rasterizerDesc.AntialiasedLineEnable = TRUE;
 
 	hr = d3d11Device->CreateRasterizerState(&rasterizerDesc, &rasterizerState);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateRasterizerState) + L" failed!");
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateRasterizerState) + L" failed!");
 
 	// Bind the rasterizer render state
 	d3d11DevCon->RSSetState(rasterizerState);
 
 	// Create resources for blending starting with a second depth buffer
 	hr = d3d11Device->CreateTexture2D(&depthStencilTextureDesc, NULL, &blendingDepthTexture);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(blendingDepthTexture));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed for the " + NAMEOF(blendingDepthTexture));
 
 	// Create view for the blending depth buffer
 	hr = d3d11Device->CreateDepthStencilView(blendingDepthTexture, &depthStencilViewDesc, &blendingDepthView);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed for the " + NAMEOF(blendingDepthView));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateDepthStencilView) + L" failed for the " + NAMEOF(blendingDepthView));
 
 	// Create a shader resource view in order to bind the depth to a shader
 	hr = d3d11Device->CreateShaderResourceView(blendingDepthTexture, &depthTextureSRVDesc, &blendingDepthTextureSRV);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(blendingDepthTextureSRV));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(blendingDepthTextureSRV));
 
 	// Create a blend state that adds all the colors of the overlapping fragments together
 	D3D11_BLEND_DESC additiveBlendStateDesc;
@@ -550,14 +606,14 @@ void InitializeRenderingResources()
 	additiveBlendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	hr = d3d11Device->CreateBlendState(&additiveBlendStateDesc, &additiveBlendState);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed for the " + NAMEOF(additiveBlendState));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBlendState) + L" failed for the " + NAMEOF(additiveBlendState));
 
 	// Create a depth/stencil state with disabled depth testing for blending
 	D3D11_DEPTH_STENCIL_DESC disabledDepthStencilStateDesc = depthStencilDesc;
 	disabledDepthStencilStateDesc.DepthEnable = false;
 
 	hr = d3d11Device->CreateDepthStencilState(&disabledDepthStencilStateDesc, &disabledDepthStencilState);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed for the " + NAMEOF(disabledDepthStencilState));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed for the " + NAMEOF(disabledDepthStencilState));
 }
 
 // Main part of the program
@@ -573,7 +629,9 @@ int Messageloop()
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
+			{
 				break;
+			}
 
 			TranslateMessage(&msg);		// Translating like the keyboard's virtual keys to characters
 			DispatchMessage(&msg);		// Sends the message to our windows procedure, WindowProc
@@ -591,7 +649,7 @@ int Messageloop()
 }
 
 // Check messages for events
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     Input::HandleMessage(msg, wParam, lParam);
 	GUI::HandleMessage(msg, wParam, lParam);
@@ -605,7 +663,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
 		case WM_SIZE:
 		{
-			if ((hwnd == hwndScene) && (camera != NULL))
+			if ((hwnd == hwndEngine) && (camera != NULL))
 			{
 				RECT rectClient;
 				GetClientRect(hwndScene, &rectClient);
@@ -642,7 +700,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 				case ID_EDIT_SETTINGS:
 				{
-					ShellExecute(0, L"open", (executableDirectory + SETTINGS_FILENAME).c_str(), 0, 0, SW_SHOW);
+					INFO_MESSAGE(L"TODO");
 					break;
 				}
 				case ID_EDIT_OPENDIRECTORY:
@@ -699,7 +757,7 @@ void InitializeScene()
 	lightingConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	hr = d3d11Device->CreateBuffer(&lightingConstantBufferDesc, NULL, &lightingConstantBuffer);
-	ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
 
 	scene.Initialize();
     timer.ResetElapsedTime();
@@ -781,7 +839,7 @@ void DrawScene()
 	{
 		// Present backbuffer to the screen
 		hr = swapChain->Present(1, 0);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(swapChain->Present) + L" failed!");
 
 		// Perform gamma correction
 		d3d11DevCon->Draw(1, 0);
@@ -793,7 +851,7 @@ void DrawScene()
 
 		// Present backbuffer to the screen
 		hr = swapChain->Present(1, 0);
-		ERROR_MESSAGE_ON_FAIL(hr, NAMEOF(swapChain->Present) + L" failed!");
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(swapChain->Present) + L" failed!");
 	}
 
 	d3d11DevCon->VSSetShader(NULL, NULL, 0);
@@ -808,8 +866,8 @@ void ReleaseObjects()
 	scene.Release();
 
     // Delete settings (also saves them to the hard drive)
-    SafeDelete(settings);
-    SafeDelete(camera);
+    SAFE_DELETE(settings);
+    SAFE_DELETE(camera);
 
     // Release and delete shaders
     Shader::ReleaseAllShaders();
