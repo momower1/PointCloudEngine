@@ -47,9 +47,7 @@ int GUI::resolutionX = 0;
 int GUI::resolutionY = 0;
 Vector3 GUI::waypointStartPosition;
 Matrix GUI::waypointStartRotation;
-Vector2 GUI::guiSize = Vector2(380, 540);
 
-HWND GUI::hwndGUI = NULL;
 GUITab* GUI::tabGroundTruth = NULL;
 GUITab* GUI::tabOctree = NULL;
 
@@ -79,12 +77,9 @@ void PointCloudEngine::GUI::Initialize()
 
 		IGUIElement::InitializeFontHandle();
 
-		// This is the gui window
-		hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwndScene, NULL, NULL, NULL);
-
 		// Tab inside the gui window for choosing different groups of settings
-		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
-		tabOctree = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced" }, OnSelectTab);
+		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(settings->userInterfaceWidth, settings->userInterfaceHeight), { L"Renderer", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
+		tabOctree = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(settings->userInterfaceWidth, settings->userInterfaceHeight), { L"Renderer", L"Advanced" }, OnSelectTab);
 
 		viewModeSelection = (int)settings->viewMode;
 

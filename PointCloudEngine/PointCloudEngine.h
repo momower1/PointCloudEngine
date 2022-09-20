@@ -84,7 +84,7 @@ extern bool success;
 extern HRESULT hr;
 extern HWND hwndEngine;
 extern HWND hwndScene;
-//extern HWND hwndGui;
+extern HWND hwndGUI;
 extern Settings* settings;
 extern Camera* camera;
 extern Shader* textShader;

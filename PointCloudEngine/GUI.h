@@ -47,9 +47,7 @@ namespace PointCloudEngine
 		static int resolutionY;
 		static Vector3 waypointStartPosition;
 		static Matrix waypointStartRotation;
-		static Vector2 guiSize;
 
-		static HWND hwndGUI;
 		static GUITab* tabGroundTruth;
 		static GUITab* tabOctree;
 

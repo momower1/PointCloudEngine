@@ -8,7 +8,7 @@ HRESULT hr;
 ULONG_PTR gdiplusToken = NULL;
 HWND hwndEngine = NULL;
 HWND hwndScene = NULL;
-HWND hwndUserInterface = NULL;
+HWND hwndGUI = NULL;
 double dt = 0;
 Timer timer;
 Scene scene;
@@ -80,22 +80,6 @@ bool OpenFileDialog(const wchar_t *filter, std::wstring& outFilename)
 	}
 
 	return false;
-}
-
-void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line)
-{
-	if (FAILED(hr))
-	{
-		// Display the error code and message as well as the line and file of the error
-		_com_error error(hr);
-		std::wstringstream headerStream, messageStream;
-		std::wstring filename = file.substr(file.find_last_of(L"/\\") + 1);
-		headerStream << L"Error 0x" << std::hex << hr;
-		messageStream << message << L"\n\n" << error.ErrorMessage() << L" in " << filename << " at line " << line;
-		std::wstring header = std::wstring(headerStream.str());
-		message = std::wstring(messageStream.str());
-		MessageBox(hwndEngine, message.c_str(), header.c_str(), MB_ICONERROR | MB_APPLMODAL);
-	}
 }
 
 bool LoadPointcloudFile(std::vector<Vertex>& outVertices, Vector3& outBoundingCubePosition, float& outBoundingCubeSize, const std::wstring& pointcloudFile)
@@ -334,16 +318,16 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	HMENU menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU));
 
 	// Create main engine window with extended styles like WS_EX_ACCEPTFILES, WS_EX_APPWINDOW, WS_EX_CONTEXTHELP, WS_EX_TOOLWINDOW
-	hwndEngine = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW, settings->enginePositionX - (settings->engineWidth / 2), settings->enginePositionY - (settings->engineHeight / 2), settings->engineWidth, settings->engineHeight, NULL, menu, hInstance, NULL);
+	hwndEngine = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, settings->enginePositionX - (settings->engineWidth / 2), settings->enginePositionY - (settings->engineHeight / 2), settings->engineWidth, settings->engineHeight, NULL, menu, hInstance, NULL);
 	ERROR_MESSAGE_ON_NULL(hwndEngine, NAMEOF(CreateWindowEx) + L" failed!");
 
 	// Create scene window (where the swap chain renders to)
 	hwndScene = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine Scene", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwndEngine, NULL, hInstance, NULL);
 	ERROR_MESSAGE_ON_NULL(hwndScene, NAMEOF(CreateWindowEx) + L" failed!");
 
-	// Create user interface window (where all the buttons and sliders are attached to)
-	hwndUserInterface = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine User Interface", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwndEngine, NULL, hInstance, NULL);
-	ERROR_MESSAGE_ON_NULL(hwndUserInterface, NAMEOF(CreateWindowEx) + L" failed!");
+	// Create GUI (where all the buttons and sliders are attached to)
+	hwndGUI = CreateWindowEx(NULL, wc.lpszClassName, L"PointCloudEngine GUI", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hwndEngine, NULL, hInstance, NULL);
+	ERROR_MESSAGE_ON_NULL(hwndGUI, NAMEOF(CreateWindowEx) + L" failed!");
 
 	ResizeSceneAndUserInterface();
 
@@ -361,8 +345,13 @@ void ResizeSceneAndUserInterface()
 	int w = rectClient.right - rectClient.left;
 	int h = rectClient.bottom - rectClient.top;
 
-	MoveWindow(hwndScene, rectClient.left, rectClient.top, w - settings->userInterfaceWidth, h, true);
-	MoveWindow(hwndUserInterface, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
+	settings->resolutionX = w - settings->userInterfaceWidth;
+	settings->resolutionY = h;
+
+	std::cout << settings->resolutionX << std::endl;
+
+	MoveWindow(hwndScene, rectClient.left, rectClient.top, settings->resolutionX, settings->resolutionY, true);
+	MoveWindow(hwndGUI, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
 }
 
 void InitializeRenderingResources()
@@ -474,6 +463,7 @@ void InitializeRenderingResources()
 
 	// Create backbuffer for the render target view
 	hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(swapChain->GetBuffer) + L" failed!");
 
 	// Create render target view, will be sended to the output merger stage of the pipeline
 	hr = d3d11Device->CreateRenderTargetView(backBufferTexture, NULL, &renderTargetView);		// NULL -> view accesses all subresources in mipmap level 0
@@ -661,10 +651,35 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		    PostQuitMessage(0);
 		    return 0;
         }
+		case WM_SIZING:
+		{
+			// Make sure that the engine window cannot get smaller than the GUI size
+			RECT rectClientMinimum;
+			rectClientMinimum.left = 0;
+			rectClientMinimum.right = settings->userInterfaceWidth + 1;
+			rectClientMinimum.top = 0;
+			rectClientMinimum.bottom = settings->userInterfaceHeight + 1;
+
+			success = AdjustWindowRectEx(&rectClientMinimum, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, 0);
+			ERROR_MESSAGE_ON_FAIL(success, NAMEOF(AdjustWindowRectEx) + L" failed!");
+
+			RECT* rect = (RECT*)lParam;
+			int w = rect->right - rect->left;
+			int h = rect->bottom - rect->top;
+			w = max(w, rectClientMinimum.right - rectClientMinimum.left);
+			h = max(h, rectClientMinimum.bottom - rectClientMinimum.top);
+
+			rect->right = rect->left + w;
+			rect->bottom = rect->top + h;
+
+			return TRUE;
+		}
 		case WM_SIZE:
 		{
 			if ((hwnd == hwndEngine) && (camera != NULL))
 			{
+				ResizeSceneAndUserInterface();
+
 				RECT rectClient;
 				GetClientRect(hwndScene, &rectClient);
 				ChangeRenderingResolution(rectClient.right - rectClient.left, rectClient.bottom - rectClient.top);
