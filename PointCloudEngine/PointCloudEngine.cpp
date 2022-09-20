@@ -348,8 +348,6 @@ void ResizeSceneAndUserInterface()
 	settings->resolutionX = w - settings->userInterfaceWidth;
 	settings->resolutionY = h;
 
-	std::cout << settings->resolutionX << std::endl;
-
 	MoveWindow(hwndScene, rectClient.left, rectClient.top, settings->resolutionX, settings->resolutionY, true);
 	MoveWindow(hwndGUI, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
 }
