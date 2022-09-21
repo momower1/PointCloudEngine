@@ -689,34 +689,34 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		{
 			switch (wParam)
 			{
-				case ID_FILE_OPEN:
+				case ID_FILE_OPEN_FILE:
 				{
 					scene.OpenPointcloudFile();
 					break;
 				}
-				case ID_FILE_GROUNDTRUTHRENDERER:
-				{
-					settings->useOctree = false;
-					scene.LoadFile(settings->pointcloudFile);
-					break;
-				}
-				case ID_FILE_OCTREERENDERER:
-				{
-					settings->useOctree = true;
-					scene.LoadFile(settings->pointcloudFile);
-					break;
-				}
-				case ID_FILE_SCREENSHOT:
+				//case ID_FILE_GROUNDTRUTHRENDERER:
+				//{
+				//	settings->useOctree = false;
+				//	scene.LoadFile(settings->pointcloudFile);
+				//	break;
+				//}
+				//case ID_FILE_OCTREERENDERER:
+				//{
+				//	settings->useOctree = true;
+				//	scene.LoadFile(settings->pointcloudFile);
+				//	break;
+				//}
+				case ID_FILE_TAKE_SCREENSHOT:
 				{
 					SaveScreenshotToFile();
 					break;
 				}
-				case ID_EDIT_SETTINGS:
+				case ID_EDIT_OPEN_SETTINGS:
 				{
 					INFO_MESSAGE(L"TODO");
 					break;
 				}
-				case ID_EDIT_OPENDIRECTORY:
+				case ID_EDIT_OPEN_DIRECTORY:
 				{
 					ShellExecute(0, L"open", executableDirectory.c_str(), 0, 0, SW_SHOW);
 					break;
@@ -724,11 +724,6 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				case ID_HELP_README:
 				{
 					ShellExecute(0, L"open", (executableDirectory + L"/Readme.txt").c_str(), 0, 0, SW_SHOW);
-					break;
-				}
-				case ID_HELP_WEBSITE:
-				{
-					ShellExecute(0, 0, L"https://github.com/momower1/PointCloudEngine", 0, 0, SW_SHOW);
 					break;
 				}
 			}
