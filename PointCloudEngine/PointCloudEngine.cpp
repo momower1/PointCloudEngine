@@ -301,7 +301,7 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd)
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;		            // Redraw when the window is moved or changed size
-	wc.lpfnWndProc = WindowProcEngine;		                // lpfnWndProc is a pointer to the function we want to process the windows messages
+	wc.lpfnWndProc = WindowProcEngine;		            // lpfnWndProc is a pointer to the function we want to process the windows messages
 	wc.cbClsExtra = NULL;		                        // cbClsExtra is the number of extra bytes allocated after WNDCLASSEX.
 	wc.cbWndExtra = NULL;		                        // cbWndExtra specifies the number of bytes allocated after the windows instance.
 	wc.hInstance = hInstance;		                    // Handle to the current application, GetModuleHandle() function can be used to get the current window application by passing NUll to its 1 parameter
@@ -700,7 +700,7 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			{
 				case ID_FILE_OPEN_FILE:
 				{
-					scene.OpenPointcloudFile();
+					scene.OpenPlyOrPointcloudFile();
 					break;
 				}
 				//case ID_FILE_GROUNDTRUTHRENDERER:

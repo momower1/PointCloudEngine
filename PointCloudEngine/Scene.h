@@ -13,7 +13,7 @@ namespace PointCloudEngine
         void Update(Timer &timer);
         void Draw();
         void Release();
-		void OpenPointcloudFile();
+		void OpenPlyOrPointcloudFile();
 		void LoadFile(std::wstring filepath);
 
     private:

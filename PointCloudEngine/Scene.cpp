@@ -126,7 +126,7 @@ void Scene::Release()
 	GUI::Release();
 }
 
-void PointCloudEngine::Scene::OpenPointcloudFile()
+void PointCloudEngine::Scene::OpenPlyOrPointcloudFile()
 {
 	// Disable fullscreen in order to avoid issues with selecting the file
 	SetFullscreen(false);
@@ -134,7 +134,7 @@ void PointCloudEngine::Scene::OpenPointcloudFile()
 
 	std::wstring filename;
 
-	if (OpenFileDialog(L"Pointcloud Files\0*.pointcloud\0\0", filename))
+	if (OpenFileDialog(L"Ply Files\0*.ply\0Pointcloud Files\0*.pointcloud\0\0", filename))
 	{
 		LoadFile(filename);
 	}
@@ -150,6 +150,32 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 		// Show startup text
 		startupTextRenderer->enabled = true;
 		return;
+	}
+
+	std::wstring fileExtension = filepath.substr(filepath.find_last_of(L'.'));
+
+	// Possibly need to convert the .ply file into a .pointcloud file (execute PlyToPointcloud.exe and wait for it to finish)
+	if (fileExtension.compare(L".ply") == 0)
+	{
+		std::wstring plyToPointcloudPath = executableDirectory + L"\\PlyToPointcloud.exe";
+
+		SHELLEXECUTEINFO shellExecuteInfo;
+		ZeroMemory(&shellExecuteInfo, sizeof(shellExecuteInfo));
+		shellExecuteInfo.cbSize = sizeof(shellExecuteInfo);
+		shellExecuteInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+		shellExecuteInfo.hwnd = NULL;
+		shellExecuteInfo.lpVerb = L"open";
+		shellExecuteInfo.lpFile = plyToPointcloudPath.c_str();
+		shellExecuteInfo.lpParameters = filepath.c_str();
+		shellExecuteInfo.lpDirectory = NULL;
+		shellExecuteInfo.nShow = SW_SHOW;
+		shellExecuteInfo.hInstApp = NULL;
+
+		ShellExecuteEx(&shellExecuteInfo);
+		WaitForSingleObject(shellExecuteInfo.hProcess, INFINITE);
+		CloseHandle(shellExecuteInfo.hProcess);
+
+		filepath = filepath.substr(0, filepath.find_last_of(L'.')) + L".pointcloud";
 	}
 
     // Release resources before loading
@@ -197,7 +223,7 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     }
     catch (std::exception e)
     {
-		ERROR_MESSAGE(L"Could not open " + settings->pointcloudFile + L"\nOnly .pointcloud files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nUse e.g. MeshLab and Ply2Pointcloud.exe to convert .ply files to the required format.");
+		ERROR_MESSAGE(L"Could not open " + settings->pointcloudFile + L"\nOnly .pointcloud files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nUse e.g. MeshLab and PlyToPointcloud.exe to convert .ply files to the required format.");
 
         // Set the pointer to NULL because the creation of the object failed
         pointCloudRenderer = NULL;
