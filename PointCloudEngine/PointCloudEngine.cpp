@@ -381,7 +381,7 @@ void InitializeRenderingResources()
 		bufferDesc.RefreshRate.Denominator = 1;
 		bufferDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;											// Describes the display format
 		bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;							// Describes the order in which the rasterizer renders - not used since we use double buffering
-		bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;											// Descibes how window scaling is handled
+		bufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;											// Descibes how window scaling is handled
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc;															// Describe the spaw chain
 		ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));

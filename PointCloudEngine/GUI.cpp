@@ -487,17 +487,6 @@ void PointCloudEngine::GUI::OnChangeResolution()
 
 void PointCloudEngine::GUI::OnApplyResolution()
 {	
-	// Resize the window
-	RECT rect;
-	GetWindowRect(hwndScene, &rect);
-	rect.right = rect.left + resolutionX + settings->userInterfaceWidth;
-	rect.bottom = rect.top + max(resolutionY, settings->userInterfaceHeight);
-
-	AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, NULL);
-	MoveWindow(hwndEngine, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, true);
-	MoveWindow(hwndScene, 0, 0, resolutionX, resolutionY, true);
-	MoveWindow(hwndGUI, resolutionX, 0, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
-
 	ChangeRenderingResolution(resolutionX, resolutionY);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
