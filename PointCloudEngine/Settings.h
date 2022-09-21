@@ -24,6 +24,7 @@ namespace PointCloudEngine
 		int enginePositionY = GetSystemMetrics(SM_CYSCREEN) / 2;
 		int userInterfaceWidth = guiScaleFactor * 380;
 		int userInterfaceHeight = guiScaleFactor * 540;
+		bool showUserInterface = true;
 
         // Rendering parameters default values
 		ViewMode viewMode = ViewMode::Points;

@@ -342,14 +342,23 @@ void ResizeSceneAndUserInterface()
 	success = GetClientRect(hwndEngine, &rectClient);
 	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(GetClientRect) + L" failed!");
 
+	if (settings->showUserInterface)
+	{
+		MoveWindow(hwndGUI, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
+		ShowWindow(hwndGUI, SW_SHOW);
+	}
+	else
+	{
+		ShowWindow(hwndGUI, SW_HIDE);
+	}
+
 	int w = rectClient.right - rectClient.left;
 	int h = rectClient.bottom - rectClient.top;
-
-	settings->resolutionX = w - settings->userInterfaceWidth;
+	
+	settings->resolutionX = settings->showUserInterface ? (w - settings->userInterfaceWidth) : w;
 	settings->resolutionY = h;
 
 	MoveWindow(hwndScene, rectClient.left, rectClient.top, settings->resolutionX, settings->resolutionY, true);
-	MoveWindow(hwndGUI, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
 }
 
 void InitializeRenderingResources()
@@ -719,6 +728,13 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				case ID_EDIT_OPEN_DIRECTORY:
 				{
 					ShellExecute(0, L"open", executableDirectory.c_str(), 0, 0, SW_SHOW);
+					break;
+				}
+				case ID_VIEW_TOGGLE_USER_INTERFACE:
+				{
+					settings->showUserInterface = !settings->showUserInterface;
+					ResizeSceneAndUserInterface();
+					ChangeRenderingResolution(settings->resolutionX, settings->resolutionY);
 					break;
 				}
 				case ID_HELP_README:
