@@ -182,7 +182,7 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     if (pointCloudRenderer != NULL)
     {
 		pointCloudRenderer->RemoveComponentFromSceneObject();
-        SetWindowTextW(hwndScene, L"PointCloudEngine");
+        SetWindowTextW(hwndEngine, L"PointCloudEngine");
 
 		// Hide GUI
 		GUI::SetVisible(false);
@@ -232,7 +232,7 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     if (pointCloudRenderer != NULL)
     {
         pointCloud->AddComponent(pointCloudRenderer);
-        SetWindowTextW(hwndScene, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
+        SetWindowTextW(hwndEngine, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
 
         // Set camera position in front of the object
         Vector3 boundingBoxPosition;

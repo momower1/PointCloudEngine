@@ -703,18 +703,18 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 					scene.OpenPlyOrPointcloudFile();
 					break;
 				}
-				//case ID_FILE_GROUNDTRUTHRENDERER:
-				//{
-				//	settings->useOctree = false;
-				//	scene.LoadFile(settings->pointcloudFile);
-				//	break;
-				//}
-				//case ID_FILE_OCTREERENDERER:
-				//{
-				//	settings->useOctree = true;
-				//	scene.LoadFile(settings->pointcloudFile);
-				//	break;
-				//}
+				case ID_RENDERER_USE_GROUND_TRUTH_RENDERER:
+				{
+					settings->useOctree = false;
+					scene.LoadFile(settings->pointcloudFile);
+					break;
+				}
+				case ID_RENDERER_USE_OCTREE_RENDERER:
+				{
+					settings->useOctree = true;
+					scene.LoadFile(settings->pointcloudFile);
+					break;
+				}
 				case ID_FILE_TAKE_SCREENSHOT:
 				{
 					SaveScreenshotToFile();
