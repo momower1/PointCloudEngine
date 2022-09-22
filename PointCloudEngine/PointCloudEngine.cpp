@@ -23,6 +23,7 @@ Shader* octreeSplatShader;
 Shader* octreeClusterShader;
 Shader* octreeComputeShader;
 Shader* octreeComputeVSShader;
+Shader* pullPushShader;
 Shader* blendingShader;
 Shader* gammaCorrectionShader;
 Shader* textureConversionShader;
@@ -764,6 +765,7 @@ void InitializeScene()
     octreeClusterShader = Shader::Create(L"Shader/OctreeCluster.hlsl", true, true, true, false, Shader::octreeLayout, 14);
     octreeComputeShader = Shader::Create(L"Shader/OctreeCompute.hlsl", false, false, false, true, NULL, 0);
     octreeComputeVSShader = Shader::Create(L"Shader/OctreeComputeVS.hlsl", true, false, false, false, NULL, 0);
+	pullPushShader = Shader::Create(L"Shader/PullPush.hlsl", false, false, false, true, NULL, 0);
 	blendingShader = Shader::Create(L"Shader/Blending.hlsl", true, true, true, false, NULL, 0);
 	gammaCorrectionShader = Shader::Create(L"Shader/GammaCorrection.hlsl", true, true, true, false, NULL, 0);
 	textureConversionShader = Shader::Create(L"Shader/TextureConversion.hlsl", true, true, true, false, NULL, 0);

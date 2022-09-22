@@ -99,6 +99,7 @@ extern Shader* octreeSplatShader;
 extern Shader* octreeClusterShader;
 extern Shader* octreeComputeShader;
 extern Shader* octreeComputeVSShader;
+extern Shader* pullPushShader;
 extern Shader* blendingShader;
 extern Shader* textureConversionShader;
 extern IDXGISwapChain* swapChain;
