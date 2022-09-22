@@ -133,7 +133,7 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 
 		// Set resources (for level 0, the input is the push texture at level 0 that gets copied to the color texture)
 		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullTexturesUAV[pullPushLevel], &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, (pullPushLevel == 0) ? &colorUAV : &pushTexturesUAV[pullPushLevel - 1], &zero);
+		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, (pullPushLevel == 0) ? &colorUAV : &pullTexturesUAV[pullPushLevel - 1], &zero);
 
 		UINT threadGroupCount = ceil((pullPushResolution / pow(2, max(0, pullPushLevel - 1)) / 32.0f));
 		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
@@ -157,6 +157,8 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	//	hr = SaveWICTextureToFile(d3d11DevCon, pushTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PushLevel" + std::to_wstring(pullPushLevel) + L".png").c_str());
 	//	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
 	//}
+
+	//std::cout << "done" << std::endl;
 }
 
 void PointCloudEngine::PullPush::Release()

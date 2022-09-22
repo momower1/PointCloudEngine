@@ -30,10 +30,35 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 		else
 		{
-			outputColor = 0.25f * inputTexture[2 * pixel];
-			outputColor += 0.25f * inputTexture[2 * pixel + uint2(1, 0)];
-			outputColor += 0.25f * inputTexture[2 * pixel + uint2(0, 1)];
-			outputColor += 0.25f * inputTexture[2 * pixel + uint2(1, 1)];
+			float4 inputColorTopLeft = inputTexture[2 * pixel];
+			float4 inputColorTopRight = inputTexture[2 * pixel + uint2(1, 0)];
+			float4 inputColorBottomLeft = inputTexture[2 * pixel + uint2(0, 1)];
+			float4 inputColorBottomRight = inputTexture[2 * pixel + uint2(1, 1)];
+
+			if (inputColorTopLeft.w > 0)
+			{
+				outputColor += inputColorTopLeft;
+			}
+
+			if (inputColorTopRight.w > 0)
+			{
+				outputColor += inputColorTopRight;
+			}
+
+			if (inputColorBottomLeft.w > 0)
+			{
+				outputColor += inputColorBottomLeft;
+			}
+
+			if (inputColorBottomRight.w > 0)
+			{
+				outputColor += inputColorBottomRight;
+			}
+
+			if (outputColor.w > 0)
+			{
+				outputColor /= outputColor.w;
+			}
 		}
 	}
 	else
@@ -45,7 +70,9 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 		else
 		{
-			outputColor = inputTexture[pixel / 2];
+			float4 inputColor = inputTexture[pixel / 2];
+			outputColor = outputTexture[pixel];
+			outputColor = (1.0f - outputColor.w) * inputColor + (outputColor.w * outputColor);
 		}
 	}
 
