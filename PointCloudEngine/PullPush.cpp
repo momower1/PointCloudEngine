@@ -1,17 +1,24 @@
 #include "PullPush.h"
 
-PointCloudEngine::PullPush::PullPush(int initialResolutionX, int initialResolutionY)
+PointCloudEngine::PullPush::PullPush()
 {
-	// For simplicity use power of two resolution for the pull push algorithm (not ideal e.g. if intitial resolution is 511x1, then pull push uses 1024x1024)
-	int initialPullPushResolution = pow(2, ceil(log2(max(initialResolutionX, initialResolutionY))));
-	int pullPushLevels = log2(initialPullPushResolution) + 1;
+	CreatePullPushTextureHierarchy();
+}
 
-	// Create all the required textures
+void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
+{
+	Release();
+
+	// For simplicity use power of two resolution for the pull push algorithm (not ideal e.g. if intitial resolution is 511x1, then pull push uses 1024x1024)
+	pullPushResolution = pow(2, ceil(log2(max(settings->resolutionX, settings->resolutionY))));
+	pullPushLevels = log2(pullPushResolution) + 1;
+
+	// Create all the required textures (level 0 has full resolution, last level has 1x1 resolution)
 	for (int pullPushLevel = 0; pullPushLevel < pullPushLevels; pullPushLevel++)
 	{
 		// Use a 16-bit floating point texture and store the weights in the alpha channel)
 		D3D11_TEXTURE2D_DESC pullPushLevelTextureDesc;
-		pullPushLevelTextureDesc.Width = initialPullPushResolution / pow(2, pullPushLevel);
+		pullPushLevelTextureDesc.Width = pullPushResolution / pow(2, pullPushLevel);
 		pullPushLevelTextureDesc.Height = pullPushLevelTextureDesc.Width;
 		pullPushLevelTextureDesc.MipLevels = 1;
 		pullPushLevelTextureDesc.ArraySize = 1;
@@ -58,6 +65,12 @@ PointCloudEngine::PullPush::PullPush(int initialResolutionX, int initialResoluti
 
 void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* initialColorUAV, ID3D11DepthStencilView* initialDepthView)
 {
+	// Recreate the texture hierarchy if resolution increased beyond the current hierarchy
+	if (max(settings->resolutionX, settings->resolutionY) > pullPushResolution)
+	{
+		CreatePullPushTextureHierarchy();
+	}
+
 	// TODO: Assign RGBA values for first pull texture layer (set A to 0 if a pixel is not drawn, meaning that its depth is 1)
 
 	// TODO: Execute pull phase

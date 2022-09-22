@@ -143,7 +143,7 @@ void GroundTruthRenderer::Draw()
 		{
 			if (pullPush == NULL)
 			{
-				pullPush = new PullPush(settings->resolutionX, settings->resolutionY);
+				pullPush = new PullPush();
 			}
 
 			pullPush->Execute(backBufferTextureUAV, depthStencilView);
