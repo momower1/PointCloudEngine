@@ -61,9 +61,21 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 		pullTexturesUAV.push_back(pullLevelTextureUAV);
 		pushTexturesUAV.push_back(pushLevelTextureUAV);
 	}
+
+	// Create the constant buffer for the shader
+	D3D11_BUFFER_DESC pullPushConstantBufferDesc;
+	ZeroMemory(&pullPushConstantBufferDesc, sizeof(pullPushConstantBufferDesc));
+	pullPushConstantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	pullPushConstantBufferDesc.ByteWidth = sizeof(pullPushConstantBufferData);
+	pullPushConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	pullPushConstantBufferDesc.CPUAccessFlags = 0;
+	pullPushConstantBufferDesc.MiscFlags = 0;
+
+	hr = d3d11Device->CreateBuffer(&pullPushConstantBufferDesc, NULL, &pullPushConstantBuffer);
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(pullPushConstantBuffer));
 }
 
-void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* initialColorUAV, ID3D11DepthStencilView* initialDepthView)
+void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID3D11ShaderResourceView* depthSRV)
 {
 	// Recreate the texture hierarchy if resolution increased beyond the current hierarchy or decreased below half the resolution
 	if ((max(settings->resolutionX, settings->resolutionY) > pullPushResolution) || ((2 * max(settings->resolutionX, settings->resolutionY)) < pullPushResolution))
@@ -78,10 +90,69 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* initialColor
 	// TODO: Execute push phase
 
 	// TODO: Render/copy result to the backbuffer
+
+	// Unbind backbuffer und depth textures in order to use them in the compute shader
+	d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
+
+	UINT zero = 0;
+	d3d11DevCon->CSSetShader(pullPushShader->computeShader, 0, 0);
+	d3d11DevCon->CSSetShaderResources(0, 1, &depthSRV);
+	d3d11DevCon->CSSetConstantBuffers(0, 1, &pullPushConstantBuffer);
+
+	// Set texture resolution
+	pullPushConstantBufferData.resolutionX = settings->resolutionX;
+	pullPushConstantBufferData.resolutionY = settings->resolutionY;
+
+	// Pull phase (go from high resolution to low resolution)
+	for (int pullPushLevel = 0; pullPushLevel < pullPushLevels; pullPushLevel++)
+	{
+		// Update constant buffer
+		pullPushConstantBufferData.isPullPhase = TRUE;
+		pullPushConstantBufferData.pullPushLevel = pullPushLevel;
+		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
+
+		// Set resources (for level 0, the input is the color texture that gets copied to the pull texture at level 0)
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, (pullPushLevel == 0) ? &colorUAV : &pullTexturesUAV[pullPushLevel - 1], &zero);
+		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &pullTexturesUAV[pullPushLevel], &zero);
+
+		UINT threadGroupCount = ceil((pullPushResolution / pow(2, pullPushLevel) / 32.0f));
+		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
+
+		// Unbind
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
+	}
+
+	// Push phase (go from low resolution to high resolution)
+	for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
+	{
+		// Update constant buffer
+		pullPushConstantBufferData.isPullPhase = FALSE;
+		pullPushConstantBufferData.pullPushLevel = pullPushLevel;
+		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
+
+		// Set resources (for level 0, the input is the push texture at level 0 that gets copied to the color texture)
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pushTexturesUAV[pullPushLevel], &zero);
+		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, (pullPushLevel == 0) ? &colorUAV : &pushTexturesUAV[pullPushLevel - 1], &zero);
+
+		UINT threadGroupCount = ceil((pullPushResolution / pow(2, pullPushLevel) / 32.0f));
+		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
+
+		// Unbind
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
+	}
+
+	// Unbind shader resources
+	d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
+	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+	d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 }
 
 void PointCloudEngine::PullPush::Release()
 {
+	SAFE_RELEASE(pullPushConstantBuffer);
+
 	for (auto it = pullTextures.begin(); it != pullTextures.end(); it++)
 	{
 		(*it)->Release();
