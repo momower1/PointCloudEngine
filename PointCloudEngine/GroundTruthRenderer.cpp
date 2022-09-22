@@ -114,6 +114,11 @@ void GroundTruthRenderer::Draw()
 		// This requires the vertex indices to be distributed randomly (pointcloud files provide this feature)
 		vertexCount *= settings->density;
 	}
+	else if (settings->viewMode == ViewMode::PullPush)
+	{
+		// In case of the pull push algorithm this is the initial point sample count at the full resolution layer
+		vertexCount *= settings->density;
+	}
 
     // Update effect file buffer, set shader buffer to our created buffer
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);

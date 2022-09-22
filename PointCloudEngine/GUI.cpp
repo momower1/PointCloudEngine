@@ -103,6 +103,7 @@ void PointCloudEngine::GUI::Initialize()
 
 	OnSelectTab(0);
 	OnSelectViewMode();
+	UpdateWindow(hwndGUI);
 }
 
 void PointCloudEngine::GUI::Release()
@@ -243,7 +244,7 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 void PointCloudEngine::GUI::CreateContentRenderer()
 {
 	rendererElements.push_back(new GUIText(hwndGUI, { 10, 40 }, { 100, 20 }, L"View Mode "));
-	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Pull Push", L"Neural Network"}, OnSelectViewMode, &viewModeSelection));
 	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
 	rendererElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Vertex Count "));
 	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 70 }, { 200, 20 }, &GUI::vertexCount));
@@ -400,7 +401,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	}
 	else
 	{
-		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 8);
+		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 9);
 
 		switch (settings->viewMode)
 		{
@@ -423,6 +424,13 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				break;
 			}
 			case ViewMode::SparsePoints:
+			{
+				ShowElements(pointElements);
+				sparseElements[1]->Show(SW_SHOW);
+				sparseElements[1]->SetPosition({ 160, 190 });
+				break;
+			}
+			case ViewMode::PullPush:
 			{
 				ShowElements(pointElements);
 				sparseElements[1]->Show(SW_SHOW);

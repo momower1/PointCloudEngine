@@ -40,6 +40,7 @@ namespace PointCloudEngine
 		SparseSplats,
 		Points,
 		SparsePoints,
+		PullPush,
 		NeuralNetwork
 	};
 
