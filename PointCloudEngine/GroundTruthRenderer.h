@@ -56,6 +56,9 @@ namespace PointCloudEngine
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
         ID3D11Buffer* constantBuffer;
 
+		// Pull push algorithm
+		PullPush* pullPush = NULL;
+
 		void Redraw(bool present);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION

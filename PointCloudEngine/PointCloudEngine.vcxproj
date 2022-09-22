@@ -274,6 +274,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="PullPush.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Octree.cpp" />
@@ -303,6 +304,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <ClInclude Include="GUIValue.h" />
     <ClInclude Include="HDF5File.h" />
     <ClInclude Include="PrecompiledHeader.h" />
+    <ClInclude Include="PullPush.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="IRenderer.h" />

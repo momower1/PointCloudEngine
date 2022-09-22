@@ -25,6 +25,7 @@ namespace PointCloudEngine
     class GroundTruthRenderer;
     class OctreeRenderer;
 	class WaypointRenderer;
+	class PullPush;
     class Settings;
     class Camera;
     class Octree;
@@ -73,6 +74,7 @@ using namespace PointCloudEngine;
 #include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
 #include "WaypointRenderer.h"
+#include "PullPush.h"
 #include "GUI.h"
 #include "Scene.h"
 #include "HDF5File.h"
@@ -118,7 +120,6 @@ extern LightingConstantBuffer lightingConstantBufferData;
 
 // Global function declarations
 extern bool OpenFileDialog(const wchar_t* filter, std::wstring &outFilename);
-extern void ErrorMessageOnFail(HRESULT hr, std::wstring message, std::wstring file, int line);
 extern bool LoadPointcloudFile(std::vector<Vertex> &outVertices, Vector3 &outBoundingCubePosition, float &outBoundingCubeSize, const std::wstring &pointcloudFile);
 extern void SaveScreenshotToFile();
 extern void SetFullscreen(bool fullscreen);

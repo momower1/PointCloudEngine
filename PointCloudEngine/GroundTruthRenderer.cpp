@@ -48,6 +48,11 @@ void GroundTruthRenderer::Initialize()
 
 void GroundTruthRenderer::Update()
 {
+	// Release pull push resources if no longer needed
+	if (settings->viewMode != ViewMode::PullPush)
+	{
+		SAFE_RELEASE(pullPush);
+	}
 }
 
 void GroundTruthRenderer::Draw()
@@ -133,6 +138,16 @@ void GroundTruthRenderer::Draw()
 	else
 	{
 		d3d11DevCon->Draw(vertexCount, 0);
+
+		if (settings->viewMode == ViewMode::PullPush)
+		{
+			if (pullPush == NULL)
+			{
+				pullPush = new PullPush(settings->resolutionX, settings->resolutionY);
+			}
+
+			pullPush->Execute(backBufferTextureUAV, depthStencilView);
+		}
 	}
 
 	// Show vertex count on GUI
@@ -143,6 +158,7 @@ void GroundTruthRenderer::Release()
 {
     SAFE_RELEASE(vertexBuffer);
     SAFE_RELEASE(constantBuffer);
+	SAFE_RELEASE(pullPush);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Neural Network
