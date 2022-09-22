@@ -132,10 +132,10 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
 
 		// Set resources (for level 0, the input is the push texture at level 0 that gets copied to the color texture)
-		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pushTexturesUAV[pullPushLevel], &zero);
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullTexturesUAV[pullPushLevel], &zero);
 		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, (pullPushLevel == 0) ? &colorUAV : &pushTexturesUAV[pullPushLevel - 1], &zero);
 
-		UINT threadGroupCount = ceil((pullPushResolution / pow(2, pullPushLevel) / 32.0f));
+		UINT threadGroupCount = ceil((pullPushResolution / pow(2, max(0, pullPushLevel - 1)) / 32.0f));
 		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
 
 		// Unbind
@@ -147,6 +147,16 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
 	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
 	d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
+
+	//// DEBUG ALL TEXTURES TO FILES
+	//for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
+	//{
+	//	hr = SaveWICTextureToFile(d3d11DevCon, pullTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PullLevel" + std::to_wstring(pullPushLevel) + L".png").c_str());
+	//	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+
+	//	hr = SaveWICTextureToFile(d3d11DevCon, pushTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PushLevel" + std::to_wstring(pullPushLevel) + L".png").c_str());
+	//	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+	//}
 }
 
 void PointCloudEngine::PullPush::Release()
