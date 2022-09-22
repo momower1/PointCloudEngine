@@ -65,8 +65,8 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 
 void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* initialColorUAV, ID3D11DepthStencilView* initialDepthView)
 {
-	// Recreate the texture hierarchy if resolution increased beyond the current hierarchy
-	if (max(settings->resolutionX, settings->resolutionY) > pullPushResolution)
+	// Recreate the texture hierarchy if resolution increased beyond the current hierarchy or decreased below half the resolution
+	if ((max(settings->resolutionX, settings->resolutionY) > pullPushResolution) || ((2 * max(settings->resolutionX, settings->resolutionY)) < pullPushResolution))
 	{
 		CreatePullPushTextureHierarchy();
 	}
