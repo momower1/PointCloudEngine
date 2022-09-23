@@ -17,49 +17,48 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 	for (int pullPushLevel = 0; pullPushLevel < pullPushLevels; pullPushLevel++)
 	{
 		// Use a 16-bit floating point texture and store the weights in the alpha channel)
-		D3D11_TEXTURE2D_DESC pullPushLevelTextureDesc;
-		pullPushLevelTextureDesc.Width = pullPushResolution / pow(2, pullPushLevel);
-		pullPushLevelTextureDesc.Height = pullPushLevelTextureDesc.Width;
-		pullPushLevelTextureDesc.MipLevels = 1;
-		pullPushLevelTextureDesc.ArraySize = 1;
-		pullPushLevelTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		pullPushLevelTextureDesc.SampleDesc.Count = 1;
-		pullPushLevelTextureDesc.SampleDesc.Quality = 0;
-		pullPushLevelTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-		pullPushLevelTextureDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
-		pullPushLevelTextureDesc.CPUAccessFlags = 0;
-		pullPushLevelTextureDesc.MiscFlags = 0;
+		D3D11_TEXTURE2D_DESC pullPushTextureDesc;
+		pullPushTextureDesc.Width = pullPushResolution / pow(2, pullPushLevel);
+		pullPushTextureDesc.Height = pullPushTextureDesc.Width;
+		pullPushTextureDesc.MipLevels = 1;
+		pullPushTextureDesc.ArraySize = 1;
+		pullPushTextureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		pullPushTextureDesc.SampleDesc.Count = 1;
+		pullPushTextureDesc.SampleDesc.Quality = 0;
+		pullPushTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+		pullPushTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+		pullPushTextureDesc.CPUAccessFlags = 0;
+		pullPushTextureDesc.MiscFlags = 0;
 
-		// Create the pull texture
-		ID3D11Texture2D* pullLevelTexture = NULL;
-		hr = d3d11Device->CreateTexture2D(&pullPushLevelTextureDesc, NULL, &pullLevelTexture);
+		// Create the pull push texture
+		ID3D11Texture2D* pullPushTexture = NULL;
+		hr = d3d11Device->CreateTexture2D(&pullPushTextureDesc, NULL, &pullPushTexture);
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-		// Create the push texture
-		ID3D11Texture2D* pushLevelTexture = NULL;
-		hr = d3d11Device->CreateTexture2D(&pullPushLevelTextureDesc, NULL, &pushLevelTexture);
-		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+		// Create a shader resource view in order to read the texture in the shader (also allows texture filtering)
+		D3D11_SHADER_RESOURCE_VIEW_DESC pullPushTextureSRVDesc;
+		ZeroMemory(&pullPushTextureSRVDesc, sizeof(pullPushTextureSRVDesc));
+		pullPushTextureSRVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		pullPushTextureSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		pullPushTextureSRVDesc.Texture2D.MipLevels = 1;
+
+		ID3D11ShaderResourceView* pullPushTextureSRV = NULL;
+		hr = d3d11Device->CreateShaderResourceView(pullPushTexture, &pullPushTextureSRVDesc, &pullPushTextureSRV);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed for the " + NAMEOF(pullPushTextureSRV));
 
 		// Create an unordered acces views in order to access and manipulate the textures in shaders
-		D3D11_UNORDERED_ACCESS_VIEW_DESC pullPushLevelTextureUAVDesc;
-		ZeroMemory(&pullPushLevelTextureUAVDesc, sizeof(pullPushLevelTextureUAVDesc));
-		pullPushLevelTextureUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		pullPushLevelTextureUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+		D3D11_UNORDERED_ACCESS_VIEW_DESC pullPushTextureUAVDesc;
+		ZeroMemory(&pullPushTextureUAVDesc, sizeof(pullPushTextureUAVDesc));
+		pullPushTextureUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		pullPushTextureUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 
-		// Create pull texture UAV
-		ID3D11UnorderedAccessView* pullLevelTextureUAV = NULL;
-		hr = d3d11Device->CreateUnorderedAccessView(pullLevelTexture, &pullPushLevelTextureUAVDesc, &pullLevelTextureUAV);
-		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(pullLevelTextureUAV));
+		ID3D11UnorderedAccessView* pullPushTextureUAV = NULL;
+		hr = d3d11Device->CreateUnorderedAccessView(pullPushTexture, &pullPushTextureUAVDesc, &pullPushTextureUAV);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(pullPushTextureUAV));
 
-		// Create push texture UAV
-		ID3D11UnorderedAccessView* pushLevelTextureUAV = NULL;
-		hr = d3d11Device->CreateUnorderedAccessView(pushLevelTexture, &pullPushLevelTextureUAVDesc, &pushLevelTextureUAV);
-		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateUnorderedAccessView) + L" failed for the " + NAMEOF(pushLevelTextureUAV));
-
-		pullTextures.push_back(pullLevelTexture);
-		pushTextures.push_back(pushLevelTexture);
-		pullTexturesUAV.push_back(pullLevelTextureUAV);
-		pushTexturesUAV.push_back(pushLevelTextureUAV);
+		pullPushTextures.push_back(pullPushTexture);
+		pullPushTexturesSRV.push_back(pullPushTextureSRV);
+		pullPushTexturesUAV.push_back(pullPushTextureUAV);
 	}
 
 	// Create the constant buffer for the shader
@@ -73,6 +72,18 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 
 	hr = d3d11Device->CreateBuffer(&pullPushConstantBufferDesc, NULL, &pullPushConstantBuffer);
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(pullPushConstantBuffer));
+
+	// Create texture sampler
+	D3D11_SAMPLER_DESC pullPushSamplerDesc;
+	ZeroMemory(&pullPushSamplerDesc, sizeof(pullPushSamplerDesc));
+	pullPushSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	pullPushSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	pullPushSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	pullPushSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	pullPushSamplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+
+	hr = d3d11Device->CreateSamplerState(&pullPushSamplerDesc, &pullPushSamplerState);
+	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateSamplerState) + L" failed for the " + NAMEOF(pullPushSamplerState));
 }
 
 void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID3D11ShaderResourceView* depthSRV)
@@ -83,25 +94,20 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 		CreatePullPushTextureHierarchy();
 	}
 
-	// TODO: Assign RGBA values for first pull texture layer (set A to 0 if a pixel is not drawn, meaning that its depth is 1)
-
-	// TODO: Execute pull phase
-
-	// TODO: Execute push phase
-
-	// TODO: Render/copy result to the backbuffer
-
 	// Unbind backbuffer und depth textures in order to use them in the compute shader
 	d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
 
 	UINT zero = 0;
 	d3d11DevCon->CSSetShader(pullPushShader->computeShader, 0, 0);
 	d3d11DevCon->CSSetShaderResources(0, 1, &depthSRV);
+	d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &backBufferTextureUAV, &zero);
 	d3d11DevCon->CSSetConstantBuffers(0, 1, &pullPushConstantBuffer);
+	d3d11DevCon->CSSetSamplers(0, 1, &pullPushSamplerState);
 
 	// Set texture resolution
 	pullPushConstantBufferData.resolutionX = settings->resolutionX;
 	pullPushConstantBufferData.resolutionY = settings->resolutionY;
+	pullPushConstantBufferData.pullPushResolution = pullPushResolution;
 
 	// Pull phase (go from high resolution to low resolution)
 	for (int pullPushLevel = 0; pullPushLevel < pullPushLevels; pullPushLevel++)
@@ -112,15 +118,15 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
 
 		// Set resources (for level 0, the input is the color texture that gets copied to the pull texture at level 0)
-		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, (pullPushLevel == 0) ? &colorUAV : &pullTexturesUAV[pullPushLevel - 1], &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &pullTexturesUAV[pullPushLevel], &zero);
+		d3d11DevCon->CSSetShaderResources(1, 1, (pullPushLevel == 0) ? nullSRV : &pullPushTexturesSRV[pullPushLevel - 1]);
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullPushTexturesUAV[pullPushLevel], &zero);
 
 		UINT threadGroupCount = ceil((pullPushResolution / pow(2, pullPushLevel) / 32.0f));
 		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
 
 		// Unbind
+		d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
 		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 	}
 
 	// Push phase (go from low resolution to high resolution)
@@ -132,29 +138,27 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
 
 		// Set resources (for level 0, the input is the push texture at level 0 that gets copied to the color texture)
-		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullTexturesUAV[pullPushLevel], &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, (pullPushLevel == 0) ? &colorUAV : &pullTexturesUAV[pullPushLevel - 1], &zero);
+		d3d11DevCon->CSSetShaderResources(1, 1, &pullPushTexturesSRV[pullPushLevel]);
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, (pullPushLevel == 0) ? nullUAV : &pullPushTexturesUAV[pullPushLevel - 1], &zero);
 
 		UINT threadGroupCount = ceil((pullPushResolution / pow(2, max(0, pullPushLevel - 1)) / 32.0f));
 		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
 
 		// Unbind
+		d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
 		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 	}
 
-	// Unbind shader resources
+	// Unbind all shader resources
 	d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
+	d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
 	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
 	d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 
 	//// DEBUG ALL TEXTURES TO FILES
 	//for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
 	//{
-	//	hr = SaveWICTextureToFile(d3d11DevCon, pullTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PullLevel" + std::to_wstring(pullPushLevel) + L".png").c_str());
-	//	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
-
-	//	hr = SaveWICTextureToFile(d3d11DevCon, pushTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PushLevel" + std::to_wstring(pullPushLevel) + L".png").c_str());
+	//	hr = SaveWICTextureToFile(d3d11DevCon, pullPushTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PullPush" + std::to_wstring(pullPushLevel) + L".png").c_str());
 	//	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
 	//}
 
@@ -164,29 +168,24 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 void PointCloudEngine::PullPush::Release()
 {
 	SAFE_RELEASE(pullPushConstantBuffer);
+	SAFE_RELEASE(pullPushSamplerState);
 
-	for (auto it = pullTextures.begin(); it != pullTextures.end(); it++)
+	for (auto it = pullPushTextures.begin(); it != pullPushTextures.end(); it++)
 	{
 		(*it)->Release();
 	}
 
-	for (auto it = pushTextures.begin(); it != pushTextures.end(); it++)
+	for (auto it = pullPushTexturesSRV.begin(); it != pullPushTexturesSRV.end(); it++)
 	{
 		(*it)->Release();
 	}
 
-	for (auto it = pullTexturesUAV.begin(); it != pullTexturesUAV.end(); it++)
+	for (auto it = pullPushTexturesUAV.begin(); it != pullPushTexturesUAV.end(); it++)
 	{
 		(*it)->Release();
 	}
 
-	for (auto it = pushTexturesUAV.begin(); it != pushTexturesUAV.end(); it++)
-	{
-		(*it)->Release();
-	}
-
-	pullTextures.clear();
-	pushTextures.clear();
-	pullTexturesUAV.clear();
-	pushTexturesUAV.clear();
+	pullPushTextures.clear();
+	pullPushTexturesSRV.clear();
+	pullPushTexturesUAV.clear();
 }

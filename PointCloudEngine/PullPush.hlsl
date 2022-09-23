@@ -1,13 +1,18 @@
 Texture2D<float> depthTexture : register(t0);
-RWTexture2D<float4> inputTexture : register(u0);
-RWTexture2D<float4> outputTexture : register(u1);
+Texture2D<float4> inputTexture : register(t1);
+RWTexture2D<float4> outputTexture : register(u0);
+RWTexture2D<float4> backbufferTexture : register(u1);
+SamplerState samplerState : register(s0);
 
 cbuffer PullPushConstantBuffer : register(b0)
 {
 	int resolutionX;
 	int resolutionY;
+	int pullPushResolution;
 	int pullPushLevel;
+//------------------------------------------------------------------------------ (16 byte boundary)
 	bool isPullPhase;
+	// 12 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 16 bytes with constant buffer packing rules
 
@@ -24,7 +29,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		{
 			if ((pixel.x < resolutionX) && (pixel.y < resolutionY))
 			{
-				outputColor = inputTexture[pixel];
+				outputColor = backbufferTexture[pixel];
 				outputColor.w = depthTexture[pixel];
 			}
 			else
@@ -58,10 +63,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 		{
 			outputColor = inputTexture[pixel];
 			outputColor.a = 1.0f;
+
+			backbufferTexture[pixel] = outputColor;
+			return;
 		}
 		else
 		{
-			float4 inputColor = inputTexture[pixel / 2];
+			float2 uv = pixel / (pullPushResolution / pow(2.0f, pullPushLevel - 1));
+			float4 inputColor = inputTexture.SampleLevel(samplerState, uv, 0);
 			outputColor = outputTexture[pixel];
 
 			// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the lower level pull texture

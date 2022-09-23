@@ -17,19 +17,21 @@ namespace PointCloudEngine
         {
             int resolutionX;
             int resolutionY;
+            int pullPushResolution;
             int pullPushLevel;
             BOOL isPullPhase;
+            XMUINT3 padding;
         };
 
         int pullPushLevels = 0;
         int pullPushResolution = 0;
         PullPushConstantBuffer pullPushConstantBufferData;
 
-        ID3D11Buffer* pullPushConstantBuffer;
-        std::vector<ID3D11Texture2D*> pullTextures;
-        std::vector<ID3D11Texture2D*> pushTextures;
-        std::vector<ID3D11UnorderedAccessView*> pullTexturesUAV;
-        std::vector<ID3D11UnorderedAccessView*> pushTexturesUAV;
+        ID3D11Buffer* pullPushConstantBuffer = NULL;
+        ID3D11SamplerState* pullPushSamplerState = NULL;
+        std::vector<ID3D11Texture2D*> pullPushTextures;
+        std::vector<ID3D11UnorderedAccessView*> pullPushTexturesUAV;
+        std::vector<ID3D11ShaderResourceView*> pullPushTexturesSRV;
     };
 }
 #endif
