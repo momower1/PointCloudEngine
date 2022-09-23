@@ -15,49 +15,39 @@ cbuffer PullPushConstantBuffer : register(b0)
 void CS(uint3 id : SV_DispatchThreadID)
 {
 	uint2 pixel = id.xy;
-	float4 outputColor = float4(0, 0, 0, 0);
+	float4 outputColor;
 
 	if (isPullPhase)
 	{
 		// Copy input texture to output texture and set valid weight if there is a depth value
 		if (pullPushLevel == 0)
 		{
-			if ((pixel.x < resolutionX) && (pixel.y < resolutionY) && (depthTexture[pixel] < 1.0f))
+			if ((pixel.x < resolutionX) && (pixel.y < resolutionY))
 			{
 				outputColor = inputTexture[pixel];
-				outputColor.w = 1.0f;
+				outputColor.w = depthTexture[pixel];
+			}
+			else
+			{
+				outputColor = float4(0, 0, 0, 1);
 			}
 		}
 		else
 		{
-			float4 inputColorTopLeft = inputTexture[2 * pixel];
-			float4 inputColorTopRight = inputTexture[2 * pixel + uint2(1, 0)];
-			float4 inputColorBottomLeft = inputTexture[2 * pixel + uint2(0, 1)];
-			float4 inputColorBottomRight = inputTexture[2 * pixel + uint2(1, 1)];
+			float smallestDepth = 1.0f;
 
-			if (inputColorTopLeft.w > 0)
+			for (int y = 0; y < 2; y++)
 			{
-				outputColor += inputColorTopLeft;
-			}
+				for (int x = 0; x < 2; x++)
+				{
+					float4 inputColor = inputTexture[2 * pixel + uint2(x, y)];
 
-			if (inputColorTopRight.w > 0)
-			{
-				outputColor += inputColorTopRight;
-			}
-
-			if (inputColorBottomLeft.w > 0)
-			{
-				outputColor += inputColorBottomLeft;
-			}
-
-			if (inputColorBottomRight.w > 0)
-			{
-				outputColor += inputColorBottomRight;
-			}
-
-			if (outputColor.w > 0)
-			{
-				outputColor /= outputColor.w;
+					if (inputColor.w <= smallestDepth)
+					{
+						smallestDepth = inputColor.w;
+						outputColor = inputColor;
+					}
+				}
 			}
 		}
 	}
@@ -67,12 +57,18 @@ void CS(uint3 id : SV_DispatchThreadID)
 		if (pullPushLevel == 0)
 		{
 			outputColor = inputTexture[pixel];
+			outputColor.a = 1.0f;
 		}
 		else
 		{
 			float4 inputColor = inputTexture[pixel / 2];
 			outputColor = outputTexture[pixel];
-			outputColor = (1.0f - outputColor.w) * inputColor + (outputColor.w * outputColor);
+
+			// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the lower level pull texture
+			if (outputColor.w >= 1.0f)
+			{
+				outputColor = inputColor;
+			}
 		}
 	}
 
