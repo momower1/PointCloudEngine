@@ -69,7 +69,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 		else
 		{
-			float2 uv = pixel / (pullPushResolution / pow(2.0f, pullPushLevel - 1));
+			float2 uv = (pixel + float2(0.5f, 0.5f)) / (pullPushResolution / pow(2.0f, pullPushLevel - 1));
 			float4 inputColor = inputTexture.SampleLevel(samplerState, uv, 0);
 			outputColor = outputTexture[pixel];
 
