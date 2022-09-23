@@ -321,10 +321,10 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 45, 20 }, { 0, 200 }, 100, 100, L"X", &settings->lightDirection.x, 0, 0, 0));
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 203, 280 }, { 45, 20 }, { 0, 200 }, 100, 100, L"Y", &settings->lightDirection.y, 0, 0, 0));
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 245, 280 }, { 45, 20 }, { 0, 200 }, 100, 100, L"Z", &settings->lightDirection.z, 0, 0, 0));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 310 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Ambient", &settings->ambient, 2));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 340 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Diffuse", &settings->diffuse, 2));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 370 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Specular", &settings->specular, 2));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 400 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Lighting Specular Exp.", &settings->specularExponent, 2));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 310 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Light Ambient", &settings->ambient, 2));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 340 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Light Diffuse", &settings->diffuse, 2));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 370 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Light Specular", &settings->specular, 2));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 400 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Light Specular Exp.", &settings->specularExponent, 2));
 }
 
 void PointCloudEngine::GUI::CreateContentHDF5()
