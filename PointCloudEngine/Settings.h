@@ -60,6 +60,9 @@ namespace PointCloudEngine
 		float density = 0.2f;
 		float sparseSamplingRate = 0.01f;
 
+		// Pull push parameters
+		bool usePullPushLinearFilter = true;
+
 		// Neural Network parameters
 		std::wstring neuralNetworkModelFile = L"";
 		std::wstring neuralNetworkDescriptionFile = L"";

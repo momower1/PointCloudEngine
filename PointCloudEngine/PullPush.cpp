@@ -74,9 +74,8 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(pullPushConstantBuffer));
 
 	// Create texture sampler
-	D3D11_SAMPLER_DESC pullPushSamplerDesc;
 	ZeroMemory(&pullPushSamplerDesc, sizeof(pullPushSamplerDesc));
-	pullPushSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	pullPushSamplerDesc.Filter = settings->usePullPushLinearFilter ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
 	pullPushSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	pullPushSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	pullPushSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -92,6 +91,16 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	if ((max(settings->resolutionX, settings->resolutionY) > pullPushResolution) || ((2 * max(settings->resolutionX, settings->resolutionY)) < pullPushResolution))
 	{
 		CreatePullPushTextureHierarchy();
+	}
+
+	// Recreate the sampler state if necessary
+	if ((settings->usePullPushLinearFilter && (pullPushSamplerDesc.Filter == D3D11_FILTER_MIN_MAG_MIP_POINT)) || (!settings->usePullPushLinearFilter && (pullPushSamplerDesc.Filter == D3D11_FILTER_MIN_MAG_MIP_LINEAR)))
+	{
+		SAFE_RELEASE(pullPushSamplerState);
+		pullPushSamplerDesc.Filter = settings->usePullPushLinearFilter ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
+
+		hr = d3d11Device->CreateSamplerState(&pullPushSamplerDesc, &pullPushSamplerState);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateSamplerState) + L" failed for the " + NAMEOF(pullPushSamplerState));
 	}
 
 	// Unbind backbuffer und depth textures in order to use them in the compute shader

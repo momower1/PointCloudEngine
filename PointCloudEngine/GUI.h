@@ -57,6 +57,7 @@ namespace PointCloudEngine
 		static std::vector<IGUIElement*> octreeElements;
 		static std::vector<IGUIElement*> sparseElements;
 		static std::vector<IGUIElement*> pointElements;
+		static std::vector<IGUIElement*> pullPushElements;
 		static std::vector<IGUIElement*> neuralNetworkElements;
 
 		// Advanced

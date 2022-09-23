@@ -57,6 +57,7 @@ std::vector<IGUIElement*> GUI::splatElements;
 std::vector<IGUIElement*> GUI::octreeElements;
 std::vector<IGUIElement*> GUI::sparseElements;
 std::vector<IGUIElement*> GUI::pointElements;
+std::vector<IGUIElement*> GUI::pullPushElements;
 std::vector<IGUIElement*> GUI::neuralNetworkElements;
 
 // Advanced
@@ -121,6 +122,7 @@ void PointCloudEngine::GUI::Release()
 	DeleteElements(octreeElements);
 	DeleteElements(sparseElements);
 	DeleteElements(pointElements);
+	DeleteElements(pullPushElements);
 	DeleteElements(neuralNetworkElements);
 	DeleteElements(advancedElements);
 	DeleteElements(hdf5Elements);
@@ -138,6 +140,7 @@ void PointCloudEngine::GUI::Update()
 	UpdateElements(octreeElements);
 	UpdateElements(sparseElements);
 	UpdateElements(pointElements);
+	UpdateElements(pullPushElements);
 	UpdateElements(neuralNetworkElements);
 	UpdateElements(advancedElements);
 	UpdateElements(hdf5Elements);
@@ -159,6 +162,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		HandleMessageElements(octreeElements, msg, wParam, lParam);
 		HandleMessageElements(sparseElements, msg, wParam, lParam);
 		HandleMessageElements(pointElements, msg, wParam, lParam);
+		HandleMessageElements(pullPushElements, msg, wParam, lParam);
 		HandleMessageElements(neuralNetworkElements, msg, wParam, lParam);
 		HandleMessageElements(advancedElements, msg, wParam, lParam);
 		HandleMessageElements(hdf5Elements, msg, wParam, lParam);
@@ -271,6 +275,9 @@ void PointCloudEngine::GUI::CreateContentRenderer()
 
 	pointElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Backface Culling "));
 	pointElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->backfaceCulling));
+
+	pullPushElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 150, 20 }, L"Linear Filtering "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, { 160, 220 }, { 20, 20 }, L"", NULL, &settings->usePullPushLinearFilter));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Loss Function"));
 	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 160 }, { 90, 200 }, { L"None", L"L1", L"MSE", L"Smooth L1" }, OnSelectNeuralNetworkLossFunction, &lossFunctionSelection));
@@ -390,6 +397,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	ShowElements(splatElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(pointElements, SW_HIDE);
+	ShowElements(pullPushElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 
 	if (settings->useOctree)
@@ -433,6 +441,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 			case ViewMode::PullPush:
 			{
 				ShowElements(pointElements);
+				ShowElements(pullPushElements);
 				sparseElements[1]->Show(SW_SHOW);
 				sparseElements[1]->SetPosition({ 160, 190 });
 				break;
@@ -453,6 +462,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(pointElements, SW_HIDE);
+	ShowElements(pullPushElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 	ShowElements(advancedElements, SW_HIDE);
 	ShowElements(hdf5Elements, SW_HIDE);

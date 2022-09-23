@@ -25,6 +25,7 @@ namespace PointCloudEngine
 
         int pullPushLevels = 0;
         int pullPushResolution = 0;
+        D3D11_SAMPLER_DESC pullPushSamplerDesc;
         PullPushConstantBuffer pullPushConstantBufferData;
 
         ID3D11Buffer* pullPushConstantBuffer = NULL;

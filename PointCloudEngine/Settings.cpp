@@ -70,6 +70,9 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(density), &density);
 		TryParse(NAMEOF(sparseSamplingRate), &sparseSamplingRate);
 
+		// Parse pull push parameters
+		TryParse(NAMEOF(usePullPushLinearFilter), &usePullPushLinearFilter);
+
 		// Parse neural network parameters
 		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
 		TryParse(NAMEOF(neuralNetworkDescriptionFile), &neuralNetworkDescriptionFile);
@@ -179,6 +182,10 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(backfaceCulling) << L"=" << backfaceCulling << std::endl;
 	settingsStream << NAMEOF(density) << L"=" << density << std::endl;
 	settingsStream << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Pull Push Parameters" << std::endl;
+	settingsStream << NAMEOF(usePullPushLinearFilter) << L"=" << usePullPushLinearFilter << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
