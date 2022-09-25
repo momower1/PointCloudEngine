@@ -73,7 +73,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 			float4 inputColor = inputTexture.SampleLevel(samplerState, uv, 0);
 			outputColor = outputTexture[pixel];
 
-			// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the lower level pull texture
+			// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
 			if (outputColor.w >= 1.0f)
 			{
 				outputColor = inputColor;
