@@ -20,7 +20,8 @@ namespace PointCloudEngine
             int resolutionOutput;
             int pullPushLevel;
             BOOL isPullPhase;
-            XMUINT3 padding;
+            BOOL drawImportance;
+            XMUINT2 padding;
         };
 
         int pullPushLevels = 0;
@@ -30,9 +31,14 @@ namespace PointCloudEngine
 
         ID3D11Buffer* pullPushConstantBuffer = NULL;
         ID3D11SamplerState* pullPushSamplerState = NULL;
-        std::vector<ID3D11Texture2D*> pullPushTextures;
-        std::vector<ID3D11UnorderedAccessView*> pullPushTexturesUAV;
-        std::vector<ID3D11ShaderResourceView*> pullPushTexturesSRV;
+        std::vector<ID3D11Texture2D*> pullPushColorTextures;
+        std::vector<ID3D11Texture2D*> pullPushImportanceTextures;
+        std::vector<ID3D11ShaderResourceView*> pullPushColorTexturesSRV;
+        std::vector<ID3D11UnorderedAccessView*> pullPushColorTexturesUAV;
+        std::vector<ID3D11ShaderResourceView*> pullPushImportanceTexturesSRV;
+        std::vector<ID3D11UnorderedAccessView*> pullPushImportanceTexturesUAV;
+
+        void CreateTextureResources(D3D11_TEXTURE2D_DESC *textureDesc, ID3D11Texture2D** outTexture, ID3D11ShaderResourceView** outTextureSRV, ID3D11UnorderedAccessView** outTextureUAV);
     };
 }
 #endif
