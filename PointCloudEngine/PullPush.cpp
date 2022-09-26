@@ -116,7 +116,6 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	// Set texture resolution
 	pullPushConstantBufferData.resolutionX = settings->resolutionX;
 	pullPushConstantBufferData.resolutionY = settings->resolutionY;
-	pullPushConstantBufferData.pullPushResolution = pullPushResolution;
 
 	// Pull phase (go from high resolution to low resolution)
 	for (int pullPushLevel = 0; pullPushLevel < pullPushLevels; pullPushLevel++)
@@ -124,13 +123,14 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 		// Update constant buffer
 		pullPushConstantBufferData.isPullPhase = TRUE;
 		pullPushConstantBufferData.pullPushLevel = pullPushLevel;
+		pullPushConstantBufferData.resolutionOutput = pullPushResolution / pow(2, pullPushLevel);
 		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
 
 		// Set resources (for level 0, the input is the color texture that gets copied to the pull texture at level 0)
 		d3d11DevCon->CSSetShaderResources(1, 1, (pullPushLevel == 0) ? nullSRV : &pullPushTexturesSRV[pullPushLevel - 1]);
 		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullPushTexturesUAV[pullPushLevel], &zero);
 
-		UINT threadGroupCount = ceil((pullPushResolution / pow(2, pullPushLevel) / 32.0f));
+		UINT threadGroupCount = ceil(pullPushConstantBufferData.resolutionOutput / 32.0f);
 		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
 
 		// Unbind
@@ -144,13 +144,14 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 		// Update constant buffer
 		pullPushConstantBufferData.isPullPhase = FALSE;
 		pullPushConstantBufferData.pullPushLevel = pullPushLevel;
+		pullPushConstantBufferData.resolutionOutput = pullPushResolution / pow(2, max(0, pullPushLevel - 1));
 		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
 
 		// Set resources (for level 0, the input is the push texture at level 0 that gets copied to the color texture)
 		d3d11DevCon->CSSetShaderResources(1, 1, &pullPushTexturesSRV[pullPushLevel]);
 		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, (pullPushLevel == 0) ? nullUAV : &pullPushTexturesUAV[pullPushLevel - 1], &zero);
 
-		UINT threadGroupCount = ceil((pullPushResolution / pow(2, max(0, pullPushLevel - 1)) / 32.0f));
+		UINT threadGroupCount = ceil(pullPushConstantBufferData.resolutionOutput / 32.0f);
 		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
 
 		// Unbind

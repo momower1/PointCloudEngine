@@ -17,7 +17,7 @@ namespace PointCloudEngine
         {
             int resolutionX;
             int resolutionY;
-            int pullPushResolution;
+            int resolutionOutput;
             int pullPushLevel;
             BOOL isPullPhase;
             XMUINT3 padding;
