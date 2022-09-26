@@ -23,6 +23,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	if (isPullPhase)
 	{
+		// Initialize the texture such that each pixel contains the point color in the RGB and its depth in the A component
+		// If there was no point rendered to a pixel, its depth must be 1
 		if (pullPushLevel == 0)
 		{
 			if ((pixel.x < resolutionX) && (pixel.y < resolutionY))
