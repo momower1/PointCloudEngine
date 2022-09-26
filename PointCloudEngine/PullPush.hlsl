@@ -1,7 +1,6 @@
 Texture2D<float> depthTexture : register(t0);
 Texture2D<float4> inputTexture : register(t1);
 RWTexture2D<float4> outputTexture : register(u0);
-RWTexture2D<float4> backbufferTexture : register(u1);
 SamplerState samplerState : register(s0);
 
 cbuffer PullPushConstantBuffer : register(b0)
@@ -24,12 +23,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	if (isPullPhase)
 	{
-		// Copy input texture to output texture and set valid weight if there is a depth value
 		if (pullPushLevel == 0)
 		{
 			if ((pixel.x < resolutionX) && (pixel.y < resolutionY))
 			{
-				outputColor = backbufferTexture[pixel];
+				outputColor = outputTexture[pixel];
 				outputColor.w = depthTexture[pixel];
 			}
 			else
@@ -58,26 +56,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 	else
 	{
-		// Copy input texture to output texture
-		if (pullPushLevel == 0)
-		{
-			outputColor = inputTexture[pixel];
-			outputColor.a = 1.0f;
+		float2 uv = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
+		float4 inputColor = inputTexture.SampleLevel(samplerState, uv, 0);
+		outputColor = outputTexture[pixel];
 
-			backbufferTexture[pixel] = outputColor;
-			return;
-		}
-		else
+		// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
+		if (outputColor.w >= 1.0f)
 		{
-			float2 uv = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
-			float4 inputColor = inputTexture.SampleLevel(samplerState, uv, 0);
-			outputColor = outputTexture[pixel];
-
-			// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
-			if (outputColor.w >= 1.0f)
-			{
-				outputColor = inputColor;
-			}
+			outputColor = inputColor;
 		}
 	}
 

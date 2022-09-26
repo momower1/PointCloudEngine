@@ -146,7 +146,7 @@ void GroundTruthRenderer::Draw()
 				pullPush = new PullPush();
 			}
 
-			pullPush->Execute(backBufferTextureUAV, depthTextureSRV);
+			pullPush->Execute(backBufferTexture, depthTextureSRV);
 		}
 	}
 

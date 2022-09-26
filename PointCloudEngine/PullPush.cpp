@@ -85,7 +85,7 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateSamplerState) + L" failed for the " + NAMEOF(pullPushSamplerState));
 }
 
-void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID3D11ShaderResourceView* depthSRV)
+void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11ShaderResourceView* depthSRV)
 {
 	// Recreate the texture hierarchy if resolution increased beyond the current hierarchy or decreased below half the resolution
 	if ((max(settings->resolutionX, settings->resolutionY) > pullPushResolution) || ((2 * max(settings->resolutionX, settings->resolutionY)) < pullPushResolution))
@@ -106,10 +106,12 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	// Unbind backbuffer und depth textures in order to use them in the compute shader
 	d3d11DevCon->OMSetRenderTargets(0, NULL, NULL);
 
+	// Copy the backbuffer color texture that contains the rendered sparse points to the pull push texture at level 0
+	d3d11DevCon->CopySubresourceRegion(pullPushTextures.front(), 0, 0, 0, 0, colorTexture, 0, NULL);
+
 	UINT zero = 0;
 	d3d11DevCon->CSSetShader(pullPushShader->computeShader, 0, 0);
 	d3d11DevCon->CSSetShaderResources(0, 1, &depthSRV);
-	d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &backBufferTextureUAV, &zero);
 	d3d11DevCon->CSSetConstantBuffers(0, 1, &pullPushConstantBuffer);
 	d3d11DevCon->CSSetSamplers(0, 1, &pullPushSamplerState);
 
@@ -139,7 +141,7 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	}
 
 	// Push phase (go from low resolution to high resolution)
-	for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
+	for (int pullPushLevel = pullPushLevels - 1; pullPushLevel > 0; pullPushLevel--)
 	{
 		// Update constant buffer
 		pullPushConstantBufferData.isPullPhase = FALSE;
@@ -163,7 +165,17 @@ void PointCloudEngine::PullPush::Execute(ID3D11UnorderedAccessView* colorUAV, ID
 	d3d11DevCon->CSSetShaderResources(0, 1, nullSRV);
 	d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
 	d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
-	d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
+
+	D3D11_BOX subresourceBox;
+	subresourceBox.left = 0;
+	subresourceBox.right = settings->resolutionX;
+	subresourceBox.top = 0;
+	subresourceBox.bottom = settings->resolutionY;
+	subresourceBox.front = 0;
+	subresourceBox.back = 1;
+
+	// Copy the result from the pull push algorithm back to the backbuffer color texture
+	d3d11DevCon->CopySubresourceRegion(colorTexture, 0, 0, 0, 0, pullPushTextures.front(), 0, &subresourceBox);
 
 	//// DEBUG ALL TEXTURES TO FILES
 	//for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)

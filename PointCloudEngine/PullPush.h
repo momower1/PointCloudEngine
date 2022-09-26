@@ -10,7 +10,7 @@ namespace PointCloudEngine
     public:
         PullPush();
         void CreatePullPushTextureHierarchy();
-        void Execute(ID3D11UnorderedAccessView* colorUAV, ID3D11ShaderResourceView* depthSRV);
+        void Execute(ID3D11Resource* colorTexture, ID3D11ShaderResourceView* depthSRV);
         void Release();
     private:
         struct PullPushConstantBuffer
