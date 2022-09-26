@@ -278,6 +278,8 @@ void PointCloudEngine::GUI::CreateContentRenderer()
 
 	pullPushElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 150, 20 }, L"Linear Filtering "));
 	pullPushElements.push_back(new GUICheckbox(hwndGUI, { 160, 220 }, { 20, 20 }, L"", NULL, &settings->usePullPushLinearFilter));
+	pullPushElements.push_back(new GUIText(hwndGUI, { 10, 250 }, { 150, 20 }, L"Draw Importance "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, { 160, 250 }, { 20, 20 }, L"", NULL, &settings->drawPullPushImportance));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Loss Function"));
 	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 160 }, { 90, 200 }, { L"None", L"L1", L"MSE", L"Smooth L1" }, OnSelectNeuralNetworkLossFunction, &lossFunctionSelection));

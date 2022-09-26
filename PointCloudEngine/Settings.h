@@ -62,6 +62,7 @@ namespace PointCloudEngine
 
 		// Pull push parameters
 		bool usePullPushLinearFilter = true;
+		bool drawPullPushImportance = false;
 
 		// Neural Network parameters
 		std::wstring neuralNetworkModelFile = L"";

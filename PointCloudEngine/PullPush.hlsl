@@ -23,6 +23,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 {
 	uint2 pixel = id.xy;
 	float4 outputColor;
+	float outputImportance;
 
 	if (isPullPhase)
 	{
@@ -58,19 +59,31 @@ void CS(uint3 id : SV_DispatchThreadID)
 				}
 			}
 		}
+
+		outputImportance = 1.0f / (1 + pullPushLevel);
 	}
 	else
 	{
 		float2 uv = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
 		float4 inputColor = inputColorTexture.SampleLevel(samplerState, uv, 0);
+		float inputImportance = inputImportanceTexture.SampleLevel(samplerState, uv, 0);
+		
 		outputColor = outputColorTexture[pixel];
+		outputImportance = outputImportanceTexture[pixel];
 
 		// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
 		if (outputColor.w >= 1.0f)
 		{
 			outputColor = inputColor;
+			outputImportance = inputImportance;
+		}
+
+		if (drawImportance && (pullPushLevel == 1))
+		{
+			outputColor = float4(outputImportance, outputImportance, outputImportance, 1.0f);
 		}
 	}
 
 	outputColorTexture[pixel] = outputColor;
+	outputImportanceTexture[pixel] = outputImportance;
 }
