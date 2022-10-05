@@ -661,26 +661,31 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
         }
 		case WM_SIZING:
 		{
-			// Make sure that the engine window cannot get smaller than the GUI size
-			RECT rectClientMinimum;
-			rectClientMinimum.left = 0;
-			rectClientMinimum.right = GS(settings->userInterfaceWidth) + 1;
-			rectClientMinimum.top = 0;
-			rectClientMinimum.bottom = GS(settings->userInterfaceHeight) + 1;
+			if (hwnd == hwndEngine)
+			{
+				// Make sure that the engine window cannot get smaller than the GUI size
+				RECT rectClientMinimum;
+				rectClientMinimum.left = 0;
+				rectClientMinimum.right = GS(settings->userInterfaceWidth) + 1;
+				rectClientMinimum.top = 0;
+				rectClientMinimum.bottom = GS(settings->userInterfaceHeight) + 1;
 
-			success = AdjustWindowRectEx(&rectClientMinimum, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, 0);
-			ERROR_MESSAGE_ON_FAIL(success, NAMEOF(AdjustWindowRectEx) + L" failed!");
+				success = AdjustWindowRectEx(&rectClientMinimum, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, 0);
+				ERROR_MESSAGE_ON_FAIL(success, NAMEOF(AdjustWindowRectEx) + L" failed!");
 
-			RECT* rect = (RECT*)lParam;
-			int w = rect->right - rect->left;
-			int h = rect->bottom - rect->top;
-			w = max(w, rectClientMinimum.right - rectClientMinimum.left);
-			h = max(h, rectClientMinimum.bottom - rectClientMinimum.top);
+				RECT* rect = (RECT*)lParam;
+				int w = rect->right - rect->left;
+				int h = rect->bottom - rect->top;
+				w = max(w, rectClientMinimum.right - rectClientMinimum.left);
+				h = max(h, rectClientMinimum.bottom - rectClientMinimum.top);
 
-			rect->right = rect->left + w;
-			rect->bottom = rect->top + h;
+				rect->right = rect->left + w;
+				rect->bottom = rect->top + h;
 
-			return TRUE;
+				return TRUE;
+			}
+
+			break;
 		}
 		case WM_SIZE:
 		{
@@ -691,9 +696,26 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				RECT rectClient;
 				GetClientRect(hwndScene, &rectClient);
 				ChangeRenderingResolution(rectClient.right - rectClient.left, rectClient.bottom - rectClient.top);
+
+				RECT rectEngine;
+				GetWindowRect(hwndEngine, &rectEngine);
+				settings->engineWidth = rectEngine.right - rectEngine.left;
+				settings->engineHeight = rectEngine.bottom - rectEngine.top;
+				settings->enginePositionX = rectEngine.left + (settings->engineWidth / 2);
+				settings->enginePositionY = rectEngine.top + (settings->engineHeight / 2);
 			}
 
 			return 0;
+		}
+		case WM_MOVE:
+		{
+			if (hwnd == hwndEngine)
+			{
+				settings->enginePositionX = LOWORD(lParam) + (settings->engineWidth / 2);
+				settings->enginePositionY = HIWORD(lParam) + (settings->engineHeight / 2);
+
+				return NULL;
+			}
 		}
 		case WM_COMMAND:
 		{
