@@ -64,7 +64,7 @@ std::vector<IGUIElement*> GUI::neuralNetworkElements;
 std::vector<IGUIElement*> GUI::advancedElements;
 
 // HDF5
-std::vector<IGUIElement*> GUI::hdf5Elements;
+std::vector<IGUIElement*> GUI::datasetElements;
 
 void PointCloudEngine::GUI::Initialize()
 {
@@ -79,7 +79,7 @@ void PointCloudEngine::GUI::Initialize()
 		IGUIElement::InitializeFontHandle(GS(20));
 
 		// Tab inside the gui window for choosing different groups of settings
-		tabGroundTruth = new GUITab(hwndGUI, 0, 0, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), { L"Renderer", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
+		tabGroundTruth = new GUITab(hwndGUI, 0, 0, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), { L"Renderer", L"Advanced", L"Dataset" }, OnSelectTab);
 		tabOctree = new GUITab(hwndGUI, 0, 0, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), { L"Renderer", L"Advanced" }, OnSelectTab);
 
 		viewModeSelection = (int)settings->viewMode;
@@ -95,9 +95,9 @@ void PointCloudEngine::GUI::Initialize()
 		}
 
 		// Create and show content for each tab
-		CreateContentRenderer();
-		CreateContentAdvanced();
-		CreateContentHDF5();
+		CreateRendererElements();
+		CreateAdvancedElements();
+		CreateDatasetElements();
 
 		initialized = true;
 	}
@@ -125,7 +125,7 @@ void PointCloudEngine::GUI::Release()
 	DeleteElements(pullPushElements);
 	DeleteElements(neuralNetworkElements);
 	DeleteElements(advancedElements);
-	DeleteElements(hdf5Elements);
+	DeleteElements(datasetElements);
 }
 
 void PointCloudEngine::GUI::Update()
@@ -143,7 +143,7 @@ void PointCloudEngine::GUI::Update()
 	UpdateElements(pullPushElements);
 	UpdateElements(neuralNetworkElements);
 	UpdateElements(advancedElements);
-	UpdateElements(hdf5Elements);
+	UpdateElements(datasetElements);
 }
 
 void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -165,7 +165,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		HandleMessageElements(pullPushElements, msg, wParam, lParam);
 		HandleMessageElements(neuralNetworkElements, msg, wParam, lParam);
 		HandleMessageElements(advancedElements, msg, wParam, lParam);
-		HandleMessageElements(hdf5Elements, msg, wParam, lParam);
+		HandleMessageElements(datasetElements, msg, wParam, lParam);
 	}
 }
 
@@ -245,7 +245,7 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 	}
 }
 
-void PointCloudEngine::GUI::CreateContentRenderer()
+void PointCloudEngine::GUI::CreateRendererElements()
 {
 	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(40), GS(100), GS(20), L"View Mode "));
 	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Pull Push", L"Neural Network"}, OnSelectViewMode, &viewModeSelection));
@@ -284,7 +284,7 @@ void PointCloudEngine::GUI::CreateContentRenderer()
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
 }
 
-void PointCloudEngine::GUI::CreateContentAdvanced()
+void PointCloudEngine::GUI::CreateAdvancedElements()
 {
 	resolutionX = settings->resolutionX;
 	resolutionY = settings->resolutionY;
@@ -312,32 +312,32 @@ void PointCloudEngine::GUI::CreateContentAdvanced()
 	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 2000, 100, 0, L"Light Specular Exp.", &settings->specularExponent, 2, GS(148), GS(40)));
 }
 
-void PointCloudEngine::GUI::CreateContentHDF5()
+void PointCloudEngine::GUI::CreateDatasetElements()
 {
 	// Use this to select a camera position from the HDF5 file generation
-	hdf5Elements.push_back(new GUISlider<UINT>(hwndGUI, GS(160), GS(40), GS(130), GS(20), 0, (UINT)cameraRecordingPositions.size() - 1, 1, 0, L"Camera Recording", &cameraRecording, 0, GS(148), GS(40), OnChangeCameraRecording));
+	datasetElements.push_back(new GUISlider<UINT>(hwndGUI, GS(160), GS(40), GS(130), GS(20), 0, (UINT)cameraRecordingPositions.size() - 1, 1, 0, L"Camera Recording", &cameraRecording, 0, GS(148), GS(40), OnChangeCameraRecording));
 
-	hdf5Elements.push_back(new GUIText(hwndGUI, GS(10), GS(80), GS(300), GS(20), L"Waypoint Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(110), GS(130), GS(20), 1, 1000, 1000, 0, L"Step Size", &settings->waypointStepSize, 3, GS(148), GS(40)));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(140), GS(130), GS(20), 1, 1000, 1000, 0, L"Preview Step Size", &settings->waypointPreviewStepSize, 3, GS(148), GS(40)));
-	hdf5Elements.push_back(new GUIText(hwndGUI, GS(10), GS(170), GS(150), GS(20), L"Range Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(170), GS(50), GS(20), 0, 100, 100, 0, L"Min", &settings->waypointMin, 1, 0, GS(28)));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(170), GS(50), GS(20), 0, 100, 100, 0, L"Max", &settings->waypointMax, 1, 0, GS(28)));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, GS(10), GS(200), GS(150), GS(25), L"Add Waypoint", OnWaypointAdd));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, GS(185), GS(200), GS(150), GS(25), L"Remove Waypoint", OnWaypointRemove));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, GS(10), GS(235), GS(150), GS(25), L"Toggle Waypoints", OnWaypointToggle));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, GS(185), GS(235), GS(150), GS(25), L"Preview Waypoints", OnWaypointPreview));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, GS(10), GS(270), GS(325), GS(25), L"Generate Waypoint HDF5 Dataset", OnGenerateWaypointDataset));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(80), GS(300), GS(20), L"Waypoint Dataset Generation"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(110), GS(130), GS(20), 1, 1000, 1000, 0, L"Step Size", &settings->waypointStepSize, 3, GS(148), GS(40)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(140), GS(130), GS(20), 1, 1000, 1000, 0, L"Preview Step Size", &settings->waypointPreviewStepSize, 3, GS(148), GS(40)));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(170), GS(150), GS(20), L"Range Min/Max"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(170), GS(50), GS(20), 0, 100, 100, 0, L"Min", &settings->waypointMin, 1, 0, GS(28)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(170), GS(50), GS(20), 0, 100, 100, 0, L"Max", &settings->waypointMax, 1, 0, GS(28)));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(200), GS(150), GS(25), L"Add Waypoint", OnWaypointAdd));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(185), GS(200), GS(150), GS(25), L"Remove Waypoint", OnWaypointRemove));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(235), GS(150), GS(25), L"Toggle Waypoints", OnWaypointToggle));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(185), GS(235), GS(150), GS(25), L"Preview Waypoints", OnWaypointPreview));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(270), GS(325), GS(25), L"Generate Waypoint Dataset", OnGenerateWaypointDataset));
 
-	hdf5Elements.push_back(new GUIText(hwndGUI, GS(10), GS(330), GS(300), GS(20), L"Sphere Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(360), GS(130), GS(20), 1, 6283, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3, GS(148), GS(40)));
-	hdf5Elements.push_back(new GUIText(hwndGUI, GS(10), GS(390), GS(150), GS(20), L"Theta Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(390), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, GS(28)));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(390), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, GS(28)));
-	hdf5Elements.push_back(new GUIText(hwndGUI, GS(10), GS(420), GS(150), GS(20), L"Phi Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, GS(28)));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, GS(28)));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, GS(10), GS(450), GS(325), GS(25), L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(330), GS(300), GS(20), L"Sphere Dataset Generation"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(360), GS(130), GS(20), 1, 6283, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3, GS(148), GS(40)));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(390), GS(150), GS(20), L"Theta Min/Max"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(390), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, GS(28)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(390), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, GS(28)));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(420), GS(150), GS(20), L"Phi Min/Max"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, GS(28)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, GS(28)));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(450), GS(325), GS(25), L"Generate Sphere Dataset", OnGenerateSphereDataset));
 }
 
 void PointCloudEngine::GUI::LoadCameraRecording()
@@ -450,7 +450,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	ShowElements(pullPushElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 	ShowElements(advancedElements, SW_HIDE);
-	ShowElements(hdf5Elements, SW_HIDE);
+	ShowElements(datasetElements, SW_HIDE);
 
 	switch (selection)
 	{
@@ -476,7 +476,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 		}
 		case 2:
 		{
-			ShowElements(hdf5Elements);
+			ShowElements(datasetElements);
 			break;
 		}
 	}
@@ -563,7 +563,7 @@ void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 		groundTruthRenderer->GenerateWaypointDataset();
 	}
 #endif
-	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
+	((GUISlider<UINT>*)datasetElements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
@@ -574,7 +574,7 @@ void PointCloudEngine::GUI::OnGenerateSphereDataset()
 		groundTruthRenderer->GenerateSphereDataset();
 	}
 #endif
-	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
+	((GUISlider<UINT>*)datasetElements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
 }
 
 void PointCloudEngine::GUI::OnChangeCameraRecording()

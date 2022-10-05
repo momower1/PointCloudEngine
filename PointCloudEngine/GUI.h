@@ -63,16 +63,16 @@ namespace PointCloudEngine
 		// Advanced
 		static std::vector<IGUIElement*> advancedElements;
 
-		// HDF5
-		static std::vector<IGUIElement*> hdf5Elements;
+		// Dataset
+		static std::vector<IGUIElement*> datasetElements;
 
 		static void ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND = SW_SHOW);
 		static void DeleteElements(std::vector<IGUIElement*> elements);
 		static void UpdateElements(std::vector<IGUIElement*> elements);
 		static void HandleMessageElements(std::vector<IGUIElement*> elements, UINT msg, WPARAM wParam, LPARAM lParam);
-		static void CreateContentRenderer();
-		static void CreateContentAdvanced();
-		static void CreateContentHDF5();
+		static void CreateRendererElements();
+		static void CreateAdvancedElements();
+		static void CreateDatasetElements();
 		static void LoadCameraRecording();
 		static void SaveCameraRecording();
 
