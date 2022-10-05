@@ -345,7 +345,7 @@ void ResizeSceneAndUserInterface()
 
 	if (settings->showUserInterface)
 	{
-		MoveWindow(hwndGUI, rectClient.right - settings->userInterfaceWidth, rectClient.top, settings->userInterfaceWidth, settings->userInterfaceHeight, true);
+		MoveWindow(hwndGUI, rectClient.right - GS(settings->userInterfaceWidth), rectClient.top, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), true);
 		ShowWindow(hwndGUI, SW_SHOW);
 	}
 	else
@@ -356,7 +356,7 @@ void ResizeSceneAndUserInterface()
 	int w = rectClient.right - rectClient.left;
 	int h = rectClient.bottom - rectClient.top;
 	
-	settings->resolutionX = settings->showUserInterface ? (w - settings->userInterfaceWidth) : w;
+	settings->resolutionX = settings->showUserInterface ? (w - GS(settings->userInterfaceWidth)) : w;
 	settings->resolutionY = h;
 
 	MoveWindow(hwndScene, rectClient.left, rectClient.top, settings->resolutionX, settings->resolutionY, true);
@@ -664,9 +664,9 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			// Make sure that the engine window cannot get smaller than the GUI size
 			RECT rectClientMinimum;
 			rectClientMinimum.left = 0;
-			rectClientMinimum.right = settings->userInterfaceWidth + 1;
+			rectClientMinimum.right = GS(settings->userInterfaceWidth) + 1;
 			rectClientMinimum.top = 0;
-			rectClientMinimum.bottom = settings->userInterfaceHeight + 1;
+			rectClientMinimum.bottom = GS(settings->userInterfaceHeight) + 1;
 
 			success = AdjustWindowRectEx(&rectClientMinimum, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, TRUE, 0);
 			ERROR_MESSAGE_ON_FAIL(success, NAMEOF(AdjustWindowRectEx) + L" failed!");

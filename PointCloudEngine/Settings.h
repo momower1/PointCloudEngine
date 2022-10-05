@@ -16,14 +16,16 @@ namespace PointCloudEngine
 		Vector3 ToVector3(std::wstring s);
 		Vector4 ToVector4(std::wstring s);
 
+		// Constants that cannot be edited
+		const int userInterfaceWidth = 380;
+		const int userInterfaceHeight = 540;
+
 		// Engine window parameters
 		float guiScaleFactor = GetDpiForSystem() / 96.0f;
 		int engineWidth = 1280;
 		int engineHeight = 720;
 		int enginePositionX = GetSystemMetrics(SM_CXSCREEN) / 2;
 		int enginePositionY = GetSystemMetrics(SM_CYSCREEN) / 2;
-		int userInterfaceWidth = guiScaleFactor * 380;
-		int userInterfaceHeight = guiScaleFactor * 540;
 		bool showUserInterface = true;
 
         // Rendering parameters default values

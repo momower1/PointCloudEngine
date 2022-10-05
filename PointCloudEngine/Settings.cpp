@@ -32,8 +32,6 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(engineHeight), &engineHeight);
 		TryParse(NAMEOF(enginePositionX), &enginePositionX);
 		TryParse(NAMEOF(enginePositionY), &enginePositionY);
-		TryParse(NAMEOF(userInterfaceWidth), &userInterfaceWidth);
-		TryParse(NAMEOF(userInterfaceHeight), &userInterfaceHeight);
 		TryParse(NAMEOF(showUserInterface), &showUserInterface);
 
 		// Parse rendering parameters
@@ -140,8 +138,6 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(engineHeight) << L"=" << engineHeight << std::endl;
 	settingsStream << NAMEOF(enginePositionX) << L"=" << enginePositionX << std::endl;
 	settingsStream << NAMEOF(enginePositionY) << L"=" << enginePositionY << std::endl;
-	settingsStream << NAMEOF(userInterfaceWidth) << L"=" << userInterfaceWidth << std::endl;
-	settingsStream << NAMEOF(userInterfaceHeight) << L"=" << userInterfaceHeight << std::endl;
 	settingsStream << NAMEOF(showUserInterface) << L"=" << showUserInterface << std::endl;
 	settingsStream << std::endl;
 
