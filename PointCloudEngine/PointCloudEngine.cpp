@@ -711,8 +711,10 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		{
 			if (hwnd == hwndEngine)
 			{
-				settings->enginePositionX = LOWORD(lParam) + (settings->engineWidth / 2);
-				settings->enginePositionY = HIWORD(lParam) + (settings->engineHeight / 2);
+				RECT rectEngine;
+				GetWindowRect(hwndEngine, &rectEngine);
+				settings->enginePositionX = rectEngine.left + ((rectEngine.right - rectEngine.left) / 2);
+				settings->enginePositionY = rectEngine.top + ((rectEngine.bottom - rectEngine.top) / 2);
 
 				return NULL;
 			}
