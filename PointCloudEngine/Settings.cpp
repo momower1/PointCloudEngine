@@ -70,6 +70,8 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 
 		// Parse pull push parameters
 		TryParse(NAMEOF(usePullPushLinearFilter), &usePullPushLinearFilter);
+		TryParse(NAMEOF(pullPushImportanceScale), &pullPushImportanceScale);
+		TryParse(NAMEOF(pullPushImportanceExponent), &pullPushImportanceExponent);
 		TryParse(NAMEOF(drawPullPushImportance), &drawPullPushImportance);
 
 		// Parse neural network parameters
@@ -183,6 +185,8 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 
 	settingsStream << L"# Pull Push Parameters" << std::endl;
 	settingsStream << NAMEOF(usePullPushLinearFilter) << L"=" << usePullPushLinearFilter << std::endl;
+	settingsStream << NAMEOF(pullPushImportanceScale) << L"=" << pullPushImportanceScale << std::endl;
+	settingsStream << NAMEOF(pullPushImportanceExponent) << L"=" << pullPushImportanceExponent << std::endl;
 	settingsStream << NAMEOF(drawPullPushImportance) << L"=" << drawPullPushImportance << std::endl;
 	settingsStream << std::endl;
 

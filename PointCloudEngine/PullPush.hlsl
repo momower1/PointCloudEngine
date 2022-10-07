@@ -12,9 +12,10 @@ cbuffer PullPushConstantBuffer : register(b0)
 	int resolutionOutput;
 	int pullPushLevel;
 //------------------------------------------------------------------------------ (16 byte boundary)
+	float importanceScale;
+	float importanceExponent;
 	bool isPullPhase;
 	bool drawImportance;
-	// 8 byte auto padding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 16 bytes with constant buffer packing rules
 
@@ -60,7 +61,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 			}
 		}
 
-		outputImportance = 1.0f / (1 + pullPushLevel);
+		outputImportance = (1.0f + importanceScale) / (1 + pullPushLevel);
 	}
 	else
 	{
@@ -69,7 +70,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		float inputImportance = inputImportanceTexture.SampleLevel(samplerState, uv, 0);
 		
 		outputColor = outputColorTexture[pixel];
-		outputImportance = outputImportanceTexture[pixel];
+		outputImportance = outputImportanceTexture[pixel] + inputImportance;
 
 		// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
 		if (outputColor.w >= 1.0f)
@@ -81,6 +82,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Debug importance map
 		if (drawImportance && (pullPushLevel == 1))
 		{
+			outputImportance = pow(outputImportance, importanceExponent);
+			outputImportance = clamp(outputImportance, 0, 1);
 			outputColor = float4(outputImportance, outputImportance, outputImportance, 1.0f);
 		}
 	}
