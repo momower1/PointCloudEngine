@@ -79,12 +79,20 @@ void CS(uint3 id : SV_DispatchThreadID)
 			outputImportance = inputImportance;
 		}
 
-		// Debug importance map
-		if (drawImportance && (pullPushLevel == 1))
+		if (pullPushLevel == 1)
 		{
 			outputImportance = pow(outputImportance, importanceExponent);
 			outputImportance = clamp(outputImportance, 0, 1);
-			outputColor = float4(outputImportance, outputImportance, outputImportance, 1.0f);
+
+			// Debug importance map
+			if (drawImportance)
+			{
+				outputColor = float4(outputImportance, outputImportance, outputImportance, 1.0f);
+			}
+			else
+			{
+				outputColor.rgb *= outputImportance;
+			}
 		}
 	}
 
