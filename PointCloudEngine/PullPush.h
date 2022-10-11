@@ -19,10 +19,12 @@ namespace PointCloudEngine
             int resolutionY;
             int resolutionOutput;
             int pullPushLevel;
+            float depthBias;
             float importanceScale;
             float importanceExponent;
             BOOL isPullPhase;
             BOOL drawImportance;
+            XMUINT3 padding;
         };
 
         int pullPushLevels = 0;

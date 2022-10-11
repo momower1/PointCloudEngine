@@ -114,6 +114,7 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 	// Set texture resolution
 	pullPushConstantBufferData.resolutionX = settings->resolutionX;
 	pullPushConstantBufferData.resolutionY = settings->resolutionY;
+	pullPushConstantBufferData.depthBias = settings->pullPushDepthBias;
 	pullPushConstantBufferData.importanceScale = settings->pullPushImportanceScale;
 	pullPushConstantBufferData.importanceExponent = settings->pullPushImportanceExponent;
 	pullPushConstantBufferData.drawImportance = settings->drawPullPushImportance;

@@ -280,8 +280,9 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(220), GS(20), GS(20), L"", NULL, &settings->usePullPushLinearFilter));
 	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Draw Importance "));
 	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(250), GS(20), GS(20), L"", NULL, &settings->drawPullPushImportance));
-	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 2000, 1000, 1000, L"Importance Scale", &settings->pullPushImportanceScale, 2, GS(148), GS(40)));
-	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(310), GS(130), GS(20), 0, 1000, 10, 0, L"Importance Exp.", &settings->pullPushImportanceExponent, 1, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 1000, 10000, 0, L"Depth Bias", &settings->pullPushDepthBias, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(310), GS(130), GS(20), 0, 2000, 1000, 1000, L"Importance Scale", &settings->pullPushImportanceScale, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 1000, 10, 0, L"Importance Exp.", &settings->pullPushImportanceExponent, 1, GS(148), GS(40)));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
 }

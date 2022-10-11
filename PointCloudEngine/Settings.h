@@ -64,6 +64,7 @@ namespace PointCloudEngine
 
 		// Pull push parameters
 		bool usePullPushLinearFilter = true;
+		float pullPushDepthBias = 0.01f;
 		float pullPushImportanceScale = 0.25f;
 		float pullPushImportanceExponent = 50.0f;
 		bool drawPullPushImportance = false;

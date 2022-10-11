@@ -12,11 +12,13 @@ cbuffer PullPushConstantBuffer : register(b0)
 	int resolutionOutput;
 	int pullPushLevel;
 //------------------------------------------------------------------------------ (16 byte boundary)
+	float depthBias;
 	float importanceScale;
 	float importanceExponent;
 	bool isPullPhase;
-	bool drawImportance;
 //------------------------------------------------------------------------------ (16 byte boundary)
+	bool drawImportance;
+// 12 bytes auto paddding
 };  // Total: 16 bytes with constant buffer packing rules
 
 [numthreads(32, 32, 1)]
@@ -77,6 +79,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 		{
 			outputColor = inputColor;
 			outputImportance = inputImportance;
+		}
+		// Ignore pixels that shine through the closest surface and replace them
+		else if ((outputColor.w - inputColor.w) > depthBias)
+		{
+			outputColor = inputColor;
 		}
 
 		if (pullPushLevel == 1)
