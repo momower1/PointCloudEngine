@@ -86,7 +86,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		else
 		{
 			// Construct normalized device coordinates for the points in range [-1, 1]
-			float4 inputPosition = float4((2.0f * uv.x) - 1.0f, (2.0f * uv.y) - 1.0f, inputColor.w, 1.0f);
+			float2 inputUV = ((pixel / 2) + float2(0.5f, 0.5f)) / (resolutionOutput / 2);
+			float4 inputPosition = float4((2.0f * inputUV.x) - 1.0f, (2.0f * inputUV.y) - 1.0f, inputColor.w, 1.0f);
 			float4 outputPosition = float4((2.0f * uv.x) - 1.0f, (2.0f * uv.y) - 1.0f, outputColor.w, 1.0f);
 
 			// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
@@ -96,10 +97,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 			outputPosition = mul(outputPosition, WorldViewProjectionInverse);
 			outputPosition = outputPosition / outputPosition.w;
 
-			//outputColor = float4(inputPosition.x, inputPosition.y, inputPosition.z, outputColor.w);
-
-			// Compare depth values
-			if (distance(outputPosition, inputPosition) > depthBias)
+			// Compare depth values and ignore pixels that "shine through" closer surfaces
+			if (distance(outputPosition, inputPosition) > (depthBias * pullPushLevel))
 			{
 				outputColor = inputColor;
 			}
