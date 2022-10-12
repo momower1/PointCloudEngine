@@ -108,7 +108,7 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 	UINT zero = 0;
 	d3d11DevCon->CSSetShader(pullPushShader->computeShader, 0, 0);
 	d3d11DevCon->CSSetShaderResources(0, 1, &depthSRV);
-	d3d11DevCon->CSSetConstantBuffers(0, 1, &pullPushConstantBuffer);
+	d3d11DevCon->CSSetConstantBuffers(1, 1, &pullPushConstantBuffer);
 	d3d11DevCon->CSSetSamplers(0, 1, &pullPushSamplerState);
 
 	// Set texture resolution

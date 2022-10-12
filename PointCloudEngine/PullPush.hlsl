@@ -1,3 +1,5 @@
+#include "GroundTruth.hlsl"
+
 Texture2D<float> depthTexture : register(t0);
 Texture2D<float4> inputColorTexture : register(t1);
 Texture2D<float> inputImportanceTexture : register(t2);
@@ -5,7 +7,7 @@ RWTexture2D<float4> outputColorTexture : register(u0);
 RWTexture2D<float> outputImportanceTexture : register(u1);
 SamplerState samplerState : register(s0);
 
-cbuffer PullPushConstantBuffer : register(b0)
+cbuffer PullPushConstantBuffer : register(b1)
 {
 	int resolutionX;
 	int resolutionY;
@@ -19,7 +21,7 @@ cbuffer PullPushConstantBuffer : register(b0)
 //------------------------------------------------------------------------------ (16 byte boundary)
 	bool drawImportance;
 // 12 bytes auto paddding
-};  // Total: 16 bytes with constant buffer packing rules
+};  // Total: 48 bytes with constant buffer packing rules
 
 [numthreads(32, 32, 1)]
 void CS(uint3 id : SV_DispatchThreadID)
@@ -81,9 +83,26 @@ void CS(uint3 id : SV_DispatchThreadID)
 			outputImportance = inputImportance;
 		}
 		// Ignore pixels that shine through the closest surface and replace them
-		else if ((outputColor.w - inputColor.w) > depthBias)
+		else
 		{
-			outputColor = inputColor;
+			// Construct normalized device coordinates for the points in range [-1, 1]
+			float4 inputPosition = float4((2.0f * uv.x) - 1.0f, (2.0f * uv.y) - 1.0f, inputColor.w, 1.0f);
+			float4 outputPosition = float4((2.0f * uv.x) - 1.0f, (2.0f * uv.y) - 1.0f, outputColor.w, 1.0f);
+
+			// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
+			inputPosition = mul(inputPosition, WorldViewProjectionInverse);
+			inputPosition = inputPosition / inputPosition.w;
+
+			outputPosition = mul(outputPosition, WorldViewProjectionInverse);
+			outputPosition = outputPosition / outputPosition.w;
+
+			//outputColor = float4(inputPosition.x, inputPosition.y, inputPosition.z, outputColor.w);
+
+			// Compare depth values
+			if (distance(outputPosition, inputPosition) > depthBias)
+			{
+				outputColor = inputColor;
+			}
 		}
 
 		if (pullPushLevel == 1)

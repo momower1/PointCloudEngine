@@ -146,6 +146,7 @@ void GroundTruthRenderer::Draw()
 				pullPush = new PullPush();
 			}
 
+			d3d11DevCon->CSSetConstantBuffers(0, 1, &constantBuffer);
 			pullPush->Execute(backBufferTexture, depthTextureSRV);
 		}
 	}
