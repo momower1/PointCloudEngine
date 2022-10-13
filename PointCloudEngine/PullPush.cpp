@@ -44,7 +44,6 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 
 		// Create the pull push importance texture
 		D3D11_TEXTURE2D_DESC pullPushImportanceTextureDesc = pullPushColorTextureDesc;
-		pullPushImportanceTextureDesc.Format = DXGI_FORMAT_R16_FLOAT;
 
 		ID3D11Texture2D* pullPushImportanceTexture = NULL;
 		ID3D11ShaderResourceView* pullPushImportanceTextureSRV = NULL;
@@ -144,6 +143,18 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 	}
 
+	if (Input::GetKeyDown(DirectX::Keyboard::K))
+	{
+		// DEBUG ALL TEXTURES TO FILES
+		for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
+		{
+			hr = SaveWICTextureToFile(d3d11DevCon, pullPushColorTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/Pull" + std::to_wstring(pullPushLevel) + L".png").c_str());
+			ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+		}
+
+		std::cout << "done" << std::endl;
+	}
+
 	// Push phase (go from low resolution to high resolution)
 	for (int pullPushLevel = pullPushLevels - 1; pullPushLevel > 0; pullPushLevel--)
 	{
@@ -183,14 +194,17 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 
 	d3d11DevCon->CopySubresourceRegion(colorTexture, 0, 0, 0, 0, pullPushColorTextures.front(), 0, &pullPushBox);
 
-	//// DEBUG ALL TEXTURES TO FILES
-	//for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
-	//{
-	//	hr = SaveWICTextureToFile(d3d11DevCon, pullPushColorTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/PullPush" + std::to_wstring(pullPushLevel) + L".png").c_str());
-	//	ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
-	//}
+	if (Input::GetKeyDown(DirectX::Keyboard::K))
+	{
+		// DEBUG ALL TEXTURES TO FILES
+		for (int pullPushLevel = pullPushLevels - 1; pullPushLevel >= 0; pullPushLevel--)
+		{
+			hr = SaveWICTextureToFile(d3d11DevCon, pullPushColorTextures[pullPushLevel], GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/Push" + std::to_wstring(pullPushLevel) + L".png").c_str());
+			ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+		}
 
-	//std::cout << "done" << std::endl;
+		std::cout << "done" << std::endl;
+	}
 }
 
 void PointCloudEngine::PullPush::Release()
