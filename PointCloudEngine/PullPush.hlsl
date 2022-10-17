@@ -114,7 +114,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	{
 		float2 uv = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
 		float4 inputColor = inputColorTexture.SampleLevel(samplerState, uv, 0);
-		float4 inputImportance = inputImportanceTexture.SampleLevel(samplerState, uv, 0);
+		float4 inputImportance = inputImportanceTexture[pixel / 2];
 		
 		outputColor = outputColorTexture[pixel];
 		outputImportance = outputImportanceTexture[pixel];
