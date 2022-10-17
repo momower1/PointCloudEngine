@@ -9,23 +9,27 @@ SamplerState samplerState : register(s0);
 
 cbuffer PullPushConstantBuffer : register(b1)
 {
+	bool debug;
+	bool isPullPhase;
 	int resolutionX;
 	int resolutionY;
+//------------------------------------------------------------------------------ (16 byte boundary)
 	int resolutionOutput;
+	float splatSize;
 	int pullPushLevel;
+	// 4 bytes auto paddding
 //------------------------------------------------------------------------------ (16 byte boundary)
-	float depthBias;
-	float importanceScale;
-	float importanceExponent;
-	bool isPullPhase;
-//------------------------------------------------------------------------------ (16 byte boundary)
-	bool drawImportance;
-// 12 bytes auto paddding
-};  // Total: 48 bytes with constant buffer packing rules
+};  // Total: 32 bytes with constant buffer packing rules
 
 [numthreads(32, 32, 1)]
 void CS(uint3 id : SV_DispatchThreadID)
 {
+	if (debug)
+	{
+		outputColorTexture[id.xy] = inputColorTexture.SampleLevel(samplerState, (id.xy + float2(0.5f, 0.5f)) / resolutionOutput, 0);
+		return;
+	}
+
 	uint2 pixel = id.xy;
 	float4 outputColor;
 	float4 outputImportance;
@@ -92,7 +96,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 					inputPosition = inputPosition / inputPosition.w;
 
 					float distanceInputToCamera = distance(cameraPosition, inputPosition);
-					float splatSize = depthBias;
 					float projectedSplatSizeInput = splatSize / ((2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera);
 
 					float distanceTopLeft = distance(outputTexelTopLeft, inputImportance.xy);

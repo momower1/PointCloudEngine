@@ -63,11 +63,10 @@ namespace PointCloudEngine
 		float sparseSamplingRate = 0.01f;
 
 		// Pull push parameters
-		bool usePullPushLinearFilter = true;
-		float pullPushDepthBias = 0.01f;
-		float pullPushImportanceScale = 0.25f;
-		float pullPushImportanceExponent = 50.0f;
-		bool drawPullPushImportance = false;
+		bool pullPushLinearFilter = true;
+		bool pullPushSkipPushPhase = false;
+		int pullPushDebugLevel = 0;
+		float pullPushSplatSize = 0.25f;
 
 		// Neural Network parameters
 		std::wstring neuralNetworkModelFile = L"";

@@ -70,7 +70,7 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 
 	// Create texture sampler
 	ZeroMemory(&pullPushSamplerDesc, sizeof(pullPushSamplerDesc));
-	pullPushSamplerDesc.Filter = settings->usePullPushLinearFilter ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
+	pullPushSamplerDesc.Filter = settings->pullPushLinearFilter ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
 	pullPushSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	pullPushSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	pullPushSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -89,10 +89,10 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 	}
 
 	// Recreate the sampler state if necessary
-	if ((settings->usePullPushLinearFilter && (pullPushSamplerDesc.Filter == D3D11_FILTER_MIN_MAG_MIP_POINT)) || (!settings->usePullPushLinearFilter && (pullPushSamplerDesc.Filter == D3D11_FILTER_MIN_MAG_MIP_LINEAR)))
+	if ((settings->pullPushLinearFilter && (pullPushSamplerDesc.Filter == D3D11_FILTER_MIN_MAG_MIP_POINT)) || (!settings->pullPushLinearFilter && (pullPushSamplerDesc.Filter == D3D11_FILTER_MIN_MAG_MIP_LINEAR)))
 	{
 		SAFE_RELEASE(pullPushSamplerState);
-		pullPushSamplerDesc.Filter = settings->usePullPushLinearFilter ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
+		pullPushSamplerDesc.Filter = settings->pullPushLinearFilter ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
 		hr = d3d11Device->CreateSamplerState(&pullPushSamplerDesc, &pullPushSamplerState);
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateSamplerState) + L" failed for the " + NAMEOF(pullPushSamplerState));
@@ -113,10 +113,7 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 	// Set texture resolution
 	pullPushConstantBufferData.resolutionX = settings->resolutionX;
 	pullPushConstantBufferData.resolutionY = settings->resolutionY;
-	pullPushConstantBufferData.depthBias = settings->pullPushDepthBias;
-	pullPushConstantBufferData.importanceScale = settings->pullPushImportanceScale;
-	pullPushConstantBufferData.importanceExponent = settings->pullPushImportanceExponent;
-	pullPushConstantBufferData.drawImportance = settings->drawPullPushImportance;
+	pullPushConstantBufferData.splatSize = settings->pullPushSplatSize;
 
 	// Pull phase (go from high resolution to low resolution)
 	for (int pullPushLevel = 0; pullPushLevel < pullPushLevels; pullPushLevel++)
@@ -143,6 +140,27 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
 	}
 
+	// Possibly debug the pull phase textures
+	if (settings->pullPushSkipPushPhase && (settings->pullPushDebugLevel > 0))
+	{
+		pullPushConstantBufferData.debug = true;
+		pullPushConstantBufferData.resolutionOutput = pullPushResolution;
+		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
+
+		// Draw the texture at the debug level directly to the output at level 0
+		d3d11DevCon->CSSetShaderResources(1, 1, &pullPushColorTexturesSRV[min(settings->pullPushDebugLevel, pullPushLevels - 1)]);
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullPushColorTexturesUAV[0], &zero);
+
+		UINT threadGroupCount = ceil(pullPushResolution / 32.0f);
+		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
+
+		// Unbind
+		d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
+		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+
+		pullPushConstantBufferData.debug = false;
+	}
+
 	if (Input::GetKeyDown(DirectX::Keyboard::K))
 	{
 		// DEBUG ALL TEXTURES TO FILES
@@ -155,29 +173,53 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* colorTexture, ID3D11Sha
 		std::cout << "done" << std::endl;
 	}
 
-	// Push phase (go from low resolution to high resolution)
-	for (int pullPushLevel = pullPushLevels - 1; pullPushLevel > 0; pullPushLevel--)
+	if (!settings->pullPushSkipPushPhase)
 	{
-		// Update constant buffer
-		pullPushConstantBufferData.isPullPhase = FALSE;
-		pullPushConstantBufferData.pullPushLevel = pullPushLevel;
-		pullPushConstantBufferData.resolutionOutput = pullPushResolution / pow(2, max(0, pullPushLevel - 1));
-		d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
+		// Push phase (go from low resolution to high resolution)
+		for (int pullPushLevel = pullPushLevels - 1; pullPushLevel > 0; pullPushLevel--)
+		{
+			// Update constant buffer
+			pullPushConstantBufferData.isPullPhase = FALSE;
+			pullPushConstantBufferData.pullPushLevel = pullPushLevel;
+			pullPushConstantBufferData.resolutionOutput = pullPushResolution / pow(2, max(0, pullPushLevel - 1));
+			d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
 
-		// Set resources
-		d3d11DevCon->CSSetShaderResources(1, 1, &pullPushColorTexturesSRV[pullPushLevel]);
-		d3d11DevCon->CSSetShaderResources(2, 1, &pullPushImportanceTexturesSRV[pullPushLevel]);
-		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullPushColorTexturesUAV[pullPushLevel - 1], &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &pullPushImportanceTexturesUAV[pullPushLevel - 1], &zero);
+			// Set resources
+			d3d11DevCon->CSSetShaderResources(1, 1, &pullPushColorTexturesSRV[pullPushLevel]);
+			d3d11DevCon->CSSetShaderResources(2, 1, &pullPushImportanceTexturesSRV[pullPushLevel]);
+			d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullPushColorTexturesUAV[pullPushLevel - 1], &zero);
+			d3d11DevCon->CSSetUnorderedAccessViews(1, 1, &pullPushImportanceTexturesUAV[pullPushLevel - 1], &zero);
 
-		UINT threadGroupCount = ceil(pullPushConstantBufferData.resolutionOutput / 32.0f);
-		d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
+			UINT threadGroupCount = ceil(pullPushConstantBufferData.resolutionOutput / 32.0f);
+			d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
 
-		// Unbind
-		d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
-		d3d11DevCon->CSSetShaderResources(2, 1, nullSRV);
-		d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
-		d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
+			// Unbind
+			d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
+			d3d11DevCon->CSSetShaderResources(2, 1, nullSRV);
+			d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+			d3d11DevCon->CSSetUnorderedAccessViews(1, 1, nullUAV, &zero);
+		}
+
+		// Possibly debug the push phase textures
+		if (settings->pullPushDebugLevel > 0)
+		{
+			pullPushConstantBufferData.debug = true;
+			pullPushConstantBufferData.resolutionOutput = pullPushResolution;
+			d3d11DevCon->UpdateSubresource(pullPushConstantBuffer, 0, NULL, &pullPushConstantBufferData, 0, 0);
+
+			// Draw the texture at the debug level directly to the output at level 0
+			d3d11DevCon->CSSetShaderResources(1, 1, &pullPushColorTexturesSRV[min(settings->pullPushDebugLevel, pullPushLevels - 1)]);
+			d3d11DevCon->CSSetUnorderedAccessViews(0, 1, &pullPushColorTexturesUAV[0], &zero);
+
+			UINT threadGroupCount = ceil(pullPushResolution / 32.0f);
+			d3d11DevCon->Dispatch(threadGroupCount, threadGroupCount, 1);
+
+			// Unbind
+			d3d11DevCon->CSSetShaderResources(1, 1, nullSRV);
+			d3d11DevCon->CSSetUnorderedAccessViews(0, 1, nullUAV, &zero);
+
+			pullPushConstantBufferData.debug = false;
+		}
 	}
 
 	// Unbind remaining shader resources

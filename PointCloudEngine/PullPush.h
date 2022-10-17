@@ -15,16 +15,14 @@ namespace PointCloudEngine
     private:
         struct PullPushConstantBuffer
         {
+            BOOL debug;
+            BOOL isPullPhase;
             int resolutionX;
             int resolutionY;
             int resolutionOutput;
+            float splatSize;
             int pullPushLevel;
-            float depthBias;
-            float importanceScale;
-            float importanceExponent;
-            BOOL isPullPhase;
-            BOOL drawImportance;
-            XMUINT3 padding;
+            int padding;
         };
 
         int pullPushLevels = 0;
