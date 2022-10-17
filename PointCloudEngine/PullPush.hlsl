@@ -53,7 +53,33 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 		else
 		{
+			int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
+
+			// Compute NDC coordinates of the 4 corners of the output texel
+			float2 outputTexelTopLeft = resolutionFull * (pixel / (float)resolutionOutput);
+			outputTexelTopLeft /= float2(resolutionX, resolutionY);
+			outputTexelTopLeft = (2 * outputTexelTopLeft) - 1;
+
+			float2 outputTexelTopRight = resolutionFull * ((pixel + uint2(1, 0)) / (float)resolutionOutput);
+			outputTexelTopRight /= float2(resolutionX, resolutionY);
+			outputTexelTopRight = (2 * outputTexelTopRight) - 1;
+
+			float2 outputTexelBottomLeft = resolutionFull * ((pixel + uint2(0, 1)) / (float)resolutionOutput);
+			outputTexelBottomLeft /= float2(resolutionX, resolutionY);
+			outputTexelBottomLeft = (2 * outputTexelBottomLeft) - 1;
+
+			float2 outputTexelBottomRight = resolutionFull * ((pixel + uint2(1, 1)) / (float)resolutionOutput);
+			outputTexelBottomRight /= float2(resolutionX, resolutionY);
+			outputTexelBottomRight = (2 * outputTexelBottomRight) - 1;
+
+			float4 cameraPosition = float4(0, 0, 0, 1);
+			cameraPosition = mul(cameraPosition, WorldViewProjectionInverse);
+			cameraPosition = cameraPosition / cameraPosition.w;
+
 			float smallestDepth = 1.0f;
+
+			outputColor = float4(0, 0, 0, 1);
+			outputImportance = float4(0, 0, 1, 1);
 
 			for (int y = 0; y < 2; y++)
 			{
@@ -62,41 +88,26 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float4 inputColor = inputColorTexture[2 * pixel + uint2(x, y)];
 					float4 inputImportance = inputImportanceTexture[2 * pixel + uint2(x, y)];
 
-					if (inputColor.w <= smallestDepth)
+					float4 inputPosition = mul(inputImportance, WorldViewProjectionInverse);
+					inputPosition = inputPosition / inputPosition.w;
+
+					float distanceInputToCamera = distance(cameraPosition, inputPosition);
+					float splatSize = depthBias;
+					float projectedSplatSizeInput = splatSize / ((2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera);
+
+					float distanceTopLeft = distance(outputTexelTopLeft, inputImportance.xy);
+					float distanceTopRight = distance(outputTexelTopRight, inputImportance.xy);
+					float distanceBottomLeft = distance(outputTexelBottomLeft, inputImportance.xy);
+					float distanceBottomRight = distance(outputTexelBottomRight, inputImportance.xy);
+
+					if ((inputImportance.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
 					{
-						smallestDepth = inputColor.w;
+						smallestDepth = inputImportance.z;
 						outputColor = inputColor;
 						outputImportance = inputImportance;
 					}
 				}
 			}
-
-			//// Instead of closest pixel depthwise, choose closest pixel to the center position
-			//float smallestDistanceInScreenSpace = 200.0f;
-
-			//for (int y = 0; y < 2; y++)
-			//{
-			//	for (int x = 0; x < 2; x++)
-			//	{
-			//		float2 positionScreen = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
-			//		positionScreen.x = positionScreen.x * pow(2, int(log2(max(resolutionX, resolutionY))));
-			//		positionScreen.y = positionScreen.y * pow(2, int(log2(max(resolutionX, resolutionY))));
-			//		positionScreen.x /= resolutionX;
-			//		positionScreen.y /= resolutionY;
-			//		positionScreen.x = positionScreen.x * 2 - 1;
-			//		positionScreen.y = positionScreen.y * 2 - 1;
-
-			//		float4 inputColor = inputColorTexture[2 * pixel + uint2(x, y)];
-			//		float4 inputImportance = inputImportanceTexture[2 * pixel + uint2(x, y)];
-
-			//		if (distance(inputImportance.xy, positionScreen.xy) < smallestDistanceInScreenSpace)
-			//		{
-			//			smallestDistanceInScreenSpace = inputColor.w;
-			//			outputColor = inputColor;
-			//			outputImportance = inputImportance;
-			//		}
-			//	}
-			//}
 		}
 	}
 	else
@@ -108,121 +119,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColor = outputColorTexture[pixel];
 		outputImportance = outputImportanceTexture[pixel];
 
-		// Construct normalized device coordinates for the points in range [-1, 1]
-		float4 inputPositionScreen = inputImportance;
-		float4 outputPositionScreen = outputImportance;
-
-		//outputPositionScreen.x = min(resolutionX, uv.x * resolutionOutput);
-		//outputPositionScreen.y = min(resolutionY, uv.y * resolutionOutput);
-		//outputPositionScreen.x /= resolutionX;
-		//outputPositionScreen.y /= resolutionY;
-		//outputPositionScreen.x = outputPositionScreen.x * 2 - 1;
-		//outputPositionScreen.y = outputPositionScreen.y * 2 - 1;
-
-		//outputColorTexture[pixel] = float4(outputPositionScreen.x, outputPositionScreen.y, 0, 1);
-		//outputColorTexture[pixel] = float4(inputPositionScreen.x, inputPositionScreen.y, 0, 1);
-		//return;
-
-
-		//if (outputPositionScreen.z >= 1.0f)
-		//{
-		//	outputColor = inputColor;
-		//	outputImportance = inputImportance;
-		//}
-		{
-			// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
-			float4 inputPosition = mul(inputPositionScreen, WorldViewProjectionInverse);
-			inputPosition = inputPosition / inputPosition.w;
-
-			float4 outputPosition = mul(outputPositionScreen, WorldViewProjectionInverse);
-			outputPosition = outputPosition / outputPosition.w;
-
-			float4 cameraPosition = float4(0, 0, 0, 1);
-			cameraPosition = mul(cameraPosition, WorldViewProjectionInverse);
-			cameraPosition = cameraPosition / cameraPosition.w;
-
-			float distanceInputToCamera = distance(cameraPosition, inputPosition);
-			float distanceOutputToCamera = distance(cameraPosition, outputPosition);
-			float splatSize = depthBias;
-			float projectedSplatSizeInput = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera;
-			float projectedSplatSizeOutput = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceOutputToCamera;
-
-			projectedSplatSizeInput = splatSize / ((2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera);
-
-			// Ignore pixels that "shine through" closer surfaces
-			if (distance(inputPositionScreen.xy, outputPositionScreen.xy) < projectedSplatSizeInput)
-			{
-				outputColor = inputColor;
-				outputImportance = inputImportance;
-			}
-		}
-
-
-		//if (true)
-		//{
-		//	outputColor.r = (outputImportance.x + 1) / 2;
-		//	outputColor.g = (outputImportance.y + 1) / 2;
-		//	outputColor.b = 0;
-		//	outputColor.a = 1;
-
-		//	if (outputImportance.z >= 1.0f)
-		//	{
-		//		outputColor = float4(0, 0, 0, 1);
-		//	}
-		//}
 		// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
-		//if (outputColor.w >= 1.0f)
-		//{
-		//	outputColor = inputColor;
-		//	outputImportance = inputImportance;
-		//}
-		//// Ignore pixels that shine through the closest surface and replace them
-		//else
-		//{
-		//	// Construct normalized device coordinates for the points in range [-1, 1]
-		//	float4 inputPositionScreen = inputImportance;
-		//	float4 outputPositionScreen = outputImportance;
-
-		//	// Transform back into object space because comparing the depth values directly doesn't work well since they are not distributed linearely
-		//	float4 inputPosition = mul(inputPositionScreen, WorldViewProjectionInverse);
-		//	inputPosition = inputPosition / inputPosition.w;
-
-		//	float4 outputPosition = mul(outputPositionScreen, WorldViewProjectionInverse);
-		//	outputPosition = outputPosition / outputPosition.w;
-
-		//	float4 cameraPosition = float4(0, 0, 0, 1);
-		//	cameraPosition = mul(cameraPosition, WorldViewProjectionInverse);
-		//	cameraPosition = cameraPosition / cameraPosition.w;
-
-		//	float distanceInputToCamera = distance(cameraPosition, inputPosition);
-		//	float distanceOutputToCamera = distance(cameraPosition, outputPosition);
-		//	float splatSize = depthBias;
-		//	float projectedSplatSizeInput = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera;
-		//	float projectedSplatSizeOutput = splatSize * (2.0f * tan(fovAngleY / 2.0f)) * distanceOutputToCamera;
-
-		//	// Ignore pixels that "shine through" closer surfaces
-		//	if (distance(inputPositionScreen.xy, outputPositionScreen.xy) < projectedSplatSizeInput)
-		//	{
-		//		outputColor = inputColor;
-		//		outputImportance = inputImportance;
-		//	}
-		//}
-
-		//if (pullPushLevel == 1)
-		//{
-		//	outputImportance = pow(outputImportance, importanceExponent);
-		//	outputImportance = clamp(outputImportance, 0, 1);
-
-		//	// Debug importance map
-		//	if (drawImportance)
-		//	{
-		//		outputColor = float4(outputImportance, outputImportance, outputImportance, 1.0f);
-		//	}
-		//	else
-		//	{
-		//		outputColor.rgb *= outputImportance;
-		//	}
-		//}
+		if ((outputImportance.z >= 1.0f) || (inputImportance.z < outputImportance.z))
+		{
+			outputColor = inputColor;
+			outputImportance = inputImportance;
+		}
 	}
 
 	outputColorTexture[pixel] = outputColor;
