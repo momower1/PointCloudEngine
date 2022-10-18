@@ -147,6 +147,7 @@ void GroundTruthRenderer::Draw()
 			}
 
 			d3d11DevCon->CSSetConstantBuffers(0, 1, &constantBuffer);
+			pullPush->SetInitialColorTexture(backBufferTexture);
 			pullPush->Execute(backBufferTexture, depthTextureSRV);
 		}
 	}

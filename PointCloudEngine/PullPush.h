@@ -10,7 +10,9 @@ namespace PointCloudEngine
     public:
         PullPush();
         void CreatePullPushTextureHierarchy();
-        void Execute(ID3D11Resource* colorTexture, ID3D11ShaderResourceView* depthSRV);
+        void SetInitialColorTexture(ID3D11Resource* colorTexture);
+        void SetInitialNormalTexture(ID3D11Resource* normalTexture);
+        void Execute(ID3D11Resource* backbufferTexture, ID3D11ShaderResourceView* depthSRV);
         void Release();
     private:
         struct PullPushConstantBuffer
@@ -33,11 +35,14 @@ namespace PointCloudEngine
         ID3D11Buffer* pullPushConstantBuffer = NULL;
         ID3D11SamplerState* pullPushSamplerState = NULL;
         std::vector<ID3D11Texture2D*> pullPushColorTextures;
-        std::vector<ID3D11Texture2D*> pullPushImportanceTextures;
+        std::vector<ID3D11Texture2D*> pullPushNormalTextures;
+        std::vector<ID3D11Texture2D*> pullPushPositionTextures;
         std::vector<ID3D11ShaderResourceView*> pullPushColorTexturesSRV;
         std::vector<ID3D11UnorderedAccessView*> pullPushColorTexturesUAV;
-        std::vector<ID3D11ShaderResourceView*> pullPushImportanceTexturesSRV;
-        std::vector<ID3D11UnorderedAccessView*> pullPushImportanceTexturesUAV;
+        std::vector<ID3D11ShaderResourceView*> pullPushNormalTexturesSRV;
+        std::vector<ID3D11UnorderedAccessView*> pullPushNormalTexturesUAV;
+        std::vector<ID3D11ShaderResourceView*> pullPushPositionTexturesSRV;
+        std::vector<ID3D11UnorderedAccessView*> pullPushPositionTexturesUAV;
 
         void CreateTextureResources(D3D11_TEXTURE2D_DESC *textureDesc, ID3D11Texture2D** outTexture, ID3D11ShaderResourceView** outTextureSRV, ID3D11UnorderedAccessView** outTextureUAV);
     };

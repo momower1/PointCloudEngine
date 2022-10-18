@@ -1,11 +1,13 @@
 #include "GroundTruth.hlsl"
 
+SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
 Texture2D<float4> inputColorTexture : register(t1);
-Texture2D<float4> inputImportanceTexture : register(t2);
+Texture2D<float4> inputNormalTexture : register(t2);
+Texture2D<float4> inputPositionTexture : register(t3);
 RWTexture2D<float4> outputColorTexture : register(u0);
-RWTexture2D<float4> outputImportanceTexture : register(u1);
-SamplerState samplerState : register(s0);
+RWTexture2D<float4> outputNormalTexture : register(u1);
+RWTexture2D<float4> outputPositionTexture : register(u2);
 
 cbuffer PullPushConstantBuffer : register(b1)
 {
@@ -32,7 +34,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	uint2 pixel = id.xy;
 	float4 outputColor;
-	float4 outputImportance;
+	float4 outputPosition;
 
 	if (isPullPhase)
 	{
@@ -41,14 +43,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 		if (pullPushLevel == 0)
 		{
 			// NDC coordinates
-			outputImportance = float4(2 * ((pixel.x + 0.5f) / resolutionX) - 1, 2 * ((pixel.y + 0.5f) / resolutionY) - 1, 1.0f, 1.0f);
+			outputPosition = float4(2 * ((pixel.x + 0.5f) / resolutionX) - 1, 2 * ((pixel.y + 0.5f) / resolutionY) - 1, 1.0f, 1.0f);
 
 			if ((pixel.x < resolutionX) && (pixel.y < resolutionY))
 			{
 				outputColor = outputColorTexture[pixel];
 				outputColor.w = depthTexture[pixel];
 
-				outputImportance.z = depthTexture[pixel];
+				outputPosition.z = depthTexture[pixel];
 			}
 			else
 			{
@@ -83,31 +85,31 @@ void CS(uint3 id : SV_DispatchThreadID)
 			float smallestDepth = 1.0f;
 
 			outputColor = float4(0, 0, 0, 1);
-			outputImportance = float4(0, 0, 1, 1);
+			outputPosition = float4(0, 0, 1, 1);
 
 			for (int y = 0; y < 2; y++)
 			{
 				for (int x = 0; x < 2; x++)
 				{
 					float4 inputColor = inputColorTexture[2 * pixel + uint2(x, y)];
-					float4 inputImportance = inputImportanceTexture[2 * pixel + uint2(x, y)];
+					float4 inputPosition = inputPositionTexture[2 * pixel + uint2(x, y)];
 
-					float4 inputPosition = mul(inputImportance, WorldViewProjectionInverse);
-					inputPosition = inputPosition / inputPosition.w;
+					float4 inputPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
+					inputPositionLocal = inputPositionLocal / inputPositionLocal.w;
 
-					float distanceInputToCamera = distance(cameraPosition, inputPosition);
+					float distanceInputToCamera = distance(cameraPosition, inputPositionLocal);
 					float projectedSplatSizeInput = splatSize / ((2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera);
 
-					float distanceTopLeft = distance(outputTexelTopLeft, inputImportance.xy);
-					float distanceTopRight = distance(outputTexelTopRight, inputImportance.xy);
-					float distanceBottomLeft = distance(outputTexelBottomLeft, inputImportance.xy);
-					float distanceBottomRight = distance(outputTexelBottomRight, inputImportance.xy);
+					float distanceTopLeft = distance(outputTexelTopLeft, inputPosition.xy);
+					float distanceTopRight = distance(outputTexelTopRight, inputPosition.xy);
+					float distanceBottomLeft = distance(outputTexelBottomLeft, inputPosition.xy);
+					float distanceBottomRight = distance(outputTexelBottomRight, inputPosition.xy);
 
-					if ((inputImportance.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
+					if ((inputPosition.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
 					{
-						smallestDepth = inputImportance.z;
+						smallestDepth = inputPosition.z;
 						outputColor = inputColor;
-						outputImportance = inputImportance;
+						outputPosition = inputPosition;
 					}
 				}
 			}
@@ -117,19 +119,19 @@ void CS(uint3 id : SV_DispatchThreadID)
 	{
 		float2 uv = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
 		float4 inputColor = inputColorTexture.SampleLevel(samplerState, uv, 0);
-		float4 inputImportance = inputImportanceTexture[pixel / 2];
+		float4 inputPosition = inputPositionTexture[pixel / 2];
 		
 		outputColor = outputColorTexture[pixel];
-		outputImportance = outputImportanceTexture[pixel];
+		outputPosition = outputPositionTexture[pixel];
 
 		// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
-		if ((outputImportance.z >= 1.0f) || (inputImportance.z < outputImportance.z))
+		if ((outputPosition.z >= 1.0f) || (inputPosition.z < outputPosition.z))
 		{
 			outputColor = inputColor;
-			outputImportance = inputImportance;
+			outputPosition = inputPosition;
 		}
 	}
 
 	outputColorTexture[pixel] = outputColor;
-	outputImportanceTexture[pixel] = outputImportance;
+	outputPositionTexture[pixel] = outputPosition;
 }
