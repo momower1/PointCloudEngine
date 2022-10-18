@@ -34,27 +34,39 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	uint2 pixel = id.xy;
 	float4 outputColor;
+	float4 outputNormal;
 	float4 outputPosition;
 
 	if (isPullPhase)
 	{
-		// Initialize the texture such that each pixel contains the point color in the RGB and its depth in the A component
-		// If there was no point rendered to a pixel, its depth must be 1
+		// Initialize the textures, if there was no point rendered to a pixel, its last texture element component must be zero
 		if (pullPushLevel == 0)
 		{
-			// NDC coordinates
-			outputPosition = float4(2 * ((pixel.x + 0.5f) / resolutionX) - 1, 2 * ((pixel.y + 0.5f) / resolutionY) - 1, 1.0f, 1.0f);
+			outputColor = float4(0, 0, 0, 0);
+			outputNormal = float4(0, 0, 0, 0);
+			outputPosition = float4(0, 0, 0, 0);
 
 			if ((pixel.x < resolutionX) && (pixel.y < resolutionY))
 			{
-				outputColor = outputColorTexture[pixel];
-				outputColor.w = depthTexture[pixel];
+				float depth = depthTexture[pixel];
 
-				outputPosition.z = depthTexture[pixel];
-			}
-			else
-			{
-				outputColor = float4(0, 0, 0, 1);
+				if (depth < 1.0f)
+				{
+					// Color of the point
+					outputColor = outputColorTexture[pixel];
+					outputColor.w = 1.0f;
+
+					// World space normals of the point
+					outputNormal = outputNormalTexture[pixel];
+					outputNormal.xyz = (2 * outputNormal.xyz) - 1;
+					outputNormal.w = 1.0f;
+
+					// Normalized device coordinates of the point
+					outputPosition.x = 2 * ((pixel.x + 0.5f) / resolutionX) - 1;
+					outputPosition.y = 2 * ((pixel.y + 0.5f) / resolutionY) - 1;
+					outputPosition.z = depth;
+					outputPosition.w = 1.0f;
+				}
 			}
 		}
 		else
@@ -84,8 +96,9 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 			float smallestDepth = 1.0f;
 
-			outputColor = float4(0, 0, 0, 1);
-			outputPosition = float4(0, 0, 1, 1);
+			outputColor = float4(0, 0, 0, 0);
+			outputNormal = float4(0, 0, 0, 0);
+			outputPosition = float4(0, 0, 1, 0);
 
 			for (int y = 0; y < 2; y++)
 			{
@@ -105,7 +118,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float distanceBottomLeft = distance(outputTexelBottomLeft, inputPosition.xy);
 					float distanceBottomRight = distance(outputTexelBottomRight, inputPosition.xy);
 
-					if ((inputPosition.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
+					if ((inputColor.w > 0.0f) && (inputPosition.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
 					{
 						smallestDepth = inputPosition.z;
 						outputColor = inputColor;
@@ -124,8 +137,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColor = outputColorTexture[pixel];
 		outputPosition = outputPositionTexture[pixel];
 
-		// Only replace pixels where no point has been rendered to (therefore depth is 1) with values from the higher level pull texture
-		if ((outputPosition.z >= 1.0f) || (inputPosition.z < outputPosition.z))
+		// Only replace pixels where no point has been rendered to (therefore 4th component is zero) with values from the higher level pull texture
+		if ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z))
 		{
 			outputColor = inputColor;
 			outputPosition = inputPosition;
