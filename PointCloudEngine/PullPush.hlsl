@@ -118,7 +118,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float distanceBottomLeft = distance(outputTexelBottomLeft, inputPosition.xy);
 					float distanceBottomRight = distance(outputTexelBottomRight, inputPosition.xy);
 
-					if ((inputColor.w > 0.0f) && (inputPosition.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
+					if ((inputPosition.w > 0.0f) && (inputPosition.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
 					{
 						smallestDepth = inputPosition.z;
 						outputColor = inputColor;
