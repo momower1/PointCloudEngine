@@ -98,7 +98,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 			outputColor = float4(0, 0, 0, 0);
 			outputNormal = float4(0, 0, 0, 0);
-			outputPosition = float4(0, 0, 1, 0);
+			outputPosition = float4(0, 0, 0, 0);
 
 			for (int y = 0; y < 2; y++)
 			{
@@ -137,8 +137,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColor = outputColorTexture[pixel];
 		outputPosition = outputPositionTexture[pixel];
 
-		// Only replace pixels where no point has been rendered to (therefore 4th component is zero) with values from the higher level pull texture
-		if ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z))
+		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
+		if ((inputPosition.w >= 1.0f) && ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z)))
 		{
 			outputColor = inputColor;
 			outputPosition = inputPosition;
