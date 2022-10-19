@@ -45,8 +45,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 /////////////////////////////////////////////////////
 // TESTING
 
-	float3 pointNormalLocal = float3(0, 1, 0);
-	float3 pointPositionLocal = float3(0, 0, 0);
+	float3 pointNormalLocal = float3(0, 0, -1);
+	float3 pointPositionLocal = float3(0, 0, 1);
 	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
 	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
@@ -78,10 +78,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float semiMajorAxis = length(majorAxisProjected);
 	float semiMinorAxis = semiMajorAxis - length(minorAxisProjected);
 
-	float angleToMinor = dot(semiMinorAxis, float2(0, 1)) / length(semiMinorAxis);
+	// Compute signed angle towards the y-axis (for ellipsis check need minor axis aligned with y-axis)
+	float angleToMinor = atan2(1, 0) - atan2(minorAxisProjected.y, minorAxisProjected.x);
 	float2x2 rotationToMinor = { cos(angleToMinor), sin(angleToMinor), -sin(angleToMinor), cos(angleToMinor) };
 
-	// TODO: Rotate pixel such that minor axis aligns with x-axis
+	// TODO: Rotate pixel such that minor axis aligns with y-axis
 	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
@@ -96,10 +97,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
 	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
 
-	//// Apply rotation
-	//ndcTopLeft -= pointPositionNDC.xy;
-	//ndcTopLeft = mul(ndcTopLeft, rotationToMinor);
-	//ndcTopLeft += pointPositionNDC.xy;
+	// Apply rotation
+	ndcTopLeft -= pointPositionNDC.xy;
+	ndcTopLeft = mul(ndcTopLeft, rotationToMinor);
+	ndcTopLeft += pointPositionNDC.xy;
 
 	if (IsInsideEllipse(ndcTopLeft, pointPositionNDC.xy, length(semiMinorAxis), length(semiMajorAxis)))
 	{
