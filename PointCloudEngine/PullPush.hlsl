@@ -32,6 +32,46 @@ void CS(uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
+/////////////////////////////////////////////////////
+// TESTING
+
+	float pointDepth = 0.1f;
+	float splatSizePixel = 1000 * splatSize;
+	float4 pointPositionNDC = float4(0, 0, pointDepth, 1.0f);
+
+	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
+
+	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
+	float2 ndcTopLeft = 2 * (absoluteTopLeft / float2(resolutionX, resolutionY)) - 1;
+
+	float2 absoluteTopRight = resolutionFull * ((id.xy + uint2(1, 0)) / (float)resolutionOutput);
+	float2 ndcTopRight = 2 * (absoluteTopRight / float2(resolutionX, resolutionY)) - 1;
+
+	float2 absoluteBottomLeft = resolutionFull * ((id.xy + uint2(0, 1)) / (float)resolutionOutput);
+	float2 ndcBottomLeft = 2 * (absoluteBottomLeft / float2(resolutionX, resolutionY)) - 1;
+
+	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
+	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
+
+	float2 positionAbsolute = 0.5f * float2(resolutionX, resolutionY);
+
+	if ((distance(positionAbsolute, absoluteTopLeft) < splatSizePixel)
+		&& (distance(positionAbsolute, absoluteTopRight) < splatSizePixel)
+		&& (distance(positionAbsolute, absoluteBottomLeft) < splatSizePixel)
+		&& (distance(positionAbsolute, absoluteBottomRight) < splatSizePixel))
+	{
+		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
+	}
+	else
+	{
+		outputColorTexture[id.xy] = float4(0, 0, 0, 1);
+	}
+
+	return;
+
+// TESTING
+////////////////////////////////////////////////////
+
 	uint2 pixel = id.xy;
 	float4 outputColor;
 	float4 outputNormal;
