@@ -30,8 +30,6 @@ bool IsInsideEllipse(float2 position, float2 ellipseCenter, float ellipseSemiMin
 	float minorAxisSquared = ellipseSemiMinorAxis * ellipseSemiMinorAxis;
 	float majorAxisSquared = ellipseSemiMajorAxis * ellipseSemiMajorAxis;
 
-	return distance(position, ellipseCenter) < ellipseSemiMajorAxis;
-
 	return ((differenceSquared.x / majorAxisSquared) + (differenceSquared.y / minorAxisSquared)) <= 1.0f;
 }
 
@@ -47,7 +45,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 /////////////////////////////////////////////////////
 // TESTING
 
-	float3 pointNormalLocal = float3(0, 0, -1);
+	float3 pointNormalLocal = float3(0, 1, 0);
 	float3 pointPositionLocal = float3(0, 0, 0);
 	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
@@ -60,46 +58,27 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	if (angle > (PI / 2))
 	{
-		outputColorTexture[id.xy] = float4(0, 0, 0, 1);
+		outputColorTexture[id.xy] = float4(0, 1, 0, 1);
 		return;
 	}
 
-	// Construct splat size scaled vectors that are perpendicular to the normal and each other
-	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
-	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
-	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+	float3 majorAxis = splatSize * normalize(cross(viewDirection, pointNormalWorld));
+	float3 minorAxis = splatSize * pointNormalWorld;
 
-	float splatSizeWorld = length(mul(float4(splatSize, 0, 0, 0), World).xyz);
-	float3 up = 0.5f * splatSizeWorld * normalize(cross(pointNormalWorld, cameraRight));
-	float3 right = 0.5f * splatSizeWorld * normalize(cross(pointNormalWorld, up));
+	float4 majorAxisNDC = mul(mul(float4(pointPositionWorld + majorAxis, 1), View), Projection);
+	majorAxisNDC /= majorAxisNDC.w;
 
-	// Project the splat center and both splat plane vectors
-	float4 upNDC = mul(mul(float4(pointPositionWorld + up, 1), View), Projection);
-	float4 rightNDC = mul(mul(float4(pointPositionWorld + right, 1), View), Projection);
-	upNDC = upNDC / upNDC.w;
-	rightNDC = rightNDC / rightNDC.w;
+	float4 minorAxisNDC = mul(mul(float4(pointPositionWorld + minorAxis, 1), View), Projection);
+	minorAxisNDC /= minorAxisNDC.w;
 
-	upNDC = upNDC - pointPositionNDC;
-	rightNDC = rightNDC - pointPositionNDC;
+	float2 majorAxisProjected = majorAxisNDC.xy - pointPositionNDC.xy;
+	float2 minorAxisProjected = minorAxisNDC.xy - pointPositionNDC.xy;
 
-	float rightNDCLength = length(rightNDC.xy);
-	float upNDCLength = length(upNDC.xy);
+	// Invert due to projected normal being small when directly looking at an object
+	float semiMajorAxis = length(majorAxisProjected);
+	float semiMinorAxis = semiMajorAxis - length(minorAxisProjected);
 
-	float2 semiMinorAxis;
-	float2 semiMajorAxis;
-	
-	if (rightNDCLength < upNDCLength)
-	{
-		semiMinorAxis = rightNDC.xy;
-		semiMajorAxis = upNDC.xy;
-	}
-	else
-	{
-		semiMinorAxis = upNDC.xy;
-		semiMajorAxis = rightNDC.xy;
-	}
-
-	float angleToMinor = -dot(semiMinorAxis, float2(0, 1)) / length(semiMinorAxis);
+	float angleToMinor = dot(semiMinorAxis, float2(0, 1)) / length(semiMinorAxis);
 	float2x2 rotationToMinor = { cos(angleToMinor), sin(angleToMinor), -sin(angleToMinor), cos(angleToMinor) };
 
 	// TODO: Rotate pixel such that minor axis aligns with x-axis
