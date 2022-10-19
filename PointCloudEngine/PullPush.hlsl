@@ -23,6 +23,18 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 32 bytes with constant buffer packing rules
 
+bool IsInsideEllipse(float2 position, float2 ellipseCenter, float ellipseSemiMinorAxis, float ellipseSemiMajorAxis)
+{
+	float2 difference = position - ellipseCenter;
+	float2 differenceSquared = difference * difference;
+	float minorAxisSquared = ellipseSemiMinorAxis * ellipseSemiMinorAxis;
+	float majorAxisSquared = ellipseSemiMajorAxis * ellipseSemiMajorAxis;
+
+	return distance(position, ellipseCenter) < ellipseSemiMajorAxis;
+
+	return ((differenceSquared.x / majorAxisSquared) + (differenceSquared.y / minorAxisSquared)) <= 1.0f;
+}
+
 [numthreads(32, 32, 1)]
 void CS(uint3 id : SV_DispatchThreadID)
 {
@@ -35,10 +47,53 @@ void CS(uint3 id : SV_DispatchThreadID)
 /////////////////////////////////////////////////////
 // TESTING
 
-	float pointDepth = 0.1f;
-	float splatSizePixel = 1000 * splatSize;
-	float4 pointPositionNDC = float4(0, 0, pointDepth, 1.0f);
+	float3 pointNormalLocal = float3(0, 0, 1);
+	float3 pointPositionLocal = float3(0, 0, 0);
+	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
+	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
+	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
 
+	float3 pointNormalWorld = normalize(mul(float4(pointNormalLocal, 0), WorldInverseTranspose).xyz);
+
+	// Construct splat size scaled vectors that are perpendicular to the normal and each other
+	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
+	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+
+	float splatSizeWorld = length(mul(float4(splatSize, 0, 0, 0), World).xyz);
+	float3 up = 0.5f * splatSizeWorld * normalize(cross(pointNormalWorld, cameraRight));
+	float3 right = 0.5f * splatSizeWorld * normalize(cross(pointNormalWorld, up));
+
+	// Project the splat center and both splat plane vectors
+	float4 upNDC = mul(mul(float4(pointPositionWorld + up, 1), View), Projection);
+	float4 rightNDC = mul(mul(float4(pointPositionWorld + right, 1), View), Projection);
+	upNDC = upNDC / upNDC.w;
+	rightNDC = rightNDC / rightNDC.w;
+
+	upNDC = upNDC - pointPositionNDC;
+	rightNDC = rightNDC - pointPositionNDC;
+
+	float rightNDCLength = length(rightNDC.xy);
+	float upNDCLength = length(upNDC.xy);
+
+	float2 semiMinorAxis;
+	float2 semiMajorAxis;
+	
+	if (rightNDCLength < upNDCLength)
+	{
+		semiMinorAxis = rightNDC.xy;
+		semiMajorAxis = upNDC.xy;
+	}
+	else
+	{
+		semiMinorAxis = upNDC.xy;
+		semiMajorAxis = rightNDC.xy;
+	}
+
+	float angleToMinor = -dot(semiMinorAxis, float2(0, 1)) / length(semiMinorAxis);
+	float2x2 rotationToMinor = { cos(angleToMinor), sin(angleToMinor), -sin(angleToMinor), cos(angleToMinor) };
+
+	// TODO: Rotate pixel such that minor axis aligns with x-axis
 	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
@@ -53,12 +108,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
 	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
 
-	float2 positionAbsolute = 0.5f * float2(resolutionX, resolutionY);
+	//// Apply rotation
+	//ndcTopLeft -= pointPositionNDC.xy;
+	//ndcTopLeft = mul(ndcTopLeft, rotationToMinor);
+	//ndcTopLeft += pointPositionNDC.xy;
 
-	if ((distance(positionAbsolute, absoluteTopLeft) < splatSizePixel)
-		&& (distance(positionAbsolute, absoluteTopRight) < splatSizePixel)
-		&& (distance(positionAbsolute, absoluteBottomLeft) < splatSizePixel)
-		&& (distance(positionAbsolute, absoluteBottomRight) < splatSizePixel))
+	if (IsInsideEllipse(ndcTopLeft, pointPositionNDC.xy, length(semiMinorAxis), length(semiMajorAxis)))
 	{
 		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
 	}
