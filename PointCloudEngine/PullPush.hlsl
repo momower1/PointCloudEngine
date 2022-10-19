@@ -63,7 +63,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 	float3 majorAxis = splatSize * normalize(cross(viewDirection, pointNormalWorld));
-	float3 minorAxis = splatSize * pointNormalWorld;
+	float3 minorAxis = splatSize * normalize(cross(majorAxis, pointNormalWorld));
 
 	float4 majorAxisNDC = mul(mul(float4(pointPositionWorld + majorAxis, 1), View), Projection);
 	majorAxisNDC /= majorAxisNDC.w;
@@ -76,7 +76,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	// Invert due to projected normal being small when directly looking at an object
 	float semiMajorAxis = length(majorAxisProjected);
-	float semiMinorAxis = semiMajorAxis - length(minorAxisProjected);
+	float semiMinorAxis = length(minorAxisProjected);
 
 	// Compute signed angle towards the y-axis (for ellipsis check need minor axis aligned with y-axis)
 	float angleToMinor = atan2(1, 0) - atan2(minorAxisProjected.y, minorAxisProjected.x);
