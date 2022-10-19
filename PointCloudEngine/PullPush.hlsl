@@ -47,13 +47,22 @@ void CS(uint3 id : SV_DispatchThreadID)
 /////////////////////////////////////////////////////
 // TESTING
 
-	float3 pointNormalLocal = float3(0, 0, 1);
+	float3 pointNormalLocal = float3(0, 0, -1);
 	float3 pointPositionLocal = float3(0, 0, 0);
 	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
 	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
 
 	float3 pointNormalWorld = normalize(mul(float4(pointNormalLocal, 0), WorldInverseTranspose).xyz);
+
+	float3 viewDirection = normalize(pointPositionWorld - cameraPosition);
+	float angle = acos(dot(pointNormalWorld, -viewDirection));
+
+	if (angle > (PI / 2))
+	{
+		outputColorTexture[id.xy] = float4(0, 0, 0, 1);
+		return;
+	}
 
 	// Construct splat size scaled vectors that are perpendicular to the normal and each other
 	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
