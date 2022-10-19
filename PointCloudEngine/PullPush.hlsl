@@ -58,7 +58,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	if (angle > (PI / 2))
 	{
-		outputColorTexture[id.xy] = float4(0, 1, 0, 1);
+		outputColorTexture[id.xy] = float4(0.5f, 0, 1, 1);
 		return;
 	}
 
@@ -104,7 +104,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	if (IsInsideEllipse(ndcTopLeft, pointPositionNDC.xy, length(semiMinorAxis), length(semiMajorAxis)))
 	{
-		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
+		outputColorTexture[id.xy] = float4(0, 0, 1, 1);
 	}
 	else
 	{
