@@ -49,6 +49,13 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float3 pointPositionLocal = float3(0, 0, 1);
 	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
+
+	if (pointPositionNDC.z < 0)
+	{
+		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
+		return;
+	}
+
 	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
 
 	float3 pointNormalWorld = normalize(mul(float4(pointNormalLocal, 0), WorldInverseTranspose).xyz);
