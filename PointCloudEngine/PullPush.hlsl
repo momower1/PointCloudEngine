@@ -23,14 +23,14 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 32 bytes with constant buffer packing rules
 
-bool IsInsideEllipse(float2 position, float2 ellipseCenter, float ellipseSemiMinorAxis, float ellipseSemiMajorAxis)
+bool IsInsideQuad(float2 position, float2 edgeTopPosition, float2 edgeTopNormal, float2 edgeLeftPosition, float2 edgeLeftNormal, float2 edgeRightPosition, float2 edgeRightNormal, float2 edgeBottomPosition, float2 edgeBottomNormal)
 {
-	float2 difference = position - ellipseCenter;
-	float2 differenceSquared = difference * difference;
-	float minorAxisSquared = ellipseSemiMinorAxis * ellipseSemiMinorAxis;
-	float majorAxisSquared = ellipseSemiMajorAxis * ellipseSemiMajorAxis;
+	bool isInsideTopEdge = dot(position - edgeTopPosition, edgeTopNormal) > 0;
+	bool isInsideLeftEdge = dot(position - edgeLeftPosition, edgeLeftNormal) > 0;
+	bool isInsideRightEdge = dot(position - edgeRightPosition, edgeRightNormal) > 0;
+	bool isInsideBottomEdge = dot(position - edgeBottomPosition, edgeBottomNormal) > 0;
 
-	return ((differenceSquared.x / majorAxisSquared) + (differenceSquared.y / minorAxisSquared)) <= 1.0f;
+	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
 }
 
 [numthreads(32, 32, 1)]
@@ -49,14 +49,13 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float3 pointPositionLocal = float3(0, 0, 1);
 	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
+	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
 
 	if (pointPositionNDC.z < 0)
 	{
 		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
 		return;
 	}
-
-	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
 
 	float3 pointNormalWorld = normalize(mul(float4(pointNormalLocal, 0), WorldInverseTranspose).xyz);
 
@@ -69,27 +68,98 @@ void CS(uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-	float3 majorAxis = splatSize * normalize(cross(viewDirection, pointNormalWorld));
-	float3 minorAxis = splatSize * normalize(cross(majorAxis, pointNormalWorld));
+	// Construct quad in world space
+	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
+	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
-	float4 majorAxisNDC = mul(mul(float4(pointPositionWorld + majorAxis, 1), View), Projection);
-	majorAxisNDC /= majorAxisNDC.w;
+	// Billboard should face in the same direction as the normal
+	float3 up = 0.5f * splatSize * normalize(cross(pointNormalWorld, cameraRight));
+	float3 right = 0.5f * splatSize * normalize(cross(pointNormalWorld, up));
 
-	float4 minorAxisNDC = mul(mul(float4(pointPositionWorld + minorAxis, 1), View), Projection);
-	minorAxisNDC /= minorAxisNDC.w;
+	float3 quadCenter = pointPositionWorld;
+	float3 quadTopLeft = quadCenter + up - right;
+	float3 quadTopRight = quadCenter + up + right;
+	float3 quadBottomLeft = quadCenter - up - right;
+	float3 quadBottomRight = quadCenter - up + right;
 
-	float2 majorAxisProjected = majorAxisNDC.xy - pointPositionNDC.xy;
-	float2 minorAxisProjected = minorAxisNDC.xy - pointPositionNDC.xy;
+	// Project quad
+	float4x4 VP = mul(View, Projection);
+	float4 quadCenterNDC = mul(float4(quadCenter, 1), VP);
+	float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
+	float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
+	float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
+	float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
 
-	// Invert due to projected normal being small when directly looking at an object
-	float semiMajorAxis = length(majorAxisProjected);
-	float semiMinorAxis = length(minorAxisProjected);
+	// Homogeneous division
+	quadCenterNDC /= quadCenterNDC.w;
+	quadTopLeftNDC /= quadTopLeftNDC.w;
+	quadTopRightNDC /= quadTopRightNDC.w;
+	quadBottomLeftNDC /= quadBottomLeftNDC.w;
+	quadBottomRightNDC /= quadBottomRightNDC.w;
 
-	// Compute signed angle towards the y-axis (for ellipsis check need minor axis aligned with y-axis)
-	float angleToMinor = atan2(1, 0) - atan2(minorAxisProjected.y, minorAxisProjected.x);
-	float2x2 rotationToMinor = { cos(angleToMinor), sin(angleToMinor), -sin(angleToMinor), cos(angleToMinor) };
+	// Calculate edge normal vectors (pointing towards quad center)
+	float2 quadEdgeTop = quadTopRightNDC - quadTopLeftNDC.xy;
+	float2 quadEdgeTopNormal = normalize(quadCenterNDC.xy - (quadTopLeftNDC.xy + dot(quadCenterNDC.xy - quadTopLeftNDC, quadEdgeTop) * quadEdgeTop));
+	float2 quadEdgeLeft = quadBottomLeftNDC - quadTopLeftNDC.xy;
+	float2 quadEdgeLeftNormal = normalize(quadCenterNDC.xy - (quadTopLeftNDC.xy + dot(quadCenterNDC.xy - quadTopLeftNDC, quadEdgeLeft) * quadEdgeLeft));
+	float2 quadEdgeRight = quadBottomRightNDC - quadTopRightNDC.xy;
+	float2 quadEdgeRightNormal = normalize(quadCenterNDC.xy - (quadTopRightNDC.xy + dot(quadCenterNDC.xy - quadTopRightNDC, quadEdgeRight) * quadEdgeRight));
+	float2 quadEdgeBottom = quadBottomRightNDC - quadBottomLeftNDC.xy;
+	float2 quadEdgeBottomNormal = normalize(quadCenterNDC.xy - (quadBottomLeftNDC.xy + dot(quadCenterNDC.xy - quadBottomLeftNDC, quadEdgeBottom) * quadEdgeBottom));
 
-	// TODO: Rotate pixel such that minor axis aligns with y-axis
+	uint2 actualId = uint2(id.x, resolutionY - id.y - 1);
+	float2 actualIdNDC = (2 * (actualId / float2(resolutionX, resolutionY))) - 1;
+
+	if (distance(actualIdNDC, quadTopLeftNDC.xy) < 0.01f)
+	{
+		outputColorTexture[actualId] = float4(0, 0, 1, 1);
+	}
+	else if (distance(actualIdNDC, quadTopRightNDC.xy) < 0.01f)
+	{
+		outputColorTexture[actualId] = float4(0, 0, 1, 1);
+	}
+	else if (distance(actualIdNDC, quadBottomLeftNDC.xy) < 0.01f)
+	{
+		outputColorTexture[actualId] = float4(0, 0, 1, 1);
+	}
+	else if (distance(actualIdNDC, quadBottomRightNDC.xy) < 0.01f)
+	{
+		outputColorTexture[actualId] = float4(0, 0, 1, 1);
+	}
+	else if (distance(actualIdNDC, quadCenterNDC.xy) < 0.01f)
+	{
+		outputColorTexture[actualId] = float4(0, 0, 1, 1);
+	}
+	else
+	{
+		float2 edgeLeft = quadBottomLeftNDC.xy - quadTopLeftNDC.xy;
+		float2 edgeLeftN = normalize(cross(float3(0, 0, 1), float3(edgeLeft, 0)));
+
+		float2 edgeRight = quadBottomRightNDC.xy - quadTopRightNDC.xy;
+		float2 edgeRightN = normalize(cross(float3(0, 0, 1), float3(edgeRight, 0)));
+
+		float2 edgeTop = quadTopRightNDC.xy - quadTopLeftNDC.xy;
+		float2 edgeTopN = normalize(cross(float3(0, 0, 1), float3(edgeTop, 0)));
+
+		float2 edgeBottom = quadBottomRightNDC.xy - quadBottomLeftNDC.xy;
+		float2 edgeBottomN = normalize(cross(float3(0, 0, 1), float3(edgeBottom, 0)));
+
+		if ((dot(actualIdNDC - quadTopLeftNDC, edgeLeftN) > 0)
+			&& (dot(actualIdNDC - quadTopLeftNDC, edgeTopN) < 0)
+			&& (dot(actualIdNDC - quadBottomRightNDC, edgeRightN) < 0)
+			&& (dot(actualIdNDC - quadBottomRightNDC, edgeBottomN) > 0))
+		{
+			outputColorTexture[actualId] = float4(0, 1, 0, 1);
+		}
+		else
+		{
+			outputColorTexture[actualId] = float4(0, 0, 0, 1);
+		}
+	}
+
+	return;
+
 	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
@@ -104,12 +174,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
 	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
 
-	// Apply rotation
-	ndcTopLeft -= pointPositionNDC.xy;
-	ndcTopLeft = mul(ndcTopLeft, rotationToMinor);
-	ndcTopLeft += pointPositionNDC.xy;
-
-	if (IsInsideEllipse(ndcTopLeft, pointPositionNDC.xy, length(semiMinorAxis), length(semiMajorAxis)))
+	if (IsInsideQuad(ndcTopLeft.xy, quadTopLeftNDC.xy, quadEdgeTopNormal, quadTopLeftNDC.xy, quadEdgeLeftNormal, quadTopRightNDC.xy, quadEdgeRightNormal, quadBottomLeftNDC.xy, quadEdgeBottomNormal))
 	{
 		outputColorTexture[id.xy] = float4(0, 0, 1, 1);
 	}
