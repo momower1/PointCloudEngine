@@ -1,6 +1,6 @@
 #include "GroundTruth.hlsl"
 
-#define DEBUG_SINGLE_QUAD
+//#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -178,28 +178,21 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 		else
 		{
+			float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+
+			// Need to invert the vertical pixel index for use with NDC coordinates
+			uint2 texel = uint2(id.x, id.y);// resolutionOutput - id.y - 1);
 			int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
-			// Compute NDC coordinates of the 4 corners of the output texel
-			float2 outputTexelTopLeft = resolutionFull * (pixel / (float)resolutionOutput);
-			outputTexelTopLeft /= float2(resolutionX, resolutionY);
-			outputTexelTopLeft = (2 * outputTexelTopLeft) - 1;
-
-			float2 outputTexelTopRight = resolutionFull * ((pixel + uint2(1, 0)) / (float)resolutionOutput);
-			outputTexelTopRight /= float2(resolutionX, resolutionY);
-			outputTexelTopRight = (2 * outputTexelTopRight) - 1;
-
-			float2 outputTexelBottomLeft = resolutionFull * ((pixel + uint2(0, 1)) / (float)resolutionOutput);
-			outputTexelBottomLeft /= float2(resolutionX, resolutionY);
-			outputTexelBottomLeft = (2 * outputTexelBottomLeft) - 1;
-
-			float2 outputTexelBottomRight = resolutionFull * ((pixel + uint2(1, 1)) / (float)resolutionOutput);
-			outputTexelBottomRight /= float2(resolutionX, resolutionY);
-			outputTexelBottomRight = (2 * outputTexelBottomRight) - 1;
-
-			float4 cameraPosition = float4(0, 0, 0, 1);
-			cameraPosition = mul(cameraPosition, WorldViewProjectionInverse);
-			cameraPosition = cameraPosition / cameraPosition.w;
+			// Calculate normalized device coordinates for the four texel corners
+			float2 texelTopLeftNDC = resolutionFull * (texel / (float)resolutionOutput);
+			texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
+			float2 texelTopRightNDC = resolutionFull * ((texel + uint2(1, 0)) / (float)resolutionOutput);
+			texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
+			float2 texelBottomLeftNDC = resolutionFull * ((texel + uint2(0, 1)) / (float)resolutionOutput);
+			texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
+			float2 texelBottomRightNDC = resolutionFull * ((texel + uint2(1, 1)) / (float)resolutionOutput);
+			texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
 
 			float smallestDepth = 1.0f;
 
@@ -211,24 +204,58 @@ void CS(uint3 id : SV_DispatchThreadID)
 			{
 				for (int x = 0; x < 2; x++)
 				{
+					// Transform quad position and normal into world space
 					float4 inputColor = inputColorTexture[2 * pixel + uint2(x, y)];
+					float4 inputNormal = inputNormalTexture[2 * pixel + uint2(x, y)];
 					float4 inputPosition = inputPositionTexture[2 * pixel + uint2(x, y)];
 
-					float4 inputPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
-					inputPositionLocal = inputPositionLocal / inputPositionLocal.w;
+					float4 quadPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
+					quadPositionLocal /= quadPositionLocal.w;
 
-					float distanceInputToCamera = distance(cameraPosition, inputPositionLocal);
-					float projectedSplatSizeInput = splatSize / ((2.0f * tan(fovAngleY / 2.0f)) * distanceInputToCamera);
+					float3 quadNormalWorld = inputNormal.xyz;
+					float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
 
-					float distanceTopLeft = distance(outputTexelTopLeft, inputPosition.xy);
-					float distanceTopRight = distance(outputTexelTopRight, inputPosition.xy);
-					float distanceBottomLeft = distance(outputTexelBottomLeft, inputPosition.xy);
-					float distanceBottomRight = distance(outputTexelBottomRight, inputPosition.xy);
+					// Construct quad that faces in the same direction as the normal
+					float3 quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
+					float3 quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
 
-					if ((inputPosition.w > 0.0f) && (inputPosition.z < smallestDepth) && (distanceTopLeft < projectedSplatSizeInput) && (distanceTopRight < projectedSplatSizeInput) && (distanceBottomLeft < projectedSplatSizeInput) && (distanceBottomRight < projectedSplatSizeInput))
+					float3 quadCenter = quadPositionWorld;
+					float3 quadTopLeft = quadCenter + quadUp - quadRight;
+					float3 quadTopRight = quadCenter + quadUp + quadRight;
+					float3 quadBottomLeft = quadCenter - quadUp - quadRight;
+					float3 quadBottomRight = quadCenter - quadUp + quadRight;
+
+					// Project quad
+					float4x4 VP = mul(View, Projection);
+					float4 quadCenterNDC = mul(float4(quadCenter, 1), VP);
+					float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
+					float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
+					float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
+					float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
+
+					// Homogeneous division
+					quadCenterNDC /= quadCenterNDC.w;
+					quadTopLeftNDC /= quadTopLeftNDC.w;
+					quadTopRightNDC /= quadTopRightNDC.w;
+					quadBottomLeftNDC /= quadBottomLeftNDC.w;
+					quadBottomRightNDC /= quadBottomRightNDC.w;
+
+					// Calculate edge normal vectors (pointing towards quad center)
+					float2 quadLeftNormal = GetPerpendicularVector(quadTopLeftNDC.xy - quadBottomLeftNDC.xy);
+					float2 quadTopNormal = GetPerpendicularVector(quadTopRightNDC.xy - quadTopLeftNDC.xy);
+					float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
+					float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
+
+					if ((inputPosition.w > 0.0f)
+						&& (inputPosition.z < smallestDepth)
+						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
+						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
+						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
+						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
 					{
 						smallestDepth = inputPosition.z;
 						outputColor = inputColor;
+						outputNormal = inputNormal;
 						outputPosition = inputPosition;
 					}
 				}
@@ -239,19 +266,23 @@ void CS(uint3 id : SV_DispatchThreadID)
 	{
 		float2 uv = (pixel + float2(0.5f, 0.5f)) / resolutionOutput;
 		float4 inputColor = inputColorTexture.SampleLevel(samplerState, uv, 0);
+		float4 inputNormal = inputNormalTexture[pixel / 2];
 		float4 inputPosition = inputPositionTexture[pixel / 2];
 		
 		outputColor = outputColorTexture[pixel];
+		outputNormal = outputNormalTexture[pixel];
 		outputPosition = outputPositionTexture[pixel];
 
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
 		if ((inputPosition.w >= 1.0f) && ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z)))
 		{
 			outputColor = inputColor;
+			outputNormal = inputNormal;
 			outputPosition = inputPosition;
 		}
 	}
 
 	outputColorTexture[pixel] = outputColor;
+	outputNormalTexture[pixel] = outputNormal;
 	outputPositionTexture[pixel] = outputPosition;
 }
