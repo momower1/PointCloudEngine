@@ -50,10 +50,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 #ifdef DEBUG_SINGLE_QUAD
-
-/////////////////////////////////////////////////////
-// TESTING
-
 	float3 pointNormalLocal = float3(0, 0, -1);
 	float3 pointPositionLocal = float3(0, 0, 1);
 	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
@@ -113,112 +109,34 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
 	float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
-	uint2 actualId = uint2(id.x, resolutionY - id.y - 1);
-	float2 actualIdNDC = (2 * (actualId / float2(resolutionX, resolutionY))) - 1;
-
+	// Need to invert the vertical pixel index for use with NDC coordinates
+	uint2 texel = uint2(id.x, resolutionOutput - id.y - 1);
 	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
-	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
-	float2 ndcTopLeft = 2 * (absoluteTopLeft / float2(resolutionX, resolutionY)) - 1;
+	// Calculate normalized device coordinates for the four texel corners
+	float2 texelTopLeftNDC = resolutionFull * (texel / (float)resolutionOutput);
+	texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
+	float2 texelTopRightNDC = resolutionFull * ((texel + uint2(1, 0)) / (float)resolutionOutput);
+	texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
+	float2 texelBottomLeftNDC = resolutionFull * ((texel + uint2(0, 1)) / (float)resolutionOutput);
+	texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
+	float2 texelBottomRightNDC = resolutionFull * ((texel + uint2(1, 1)) / (float)resolutionOutput);
+	texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
 
-	float2 absoluteTopRight = resolutionFull * ((id.xy + uint2(1, 0)) / (float)resolutionOutput);
-	float2 ndcTopRight = 2 * (absoluteTopRight / float2(resolutionX, resolutionY)) - 1;
-
-	float2 absoluteBottomLeft = resolutionFull * ((id.xy + uint2(0, 1)) / (float)resolutionOutput);
-	float2 ndcBottomLeft = 2 * (absoluteBottomLeft / float2(resolutionX, resolutionY)) - 1;
-
-	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
-	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
-
-	if (IsInsideQuad(ndcTopLeft, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
+	// Only color the texel if all of its texel corners are inside the projected quad
+	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
+		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
+		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
+		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
 	{
-		outputColorTexture[actualId] = float4(0, 1, 0, 1);
+		outputColorTexture[texel] = float4(0, 1, 0, 1);
 	}
 	else
 	{
-		outputColorTexture[actualId] = float4(0, 0, 0, 1);
+		outputColorTexture[texel] = float4(0, 0, 0, 1);
 	}
 
 	return;
-
-
-	/*if (distance(actualIdNDC, quadTopLeftNDC.xy) < 0.01f)
-	{
-		outputColorTexture[actualId] = float4(0, 0, 1, 1);
-	}
-	else if (distance(actualIdNDC, quadTopRightNDC.xy) < 0.01f)
-	{
-		outputColorTexture[actualId] = float4(0, 0, 1, 1);
-	}
-	else if (distance(actualIdNDC, quadBottomLeftNDC.xy) < 0.01f)
-	{
-		outputColorTexture[actualId] = float4(0, 0, 1, 1);
-	}
-	else if (distance(actualIdNDC, quadBottomRightNDC.xy) < 0.01f)
-	{
-		outputColorTexture[actualId] = float4(0, 0, 1, 1);
-	}
-	else if (distance(actualIdNDC, quadCenterNDC.xy) < 0.01f)
-	{
-		outputColorTexture[actualId] = float4(0, 0, 1, 1);
-	}
-	else
-	{
-		float2 edgeLeft = quadBottomLeftNDC.xy - quadTopLeftNDC.xy;
-		float2 edgeLeftN = normalize(cross(float3(0, 0, 1), float3(edgeLeft, 0)));
-
-		float2 edgeRight = quadBottomRightNDC.xy - quadTopRightNDC.xy;
-		float2 edgeRightN = normalize(cross(float3(0, 0, 1), float3(edgeRight, 0)));
-
-		float2 edgeTop = quadTopRightNDC.xy - quadTopLeftNDC.xy;
-		float2 edgeTopN = normalize(cross(float3(0, 0, 1), float3(edgeTop, 0)));
-
-		float2 edgeBottom = quadBottomRightNDC.xy - quadBottomLeftNDC.xy;
-		float2 edgeBottomN = normalize(cross(float3(0, 0, 1), float3(edgeBottom, 0)));
-
-		if ((dot(actualIdNDC - quadTopLeftNDC, edgeLeftN) > 0)
-			&& (dot(actualIdNDC - quadTopLeftNDC, edgeTopN) < 0)
-			&& (dot(actualIdNDC - quadBottomRightNDC, edgeRightN) < 0)
-			&& (dot(actualIdNDC - quadBottomRightNDC, edgeBottomN) > 0))
-		{
-			outputColorTexture[actualId] = float4(0, 1, 0, 1);
-		}
-		else
-		{
-			outputColorTexture[actualId] = float4(0, 0, 0, 1);
-		}
-	}
-
-	return;
-
-	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
-
-	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
-	float2 ndcTopLeft = 2 * (absoluteTopLeft / float2(resolutionX, resolutionY)) - 1;
-
-	float2 absoluteTopRight = resolutionFull * ((id.xy + uint2(1, 0)) / (float)resolutionOutput);
-	float2 ndcTopRight = 2 * (absoluteTopRight / float2(resolutionX, resolutionY)) - 1;
-
-	float2 absoluteBottomLeft = resolutionFull * ((id.xy + uint2(0, 1)) / (float)resolutionOutput);
-	float2 ndcBottomLeft = 2 * (absoluteBottomLeft / float2(resolutionX, resolutionY)) - 1;
-
-	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
-	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
-
-	if (IsInsideQuad(ndcTopLeft.xy, quadTopLeftNDC.xy, quadEdgeTopNormal, quadTopLeftNDC.xy, quadEdgeLeftNormal, quadTopRightNDC.xy, quadEdgeRightNormal, quadBottomLeftNDC.xy, quadEdgeBottomNormal))
-	{
-		outputColorTexture[id.xy] = float4(0, 0, 1, 1);
-	}
-	else
-	{
-		outputColorTexture[id.xy] = float4(0, 0, 0, 1);
-	}
-
-	return;*/
-
-// TESTING
-////////////////////////////////////////////////////
-
 #endif
 
 	uint2 pixel = id.xy;
