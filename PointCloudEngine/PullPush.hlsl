@@ -1,6 +1,7 @@
 #include "GroundTruth.hlsl"
 
 //#define DEBUG_SINGLE_QUAD
+//#define ORIENTED_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -179,8 +180,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 		else
 		{
 			float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+			float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
+			float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
-			// Need to invert the vertical pixel index for use with NDC coordinates
+			// Need to invert the vertical pixel index for use with NDC coordinates?
 			uint2 texel = uint2(id.x, id.y);// resolutionOutput - id.y - 1);
 			int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
@@ -216,8 +219,13 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
 
 					// Construct quad that faces in the same direction as the normal
+#ifdef ORIENTED_QUAD
 					float3 quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
 					float3 quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
+#else
+					float3 quadUp = 0.5f * splatSize * cameraUp;
+					float3 quadRight = 0.5f * splatSize * cameraRight;
+#endif
 
 					float3 quadCenter = quadPositionWorld;
 					float3 quadTopLeft = quadCenter + quadUp - quadRight;
