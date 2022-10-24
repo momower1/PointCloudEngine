@@ -1,5 +1,7 @@
 #include "GroundTruth.hlsl"
 
+#define DEBUG_SINGLE_QUAD
+
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
 Texture2D<float4> inputColorTexture : register(t1);
@@ -23,12 +25,17 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 32 bytes with constant buffer packing rules
 
-bool IsInsideQuad(float2 position, float2 edgeTopPosition, float2 edgeTopNormal, float2 edgeLeftPosition, float2 edgeLeftNormal, float2 edgeRightPosition, float2 edgeRightNormal, float2 edgeBottomPosition, float2 edgeBottomNormal)
+float2 GetPerpendicularVector(float2 v)
 {
-	bool isInsideTopEdge = dot(position - edgeTopPosition, edgeTopNormal) > 0;
-	bool isInsideLeftEdge = dot(position - edgeLeftPosition, edgeLeftNormal) > 0;
-	bool isInsideRightEdge = dot(position - edgeRightPosition, edgeRightNormal) > 0;
-	bool isInsideBottomEdge = dot(position - edgeBottomPosition, edgeBottomNormal) > 0;
+	return float2(v.y, -v.x);
+}
+
+bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, float2 quadLeftNormal, float2 quadTopNormal, float2 quadRightNormal, float2 quadBottomNormal)
+{
+	bool isInsideTopEdge = dot(position - quadTopLeft, quadTopNormal) > 0;
+	bool isInsideLeftEdge = dot(position - quadTopLeft, quadLeftNormal) > 0;
+	bool isInsideRightEdge = dot(position - quadBottomRight, quadRightNormal) > 0;
+	bool isInsideBottomEdge = dot(position - quadBottomRight, quadBottomNormal) > 0;
 
 	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
 }
@@ -41,6 +48,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColorTexture[id.xy] = inputColorTexture.SampleLevel(samplerState, (id.xy + float2(0.5f, 0.5f)) / resolutionOutput, 0);
 		return;
 	}
+
+#ifdef DEBUG_SINGLE_QUAD
 
 /////////////////////////////////////////////////////
 // TESTING
@@ -68,12 +77,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-	// Construct quad in world space
+	// Construct a quad in world space
 	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
 	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
 	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
-	// Billboard should face in the same direction as the normal
+	// Quad should face in the same direction as the normal
 	float3 up = 0.5f * splatSize * normalize(cross(pointNormalWorld, cameraRight));
 	float3 right = 0.5f * splatSize * normalize(cross(pointNormalWorld, up));
 
@@ -99,19 +108,41 @@ void CS(uint3 id : SV_DispatchThreadID)
 	quadBottomRightNDC /= quadBottomRightNDC.w;
 
 	// Calculate edge normal vectors (pointing towards quad center)
-	float2 quadEdgeTop = quadTopRightNDC - quadTopLeftNDC.xy;
-	float2 quadEdgeTopNormal = normalize(quadCenterNDC.xy - (quadTopLeftNDC.xy + dot(quadCenterNDC.xy - quadTopLeftNDC, quadEdgeTop) * quadEdgeTop));
-	float2 quadEdgeLeft = quadBottomLeftNDC - quadTopLeftNDC.xy;
-	float2 quadEdgeLeftNormal = normalize(quadCenterNDC.xy - (quadTopLeftNDC.xy + dot(quadCenterNDC.xy - quadTopLeftNDC, quadEdgeLeft) * quadEdgeLeft));
-	float2 quadEdgeRight = quadBottomRightNDC - quadTopRightNDC.xy;
-	float2 quadEdgeRightNormal = normalize(quadCenterNDC.xy - (quadTopRightNDC.xy + dot(quadCenterNDC.xy - quadTopRightNDC, quadEdgeRight) * quadEdgeRight));
-	float2 quadEdgeBottom = quadBottomRightNDC - quadBottomLeftNDC.xy;
-	float2 quadEdgeBottomNormal = normalize(quadCenterNDC.xy - (quadBottomLeftNDC.xy + dot(quadCenterNDC.xy - quadBottomLeftNDC, quadEdgeBottom) * quadEdgeBottom));
+	float2 quadLeftNormal = GetPerpendicularVector(quadTopLeftNDC.xy - quadBottomLeftNDC.xy);
+	float2 quadTopNormal = GetPerpendicularVector(quadTopRightNDC.xy - quadTopLeftNDC.xy);
+	float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
+	float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
 	uint2 actualId = uint2(id.x, resolutionY - id.y - 1);
 	float2 actualIdNDC = (2 * (actualId / float2(resolutionX, resolutionY))) - 1;
 
-	if (distance(actualIdNDC, quadTopLeftNDC.xy) < 0.01f)
+	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
+
+	float2 absoluteTopLeft = resolutionFull * (id.xy / (float)resolutionOutput);
+	float2 ndcTopLeft = 2 * (absoluteTopLeft / float2(resolutionX, resolutionY)) - 1;
+
+	float2 absoluteTopRight = resolutionFull * ((id.xy + uint2(1, 0)) / (float)resolutionOutput);
+	float2 ndcTopRight = 2 * (absoluteTopRight / float2(resolutionX, resolutionY)) - 1;
+
+	float2 absoluteBottomLeft = resolutionFull * ((id.xy + uint2(0, 1)) / (float)resolutionOutput);
+	float2 ndcBottomLeft = 2 * (absoluteBottomLeft / float2(resolutionX, resolutionY)) - 1;
+
+	float2 absoluteBottomRight = resolutionFull * ((id.xy + uint2(1, 1)) / (float)resolutionOutput);
+	float2 ndcBottomRight = 2 * (absoluteBottomRight / float2(resolutionX, resolutionY)) - 1;
+
+	if (IsInsideQuad(ndcTopLeft, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
+	{
+		outputColorTexture[actualId] = float4(0, 1, 0, 1);
+	}
+	else
+	{
+		outputColorTexture[actualId] = float4(0, 0, 0, 1);
+	}
+
+	return;
+
+
+	/*if (distance(actualIdNDC, quadTopLeftNDC.xy) < 0.01f)
 	{
 		outputColorTexture[actualId] = float4(0, 0, 1, 1);
 	}
@@ -183,10 +214,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColorTexture[id.xy] = float4(0, 0, 0, 1);
 	}
 
-	return;
+	return;*/
 
 // TESTING
 ////////////////////////////////////////////////////
+
+#endif
 
 	uint2 pixel = id.xy;
 	float4 outputColor;
