@@ -79,9 +79,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
 	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
+#ifdef ORIENTED_QUAD
 	// Quad should face in the same direction as the normal
 	float3 up = 0.5f * splatSize * normalize(cross(pointNormalWorld, cameraRight));
 	float3 right = 0.5f * splatSize * normalize(cross(pointNormalWorld, up));
+#else
+	float3 up = 0.5f * splatSize * cameraUp;
+	float3 right = 0.5f * splatSize * cameraRight;
+#endif
 
 	float3 quadCenter = pointPositionWorld;
 	float3 quadTopLeft = quadCenter + up - right;
@@ -110,8 +115,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
 	float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
-	// Need to invert the vertical pixel index for use with NDC coordinates
-	uint2 texel = uint2(id.x, resolutionOutput - id.y - 1);
+	uint2 texel = uint2(id.x, id.y);
 	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 	// Calculate normalized device coordinates for the four texel corners
@@ -183,8 +187,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 			float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
 			float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
-			// Need to invert the vertical pixel index for use with NDC coordinates?
-			uint2 texel = uint2(id.x, id.y);// resolutionOutput - id.y - 1);
+			uint2 texel = uint2(id.x, id.y);
 			int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 			// Calculate normalized device coordinates for the four texel corners
