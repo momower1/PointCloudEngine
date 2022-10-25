@@ -1,7 +1,7 @@
 #include "GroundTruth.hlsl"
 
 //#define DEBUG_SINGLE_QUAD
-//#define ORIENTED_QUAD
+#define ORIENTED_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -180,6 +180,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 					// Normalized device coordinates of the point
 					outputPosition.x = 2 * ((pixel.x + 0.5f) / resolutionX) - 1;
 					outputPosition.y = 2 * ((pixel.y + 0.5f) / resolutionY) - 1;
+					outputPosition.y = -outputPosition.y;
 					outputPosition.z = depth;
 					outputPosition.w = 1.0f;
 				}
@@ -203,6 +204,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 			texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
 			float2 texelBottomRightNDC = resolutionFull * ((texel + uint2(1, 1)) / (float)resolutionOutput);
 			texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
+
+			// Need to invert y-coordinate for correct coordinate system
+			texelTopLeftNDC.y = -texelTopLeftNDC.y;
+			texelTopRightNDC.y = -texelTopRightNDC.y;
+			texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
+			texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
 			float smallestDepth = 1.0f;
 
