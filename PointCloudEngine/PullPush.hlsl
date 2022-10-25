@@ -51,9 +51,9 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 #ifdef DEBUG_SINGLE_QUAD
-	float3 pointNormalLocal = float3(0, 0, -1);
-	float3 pointPositionLocal = float3(0, 0, 1);
-	float3 pointPositionWorld = mul(float4(pointPositionLocal, 1), World).xyz;
+	float3 pointPositionWorld = float3(0, -1, 2);
+	float3 pointNormalWorld = float3(0, 1, 0);
+
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
 	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
 
@@ -62,8 +62,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
 		return;
 	}
-
-	float3 pointNormalWorld = normalize(mul(float4(pointNormalLocal, 0), WorldInverseTranspose).xyz);
 
 	float3 viewDirection = normalize(pointPositionWorld - cameraPosition);
 	float angle = acos(dot(pointNormalWorld, -viewDirection));
@@ -127,6 +125,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 	texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
 	float2 texelBottomRightNDC = resolutionFull * ((texel + uint2(1, 1)) / (float)resolutionOutput);
 	texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
+
+	// Need to invert y-coordinate for correct coordinate system
+	texelTopLeftNDC.y = -texelTopLeftNDC.y;
+	texelTopRightNDC.y = -texelTopRightNDC.y;
+	texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
+	texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
 	// Only color the texel if all of its texel corners are inside the projected quad
 	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
