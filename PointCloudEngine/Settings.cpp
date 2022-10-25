@@ -72,6 +72,7 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(pullPushLinearFilter), &pullPushLinearFilter);
 		TryParse(NAMEOF(pullPushSkipPushPhase), &pullPushSkipPushPhase);
 		TryParse(NAMEOF(pullPushOrientedSplat), &pullPushOrientedSplat);
+		TryParse(NAMEOF(pullPushBlending), &pullPushBlending);
 		TryParse(NAMEOF(pullPushDebugLevel), &pullPushDebugLevel);
 		TryParse(NAMEOF(pullPushSplatSize), &pullPushSplatSize);
 
@@ -188,6 +189,7 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(pullPushLinearFilter) << L"=" << pullPushLinearFilter << std::endl;
 	settingsStream << NAMEOF(pullPushSkipPushPhase) << L"=" << pullPushSkipPushPhase << std::endl;
 	settingsStream << NAMEOF(pullPushOrientedSplat) << L"=" << pullPushOrientedSplat << std::endl;
+	settingsStream << NAMEOF(pullPushBlending) << L"=" << pullPushBlending << std::endl;
 	settingsStream << NAMEOF(pullPushDebugLevel) << L"=" << pullPushDebugLevel << std::endl;
 	settingsStream << NAMEOF(pullPushSplatSize) << L"=" << pullPushSplatSize << std::endl;
 	settingsStream << std::endl;

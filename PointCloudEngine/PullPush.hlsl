@@ -16,15 +16,16 @@ cbuffer PullPushConstantBuffer : register(b1)
 	bool debug;
 	bool isPullPhase;
 	bool orientedSplat;
-	int resolutionPullPush;
+	bool texelBlending;
 //------------------------------------------------------------------------------ (16 byte boundary)
+	int resolutionPullPush;
 	int resolutionOutput;
 	int resolutionX;
 	int resolutionY;
-	float splatSize;
 //------------------------------------------------------------------------------ (16 byte boundary)
+	float splatSize;
 	int pullPushLevel;
-	// 12 bytes auto paddding
+	// 8 bytes auto paddding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 48 bytes with constant buffer packing rules
 

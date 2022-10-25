@@ -66,6 +66,7 @@ namespace PointCloudEngine
 		bool pullPushLinearFilter = true;
 		bool pullPushSkipPushPhase = false;
 		bool pullPushOrientedSplat = true;
+		bool pullPushBlending = true;
 		int pullPushDebugLevel = 0;
 		float pullPushSplatSize = 0.25f;
 
