@@ -289,7 +289,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
 					{
 						smallestDepth = inputPosition.z;
-						outputColor = inputColor;
+						outputColor = texelBlending ? (outputColor + inputColor) : inputColor;
 						outputNormal = inputNormal;
 						outputPosition = inputPosition;
 					}
@@ -311,9 +311,16 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
 		if ((inputPosition.w >= 1.0f) && ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z)))
 		{
-			outputColor = inputColor;
+			outputColor = texelBlending ? (outputColor + inputColor) : inputColor;
 			outputNormal = inputNormal;
 			outputPosition = inputPosition;
+		}
+
+		// TODO: Perform actually reasonable blending (could also use weights that depend on the distance to the splat center)
+		// Pull and push phase: only accumulate weighted color if splats that are in a certain depth range (otherwise take color of closest one)
+		if (texelBlending && (pullPushLevel == 1) && (outputColor.w > 0))
+		{
+			outputColor /= outputColor.w;
 		}
 	}
 
