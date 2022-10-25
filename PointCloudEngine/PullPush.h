@@ -19,12 +19,14 @@ namespace PointCloudEngine
         {
             BOOL debug;
             BOOL isPullPhase;
+            BOOL orientedSplat;
+            int resolutionPullPush;
+            int resolutionOutput;
             int resolutionX;
             int resolutionY;
-            int resolutionOutput;
             float splatSize;
             int pullPushLevel;
-            int padding;
+            XMUINT3 padding;
         };
 
         int pullPushLevels = 0;

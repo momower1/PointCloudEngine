@@ -129,6 +129,8 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* backbufferTexture, ID3D
 	d3d11DevCon->CSSetSamplers(0, 1, &pullPushSamplerState);
 
 	// Set texture resolution
+	pullPushConstantBufferData.orientedSplat = settings->pullPushOrientedSplat;
+	pullPushConstantBufferData.resolutionPullPush = pullPushResolution;
 	pullPushConstantBufferData.resolutionX = settings->resolutionX;
 	pullPushConstantBufferData.resolutionY = settings->resolutionY;
 	pullPushConstantBufferData.splatSize = settings->pullPushSplatSize;

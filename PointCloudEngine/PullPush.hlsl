@@ -1,7 +1,6 @@
 #include "GroundTruth.hlsl"
 
 //#define DEBUG_SINGLE_QUAD
-#define ORIENTED_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -16,15 +15,18 @@ cbuffer PullPushConstantBuffer : register(b1)
 {
 	bool debug;
 	bool isPullPhase;
-	int resolutionX;
-	int resolutionY;
+	bool orientedSplat;
+	int resolutionPullPush;
 //------------------------------------------------------------------------------ (16 byte boundary)
 	int resolutionOutput;
+	int resolutionX;
+	int resolutionY;
 	float splatSize;
-	int pullPushLevel;
-	// 4 bytes auto paddding
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 32 bytes with constant buffer packing rules
+	int pullPushLevel;
+	// 12 bytes auto paddding
+//------------------------------------------------------------------------------ (16 byte boundary)
+};  // Total: 48 bytes with constant buffer packing rules
 
 float2 GetPerpendicularVector(float2 v)
 {
@@ -51,7 +53,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 #ifdef DEBUG_SINGLE_QUAD
-	float3 pointPositionWorld = float3(0, -1, 2);
+	float3 pointPositionWorld = float3(0, -1, 1);
 	float3 pointNormalWorld = float3(0, 1, 0);
 
 	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
@@ -77,14 +79,20 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
 	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
-#ifdef ORIENTED_QUAD
-	// Quad should face in the same direction as the normal
-	float3 up = 0.5f * splatSize * normalize(cross(pointNormalWorld, cameraRight));
-	float3 right = 0.5f * splatSize * normalize(cross(pointNormalWorld, up));
-#else
-	float3 up = 0.5f * splatSize * cameraUp;
-	float3 right = 0.5f * splatSize * cameraRight;
-#endif
+	float3 up;
+	float3 right;
+
+	// Quad should face in the same direction as the normal or it should be aligned with the camera
+	if (orientedSplat)
+	{
+		up = 0.5f * splatSize * normalize(cross(pointNormalWorld, cameraRight));
+		right = 0.5f * splatSize * normalize(cross(pointNormalWorld, up));
+	}
+	else
+	{
+		up = 0.5f * splatSize * cameraUp;
+		right = 0.5f * splatSize * cameraRight;
+	}
 
 	float3 quadCenter = pointPositionWorld;
 	float3 quadTopLeft = quadCenter + up - right;
@@ -114,16 +122,15 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
 	uint2 texel = uint2(id.x, id.y);
-	int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 	// Calculate normalized device coordinates for the four texel corners
-	float2 texelTopLeftNDC = resolutionFull * (texel / (float)resolutionOutput);
+	float2 texelTopLeftNDC = resolutionPullPush * (texel / (float)resolutionOutput);
 	texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
-	float2 texelTopRightNDC = resolutionFull * ((texel + uint2(1, 0)) / (float)resolutionOutput);
+	float2 texelTopRightNDC = resolutionPullPush * ((texel + uint2(1, 0)) / (float)resolutionOutput);
 	texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
-	float2 texelBottomLeftNDC = resolutionFull * ((texel + uint2(0, 1)) / (float)resolutionOutput);
+	float2 texelBottomLeftNDC = resolutionPullPush * ((texel + uint2(0, 1)) / (float)resolutionOutput);
 	texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
-	float2 texelBottomRightNDC = resolutionFull * ((texel + uint2(1, 1)) / (float)resolutionOutput);
+	float2 texelBottomRightNDC = resolutionPullPush * ((texel + uint2(1, 1)) / (float)resolutionOutput);
 	texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
 
 	// Need to invert y-coordinate for correct coordinate system
@@ -193,16 +200,15 @@ void CS(uint3 id : SV_DispatchThreadID)
 			float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
 
 			uint2 texel = uint2(id.x, id.y);
-			int resolutionFull = pow(2, ceil(log2(max(resolutionX, resolutionY))));
 
 			// Calculate normalized device coordinates for the four texel corners
-			float2 texelTopLeftNDC = resolutionFull * (texel / (float)resolutionOutput);
+			float2 texelTopLeftNDC = resolutionPullPush * (texel / (float)resolutionOutput);
 			texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelTopRightNDC = resolutionFull * ((texel + uint2(1, 0)) / (float)resolutionOutput);
+			float2 texelTopRightNDC = resolutionPullPush * ((texel + uint2(1, 0)) / (float)resolutionOutput);
 			texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelBottomLeftNDC = resolutionFull * ((texel + uint2(0, 1)) / (float)resolutionOutput);
+			float2 texelBottomLeftNDC = resolutionPullPush * ((texel + uint2(0, 1)) / (float)resolutionOutput);
 			texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelBottomRightNDC = resolutionFull * ((texel + uint2(1, 1)) / (float)resolutionOutput);
+			float2 texelBottomRightNDC = resolutionPullPush * ((texel + uint2(1, 1)) / (float)resolutionOutput);
 			texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
 
 			// Need to invert y-coordinate for correct coordinate system
@@ -232,14 +238,20 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float3 quadNormalWorld = inputNormal.xyz;
 					float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
 
-					// Construct quad that faces in the same direction as the normal
-#ifdef ORIENTED_QUAD
-					float3 quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
-					float3 quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
-#else
-					float3 quadUp = 0.5f * splatSize * cameraUp;
-					float3 quadRight = 0.5f * splatSize * cameraRight;
-#endif
+					float3 quadUp;
+					float3 quadRight;
+
+					// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
+					if (orientedSplat)
+					{
+						quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
+						quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
+					}
+					else
+					{
+						quadUp = 0.5f * splatSize * cameraUp;
+						quadRight = 0.5f * splatSize * cameraRight;
+					}
 
 					float3 quadCenter = quadPositionWorld;
 					float3 quadTopLeft = quadCenter + quadUp - quadRight;
