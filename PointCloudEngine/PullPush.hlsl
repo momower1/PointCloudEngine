@@ -25,10 +25,13 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 	float blendRange;
 	float splatSize;
-	int pullPushLevel;
-	// 4 bytes auto paddding
+	float nearZ;
+	float farZ;
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 48 bytes with constant buffer packing rules
+	int pullPushLevel;
+	// 12 bytes auto paddding
+//------------------------------------------------------------------------------ (16 byte boundary)
+};  // Total: 64 bytes with constant buffer packing rules
 
 float2 GetPerpendicularVector(float2 v)
 {
@@ -219,7 +222,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 			texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
 			texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
-			float smallestDepth = 1.0f;
+			float smallestZ = farZ;
 
 			outputColor = float4(0, 0, 0, 0);
 			outputNormal = float4(0, 0, 0, 0);
@@ -239,6 +242,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 					float3 quadNormalWorld = inputNormal.xyz;
 					float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
+					float3 quadPositionView = mul(float4(quadPositionWorld, 1), View).xyz;
 
 					float3 quadUp;
 					float3 quadRight;
@@ -283,16 +287,52 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
 					if ((inputPosition.w > 0.0f)
-						&& (inputPosition.z < smallestDepth)
 						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
 						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
 						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
 						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
 					{
-						smallestDepth = inputPosition.z;
-						outputColor = texelBlending ? (outputColor + inputColor) : inputColor;
-						outputNormal = inputNormal;
-						outputPosition = inputPosition;
+						// Blend splats together that are within a certain z-range to the closest surface or only keep the closest splat
+						if (texelBlending)
+						{
+							float differenceZ = quadPositionView.z - smallestZ;
+
+							// Splat is closer than the currently closest splat, assign it as the surface splat
+							if (differenceZ < 0)
+							{
+								smallestZ = quadPositionView.z;
+								outputNormal = inputNormal;
+								outputPosition = inputPosition;
+
+								// If out of blend range, assign new base color for blending
+								if (differenceZ < -blendRange)
+								{
+									outputColor = inputColor;
+								}
+								else
+								{
+									// Accumulate weighted colors and weights
+									float blendWeight = 1.0f;
+									outputColor.rgb += blendWeight * inputColor.rgb;
+									outputColor.w += blendWeight * inputColor.w;
+								}
+							}
+							else if (differenceZ < blendRange)
+							{
+								// Splat is behind current surface splat but within blend range, so blend colors
+								float blendWeight = 1.0f;
+								outputColor.rgb += blendWeight * inputColor.rgb;
+								outputColor.w += blendWeight * inputColor.w;
+							}
+						}
+						else if (quadPositionView.z < smallestZ)
+						{
+							// Keep only the closest splat
+							smallestZ = quadPositionView.z;
+							outputColor = inputColor;
+							outputNormal = inputNormal;
+							outputPosition = inputPosition;
+						}
 					}
 				}
 			}
@@ -312,7 +352,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
 		if ((inputPosition.w >= 1.0f) && ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z)))
 		{
-			outputColor = texelBlending ? (outputColor + inputColor) : inputColor;
+			outputColor = inputColor; // texelBlending ? (outputColor + inputColor) : inputColor;
 			outputNormal = inputNormal;
 			outputPosition = inputPosition;
 		}
