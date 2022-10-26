@@ -69,6 +69,7 @@ namespace PointCloudEngine
 		bool pullPushBlending = false;
 		int pullPushDebugLevel = 0;
 		float pullPushSplatSize = 0.25f;
+		float pullPushBlendRange = 0.1f;
 
 		// Neural Network parameters
 		std::wstring neuralNetworkModelFile = L"";

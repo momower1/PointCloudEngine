@@ -23,9 +23,10 @@ cbuffer PullPushConstantBuffer : register(b1)
 	int resolutionX;
 	int resolutionY;
 //------------------------------------------------------------------------------ (16 byte boundary)
+	float blendRange;
 	float splatSize;
 	int pullPushLevel;
-	// 8 bytes auto paddding
+	// 4 bytes auto paddding
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 48 bytes with constant buffer packing rules
 

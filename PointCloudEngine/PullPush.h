@@ -25,9 +25,10 @@ namespace PointCloudEngine
             int resolutionOutput;
             int resolutionX;
             int resolutionY;
+            float blendRange;
             float splatSize;
             int pullPushLevel;
-            XMUINT2 padding;
+            int padding;
         };
 
         int pullPushLevels = 0;

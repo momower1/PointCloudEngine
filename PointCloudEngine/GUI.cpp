@@ -284,8 +284,9 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(280), GS(20), GS(20), L"", NULL, &settings->pullPushOrientedSplat));
 	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(310), GS(150), GS(20), L"Texel Blending "));
 	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(310), GS(20), GS(20), L"", NULL, &settings->pullPushBlending));
-	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 1000, 1000, 0, L"Blend Range", &settings->pullPushBlendRange, 2, GS(148), GS(40)));
 	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(370), GS(130), GS(20), 0, 1000, 1000, 0, L"Splat Size", &settings->pullPushSplatSize, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
 }

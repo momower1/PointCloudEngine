@@ -134,6 +134,7 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* backbufferTexture, ID3D
 	pullPushConstantBufferData.resolutionPullPush = pullPushResolution;
 	pullPushConstantBufferData.resolutionX = settings->resolutionX;
 	pullPushConstantBufferData.resolutionY = settings->resolutionY;
+	pullPushConstantBufferData.blendRange = settings->pullPushBlendRange;
 	pullPushConstantBufferData.splatSize = settings->pullPushSplatSize;
 
 	// Pull phase (go from high resolution to low resolution)
