@@ -336,6 +336,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 					}
 				}
 			}
+
+			// Normalize accumulated blended color
+			if (texelBlending && (outputColor.w > 0.0f))
+			{
+				outputColor /= outputColor.w;
+			}
 		}
 	}
 	else
@@ -350,18 +356,59 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputPosition = outputPositionTexture[pixel];
 
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
-		if ((inputPosition.w >= 1.0f) && ((outputPosition.w <= 0.0f) || (inputPosition.z < outputPosition.z)))
+		if (inputPosition.w >= 1.0f)
 		{
-			outputColor = inputColor; // texelBlending ? (outputColor + inputColor) : inputColor;
-			outputNormal = inputNormal;
-			outputPosition = inputPosition;
-		}
+			if (outputPosition.w <= 0.0f)
+			{
+				outputColor = inputColor;
+				outputNormal = inputNormal;
+				outputPosition = inputPosition;
+			}
+			else
+			{
+				float4 inputPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
+				inputPositionLocal /= inputPositionLocal.w;
 
-		// TODO: Perform actually reasonable blending (could also use weights that depend on the distance to the splat center)
-		// Pull and push phase: only accumulate weighted color if splats that are in a certain depth range (otherwise take color of closest one)
-		if (texelBlending && (pullPushLevel == 1) && (outputColor.w > 0))
-		{
-			outputColor /= outputColor.w;
+				float3 inputPositionWorld = mul(inputPositionLocal, World).xyz;
+				float3 inputPositionView = mul(float4(inputPositionWorld, 1), View).xyz;
+
+				float4 outputPositionLocal = mul(outputPosition, WorldViewProjectionInverse);
+				outputPositionLocal /= outputPositionLocal.w;
+
+				float3 outputPositionWorld = mul(outputPositionLocal, World).xyz;
+				float3 outputPositionView = mul(float4(outputPositionWorld, 1), View).xyz;
+
+				float differenceZ = inputPositionView.z - outputPositionView.z;
+
+				if (differenceZ < 0)
+				{
+					outputNormal = inputNormal;
+					outputPosition = inputPosition;
+
+					if (!texelBlending || (differenceZ < -blendRange))
+					{
+						outputColor = inputColor;
+					}
+					else
+					{
+						float blendWeight = 1.0f;
+						outputColor.rgb += blendWeight * inputColor.rgb;
+						outputColor.w += blendWeight * inputColor.w;
+					}
+				}
+				else if (texelBlending && (differenceZ < blendRange))
+				{
+					float blendWeight = 1.0f;
+					outputColor.rgb += blendWeight * inputColor.rgb;
+					outputColor.w += blendWeight * inputColor.w;
+				}
+			}
+
+			// Normalize accumulated blended color
+			if (texelBlending && (outputColor.w > 0.0f))
+			{
+				outputColor /= outputColor.w;
+			}
 		}
 	}
 
