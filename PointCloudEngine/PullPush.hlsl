@@ -1,6 +1,6 @@
 #include "GroundTruth.hlsl"
 
-//#define DEBUG_SINGLE_QUAD
+#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -46,6 +46,27 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, f
 	bool isInsideBottomEdge = dot(position - quadBottomRight, quadBottomNormal) > 0;
 
 	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
+}
+
+float3 GetRayPlaneIntersectionPoint(float3 rayOrigin, float3 rayDirection, float3 planeOrigin, float3 planeNormal)
+{
+	// Assume that ray and plane are not parallel
+	float distanceAlongRay = dot(planeNormal, planeOrigin - rayOrigin) / dot(rayDirection, planeNormal);
+
+	return rayOrigin + distanceAlongRay * rayDirection;
+}
+
+bool IsInsideSplat(float2 positionNDC, float3 splatPositionWorld, float3 splatNormalWorld)
+{
+	float4 positionWorld = mul(float4(positionNDC, 0, 1), WorldViewProjectionInverse);
+	positionWorld /= positionWorld.w;
+	positionWorld = mul(positionWorld, World);
+
+	float3 rayDirection = positionWorld.xyz - cameraPosition;
+
+	float3 intersection = GetRayPlaneIntersectionPoint(positionWorld.xyz, rayDirection, splatPositionWorld, splatNormalWorld);
+
+	return distance(intersection, splatPositionWorld) < splatSize;
 }
 
 [numthreads(32, 32, 1)]
@@ -144,11 +165,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 	texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
 	texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
-	// Only color the texel if all of its texel corners are inside the projected quad
-	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
+	if (IsInsideSplat(texelTopLeftNDC, pointPositionWorld, pointNormalWorld)
+		&& IsInsideSplat(texelTopRightNDC, pointPositionWorld, pointNormalWorld)
+		&& IsInsideSplat(texelBottomLeftNDC, pointPositionWorld, pointNormalWorld)
+		&& IsInsideSplat(texelBottomRightNDC, pointPositionWorld, pointNormalWorld))
 	{
 		outputColorTexture[texel] = float4(0, 1, 0, 1);
 	}
