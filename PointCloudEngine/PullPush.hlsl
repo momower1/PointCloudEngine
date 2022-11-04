@@ -1,6 +1,6 @@
 #include "GroundTruth.hlsl"
 
-#define DEBUG_SINGLE_QUAD
+//#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -307,10 +307,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
 					if ((inputPosition.w > 0.0f)
-						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
+						&& IsInsideSplat(texelTopLeftNDC, quadPositionWorld, orientedSplat ? quadNormalWorld : -cameraForward)
+						&& IsInsideSplat(texelTopRightNDC, quadPositionWorld, orientedSplat ? quadNormalWorld : -cameraForward)
+						&& IsInsideSplat(texelBottomLeftNDC, quadPositionWorld, orientedSplat ? quadNormalWorld : -cameraForward)
+						&& IsInsideSplat(texelBottomRightNDC, quadPositionWorld, orientedSplat ? quadNormalWorld : -cameraForward))
 					{
 						// Blend splats together that are within a certain z-range to the closest surface or only keep the closest splat
 						if (texelBlending)
