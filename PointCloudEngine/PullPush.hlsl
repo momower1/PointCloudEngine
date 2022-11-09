@@ -134,8 +134,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 	// Debug: Split quad into two triangles and check for each texel if its center is contained or not
-	if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy)
-		|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+	if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy))
+		//|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
 	{
 		color.g += 1.0f;
 	}
@@ -153,6 +153,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 	// - make sure that point inside triangle check works correctly
 	// - compute triangle-triangle area intersection and represent the intersection area as a set of triangles
 	// - for each of the area triangles, perform point inside triangle check and verify result visually
+
+	// Brute force idea for filling the overlap area with triangles
+	// - just take any 3 intersection points (or contained vertex) and create first triangle
+	// - take other 3 intersection points and add triangle if it does not intersect with any previously added triangle
+	// - repeat until no more triangles can be added
 
 	outputColorTexture[id.xy] = color;
 	return;
