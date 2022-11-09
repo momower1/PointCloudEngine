@@ -49,28 +49,13 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, f
 	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
 }
 
-bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
+bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3, float2 n1, float2 n2, float2 n3)
 {
-	// Use barycentric coordinates to determine if the point is inside or outside of the triangle
-	float3x3 M =
-	{
-		t2.x * t3.y - t3.x * t2.y, t2.y - t3.y, t3.x - t2.x,
-		t3.x * t1.y - t1.x * t3.y, t3.y - t1.y, t1.x - t3.x,
-		t1.x * t2.y - t2.x * t1.y, t1.x - t2.y, t2.x - t1.x
-	};
+	bool isInsideEdge1 = dot(position - t1, n1) > 0;
+	bool isInsideEdge2 = dot(position - t2, n2) > 0;
+	bool isInsideEdge3 = dot(position - t3, n3) > 0;
 
-	float twoA = t1.x * (t2.y - t3.y) + t2.x * (t3.y - t1.y) + t3.x * (t1.y - t2.y);
-
-	float3 barycentricCoordinates = (1.0f / twoA) * mul(M, float3(1, position.x, position.y));
-
-	return (barycentricCoordinates.x > 0) && (barycentricCoordinates.y > 0) && (barycentricCoordinates.z > 0);
-
-	float twoAInv = 1.0f / (t1.x * (t2.y - t3.y) + t2.x * (t3.y - t1.y) + t3.x * (t1.y - t2.y));
-	float lambda1 = dot(float3(t2.x * t3.y - t3.x * t2.y, t2.y - t3.y, t3.x - t2.x), float3(1, position.x, position.y));
-	float lambda2 = dot(float3(t3.x * t1.y - t1.x * t3.y, t3.y - t1.y, t1.x - t3.x), float3(1, position.x, position.y));
-	float lambda3 = dot(float3(t1.x * t2.y - t2.x * t1.y, t1.x - t2.y, t2.x - t1.x), float3(1, position.x, position.y));
-
-	return (lambda1 > 0) && (lambda2 > 0) && (lambda3 > 0);
+	return isInsideEdge1 && isInsideEdge2&& isInsideEdge3;
 }
 
 [numthreads(32, 32, 1)]
@@ -125,8 +110,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 	else
 	{
+		float2 quadLeftNormal = GetPerpendicularVector(quadTopLeftNDC.xy - quadBottomLeftNDC.xy);
+		float2 quadTopNormal = GetPerpendicularVector(quadTopRightNDC.xy - quadTopLeftNDC.xy);
+		float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
+		float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
+		float2 quadDiagonalNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadTopRightNDC.xy);
+
 		// Debug: Split quad into two triangles and check for each texel if its center is contained or not
-		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy))
+		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadLeftNormal, quadTopNormal, quadDiagonalNormal))
 			//|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
 		{
 			outputColorTexture[id.xy] = float4(0, 1, 0, 1);
@@ -140,7 +131,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	// Idea to make sure that this works correctly, no need to do rasterization :-)
 	// - make sure that point inside triangle check works correctly
 	// - compute triangle-triangle area intersection and represent the intersection area as a set of triangles
-	// - for each of the area triangles, perform point inside triangle check and verify result
+	// - for each of the area triangles, perform point inside triangle check and verify result visually
 
 	return;
 #endif
