@@ -1,5 +1,6 @@
 #include "GroundTruth.hlsl"
 
+#define DEBUG_SPLAT_TEXEL_OVERLAP
 //#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
@@ -48,6 +49,30 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, f
 	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
 }
 
+bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
+{
+	// Use barycentric coordinates to determine if the point is inside or outside of the triangle
+	float3x3 M =
+	{
+		t2.x * t3.y - t3.x * t2.y, t2.y - t3.y, t3.x - t2.x,
+		t3.x * t1.y - t1.x * t3.y, t3.y - t1.y, t1.x - t3.x,
+		t1.x * t2.y - t2.x * t1.y, t1.x - t2.y, t2.x - t1.x
+	};
+
+	float twoA = t1.x * (t2.y - t3.y) + t2.x * (t3.y - t1.y) + t3.x * (t1.y - t2.y);
+
+	float3 barycentricCoordinates = (1.0f / twoA) * mul(M, float3(1, position.x, position.y));
+
+	return (barycentricCoordinates.x > 0) && (barycentricCoordinates.y > 0) && (barycentricCoordinates.z > 0);
+
+	float twoAInv = 1.0f / (t1.x * (t2.y - t3.y) + t2.x * (t3.y - t1.y) + t3.x * (t1.y - t2.y));
+	float lambda1 = dot(float3(t2.x * t3.y - t3.x * t2.y, t2.y - t3.y, t3.x - t2.x), float3(1, position.x, position.y));
+	float lambda2 = dot(float3(t3.x * t1.y - t1.x * t3.y, t3.y - t1.y, t1.x - t3.x), float3(1, position.x, position.y));
+	float lambda3 = dot(float3(t1.x * t2.y - t2.x * t1.y, t1.x - t2.y, t2.x - t1.x), float3(1, position.x, position.y));
+
+	return (lambda1 > 0) && (lambda2 > 0) && (lambda3 > 0);
+}
+
 [numthreads(32, 32, 1)]
 void CS(uint3 id : SV_DispatchThreadID)
 {
@@ -56,6 +81,64 @@ void CS(uint3 id : SV_DispatchThreadID)
 		outputColorTexture[id.xy] = inputColorTexture.SampleLevel(samplerState, (id.xy + float2(0.5f, 0.5f)) / resolutionOutput, 0);
 		return;
 	}
+
+#ifdef DEBUG_SPLAT_TEXEL_OVERLAP
+	// Compute overlapping area between a projected quad shaped splat and a texel in screen space (2D)
+	float3 quadPositionWorld = float3(0, -1, 1);
+	float3 quadNormalWorld = float3(0, 1, 0);
+
+	// Construct a quad in world space
+	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+	float3 quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
+	float3 quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));;
+
+	float3 quadTopLeft = quadPositionWorld + quadUp - quadRight;
+	float3 quadTopRight = quadPositionWorld + quadUp + quadRight;
+	float3 quadBottomLeft = quadPositionWorld - quadUp - quadRight;
+	float3 quadBottomRight = quadPositionWorld - quadUp + quadRight;
+
+	// Project quad
+	float4x4 VP = mul(View, Projection);
+	float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
+	float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
+	float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
+	float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
+
+	// Homogeneous division
+	quadTopLeftNDC /= quadTopLeftNDC.w;
+	quadTopRightNDC /= quadTopRightNDC.w;
+	quadBottomLeftNDC /= quadBottomLeftNDC.w;
+	quadBottomRightNDC /= quadBottomRightNDC.w;
+
+	float2 texelNDC = resolutionPullPush * ((id.xy + float2(0.5f, 0.5f)) / (float)resolutionOutput);
+	texelNDC = 2 * (texelNDC / float2(resolutionX, resolutionY)) - 1;
+	texelNDC.y *= -1;
+
+	float vertexSizeNDC = 0.01f;
+
+	if ((distance(texelNDC, quadTopLeftNDC.xy) < vertexSizeNDC)
+		|| (distance(texelNDC, quadTopRightNDC.xy) < vertexSizeNDC)
+		|| (distance(texelNDC, quadBottomLeftNDC.xy) < vertexSizeNDC)
+		|| (distance(texelNDC, quadBottomRightNDC.xy) < vertexSizeNDC))
+	{
+		outputColorTexture[id.xy] = float4(0, 0, 1, 1);
+	}
+	else
+	{
+		// Debug: Split quad into two triangles and check for each texel if its center is contained or not
+		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy))
+			//|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
+		{
+			outputColorTexture[id.xy] = float4(0, 1, 0, 1);
+		}
+		else
+		{
+			outputColorTexture[id.xy] = float4(0, 0, 0, 1);
+		}
+	}
+
+	return;
+#endif
 
 #ifdef DEBUG_SINGLE_QUAD
 	float3 pointPositionWorld = float3(0, -1, 1);
