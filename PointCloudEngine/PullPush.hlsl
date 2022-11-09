@@ -39,6 +39,11 @@ float2 GetPerpendicularVector(float2 v)
 	return float2(v.y, -v.x);
 }
 
+float2 FlipVectorIntoDirection(float2 v, float2 direction)
+{
+	return v * sign(dot(v, direction));
+}
+
 bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, float2 quadLeftNormal, float2 quadTopNormal, float2 quadRightNormal, float2 quadBottomNormal)
 {
 	bool isInsideTopEdge = dot(position - quadTopLeft, quadTopNormal) > 0;
@@ -49,13 +54,31 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, f
 	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
 }
 
-bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3, float2 n1, float2 n2, float2 n3)
+bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
 {
-	bool isInsideEdge1 = dot(position - t1, n1) > 0;
-	bool isInsideEdge2 = dot(position - t2, n2) > 0;
-	bool isInsideEdge3 = dot(position - t3, n3) > 0;
+	// Construct triangle edges
+	float2 e12 = t2 - t1;
+	float2 e13 = t3 - t1;
+	float2 e23 = t3 - t2;
 
-	return isInsideEdge1 && isInsideEdge2&& isInsideEdge3;
+	// Get normal vector perpendicular to each edge
+	float2 n12 = GetPerpendicularVector(e12);
+	float2 n13 = GetPerpendicularVector(e13);
+	float2 n23 = GetPerpendicularVector(e23);
+
+	// Make sure that the edge normals point towards the triangle center
+	float2 center = (t1 + t2 + t3) / 3.0f;
+	n12 = FlipVectorIntoDirection(n12, center - t1);
+	n13 = FlipVectorIntoDirection(n13, center - t1);
+	n23 = FlipVectorIntoDirection(n23, center - t2);
+
+	// Check on which side of each triangle edge the point lies
+	bool isInsideEdge12 = dot(position - t1, n12) > 0;
+	bool isInsideEdge13 = dot(position - t1, n13) > 0;
+	bool isInsideEdge23 = dot(position - t3, n23) > 0;
+
+	// The point can only be inside the triangle if it is inside all edges
+	return isInsideEdge12 && isInsideEdge13 && isInsideEdge23;
 }
 
 [numthreads(32, 32, 1)]
@@ -117,8 +140,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		float2 quadDiagonalNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadTopRightNDC.xy);
 
 		// Debug: Split quad into two triangles and check for each texel if its center is contained or not
-		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadLeftNormal, quadTopNormal, quadDiagonalNormal)
-			|| IsInsideTriangle(texelNDC, quadBottomRightNDC.xy, quadBottomRightNDC.xy, quadTopRightNDC.xy, quadRightNormal, quadBottomNormal, -quadDiagonalNormal))
+		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy)
+			|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
 		{
 			outputColorTexture[id.xy] = float4(0, 1, 0, 1);
 		}
