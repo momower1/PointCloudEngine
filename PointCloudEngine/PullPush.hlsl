@@ -117,8 +117,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		float2 quadDiagonalNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadTopRightNDC.xy);
 
 		// Debug: Split quad into two triangles and check for each texel if its center is contained or not
-		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadLeftNormal, quadTopNormal, quadDiagonalNormal))
-			//|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
+		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadLeftNormal, quadTopNormal, quadDiagonalNormal)
+			|| IsInsideTriangle(texelNDC, quadBottomRightNDC.xy, quadBottomRightNDC.xy, quadTopRightNDC.xy, quadRightNormal, quadBottomNormal, -quadDiagonalNormal))
 		{
 			outputColorTexture[id.xy] = float4(0, 1, 0, 1);
 		}
