@@ -137,6 +137,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 	}
 
+	// Idea to make sure that this works correctly, no need to do rasterization :-)
+	// - make sure that point inside triangle check works correctly
+	// - compute triangle-triangle area intersection and represent the intersection area as a set of triangles
+	// - for each of the area triangles, perform point inside triangle check and verify result
+
 	return;
 #endif
 
