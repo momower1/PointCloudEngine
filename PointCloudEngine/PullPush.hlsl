@@ -92,8 +92,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 #ifdef DEBUG_SPLAT_TEXEL_OVERLAP
 	// Compute overlapping area between a projected quad shaped splat and a texel in screen space (2D)
-	float3 quadPositionWorld = float3(0, -1, 1);
-	float3 quadNormalWorld = float3(0, 1, 0);
+	float3 quadPositionWorld = float3(0, 0, 1);
+	float3 quadNormalWorld = normalize(float3(0, 1, -1));
 
 	// Construct a quad in world space
 	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
@@ -122,6 +122,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	texelNDC = 2 * (texelNDC / float2(resolutionX, resolutionY)) - 1;
 	texelNDC.y *= -1;
 
+	float4 color = { 0, 0, 0, 1 };
 	float vertexSizeNDC = 0.01f;
 
 	if ((distance(texelNDC, quadTopLeftNDC.xy) < vertexSizeNDC)
@@ -129,26 +130,23 @@ void CS(uint3 id : SV_DispatchThreadID)
 		|| (distance(texelNDC, quadBottomLeftNDC.xy) < vertexSizeNDC)
 		|| (distance(texelNDC, quadBottomRightNDC.xy) < vertexSizeNDC))
 	{
-		outputColorTexture[id.xy] = float4(0, 0, 1, 1);
+		color.b += 1.0f;
 	}
-	else
-	{
-		float2 quadLeftNormal = GetPerpendicularVector(quadTopLeftNDC.xy - quadBottomLeftNDC.xy);
-		float2 quadTopNormal = GetPerpendicularVector(quadTopRightNDC.xy - quadTopLeftNDC.xy);
-		float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
-		float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
-		float2 quadDiagonalNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadTopRightNDC.xy);
 
-		// Debug: Split quad into two triangles and check for each texel if its center is contained or not
-		if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy)
-			|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
-		{
-			outputColorTexture[id.xy] = float4(0, 1, 0, 1);
-		}
-		else
-		{
-			outputColorTexture[id.xy] = float4(0, 0, 0, 1);
-		}
+	// Debug: Split quad into two triangles and check for each texel if its center is contained or not
+	if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy)
+		|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+	{
+		color.g += 1.0f;
+	}
+
+	float2 triangleNDC1 = { -0.5f, -0.5f };
+	float2 triangleNDC2 = { 0.5f, 0.5f };
+	float2 triangleNDC3 = { -0.5f, 0.5f };
+
+	if (IsInsideTriangle(texelNDC, triangleNDC1, triangleNDC2, triangleNDC3))
+	{
+		color.r += 1.0f;
 	}
 
 	// Idea to make sure that this works correctly, no need to do rasterization :-)
@@ -156,6 +154,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	// - compute triangle-triangle area intersection and represent the intersection area as a set of triangles
 	// - for each of the area triangles, perform point inside triangle check and verify result visually
 
+	outputColorTexture[id.xy] = color;
 	return;
 #endif
 
