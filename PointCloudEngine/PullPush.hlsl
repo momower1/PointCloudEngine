@@ -161,11 +161,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 		color.g += 1.0f;
 	}
 
-	float2 triangleNDC1 = { -0.5f, -0.5f };
-	float2 triangleNDC2 = { 0.5f, 0.5f };
-	float2 triangleNDC3 = { -0.5f, 0.5f };
+	float aspectRatio = resolutionX / (float)resolutionY;
+	float2 texelTopLeftNDC = { -0.5f, -0.5f * aspectRatio };
+	float2 texelTopRightNDC = { 0.5f, -0.5f * aspectRatio };
+	float2 texelBottomLeftNDC = { -0.5f, 0.5f * aspectRatio };
+	float2 texelBottomRightNDC = { 0.5f, 0.5f * aspectRatio };
 
-	if (IsInsideTriangle(texelNDC, triangleNDC1, triangleNDC2, triangleNDC3))
+	if (IsInsideTriangle(texelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomLeftNDC)
+		|| IsInsideTriangle(texelNDC, texelBottomLeftNDC, texelTopRightNDC, texelBottomRightNDC))
 	{
 		color.r += 1.0f;
 	}
@@ -180,42 +183,44 @@ void CS(uint3 id : SV_DispatchThreadID)
 	// - take other 3 intersection points and add triangle if it does not intersect with any previously added triangle
 	// - repeat until no more triangles can be added
 
-	// Perform line-line intersection for two triangles
-	float2 origins[] =
+	// Perform line-line intersection for texel against triangles
+	float2 texelOrigins[] =
 	{
-		triangleNDC1,
-		triangleNDC1,
-		triangleNDC2
+		texelTopLeftNDC,
+		texelTopLeftNDC,
+		texelBottomRightNDC,
+		texelBottomRightNDC
 	};
 
-	float2 directions[] =
+	float2 texelDirections[] =
 	{
-		triangleNDC2 - triangleNDC1,
-		triangleNDC3 - triangleNDC1,
-		triangleNDC3 - triangleNDC2
+		texelTopRightNDC - texelTopLeftNDC,
+		texelBottomLeftNDC - texelTopLeftNDC,
+		texelTopRightNDC - texelBottomRightNDC,
+		texelBottomLeftNDC -texelBottomRightNDC
 	};
 
-	float2 originsOther[] =
+	float2 triangleOrigins[] =
 	{
 		quadTopLeftNDC.xy,
 		quadTopLeftNDC.xy,
 		quadTopRightNDC.xy
 	};
 
-	float2 directionsOther[] =
+	float2 triangleDirections[] =
 	{
 		quadBottomLeftNDC.xy - quadTopLeftNDC.xy,
 		quadTopRightNDC.xy - quadTopLeftNDC.xy,
 		quadBottomLeftNDC.xy - quadTopRightNDC.xy
 	};
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
 			float2 intersection;
 			
-			if (GetLineSegmentIntersection(origins[i], directions[i], originsOther[j], directionsOther[j], intersection))
+			if (GetLineSegmentIntersection(texelOrigins[i], texelDirections[i], triangleOrigins[j], triangleDirections[j], intersection))
 			{
 				if (distance(texelNDC, intersection) < vertexSizeNDC)
 				{
@@ -225,34 +230,40 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 	}
 
-	float2 vertices[] =
+	float2 texelVertices[] =
 	{
-		triangleNDC1,
-		triangleNDC2,
-		triangleNDC3
+		texelTopLeftNDC,
+		texelBottomLeftNDC,
+		texelTopRightNDC,
+		texelBottomRightNDC
 	};
 
-	float2 verticesOther[] =
+	float2 triangleVertices[] =
 	{
 		quadTopLeftNDC.xy,
 		quadTopRightNDC.xy,
 		quadBottomLeftNDC.xy
 	};
 
-	// Check if triangle vertex is contained in the other triangle
-	for (int k = 0; k < 3; k++)
+	// Check if texel vertices are contained in the triangle
+	for (int k = 0; k < 4; k++)
 	{
-		if (IsInsideTriangle(vertices[k], verticesOther[0], verticesOther[1], verticesOther[2]))
+		if (IsInsideTriangle(texelVertices[k], triangleVertices[0], triangleVertices[1], triangleVertices[2]))
 		{
-			if (distance(texelNDC, vertices[k]) < vertexSizeNDC)
+			if (distance(texelNDC, texelVertices[k]) < vertexSizeNDC)
 			{
 				color.rgb += float3(1, 1, 1);
 			}
 		}
+	}
 
-		if (IsInsideTriangle(verticesOther[k], vertices[0], vertices[1], vertices[2]))
+	// Check if triangle vertex is contained in the other texel (split texel in two triangles)
+	for (int k = 0; k < 3; k++)
+	{
+		if (IsInsideTriangle(triangleVertices[k], texelVertices[0], texelVertices[1], texelVertices[2])
+			|| IsInsideTriangle(triangleVertices[k], texelVertices[1], texelVertices[2], texelVertices[3]))
 		{
-			if (distance(texelNDC, verticesOther[k]) < vertexSizeNDC)
+			if (distance(texelNDC, triangleVertices[k]) < vertexSizeNDC)
 			{
 				color.rgb += float3(1, 1, 1);
 			}
