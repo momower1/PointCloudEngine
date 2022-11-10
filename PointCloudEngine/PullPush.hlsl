@@ -53,6 +53,18 @@ float2 GetLineLineIntersection(float2 o1, float2 d1, float2 o2, float2 d2)
 	return o2 + lambda2 * d2;
 }
 
+bool GetLineSegmentIntersection(float2 o1, float2 d1, float2 o2, float2 d2, out float2 intersection)
+{
+	// Assume that the lines are not parallel (otherwise division by zero)
+	// Both lines have origin and direction, calculate distance along second line to the intersection point
+	// Need to explicitly calculate both lambdas, otherwise there is a configuration where one of them is incorrect
+	float lambda1 = (d2.x * o1.y - d2.x * o2.y - d2.y * o1.x + d2.y * o2.x) / (d2.y * d1.x - d2.x * d1.y);
+	float lambda2 = (d1.x * o2.y - d1.x * o1.y - d1.y * o2.x + d1.y * o1.x) / (d1.y * d2.x - d1.x * d2.y);
+	intersection = o2 + lambda2 * d2;
+
+	return (lambda1 >= 0) && (lambda1 <= 1) && (lambda2 >= 0) && (lambda2 <= 1);
+}
+
 bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, float2 quadLeftNormal, float2 quadTopNormal, float2 quadRightNormal, float2 quadBottomNormal)
 {
 	bool isInsideTopEdge = dot(position - quadTopLeft, quadTopNormal) > 0;
@@ -194,18 +206,21 @@ void CS(uint3 id : SV_DispatchThreadID)
 	{
 		quadBottomLeftNDC.xy - quadTopLeftNDC.xy,
 		quadTopRightNDC.xy - quadTopLeftNDC.xy,
-		quadTopRightNDC.xy - quadBottomLeftNDC.xy
+		quadBottomLeftNDC.xy - quadTopRightNDC.xy
 	};
 
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			float2 intersection = GetLineLineIntersection(origins[i], directions[i], originsOther[j], directionsOther[j]);
-
-			if (distance(texelNDC, intersection) < vertexSizeNDC)
+			float2 intersection;
+			
+			if (GetLineSegmentIntersection(origins[i], directions[i], originsOther[j], directionsOther[j], intersection))
 			{
-				color.rgb += float3(1, 1, 1);
+				if (distance(texelNDC, intersection) < vertexSizeNDC)
+				{
+					color.rgb += float3(1, 1, 1);
+				}
 			}
 		}
 	}
