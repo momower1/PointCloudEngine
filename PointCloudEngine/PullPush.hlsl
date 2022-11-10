@@ -225,6 +225,40 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 	}
 
+	float2 vertices[] =
+	{
+		triangleNDC1,
+		triangleNDC2,
+		triangleNDC3
+	};
+
+	float2 verticesOther[] =
+	{
+		quadTopLeftNDC.xy,
+		quadTopRightNDC.xy,
+		quadBottomLeftNDC.xy
+	};
+
+	// Check if triangle vertex is contained in the other triangle
+	for (int k = 0; k < 3; k++)
+	{
+		if (IsInsideTriangle(vertices[k], verticesOther[0], verticesOther[1], verticesOther[2]))
+		{
+			if (distance(texelNDC, vertices[k]) < vertexSizeNDC)
+			{
+				color.rgb += float3(1, 1, 1);
+			}
+		}
+
+		if (IsInsideTriangle(verticesOther[k], vertices[0], vertices[1], vertices[2]))
+		{
+			if (distance(texelNDC, verticesOther[k]) < vertexSizeNDC)
+			{
+				color.rgb += float3(1, 1, 1);
+			}
+		}
+	}
+
 	outputColorTexture[id.xy] = color;
 	return;
 #endif
