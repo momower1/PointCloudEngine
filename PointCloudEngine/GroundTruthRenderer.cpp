@@ -53,6 +53,55 @@ void GroundTruthRenderer::Update()
 	{
 		SAFE_RELEASE(pullPush);
 	}
+
+	if (Input::GetKeyDown(DirectX::Keyboard::T))
+	{
+		hr = SaveWICTextureToFile(d3d11DevCon, backBufferTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L"Color.png").c_str());
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+
+		// Depth without blending (depth buffer is cleared when using blending)
+		if (settings->useBlending)
+		{
+			settings->useBlending = false;
+			Redraw(false);
+			settings->useBlending = true;
+		}
+		else
+		{
+			Redraw(false);
+		}
+
+		D3D11_TEXTURE2D_DESC desc;
+		depthStencilTexture->GetDesc(&desc);
+		desc.Format = DXGI_FORMAT_R32_FLOAT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+
+		ID3D11Texture2D* tex = NULL;
+		hr = d3d11Device->CreateTexture2D(&desc, NULL, &tex);
+		ERROR_MESSAGE_ON_HR(hr, L"FAIL!");
+
+		d3d11DevCon->CopyResource(tex, depthStencilTexture);
+
+		hr = SaveDDSTextureToFile(d3d11DevCon, tex, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L"Depth.dds").c_str());
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveDDSTextureToFile) + L" failed in " + NAMEOF(SaveDDSTextureToFile));
+
+		hr = SaveWICTextureToFile(d3d11DevCon, tex, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L"Depth.png").c_str());
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+
+		tex->Release();
+
+		// Normal Screen
+		constantBufferData.drawNormals = true;
+		constantBufferData.normalsInScreenSpace = true;
+		Redraw(false);
+		constantBufferData.drawNormals = false;
+
+		hr = SaveWICTextureToFile(d3d11DevCon, backBufferTexture, GUID_ContainerFormatPng, (executableDirectory + L"/Screenshots/" + std::to_wstring(time(0)) + L"Normal.png").c_str());
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(SaveWICTextureToFile) + L" failed in " + NAMEOF(SaveScreenshotToFile));
+
+		std::cout << "done" << std::endl;
+	}
 }
 
 void GroundTruthRenderer::Draw()
