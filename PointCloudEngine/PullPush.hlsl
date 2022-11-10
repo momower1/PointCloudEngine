@@ -44,6 +44,15 @@ float2 FlipVectorIntoDirection(float2 v, float2 direction)
 	return v * sign(dot(v, direction));
 }
 
+float2 GetLineLineIntersection(float2 o1, float2 d1, float2 o2, float2 d2)
+{
+	// Assume that the lines are not parallel (otherwise division by zero)
+	// Both lines have origin and direction, calculate distance along second line to the intersection point
+	float lambda2 = (d1.x * o2.y - d1.x * o1.y - d1.y * o2.x + d1.y * o1.x) / (d1.y * d2.x - d1.x * d2.y);
+
+	return o2 + lambda2 * d2;
+}
+
 bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, float2 quadLeftNormal, float2 quadTopNormal, float2 quadRightNormal, float2 quadBottomNormal)
 {
 	bool isInsideTopEdge = dot(position - quadTopLeft, quadTopNormal) > 0;
@@ -158,6 +167,48 @@ void CS(uint3 id : SV_DispatchThreadID)
 	// - just take any 3 intersection points (or contained vertex) and create first triangle
 	// - take other 3 intersection points and add triangle if it does not intersect with any previously added triangle
 	// - repeat until no more triangles can be added
+
+	// Perform line-line intersection for two triangles
+	float2 origins[] =
+	{
+		triangleNDC1,
+		triangleNDC1,
+		triangleNDC2
+	};
+
+	float2 directions[] =
+	{
+		triangleNDC2 - triangleNDC1,
+		triangleNDC3 - triangleNDC1,
+		triangleNDC3 - triangleNDC2
+	};
+
+	float2 originsOther[] =
+	{
+		quadTopLeftNDC.xy,
+		quadTopLeftNDC.xy,
+		quadTopRightNDC.xy
+	};
+
+	float2 directionsOther[] =
+	{
+		quadBottomLeftNDC.xy - quadTopLeftNDC.xy,
+		quadTopRightNDC.xy - quadTopLeftNDC.xy,
+		quadTopRightNDC.xy - quadBottomLeftNDC.xy
+	};
+
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			float2 intersection = GetLineLineIntersection(origins[i], directions[i], originsOther[j], directionsOther[j]);
+
+			if (distance(texelNDC, intersection) < vertexSizeNDC)
+			{
+				color.rgb += float3(1, 1, 1);
+			}
+		}
+	}
 
 	outputColorTexture[id.xy] = color;
 	return;
