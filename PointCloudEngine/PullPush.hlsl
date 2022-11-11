@@ -347,14 +347,14 @@ void CS(uint3 id : SV_DispatchThreadID)
 		{
 			if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]))
 			{
-				color.rgb = float3((i + 1) / (float)overlapVertexCount, 0, (i + 1) / (float)overlapVertexCount);
+				color.rgb = float3((i + 1) / (float)overlapVertexCount, (i + 1) / (float)overlapVertexCount, 0);
 			}
 		}
 
 		// Last triangle
 		if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]))
 		{
-			color.rgb = float3(1, 0, 1);
+			color.rgb = float3(1, 1, 0);
 		}
 	}
 
