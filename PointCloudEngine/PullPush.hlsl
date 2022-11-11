@@ -72,27 +72,9 @@ void CS(uint3 id : SV_DispatchThreadID)
 	quadBottomLeftNDC /= quadBottomLeftNDC.w;
 	quadBottomRightNDC /= quadBottomRightNDC.w;
 
-	float2 texelNDC = resolutionPullPush * ((id.xy + float2(0.5f, 0.5f)) / (float)resolutionOutput);
-	texelNDC = 2 * (texelNDC / float2(resolutionX, resolutionY)) - 1;
-	texelNDC.y *= -1;
-
-	float4 color = { 0, 0, 0, 1 };
-	float vertexSizeNDC = 0.01f;
-
-	// Color the quad vertices blue
-	if ((distance(texelNDC, quadTopLeftNDC.xy) < vertexSizeNDC)
-		|| (distance(texelNDC, quadTopRightNDC.xy) < vertexSizeNDC)
-		|| (distance(texelNDC, quadBottomLeftNDC.xy) < vertexSizeNDC)
-		|| (distance(texelNDC, quadBottomRightNDC.xy) < vertexSizeNDC))
-	{
-		color.b += 1.0f;
-	}
-
-	// Color the quad green
-	if (IsInsideQuad(texelNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
-	{
-		color.g += 1.0f;
-	}
+	float2 pixelNDC = resolutionPullPush * ((id.xy + float2(0.5f, 0.5f)) / (float)resolutionOutput);
+	pixelNDC = 2 * (pixelNDC / float2(resolutionX, resolutionY)) - 1;
+	pixelNDC.y *= -1;
 
 	float aspectRatio = resolutionX / (float)resolutionY;
 	float2 texelTopLeftNDC = { -0.5f, -0.5f * aspectRatio };
@@ -100,13 +82,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 texelBottomLeftNDC = { -0.5f, 0.5f * aspectRatio };
 	float2 texelBottomRightNDC = { 0.5f, 0.5f * aspectRatio };
 
-	// Color the texel red
-	if (IsInsideQuad(texelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomRightNDC, texelBottomLeftNDC))
-	{
-		color.r += 1.0f;
-	}
-
-	// Perform line-line intersection for texel against quad
 	float2 texelOrigins[] =
 	{
 		texelTopLeftNDC,
@@ -123,6 +98,32 @@ void CS(uint3 id : SV_DispatchThreadID)
 		quadBottomLeftNDC.xy
 	};
 
+	float overlapPercentage = GetTexelQuadOverlapPercentage(texelOrigins, quadOrigins);
+
+	float vertexSizeNDC = 0.01f;
+	float4 color = { 0, 0, 0, 1 };
+
+	// Color the quad vertices blue
+	if ((distance(pixelNDC, quadTopLeftNDC.xy) < vertexSizeNDC)
+		|| (distance(pixelNDC, quadTopRightNDC.xy) < vertexSizeNDC)
+		|| (distance(pixelNDC, quadBottomLeftNDC.xy) < vertexSizeNDC)
+		|| (distance(pixelNDC, quadBottomRightNDC.xy) < vertexSizeNDC))
+	{
+		color.b += 1.0f;
+	}
+
+	// Color the quad green
+	if (IsInsideQuad(pixelNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+	{
+		color.g += 1.0f;
+	}
+
+	// Color the texel red
+	if (IsInsideQuad(pixelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomRightNDC, texelBottomLeftNDC))
+	{
+		color.r += 1.0f;
+	}
+
 	// The overlap area polygon of two quads can at most have 8 vertices
 	float2 overlapVertices[8];
 	uint overlapVertexCount = 0;
@@ -133,25 +134,20 @@ void CS(uint3 id : SV_DispatchThreadID)
 	{
 		SortConvexPolygonVerticesClockwise(overlapVertexCount, overlapVertices);
 
-		float overlapArea = GetConvexPolygonArea(overlapVertexCount, overlapVertices);
-
 		// Visualize result of fan triangulation
 		for (int i = 0; i < overlapVertexCount - 2; i++)
 		{
-			if (IsInsideTriangle(texelNDC, overlapVertices[0], overlapVertices[i + 1], overlapVertices[i + 2]))
+			if (IsInsideTriangle(pixelNDC, overlapVertices[0], overlapVertices[i + 1], overlapVertices[i + 2]))
 			{
 				color.rgb = float3((i + 1) / (float)(overlapVertexCount - 2), (i + 1) / (float)(overlapVertexCount - 2), 0);
 			}
 		}
+	}
 
-		float texelArea = length(texelTopLeftNDC - texelBottomLeftNDC) * length(texelTopLeftNDC - texelTopRightNDC);
-		float coveredPercentage = overlapArea / texelArea;
-
-		// Visualize covered area percentage with background color
-		if (color.r <= 0.0f && color.g <= 0.0f && color.b <= 0.0f)
-		{
-			color = float4(coveredPercentage, coveredPercentage, coveredPercentage, 1);
-		}
+	// Visualize covered area percentage with background color
+	if (color.r <= 0.0f && color.g <= 0.0f && color.b <= 0.0f)
+	{
+		color = float4(overlapPercentage, overlapPercentage, overlapPercentage, 1);
 	}
 
 	outputColorTexture[id.xy] = color;

@@ -222,3 +222,24 @@ float GetConvexPolygonArea(in uint polygonVertexCount, in float2 polygonVertices
 
 	return polygonArea;
 }
+
+float GetTexelQuadOverlapPercentage(float2 texelClockwise[4], float2 quadClockwise[4])
+{
+	float2 polygonVertices[8];
+	uint polygonVertexCount = 0;
+
+	GetQuadQuadOverlappingPolygon(texelClockwise, quadClockwise, polygonVertexCount, polygonVertices);
+
+	if (polygonVertexCount > 0)
+	{
+		SortConvexPolygonVerticesClockwise(polygonVertexCount, polygonVertices);
+
+		float polygonArea = GetConvexPolygonArea(polygonVertexCount, polygonVertices);
+		float texelArea = GetTriangleArea(texelClockwise[0], texelClockwise[1], texelClockwise[2]) + GetTriangleArea(texelClockwise[2], texelClockwise[3], texelClockwise[0]);
+		float overlapPercentage = polygonArea / texelArea;
+
+		return overlapPercentage;
+	}
+
+	return 0.0f;
+}
