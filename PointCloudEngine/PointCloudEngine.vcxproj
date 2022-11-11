@@ -347,6 +347,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <Image Include="Assets\Icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Geometry.hlsli" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
