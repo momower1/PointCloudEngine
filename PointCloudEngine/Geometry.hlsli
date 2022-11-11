@@ -114,21 +114,12 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, floa
 void GetQuadQuadOverlappingPolygon(in float2 quadClockwise[4], in float2 quadClockwiseOther[4], out uint polygonVertexCount, out float2 polygonVertices[8])
 {
 	// Quad vertices must be given in clockwise/counterclockwise order, otherwise diagonal edges will be constructed
-
-	//float2 quadOrigins[] =
-	//{
-	//	quadTopLeftNDC.xy,		0
-	//	quadTopRightNDC.xy,		1
-	//	quadBottomRightNDC.xy,	2
-	//	quadBottomLeftNDC.xy	3
-	//};
-
 	float2 quadEdges[] =
 	{
-		quadClockwise[1] - quadClockwise[0], // Top edge ->
-		quadClockwise[2] - quadClockwise[1], // Right edge v
-		quadClockwise[3] - quadClockwise[2], // Bottom edge <-
-		quadClockwise[0] - quadClockwise[3] // Left edge ^
+		quadClockwise[1] - quadClockwise[0],
+		quadClockwise[2] - quadClockwise[1],
+		quadClockwise[3] - quadClockwise[2],
+		quadClockwise[0] - quadClockwise[3]
 	};
 
 	float2 quadEdgesOther[] =
@@ -152,22 +143,19 @@ void GetQuadQuadOverlappingPolygon(in float2 quadClockwise[4], in float2 quadClo
 
 			if (GetLineSegmentIntersection(quadClockwise[i], quadEdges[i], quadClockwiseOther[j], quadEdgesOther[j], intersection))
 			{
-				polygonVertices[polygonVertexCount] = intersection;
-				polygonVertexCount++;
+				polygonVertices[polygonVertexCount++] = intersection;
 			}
 		}
 
 		// Also cross check if any vertex of one quad is inside the other quad and add it to the polygon
 		if (IsInsideQuad(quadClockwise[i], quadClockwiseOther[0], quadClockwiseOther[1], quadClockwiseOther[2], quadClockwiseOther[3]))
 		{
-			polygonVertices[polygonVertexCount] = quadClockwise[i];
-			polygonVertexCount++;
+			polygonVertices[polygonVertexCount++] = quadClockwise[i];
 		}
 
 		if (IsInsideQuad(quadClockwiseOther[i], quadClockwise[0], quadClockwise[1], quadClockwise[2], quadClockwise[3]))
 		{
-			polygonVertices[polygonVertexCount] = quadClockwiseOther[i];
-			polygonVertexCount++;
+			polygonVertices[polygonVertexCount++] = quadClockwiseOther[i];
 		}
 	}
 }
