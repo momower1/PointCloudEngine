@@ -1,7 +1,7 @@
 #include "GroundTruth.hlsl"
 #include "Geometry.hlsli"
 
-#define DEBUG_SPLAT_TEXEL_OVERLAP
+//#define DEBUG_SPLAT_TEXEL_OVERLAP
 //#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
@@ -319,7 +319,16 @@ void CS(uint3 id : SV_DispatchThreadID)
 			texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
 			texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
-			float smallestZ = farZ;
+			float2 texelVertices[] =
+			{
+				texelTopLeftNDC.xy,
+				texelTopRightNDC.xy,
+				texelBottomRightNDC.xy,
+				texelBottomLeftNDC.xy
+			};
+
+			float surfaceZ = farZ;
+			float largestOverlapPercentage = 0;
 
 			outputColor = float4(0, 0, 0, 0);
 			outputNormal = float4(0, 0, 0, 0);
@@ -377,58 +386,38 @@ void CS(uint3 id : SV_DispatchThreadID)
 					quadBottomLeftNDC /= quadBottomLeftNDC.w;
 					quadBottomRightNDC /= quadBottomRightNDC.w;
 
-					// Calculate edge normal vectors (pointing towards quad center)
-					float2 quadLeftNormal = GetPerpendicularVector(quadTopLeftNDC.xy - quadBottomLeftNDC.xy);
-					float2 quadTopNormal = GetPerpendicularVector(quadTopRightNDC.xy - quadTopLeftNDC.xy);
-					float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
-					float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
-
-					if ((inputPosition.w > 0.0f)
-						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
-						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
-						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
-						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+					float2 quadVertices[] =
 					{
-						// Blend splats together that are within a certain z-range to the closest surface or only keep the closest splat
-						if (texelBlending)
-						{
-							float differenceZ = quadPositionView.z - smallestZ;
+						quadTopLeftNDC.xy,
+						quadTopRightNDC.xy,
+						quadBottomRightNDC.xy,
+						quadBottomLeftNDC.xy
+					};
 
-							// Splat is closer than the currently closest splat, assign it as the surface splat
-							if (differenceZ < 0)
-							{
-								smallestZ = quadPositionView.z;
-								outputNormal = inputNormal;
-								outputPosition = inputPosition;
+					float overlapPercentage = GetTexelQuadOverlapPercentage(texelVertices, quadVertices);
 
-								// If out of blend range, assign new base color for blending
-								if (differenceZ < -blendRange)
-								{
-									outputColor = inputColor;
-								}
-								else
-								{
-									// Accumulate weighted colors and weights
-									float blendWeight = 1.0f;
-									outputColor.rgb += blendWeight * inputColor.rgb;
-									outputColor.w += blendWeight * inputColor.w;
-								}
-							}
-							else if (differenceZ < blendRange)
-							{
-								// Splat is behind current surface splat but within blend range, so blend colors
-								float blendWeight = 1.0f;
-								outputColor.rgb += blendWeight * inputColor.rgb;
-								outputColor.w += blendWeight * inputColor.w;
-							}
-						}
-						else if (quadPositionView.z < smallestZ)
+					if (inputPosition.w > 0.0f)
+					{
+						// Splat covers the yet largest area of the texel so assign it as the new surface splat
+						if (overlapPercentage > largestOverlapPercentage)
 						{
-							// Keep only the closest splat
-							smallestZ = quadPositionView.z;
-							outputColor = inputColor;
+							largestOverlapPercentage = overlapPercentage;
 							outputNormal = inputNormal;
 							outputPosition = inputPosition;
+
+							if (!texelBlending)
+							{
+								outputColor = inputColor;
+							}
+						}
+
+						// Blend splat colors together
+						if (texelBlending)
+						{
+							// Accumulate weighted colors and weights
+							float blendWeight = overlapPercentage;
+							outputColor.rgb += blendWeight * inputColor.rgb;
+							outputColor.w += blendWeight * inputColor.w;
 						}
 					}
 				}
@@ -455,50 +444,166 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
 		if (inputPosition.w >= 1.0f)
 		{
-			if (outputPosition.w <= 0.0f)
+			uint2 texel = uint2(id.x, id.y);
+
+			// Calculate normalized device coordinates for the four texel corners
+			float2 texelTopLeftNDC = resolutionPullPush * (texel / (float)resolutionOutput);
+			texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
+			float2 texelTopRightNDC = resolutionPullPush * ((texel + uint2(1, 0)) / (float)resolutionOutput);
+			texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
+			float2 texelBottomLeftNDC = resolutionPullPush * ((texel + uint2(0, 1)) / (float)resolutionOutput);
+			texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
+			float2 texelBottomRightNDC = resolutionPullPush * ((texel + uint2(1, 1)) / (float)resolutionOutput);
+			texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
+
+			// Need to invert y-coordinate for correct coordinate system
+			texelTopLeftNDC.y = -texelTopLeftNDC.y;
+			texelTopRightNDC.y = -texelTopRightNDC.y;
+			texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
+			texelBottomRightNDC.y = -texelBottomRightNDC.y;
+
+			float2 texelVertices[] =
+			{
+				texelTopLeftNDC.xy,
+				texelTopRightNDC.xy,
+				texelBottomRightNDC.xy,
+				texelBottomLeftNDC.xy
+			};
+
+			// Transform quad position and normal into world space
+			float4 quadPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
+			quadPositionLocal /= quadPositionLocal.w;
+
+			float3 quadNormalWorld = inputNormal.xyz;
+			float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
+			float3 quadPositionView = mul(float4(quadPositionWorld, 1), View).xyz;
+
+			float3 quadUp;
+			float3 quadRight;
+
+			float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+			float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
+			float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+
+			// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
+			if (orientedSplat)
+			{
+				quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
+				quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
+			}
+			else
+			{
+				quadUp = 0.5f * splatSize * cameraUp;
+				quadRight = 0.5f * splatSize * cameraRight;
+			}
+
+			float3 quadCenter = quadPositionWorld;
+			float3 quadTopLeft = quadCenter + quadUp - quadRight;
+			float3 quadTopRight = quadCenter + quadUp + quadRight;
+			float3 quadBottomLeft = quadCenter - quadUp - quadRight;
+			float3 quadBottomRight = quadCenter - quadUp + quadRight;
+
+			// Project quad
+			float4x4 VP = mul(View, Projection);
+			float4 quadCenterNDC = mul(float4(quadCenter, 1), VP);
+			float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
+			float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
+			float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
+			float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
+
+			// Homogeneous division
+			quadCenterNDC /= quadCenterNDC.w;
+			quadTopLeftNDC /= quadTopLeftNDC.w;
+			quadTopRightNDC /= quadTopRightNDC.w;
+			quadBottomLeftNDC /= quadBottomLeftNDC.w;
+			quadBottomRightNDC /= quadBottomRightNDC.w;
+
+			float2 quadVertices[] =
+			{
+				quadTopLeftNDC.xy,
+				quadTopRightNDC.xy,
+				quadBottomRightNDC.xy,
+				quadBottomLeftNDC.xy
+			};
+
+			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelVertices, quadVertices);
+
+			// Need to compare overlay percentages of input and output, only keep splat with larger overlay
+			if (outputPosition.w >= 0)
+			{
+				// Transform quad position and normal into world space
+				float4 quadPositionLocalOutput = mul(outputPosition, WorldViewProjectionInverse);
+				quadPositionLocalOutput /= quadPositionLocalOutput.w;
+
+				float3 quadNormalWorldOutput = outputNormal.xyz;
+				float3 quadPositionWorldOutput = mul(quadPositionLocalOutput, World).xyz;
+				float3 quadPositionViewOutput = mul(float4(quadPositionWorldOutput, 1), View).xyz;
+
+				float3 quadUpOutput;
+				float3 quadRightOutput;
+
+				// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
+				if (orientedSplat)
+				{
+					quadUpOutput = 0.5f * splatSize * normalize(cross(quadNormalWorldOutput, cameraRight));
+					quadRightOutput = 0.5f * splatSize * normalize(cross(quadNormalWorldOutput, quadUpOutput));
+				}
+				else
+				{
+					quadUpOutput = 0.5f * splatSize * cameraUp;
+					quadRightOutput = 0.5f * splatSize * cameraRight;
+				}
+
+				float3 quadCenterOutput = quadPositionWorldOutput;
+				float3 quadTopLeftOutput = quadCenterOutput + quadUpOutput - quadRightOutput;
+				float3 quadTopRightOutput = quadCenterOutput + quadUpOutput + quadRightOutput;
+				float3 quadBottomLeftOutput = quadCenterOutput - quadUpOutput - quadRightOutput;
+				float3 quadBottomRightOutput = quadCenterOutput - quadUpOutput + quadRightOutput;
+
+				// Project quad
+				float4x4 VP = mul(View, Projection);
+				float4 quadCenterNDCOutput = mul(float4(quadCenterOutput, 1), VP);
+				float4 quadTopLeftNDCOutput = mul(float4(quadTopLeftOutput, 1), VP);
+				float4 quadTopRightNDCOutput = mul(float4(quadTopRightOutput, 1), VP);
+				float4 quadBottomLeftNDCOutput = mul(float4(quadBottomLeftOutput, 1), VP);
+				float4 quadBottomRightNDCOutput = mul(float4(quadBottomRightOutput, 1), VP);
+
+				// Homogeneous division
+				quadCenterNDCOutput /= quadCenterNDCOutput.w;
+				quadTopLeftNDCOutput /= quadTopLeftNDCOutput.w;
+				quadTopRightNDCOutput /= quadTopRightNDCOutput.w;
+				quadBottomLeftNDCOutput /= quadBottomLeftNDCOutput.w;
+				quadBottomRightNDCOutput /= quadBottomRightNDCOutput.w;
+
+				float2 quadVerticesOutput[] =
+				{
+					quadTopLeftNDCOutput.xy,
+					quadTopRightNDCOutput.xy,
+					quadBottomRightNDCOutput.xy,
+					quadBottomLeftNDCOutput.xy
+				};
+
+				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelVertices, quadVerticesOutput);
+
+				if (inputOverlapPercentage > outputOverlapPercentage)
+				{
+					outputColor = inputColor;
+					outputNormal = inputNormal;
+					outputPosition = inputPosition;
+				}
+			}
+
+			if (texelBlending)
+			{
+				float blendWeight = inputOverlapPercentage;
+				outputColor.rgb += blendWeight * inputColor.rgb;
+				outputColor.w += blendWeight * inputColor.w;
+			}
+			else if (inputOverlapPercentage >= 0.99f)
 			{
 				outputColor = inputColor;
 				outputNormal = inputNormal;
 				outputPosition = inputPosition;
-			}
-			else
-			{
-				float4 inputPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
-				inputPositionLocal /= inputPositionLocal.w;
-
-				float3 inputPositionWorld = mul(inputPositionLocal, World).xyz;
-				float3 inputPositionView = mul(float4(inputPositionWorld, 1), View).xyz;
-
-				float4 outputPositionLocal = mul(outputPosition, WorldViewProjectionInverse);
-				outputPositionLocal /= outputPositionLocal.w;
-
-				float3 outputPositionWorld = mul(outputPositionLocal, World).xyz;
-				float3 outputPositionView = mul(float4(outputPositionWorld, 1), View).xyz;
-
-				float differenceZ = inputPositionView.z - outputPositionView.z;
-
-				if (differenceZ < 0)
-				{
-					outputNormal = inputNormal;
-					outputPosition = inputPosition;
-
-					if (!texelBlending || (differenceZ < -blendRange))
-					{
-						outputColor = inputColor;
-					}
-					else
-					{
-						float blendWeight = 1.0f;
-						outputColor.rgb += blendWeight * inputColor.rgb;
-						outputColor.w += blendWeight * inputColor.w;
-					}
-				}
-				else if (texelBlending && (differenceZ < blendRange))
-				{
-					float blendWeight = 1.0f;
-					outputColor.rgb += blendWeight * inputColor.rgb;
-					outputColor.w += blendWeight * inputColor.w;
-				}
 			}
 
 			// Normalize accumulated blended color
