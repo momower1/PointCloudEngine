@@ -89,7 +89,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 	// Color the quad green
-	if (IsInsideQuad(texelNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
+	if (IsInsideQuad(texelNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
 	{
 		color.g += 1.0f;
 	}
@@ -101,10 +101,12 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 texelBottomRightNDC = { 0.5f, 0.5f * aspectRatio };
 
 	// Color the texel red
-	if (IsInsideQuad(texelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomLeftNDC, texelBottomRightNDC))
+	if (IsInsideQuad(texelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomRightNDC, texelBottomLeftNDC))
 	{
 		color.r += 1.0f;
 	}
+
+
 
 	// Idea to make sure that this works correctly, no need to do rasterization :-)
 	// - make sure that point inside triangle check works correctly
@@ -120,66 +122,24 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 texelOrigins[] =
 	{
 		texelTopLeftNDC,
-		texelBottomLeftNDC,
 		texelTopRightNDC,
-		texelBottomRightNDC
-	};
-
-	float2 texelDirections[] =
-	{
-		texelTopRightNDC - texelTopLeftNDC,
-		texelTopLeftNDC - texelBottomLeftNDC,
-		texelBottomRightNDC - texelTopRightNDC,
-		texelBottomLeftNDC - texelBottomRightNDC
+		texelBottomRightNDC,
+		texelBottomLeftNDC
 	};
 
 	float2 quadOrigins[] =
 	{
 		quadTopLeftNDC.xy,
-		quadBottomLeftNDC.xy,
 		quadTopRightNDC.xy,
-		quadBottomRightNDC.xy
-	};
-
-	float2 quadDirections[] =
-	{
-		quadTopRightNDC.xy - quadTopLeftNDC.xy,
-		quadTopLeftNDC.xy - quadBottomLeftNDC.xy,
-		quadBottomRightNDC.xy - quadTopRightNDC.xy,
-		quadBottomLeftNDC.xy - quadBottomRightNDC.xy
+		quadBottomRightNDC.xy,
+		quadBottomLeftNDC.xy
 	};
 
 	// The overlap area polygon of two quads can at most have 8 vertices
 	float2 overlapVertices[8];
 	uint overlapVertexCount = 0;
 
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			float2 intersection;
-			
-			// Perform line segment intersection for all edges
-			if (GetLineSegmentIntersection(texelOrigins[i], texelDirections[i], quadOrigins[j], quadDirections[j], intersection))
-			{
-				overlapVertices[overlapVertexCount] = intersection;
-				overlapVertexCount++;
-			}
-		}
-
-		// Perform vertex inside other quad check for all vertices
-		if (IsInsideQuad(texelOrigins[i], quadOrigins[0], quadOrigins[1], quadOrigins[2], quadOrigins[3]))
-		{
-			overlapVertices[overlapVertexCount] = texelOrigins[i];
-			overlapVertexCount++;
-		}
-
-		if (IsInsideQuad(quadOrigins[i], texelOrigins[0], texelOrigins[1], texelOrigins[2], texelOrigins[3]))
-		{
-			overlapVertices[overlapVertexCount] = quadOrigins[i];
-			overlapVertexCount++;
-		}
-	}
+	GetQuadQuadOverlappingPolygon(texelOrigins, quadOrigins, overlapVertexCount, overlapVertices);
 
 	float2 overlapCenter = { 0, 0 };
 
@@ -355,10 +315,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 	texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
 	// Only color the texel if all of its texel corners are inside the projected quad
-	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
-		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
-		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
-		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
+	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
+		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
+		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
+		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
 	{
 		outputColorTexture[texel] = float4(0, 1, 0, 1);
 	}
@@ -497,10 +457,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
 					if ((inputPosition.w > 0.0f)
-						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
-						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
-						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
-						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
+						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
+						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
+						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
+						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
 					{
 						// Blend splats together that are within a certain z-range to the closest surface or only keep the closest splat
 						if (texelBlending)

@@ -80,7 +80,7 @@ bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
 	return isInsideEdge12 && isInsideEdge13 && isInsideEdge23;
 }
 
-bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, float2 quadBottomLeft, float2 quadBottomRight)
+bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, float2 quadBottomRight, float2 quadBottomLeft)
 {
 	// Construct quad edges
 	float2 eLeft = quadTopLeft - quadBottomLeft;
@@ -109,4 +109,65 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, floa
 
 	// The point can only be inside the quad if it is inside all edges
 	return isInsideLeftEdge && isInsideRightEdge && isInsideTopEdge && isInsideBottomEdge;
+}
+
+void GetQuadQuadOverlappingPolygon(in float2 quadClockwise[4], in float2 quadClockwiseOther[4], out uint polygonVertexCount, out float2 polygonVertices[8])
+{
+	// Quad vertices must be given in clockwise/counterclockwise order, otherwise diagonal edges will be constructed
+
+	//float2 quadOrigins[] =
+	//{
+	//	quadTopLeftNDC.xy,		0
+	//	quadTopRightNDC.xy,		1
+	//	quadBottomRightNDC.xy,	2
+	//	quadBottomLeftNDC.xy	3
+	//};
+
+	float2 quadEdges[] =
+	{
+		quadClockwise[1] - quadClockwise[0], // Top edge ->
+		quadClockwise[2] - quadClockwise[1], // Right edge v
+		quadClockwise[3] - quadClockwise[2], // Bottom edge <-
+		quadClockwise[0] - quadClockwise[3] // Left edge ^
+	};
+
+	float2 quadEdgesOther[] =
+	{
+		quadClockwiseOther[1] - quadClockwiseOther[0],
+		quadClockwiseOther[2] - quadClockwiseOther[1],
+		quadClockwiseOther[3] - quadClockwiseOther[2],
+		quadClockwiseOther[0] - quadClockwiseOther[3]
+	};
+
+	// The overlapping area of the two quads is a polygon with at most 8 vertices
+	polygonVertexCount = 0;
+
+	// Each polygon vertex is either at an intersection of two edges or it is a quad vertex that is contained inside the other quad
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			// Perform line segment intersection for all edges of the first quad against all edges of the other quad
+			float2 intersection;
+
+			if (GetLineSegmentIntersection(quadClockwise[i], quadEdges[i], quadClockwiseOther[j], quadEdgesOther[j], intersection))
+			{
+				polygonVertices[polygonVertexCount] = intersection;
+				polygonVertexCount++;
+			}
+		}
+
+		// Also cross check if any vertex of one quad is inside the other quad and add it to the polygon
+		if (IsInsideQuad(quadClockwise[i], quadClockwiseOther[0], quadClockwiseOther[1], quadClockwiseOther[2], quadClockwiseOther[3]))
+		{
+			polygonVertices[polygonVertexCount] = quadClockwise[i];
+			polygonVertexCount++;
+		}
+
+		if (IsInsideQuad(quadClockwiseOther[i], quadClockwise[0], quadClockwise[1], quadClockwise[2], quadClockwise[3]))
+		{
+			polygonVertices[polygonVertexCount] = quadClockwiseOther[i];
+			polygonVertexCount++;
+		}
+	}
 }
