@@ -56,6 +56,17 @@ float2 FlipVectorIntoDirection(float2 v, float2 direction)
 	return v * sign(dot(v, direction));
 }
 
+float GetTriangleArea(float2 t1, float2 t2, float2 t3)
+{
+	// Using Heron's formula
+	float a = length(t2 - t1);
+	float b = length(t3 - t1);
+	float c = length(t3 - t2);
+	float s = (a + b + c) / 2;
+
+	return sqrt(s * (s - a) * (s - b) * (s - c));
+}
+
 float2 GetLineLineIntersection(float2 o1, float2 d1, float2 o2, float2 d2)
 {
 	// Assume that the lines are not parallel (otherwise division by zero)
@@ -342,9 +353,13 @@ void CS(uint3 id : SV_DispatchThreadID)
 			overlapVertexAngles[indexWithSmallestAngle] = 2 * PI;
 		}
 
+		float overlapArea = 0.0f;
+
 		// Perform triangulation
 		for (int i = 0; i < overlapVertexCount - 1; i++)
 		{
+			overlapArea += GetTriangleArea(overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]);
+
 			if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]))
 			{
 				color.rgb = float3((i + 1) / (float)overlapVertexCount, (i + 1) / (float)overlapVertexCount, 0);
@@ -354,7 +369,18 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Last triangle
 		if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]))
 		{
+			overlapArea += GetTriangleArea(overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]);
+
 			color.rgb = float3(1, 1, 0);
+		}
+
+		float texelArea = length(texelTopLeftNDC - texelBottomLeftNDC) * length(texelTopLeftNDC - texelTopRightNDC);
+
+		float coveredPercentage = overlapArea / texelArea;
+
+		if (color.r <= 0.0f && color.g <= 0.0f && color.b <= 0.0f)
+		{
+			color = float4(coveredPercentage, coveredPercentage, coveredPercentage, 1);
 		}
 	}
 
