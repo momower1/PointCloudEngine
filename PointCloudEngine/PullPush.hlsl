@@ -39,6 +39,12 @@ float2 GetPerpendicularVector(float2 v)
 	return float2(v.y, -v.x);
 }
 
+float GetSignedAngle(float2 u, float2 v)
+{
+	// Returns either clockwise or counter-clockwise signed angle in [-PI, PI] depending on coordinate system
+	return atan2(u.x * v.y - u.y * v.x, u.x * v.x + u.y * v.y);
+}
+
 float2 FlipVectorIntoDirection(float2 v, float2 direction)
 {
 	return v * sign(dot(v, direction));
@@ -279,11 +285,75 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 	}
 
+	float2 overlapCenter = { 0, 0 };
+
 	for (int i = 0; i < overlapVertexCount; i++)
 	{
+		overlapCenter += overlapVertices[i];
+
 		if (distance(texelNDC, overlapVertices[i]) < vertexSizeNDC)
 		{
 			color.rgb += float3(1, 1, 1);
+		}
+	}
+
+	if (overlapVertexCount > 0)
+	{
+		// Since the overlap polygon is convex, its center must lie within the polygon
+		overlapCenter /= overlapVertexCount;
+
+		if (distance(texelNDC, overlapCenter) < vertexSizeNDC)
+		{
+			color.rgb = float3(0.5f, 0.5f, 0.5f);
+		}
+
+		// Sort vertices clockwise around the center
+		float2 overlapVerticesOrdered[8] = overlapVertices;
+		float overlapVertexAngles[8] = { 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI };
+
+		float2 edgeForAngle = overlapVerticesOrdered[0] - overlapCenter;
+		overlapVerticesOrdered[0] = overlapVertices[0];
+		overlapVertexAngles[0] = 0.0f;
+
+		for (int i = 1; i < overlapVertexCount; i++)
+		{
+			overlapVertexAngles[i] = GetSignedAngle(edgeForAngle, overlapVertices[i] - overlapCenter);
+
+			if (overlapVertexAngles[i] < 0)
+			{
+				overlapVertexAngles[i] = 2 * PI + overlapVertexAngles[i];
+			}
+		}
+
+		for (int j = 1; j < overlapVertexCount; j++)
+		{
+			int indexWithSmallestAngle = 1;
+
+			for (int i = 2; i < overlapVertexCount; i++)
+			{
+				if (overlapVertexAngles[i] < overlapVertexAngles[indexWithSmallestAngle])
+				{
+					indexWithSmallestAngle = i;
+				}
+			}
+
+			overlapVerticesOrdered[j] = overlapVertices[indexWithSmallestAngle];
+			overlapVertexAngles[indexWithSmallestAngle] = 2 * PI;
+		}
+
+		// Perform triangulation
+		for (int i = 0; i < overlapVertexCount - 1; i++)
+		{
+			if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]))
+			{
+				color.rgb = float3(1, 0, 1);
+			}
+		}
+
+		// Last triangle
+		if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]))
+		{
+			color.rgb = float3(1, 0, 1);
 		}
 	}
 
