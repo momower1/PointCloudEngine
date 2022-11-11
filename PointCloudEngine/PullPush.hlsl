@@ -366,11 +366,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 			}
 		}
 
+		overlapArea += GetTriangleArea(overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]);
+
 		// Last triangle
 		if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]))
 		{
-			overlapArea += GetTriangleArea(overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]);
-
 			color.rgb = float3(1, 1, 0);
 		}
 
