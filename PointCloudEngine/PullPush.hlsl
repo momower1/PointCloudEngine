@@ -355,10 +355,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 	texelBottomRightNDC.y = -texelBottomRightNDC.y;
 
 	// Only color the texel if all of its texel corners are inside the projected quad
-	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
+	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
+		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
+		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
+		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
 	{
 		outputColorTexture[texel] = float4(0, 1, 0, 1);
 	}
@@ -497,10 +497,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 					float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
 
 					if ((inputPosition.w > 0.0f)
-						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal)
-						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadBottomRightNDC.xy, quadLeftNormal, quadTopNormal, quadRightNormal, quadBottomNormal))
+						&& IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
+						&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
+						&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy)
+						&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
 					{
 						// Blend splats together that are within a certain z-range to the closest surface or only keep the closest splat
 						if (texelBlending)

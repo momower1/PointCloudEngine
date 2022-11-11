@@ -53,14 +53,31 @@ bool GetLineSegmentIntersection(float2 o1, float2 d1, float2 o2, float2 d2, out 
 	return (lambda1 >= 0) && (lambda1 <= 1) && (lambda2 >= 0) && (lambda2 <= 1);
 }
 
-bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, float2 quadLeftNormal, float2 quadTopNormal, float2 quadRightNormal, float2 quadBottomNormal)
+bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
 {
-	bool isInsideTopEdge = dot(position - quadTopLeft, quadTopNormal) > 0;
-	bool isInsideLeftEdge = dot(position - quadTopLeft, quadLeftNormal) > 0;
-	bool isInsideRightEdge = dot(position - quadBottomRight, quadRightNormal) > 0;
-	bool isInsideBottomEdge = dot(position - quadBottomRight, quadBottomNormal) > 0;
+	// Construct triangle edges
+	float2 e12 = t2 - t1;
+	float2 e13 = t3 - t1;
+	float2 e23 = t3 - t2;
 
-	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
+	// Get normal vector perpendicular to each edge
+	float2 n12 = GetPerpendicularVector(e12);
+	float2 n13 = GetPerpendicularVector(e13);
+	float2 n23 = GetPerpendicularVector(e23);
+
+	// Make sure that the edge normals point towards the triangle center
+	float2 center = (t1 + t2 + t3) / 3.0f;
+	n12 = FlipVectorIntoDirection(n12, center - t1);
+	n13 = FlipVectorIntoDirection(n13, center - t1);
+	n23 = FlipVectorIntoDirection(n23, center - t2);
+
+	// Check on which side of each triangle edge the point lies
+	bool isInsideEdge12 = dot(position - t1, n12) > 0;
+	bool isInsideEdge13 = dot(position - t1, n13) > 0;
+	bool isInsideEdge23 = dot(position - t3, n23) > 0;
+
+	// The point can only be inside the triangle if it is inside all edges
+	return isInsideEdge12 && isInsideEdge13 && isInsideEdge23;
 }
 
 bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, float2 quadBottomLeft, float2 quadBottomRight)
@@ -92,31 +109,4 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, floa
 
 	// The point can only be inside the quad if it is inside all edges
 	return isInsideLeftEdge && isInsideRightEdge && isInsideTopEdge && isInsideBottomEdge;
-}
-
-bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
-{
-	// Construct triangle edges
-	float2 e12 = t2 - t1;
-	float2 e13 = t3 - t1;
-	float2 e23 = t3 - t2;
-
-	// Get normal vector perpendicular to each edge
-	float2 n12 = GetPerpendicularVector(e12);
-	float2 n13 = GetPerpendicularVector(e13);
-	float2 n23 = GetPerpendicularVector(e23);
-
-	// Make sure that the edge normals point towards the triangle center
-	float2 center = (t1 + t2 + t3) / 3.0f;
-	n12 = FlipVectorIntoDirection(n12, center - t1);
-	n13 = FlipVectorIntoDirection(n13, center - t1);
-	n23 = FlipVectorIntoDirection(n23, center - t2);
-
-	// Check on which side of each triangle edge the point lies
-	bool isInsideEdge12 = dot(position - t1, n12) > 0;
-	bool isInsideEdge13 = dot(position - t1, n13) > 0;
-	bool isInsideEdge23 = dot(position - t3, n23) > 0;
-
-	// The point can only be inside the triangle if it is inside all edges
-	return isInsideEdge12 && isInsideEdge13 && isInsideEdge23;
 }
