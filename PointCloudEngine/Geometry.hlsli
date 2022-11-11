@@ -159,3 +159,52 @@ void GetQuadQuadOverlappingPolygon(in float2 quadClockwise[4], in float2 quadClo
 		}
 	}
 }
+
+void SortConvexPolygonVerticesClockwise(in uint polygonVertexCount, inout float2 polygonVertices[8])
+{
+	// For convex polygons this center must lie within the polygon
+	float2 polygonCenter = float2(0, 0);
+
+	for (int i = 0; i < polygonVertexCount; i++)
+	{
+		polygonCenter += polygonVertices[i];
+	}
+
+	polygonCenter /= polygonVertexCount;
+
+	// Now using the center, order the vertices in counter clockwise order relative to some edge from the center to a vertex
+	float2 polygonVerticesOrdered[8] = polygonVertices;
+	float polygonVertexAngles[8] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// Just use the edge to the first vertex for sorting
+	float2 edgeForAngleSorting = polygonVertices[0] - polygonCenter;
+	polygonVerticesOrdered[0] = polygonVertices[0];
+	polygonVertexAngles[0] = 0.0f;
+
+	// Calculate all counter clockwise angles for each vertex (can skip initial vertex since this angle must be zero)
+	for (int i = 1; i < polygonVertexCount; i++)
+	{
+		polygonVertexAngles[i] = GetCounterclockwiseAngle(edgeForAngleSorting, polygonVertices[i] - polygonCenter);
+	}
+
+	// Now perform simple sorting by the angle
+	for (int j = 1; j < polygonVertexCount; j++)
+	{
+		int indexWithSmallestAngle = 1;
+
+		for (int i = 2; i < polygonVertexCount; i++)
+		{
+			if (polygonVertexAngles[i] < polygonVertexAngles[indexWithSmallestAngle])
+			{
+				indexWithSmallestAngle = i;
+			}
+		}
+
+		polygonVerticesOrdered[j] = polygonVertices[indexWithSmallestAngle];
+
+		// No longer consider this vertex in the next iterations by setting its angle to two PI
+		polygonVertexAngles[indexWithSmallestAngle] = 2 * 3.141592654f;
+	}
+
+	polygonVertices = polygonVerticesOrdered;
+}

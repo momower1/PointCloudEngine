@@ -141,80 +141,24 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	GetQuadQuadOverlappingPolygon(texelOrigins, quadOrigins, overlapVertexCount, overlapVertices);
 
-	float2 overlapCenter = { 0, 0 };
-
-	for (int i = 0; i < overlapVertexCount; i++)
-	{
-		overlapCenter += overlapVertices[i];
-
-		if (distance(texelNDC, overlapVertices[i]) < vertexSizeNDC)
-		{
-			color.rgb += float3(1, 1, 1);
-		}
-	}
-
 	if (overlapVertexCount > 0)
 	{
-		// Since the overlap polygon is convex, its center must lie within the polygon
-		overlapCenter /= overlapVertexCount;
-
-		if (distance(texelNDC, overlapCenter) < vertexSizeNDC)
-		{
-			color.rgb = float3(0.5f, 0.5f, 0.5f);
-		}
-
-		// Sort vertices clockwise around the center
-		float2 overlapVerticesOrdered[8] = overlapVertices;
-		float overlapVertexAngles[8] = { 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI, 2 * PI };
-
-		float2 edgeForAngle = overlapVerticesOrdered[0] - overlapCenter;
-		overlapVerticesOrdered[0] = overlapVertices[0];
-		overlapVertexAngles[0] = 0.0f;
-
-		for (int i = 1; i < overlapVertexCount; i++)
-		{
-			overlapVertexAngles[i] = GetCounterclockwiseAngle(edgeForAngle, overlapVertices[i] - overlapCenter);
-		}
-
-		for (int j = 1; j < overlapVertexCount; j++)
-		{
-			int indexWithSmallestAngle = 1;
-
-			for (int i = 2; i < overlapVertexCount; i++)
-			{
-				if (overlapVertexAngles[i] < overlapVertexAngles[indexWithSmallestAngle])
-				{
-					indexWithSmallestAngle = i;
-				}
-			}
-
-			overlapVerticesOrdered[j] = overlapVertices[indexWithSmallestAngle];
-			overlapVertexAngles[indexWithSmallestAngle] = 2 * PI;
-		}
+		SortConvexPolygonVerticesClockwise(overlapVertexCount, overlapVertices);
 
 		float overlapArea = 0.0f;
 
-		// Perform triangulation
-		for (int i = 0; i < overlapVertexCount - 1; i++)
+		// Perform fan triangulation
+		for (int i = 0; i < overlapVertexCount - 2; i++)
 		{
-			overlapArea += GetTriangleArea(overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]);
+			overlapArea += GetTriangleArea(overlapVertices[0], overlapVertices[i + 1], overlapVertices[i + 2]);
 
-			if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]))
+			if (IsInsideTriangle(texelNDC, overlapVertices[0], overlapVertices[i + 1], overlapVertices[i + 2]))
 			{
-				color.rgb = float3((i + 1) / (float)overlapVertexCount, (i + 1) / (float)overlapVertexCount, 0);
+				color.rgb = float3((i + 1) / (float)(overlapVertexCount - 2), (i + 1) / (float)(overlapVertexCount - 2), 0);
 			}
 		}
 
-		overlapArea += GetTriangleArea(overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]);
-
-		// Last triangle
-		if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[overlapVertexCount - 1], overlapVerticesOrdered[0]))
-		{
-			color.rgb = float3(1, 1, 0);
-		}
-
 		float texelArea = length(texelTopLeftNDC - texelBottomLeftNDC) * length(texelTopLeftNDC - texelTopRightNDC);
-
 		float coveredPercentage = overlapArea / texelArea;
 
 		if (color.r <= 0.0f && color.g <= 0.0f && color.b <= 0.0f)
