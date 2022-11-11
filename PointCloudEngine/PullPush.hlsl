@@ -45,6 +45,12 @@ float GetSignedAngle(float2 u, float2 v)
 	return atan2(u.x * v.y - u.y * v.x, u.x * v.x + u.y * v.y);
 }
 
+float GetCounterclockwiseAngle(float2 u, float2 v)
+{
+	float angle = GetSignedAngle(u, v);
+	return (angle < 0) ? (2 * PI + angle) : angle;
+}
+
 float2 FlipVectorIntoDirection(float2 v, float2 direction)
 {
 	return v * sign(dot(v, direction));
@@ -317,12 +323,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 		for (int i = 1; i < overlapVertexCount; i++)
 		{
-			overlapVertexAngles[i] = GetSignedAngle(edgeForAngle, overlapVertices[i] - overlapCenter);
-
-			if (overlapVertexAngles[i] < 0)
-			{
-				overlapVertexAngles[i] = 2 * PI + overlapVertexAngles[i];
-			}
+			overlapVertexAngles[i] = GetCounterclockwiseAngle(edgeForAngle, overlapVertices[i] - overlapCenter);
 		}
 
 		for (int j = 1; j < overlapVertexCount; j++)
@@ -346,7 +347,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		{
 			if (IsInsideTriangle(texelNDC, overlapCenter, overlapVerticesOrdered[i], overlapVerticesOrdered[i + 1]))
 			{
-				color.rgb = float3(1, 0, 1);
+				color.rgb = float3((i + 1) / (float)overlapVertexCount, 0, (i + 1) / (float)overlapVertexCount);
 			}
 		}
 
