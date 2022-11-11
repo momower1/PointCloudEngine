@@ -247,6 +247,10 @@ void CS(uint3 id : SV_DispatchThreadID)
 		quadBottomLeftNDC.xy - quadBottomRightNDC.xy
 	};
 
+	// The overlap area polygon of two quads can at most have 8 vertices
+	float2 overlapVertices[8];
+	uint overlapVertexCount = 0;
+
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++)
@@ -256,28 +260,30 @@ void CS(uint3 id : SV_DispatchThreadID)
 			// Perform line segment intersection for all edges
 			if (GetLineSegmentIntersection(texelOrigins[i], texelDirections[i], quadOrigins[j], quadDirections[j], intersection))
 			{
-				if (distance(texelNDC, intersection) < vertexSizeNDC)
-				{
-					color.rgb += float3(1, 1, 1);
-				}
+				overlapVertices[overlapVertexCount] = intersection;
+				overlapVertexCount++;
 			}
 		}
 
 		// Perform vertex inside other quad check for all vertices
 		if (IsInsideQuad(texelOrigins[i], quadOrigins[0], quadOrigins[1], quadOrigins[2], quadOrigins[3]))
 		{
-			if (distance(texelNDC, texelOrigins[i]) < vertexSizeNDC)
-			{
-				color.rgb += float3(1, 1, 1);
-			}
+			overlapVertices[overlapVertexCount] = texelOrigins[i];
+			overlapVertexCount++;
 		}
 
 		if (IsInsideQuad(quadOrigins[i], texelOrigins[0], texelOrigins[1], texelOrigins[2], texelOrigins[3]))
 		{
-			if (distance(texelNDC, quadOrigins[i]) < vertexSizeNDC)
-			{
-				color.rgb += float3(1, 1, 1);
-			}
+			overlapVertices[overlapVertexCount] = quadOrigins[i];
+			overlapVertexCount++;
+		}
+	}
+
+	for (int i = 0; i < overlapVertexCount; i++)
+	{
+		if (distance(texelNDC, overlapVertices[i]) < vertexSizeNDC)
+		{
+			color.rgb += float3(1, 1, 1);
 		}
 	}
 
