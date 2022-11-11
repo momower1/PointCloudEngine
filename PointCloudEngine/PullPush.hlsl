@@ -75,6 +75,37 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, f
 	return isInsideTopEdge && isInsideLeftEdge && isInsideRightEdge && isInsideBottomEdge;
 }
 
+bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadTopRight, float2 quadBottomLeft, float2 quadBottomRight)
+{
+	// Construct quad edges
+	float2 eLeft = quadTopLeft - quadBottomLeft;
+	float2 eRight = quadTopRight - quadBottomRight;
+	float2 eTop = quadTopRight - quadTopLeft;
+	float2 eBottom = quadBottomRight - quadBottomLeft;
+
+	// Get normal vector perpendicular to each edge
+	float2 nLeft = GetPerpendicularVector(eLeft);
+	float2 nRight = GetPerpendicularVector(eRight);
+	float2 nTop = GetPerpendicularVector(eTop);
+	float2 nBottom = GetPerpendicularVector(eBottom);
+
+	// Make sure that the edge normals point towards the quad center
+	float2 center = (quadTopLeft + quadTopRight + quadBottomLeft + quadBottomRight) / 4.0f;
+	nLeft = FlipVectorIntoDirection(nLeft, center - quadTopLeft);
+	nRight = FlipVectorIntoDirection(nRight, center - quadTopRight);
+	nTop = FlipVectorIntoDirection(nTop, center - quadTopRight);
+	nBottom = FlipVectorIntoDirection(nBottom, center - quadBottomRight);
+
+	// Check on which side of each quad edge the point lies
+	bool isInsideLeftEdge = dot(position - quadTopLeft, nLeft) > 0;
+	bool isInsideRightEdge = dot(position - quadBottomRight, nRight) > 0;
+	bool isInsideTopEdge = dot(position - quadTopLeft, nTop) > 0;
+	bool isInsideBottomEdge = dot(position - quadBottomRight, nBottom) > 0;
+
+	// The point can only be inside the quad if it is inside all edges
+	return isInsideLeftEdge && isInsideRightEdge && isInsideTopEdge && isInsideBottomEdge;
+}
+
 bool IsInsideTriangle(float2 position, float2 t1, float2 t2, float2 t3)
 {
 	// Construct triangle edges
@@ -146,6 +177,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float4 color = { 0, 0, 0, 1 };
 	float vertexSizeNDC = 0.01f;
 
+	// Color the quad vertices blue
 	if ((distance(texelNDC, quadTopLeftNDC.xy) < vertexSizeNDC)
 		|| (distance(texelNDC, quadTopRightNDC.xy) < vertexSizeNDC)
 		|| (distance(texelNDC, quadBottomLeftNDC.xy) < vertexSizeNDC)
@@ -154,9 +186,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 		color.b += 1.0f;
 	}
 
-	// Debug: Split quad into two triangles and check for each texel if its center is contained or not
-	if (IsInsideTriangle(texelNDC, quadTopLeftNDC.xy, quadBottomLeftNDC.xy, quadTopRightNDC.xy))
-		//|| IsInsideTriangle(texelNDC, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+	// Color the quad green
+	if (IsInsideQuad(texelNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomLeftNDC.xy, quadBottomRightNDC.xy))
 	{
 		color.g += 1.0f;
 	}
@@ -167,8 +198,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float2 texelBottomLeftNDC = { -0.5f, 0.5f * aspectRatio };
 	float2 texelBottomRightNDC = { 0.5f, 0.5f * aspectRatio };
 
-	if (IsInsideTriangle(texelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomLeftNDC)
-		|| IsInsideTriangle(texelNDC, texelBottomLeftNDC, texelTopRightNDC, texelBottomRightNDC))
+	// Color the texel red
+	if (IsInsideQuad(texelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomLeftNDC, texelBottomRightNDC))
 	{
 		color.r += 1.0f;
 	}
@@ -183,54 +214,8 @@ void CS(uint3 id : SV_DispatchThreadID)
 	// - take other 3 intersection points and add triangle if it does not intersect with any previously added triangle
 	// - repeat until no more triangles can be added
 
-	// Perform line-line intersection for texel against triangles
+	// Perform line-line intersection for texel against quad
 	float2 texelOrigins[] =
-	{
-		texelTopLeftNDC,
-		texelTopLeftNDC,
-		texelBottomRightNDC,
-		texelBottomRightNDC
-	};
-
-	float2 texelDirections[] =
-	{
-		texelTopRightNDC - texelTopLeftNDC,
-		texelBottomLeftNDC - texelTopLeftNDC,
-		texelTopRightNDC - texelBottomRightNDC,
-		texelBottomLeftNDC -texelBottomRightNDC
-	};
-
-	float2 triangleOrigins[] =
-	{
-		quadTopLeftNDC.xy,
-		quadTopLeftNDC.xy,
-		quadTopRightNDC.xy
-	};
-
-	float2 triangleDirections[] =
-	{
-		quadBottomLeftNDC.xy - quadTopLeftNDC.xy,
-		quadTopRightNDC.xy - quadTopLeftNDC.xy,
-		quadBottomLeftNDC.xy - quadTopRightNDC.xy
-	};
-
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			float2 intersection;
-			
-			if (GetLineSegmentIntersection(texelOrigins[i], texelDirections[i], triangleOrigins[j], triangleDirections[j], intersection))
-			{
-				if (distance(texelNDC, intersection) < vertexSizeNDC)
-				{
-					color.rgb += float3(1, 1, 1);
-				}
-			}
-		}
-	}
-
-	float2 texelVertices[] =
 	{
 		texelTopLeftNDC,
 		texelBottomLeftNDC,
@@ -238,32 +223,58 @@ void CS(uint3 id : SV_DispatchThreadID)
 		texelBottomRightNDC
 	};
 
-	float2 triangleVertices[] =
+	float2 texelDirections[] =
 	{
-		quadTopLeftNDC.xy,
-		quadTopRightNDC.xy,
-		quadBottomLeftNDC.xy
+		texelTopRightNDC - texelTopLeftNDC,
+		texelTopLeftNDC - texelBottomLeftNDC,
+		texelBottomRightNDC - texelTopRightNDC,
+		texelBottomLeftNDC - texelBottomRightNDC
 	};
 
-	// Check if texel vertices are contained in the triangle
-	for (int k = 0; k < 4; k++)
+	float2 quadOrigins[] =
 	{
-		if (IsInsideTriangle(texelVertices[k], triangleVertices[0], triangleVertices[1], triangleVertices[2]))
+		quadTopLeftNDC.xy,
+		quadBottomLeftNDC.xy,
+		quadTopRightNDC.xy,
+		quadBottomRightNDC.xy
+	};
+
+	float2 quadDirections[] =
+	{
+		quadTopRightNDC.xy - quadTopLeftNDC.xy,
+		quadTopLeftNDC.xy - quadBottomLeftNDC.xy,
+		quadBottomRightNDC.xy - quadTopRightNDC.xy,
+		quadBottomLeftNDC.xy - quadBottomRightNDC.xy
+	};
+
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
 		{
-			if (distance(texelNDC, texelVertices[k]) < vertexSizeNDC)
+			float2 intersection;
+			
+			// Perform line segment intersection for all edges
+			if (GetLineSegmentIntersection(texelOrigins[i], texelDirections[i], quadOrigins[j], quadDirections[j], intersection))
+			{
+				if (distance(texelNDC, intersection) < vertexSizeNDC)
+				{
+					color.rgb += float3(1, 1, 1);
+				}
+			}
+		}
+
+		// Perform vertex inside other quad check for all vertices
+		if (IsInsideQuad(texelOrigins[i], quadOrigins[0], quadOrigins[1], quadOrigins[2], quadOrigins[3]))
+		{
+			if (distance(texelNDC, texelOrigins[i]) < vertexSizeNDC)
 			{
 				color.rgb += float3(1, 1, 1);
 			}
 		}
-	}
 
-	// Check if triangle vertex is contained in the other texel (split texel in two triangles)
-	for (int k = 0; k < 3; k++)
-	{
-		if (IsInsideTriangle(triangleVertices[k], texelVertices[0], texelVertices[1], texelVertices[2])
-			|| IsInsideTriangle(triangleVertices[k], texelVertices[1], texelVertices[2], texelVertices[3]))
+		if (IsInsideQuad(quadOrigins[i], texelOrigins[0], texelOrigins[1], texelOrigins[2], texelOrigins[3]))
 		{
-			if (distance(texelNDC, triangleVertices[k]) < vertexSizeNDC)
+			if (distance(texelNDC, quadOrigins[i]) < vertexSizeNDC)
 			{
 				color.rgb += float3(1, 1, 1);
 			}
