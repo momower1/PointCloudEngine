@@ -106,18 +106,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 		color.r += 1.0f;
 	}
 
-
-
-	// Idea to make sure that this works correctly, no need to do rasterization :-)
-	// - make sure that point inside triangle check works correctly
-	// - compute triangle-triangle area intersection and represent the intersection area as a set of triangles
-	// - for each of the area triangles, perform point inside triangle check and verify result visually
-
-	// Brute force idea for filling the overlap area with triangles
-	// - just take any 3 intersection points (or contained vertex) and create first triangle
-	// - take other 3 intersection points and add triangle if it does not intersect with any previously added triangle
-	// - repeat until no more triangles can be added
-
 	// Perform line-line intersection for texel against quad
 	float2 texelOrigins[] =
 	{
@@ -145,13 +133,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 	{
 		SortConvexPolygonVerticesClockwise(overlapVertexCount, overlapVertices);
 
-		float overlapArea = 0.0f;
+		float overlapArea = GetConvexPolygonArea(overlapVertexCount, overlapVertices);
 
-		// Perform fan triangulation
+		// Visualize result of fan triangulation
 		for (int i = 0; i < overlapVertexCount - 2; i++)
 		{
-			overlapArea += GetTriangleArea(overlapVertices[0], overlapVertices[i + 1], overlapVertices[i + 2]);
-
 			if (IsInsideTriangle(texelNDC, overlapVertices[0], overlapVertices[i + 1], overlapVertices[i + 2]))
 			{
 				color.rgb = float3((i + 1) / (float)(overlapVertexCount - 2), (i + 1) / (float)(overlapVertexCount - 2), 0);
@@ -161,6 +147,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		float texelArea = length(texelTopLeftNDC - texelBottomLeftNDC) * length(texelTopLeftNDC - texelTopRightNDC);
 		float coveredPercentage = overlapArea / texelArea;
 
+		// Visualize covered area percentage with background color
 		if (color.r <= 0.0f && color.g <= 0.0f && color.b <= 0.0f)
 		{
 			color = float4(coveredPercentage, coveredPercentage, coveredPercentage, 1);

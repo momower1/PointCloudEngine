@@ -208,3 +208,17 @@ void SortConvexPolygonVerticesClockwise(in uint polygonVertexCount, inout float2
 
 	polygonVertices = polygonVerticesOrdered;
 }
+
+float GetConvexPolygonArea(in uint polygonVertexCount, in float2 polygonVerticesSorted[8])
+{
+	// Assumes that the polygon vertices have been sorted in clockwise/counterclockwise order already
+	float polygonArea = 0.0f;
+
+	// Perform fan triangulation and sum up the area of each triangle
+	for (int i = 0; i < polygonVertexCount - 2; i++)
+	{
+		polygonArea += GetTriangleArea(polygonVerticesSorted[0], polygonVerticesSorted[i + 1], polygonVerticesSorted[i + 2]);
+	}
+
+	return polygonArea;
+}
