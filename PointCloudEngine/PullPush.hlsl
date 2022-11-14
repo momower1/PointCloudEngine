@@ -1,8 +1,8 @@
 #include "GroundTruth.hlsl"
 #include "Geometry.hlsli"
 
-#define DEBUG_SPLAT_TEXEL_OVERLAP
-#define DEBUG_SINGLE_QUAD
+//#define DEBUG_SPLAT_TEXEL_OVERLAP
+//#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -284,107 +284,35 @@ void CS(uint3 id : SV_DispatchThreadID)
 		}
 		else
 		{
-			float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
-			float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
-			float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
-
-			uint2 texel = uint2(id.x, id.y);
-
-			// Calculate normalized device coordinates for the four texel corners
-			float2 texelTopLeftNDC = resolutionPullPush * (texel / (float)resolutionOutput);
-			texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelTopRightNDC = resolutionPullPush * ((texel + uint2(1, 0)) / (float)resolutionOutput);
-			texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelBottomLeftNDC = resolutionPullPush * ((texel + uint2(0, 1)) / (float)resolutionOutput);
-			texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelBottomRightNDC = resolutionPullPush * ((texel + uint2(1, 1)) / (float)resolutionOutput);
-			texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
-
-			// Need to invert y-coordinate for correct coordinate system
-			texelTopLeftNDC.y = -texelTopLeftNDC.y;
-			texelTopRightNDC.y = -texelTopRightNDC.y;
-			texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
-			texelBottomRightNDC.y = -texelBottomRightNDC.y;
-
-			float2 texelVertices[] =
-			{
-				texelTopLeftNDC.xy,
-				texelTopRightNDC.xy,
-				texelBottomRightNDC.xy,
-				texelBottomLeftNDC.xy
-			};
-
-			float surfaceZ = farZ;
-			float largestOverlapPercentage = 0;
-
 			outputColor = float4(0, 0, 0, 0);
 			outputNormal = float4(0, 0, 0, 0);
 			outputPosition = float4(0, 0, 0, 0);
 
+			float2 texelNDC[4];
+			GetTexelCoordinates(id.xy, texelNDC);
+
+			float surfaceZ = farZ;
+			float largestOverlapPercentage = 0;
+
+			// Go over the 2x2 input texels
 			for (int y = 0; y < 2; y++)
 			{
 				for (int x = 0; x < 2; x++)
 				{
-					// Transform quad position and normal into world space
 					float4 inputColor = inputColorTexture[2 * pixel + uint2(x, y)];
 					float4 inputNormal = inputNormalTexture[2 * pixel + uint2(x, y)];
 					float4 inputPosition = inputPositionTexture[2 * pixel + uint2(x, y)];
 
-					float4 quadPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
-					quadPositionLocal /= quadPositionLocal.w;
-
-					float3 quadNormalWorld = inputNormal.xyz;
-					float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
-					float3 quadPositionView = mul(float4(quadPositionWorld, 1), View).xyz;
-
-					float3 quadUp;
-					float3 quadRight;
-
-					// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
-					if (orientedSplat)
-					{
-						quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
-						quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
-					}
-					else
-					{
-						quadUp = 0.5f * splatSize * cameraUp;
-						quadRight = 0.5f * splatSize * cameraRight;
-					}
-
-					float3 quadCenter = quadPositionWorld;
-					float3 quadTopLeft = quadCenter + quadUp - quadRight;
-					float3 quadTopRight = quadCenter + quadUp + quadRight;
-					float3 quadBottomLeft = quadCenter - quadUp - quadRight;
-					float3 quadBottomRight = quadCenter - quadUp + quadRight;
-
-					// Project quad
-					float4x4 VP = mul(View, Projection);
-					float4 quadCenterNDC = mul(float4(quadCenter, 1), VP);
-					float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
-					float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
-					float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
-					float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
-
-					// Homogeneous division
-					quadCenterNDC /= quadCenterNDC.w;
-					quadTopLeftNDC /= quadTopLeftNDC.w;
-					quadTopRightNDC /= quadTopRightNDC.w;
-					quadBottomLeftNDC /= quadBottomLeftNDC.w;
-					quadBottomRightNDC /= quadBottomRightNDC.w;
-
-					float2 quadVertices[] =
-					{
-						quadTopLeftNDC.xy,
-						quadTopRightNDC.xy,
-						quadBottomRightNDC.xy,
-						quadBottomLeftNDC.xy
-					};
-
-					float overlapPercentage = GetTexelQuadOverlapPercentage(texelVertices, quadVertices);
-
+					// Only perform calculation if the input is non-empty
 					if (inputPosition.w > 0.0f)
 					{
+						// Project the quad that corresponds to this point
+						float2 quadProjected[4];
+						GetProjectedQuad(inputPosition, inputNormal.xyz, quadProjected);
+
+						// Get the overlapping area percentage between the quad and the texel
+						float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);
+
 						// Splat covers the yet largest area of the texel so assign it as the new surface splat
 						if (overlapPercentage > largestOverlapPercentage)
 						{
@@ -431,146 +359,23 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
 		if (inputPosition.w >= 1.0f)
 		{
-			uint2 texel = uint2(id.x, id.y);
+			float2 texelNDC[4];
+			GetTexelCoordinates(id.xy, texelNDC);
 
-			// Calculate normalized device coordinates for the four texel corners
-			float2 texelTopLeftNDC = resolutionPullPush * (texel / (float)resolutionOutput);
-			texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelTopRightNDC = resolutionPullPush * ((texel + uint2(1, 0)) / (float)resolutionOutput);
-			texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelBottomLeftNDC = resolutionPullPush * ((texel + uint2(0, 1)) / (float)resolutionOutput);
-			texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
-			float2 texelBottomRightNDC = resolutionPullPush * ((texel + uint2(1, 1)) / (float)resolutionOutput);
-			texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
+			// Project the quad that corresponds to the input point
+			float2 inputQuadProjected[4];
+			GetProjectedQuad(inputPosition, inputNormal.xyz, inputQuadProjected);
 
-			// Need to invert y-coordinate for correct coordinate system
-			texelTopLeftNDC.y = -texelTopLeftNDC.y;
-			texelTopRightNDC.y = -texelTopRightNDC.y;
-			texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
-			texelBottomRightNDC.y = -texelBottomRightNDC.y;
-
-			float2 texelVertices[] =
-			{
-				texelTopLeftNDC.xy,
-				texelTopRightNDC.xy,
-				texelBottomRightNDC.xy,
-				texelBottomLeftNDC.xy
-			};
-
-			// Transform quad position and normal into world space
-			float4 quadPositionLocal = mul(inputPosition, WorldViewProjectionInverse);
-			quadPositionLocal /= quadPositionLocal.w;
-
-			float3 quadNormalWorld = inputNormal.xyz;
-			float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
-			float3 quadPositionView = mul(float4(quadPositionWorld, 1), View).xyz;
-
-			float3 quadUp;
-			float3 quadRight;
-
-			float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
-			float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
-			float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
-
-			// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
-			if (orientedSplat)
-			{
-				quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
-				quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
-			}
-			else
-			{
-				quadUp = 0.5f * splatSize * cameraUp;
-				quadRight = 0.5f * splatSize * cameraRight;
-			}
-
-			float3 quadCenter = quadPositionWorld;
-			float3 quadTopLeft = quadCenter + quadUp - quadRight;
-			float3 quadTopRight = quadCenter + quadUp + quadRight;
-			float3 quadBottomLeft = quadCenter - quadUp - quadRight;
-			float3 quadBottomRight = quadCenter - quadUp + quadRight;
-
-			// Project quad
-			float4x4 VP = mul(View, Projection);
-			float4 quadCenterNDC = mul(float4(quadCenter, 1), VP);
-			float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
-			float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
-			float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
-			float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
-
-			// Homogeneous division
-			quadCenterNDC /= quadCenterNDC.w;
-			quadTopLeftNDC /= quadTopLeftNDC.w;
-			quadTopRightNDC /= quadTopRightNDC.w;
-			quadBottomLeftNDC /= quadBottomLeftNDC.w;
-			quadBottomRightNDC /= quadBottomRightNDC.w;
-
-			float2 quadVertices[] =
-			{
-				quadTopLeftNDC.xy,
-				quadTopRightNDC.xy,
-				quadBottomRightNDC.xy,
-				quadBottomLeftNDC.xy
-			};
-
-			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelVertices, quadVertices);
+			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, inputQuadProjected);
 
 			// Need to compare overlay percentages of input and output, only keep splat with larger overlay
 			if (outputPosition.w >= 0)
 			{
-				// Transform quad position and normal into world space
-				float4 quadPositionLocalOutput = mul(outputPosition, WorldViewProjectionInverse);
-				quadPositionLocalOutput /= quadPositionLocalOutput.w;
+				// Project the quad that corresponds to the output point
+				float2 outputQuadProjected[4];
+				GetProjectedQuad(outputPosition, outputNormal.xyz, outputQuadProjected);
 
-				float3 quadNormalWorldOutput = outputNormal.xyz;
-				float3 quadPositionWorldOutput = mul(quadPositionLocalOutput, World).xyz;
-				float3 quadPositionViewOutput = mul(float4(quadPositionWorldOutput, 1), View).xyz;
-
-				float3 quadUpOutput;
-				float3 quadRightOutput;
-
-				// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
-				if (orientedSplat)
-				{
-					quadUpOutput = 0.5f * splatSize * normalize(cross(quadNormalWorldOutput, cameraRight));
-					quadRightOutput = 0.5f * splatSize * normalize(cross(quadNormalWorldOutput, quadUpOutput));
-				}
-				else
-				{
-					quadUpOutput = 0.5f * splatSize * cameraUp;
-					quadRightOutput = 0.5f * splatSize * cameraRight;
-				}
-
-				float3 quadCenterOutput = quadPositionWorldOutput;
-				float3 quadTopLeftOutput = quadCenterOutput + quadUpOutput - quadRightOutput;
-				float3 quadTopRightOutput = quadCenterOutput + quadUpOutput + quadRightOutput;
-				float3 quadBottomLeftOutput = quadCenterOutput - quadUpOutput - quadRightOutput;
-				float3 quadBottomRightOutput = quadCenterOutput - quadUpOutput + quadRightOutput;
-
-				// Project quad
-				float4x4 VP = mul(View, Projection);
-				float4 quadCenterNDCOutput = mul(float4(quadCenterOutput, 1), VP);
-				float4 quadTopLeftNDCOutput = mul(float4(quadTopLeftOutput, 1), VP);
-				float4 quadTopRightNDCOutput = mul(float4(quadTopRightOutput, 1), VP);
-				float4 quadBottomLeftNDCOutput = mul(float4(quadBottomLeftOutput, 1), VP);
-				float4 quadBottomRightNDCOutput = mul(float4(quadBottomRightOutput, 1), VP);
-
-				// Homogeneous division
-				quadCenterNDCOutput /= quadCenterNDCOutput.w;
-				quadTopLeftNDCOutput /= quadTopLeftNDCOutput.w;
-				quadTopRightNDCOutput /= quadTopRightNDCOutput.w;
-				quadBottomLeftNDCOutput /= quadBottomLeftNDCOutput.w;
-				quadBottomRightNDCOutput /= quadBottomRightNDCOutput.w;
-
-				float2 quadVerticesOutput[] =
-				{
-					quadTopLeftNDCOutput.xy,
-					quadTopRightNDCOutput.xy,
-					quadBottomRightNDCOutput.xy,
-					quadBottomLeftNDCOutput.xy
-				};
-
-				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelVertices, quadVerticesOutput);
+				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
 
 				if (inputOverlapPercentage > outputOverlapPercentage)
 				{
