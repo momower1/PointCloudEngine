@@ -230,7 +230,7 @@ float GetTexelQuadOverlapPercentage(float2 texelClockwise[4], float2 quadClockwi
 
 	GetQuadQuadOverlappingPolygon(texelClockwise, quadClockwise, polygonVertexCount, polygonVertices);
 
-	if (polygonVertexCount > 0)
+	if (polygonVertexCount >= 3)
 	{
 		SortConvexPolygonVerticesClockwise(polygonVertexCount, polygonVertices);
 

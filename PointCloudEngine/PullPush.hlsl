@@ -130,7 +130,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 	GetQuadQuadOverlappingPolygon(texelOrigins, quadOrigins, overlapVertexCount, overlapVertices);
 
-	if (overlapVertexCount > 0)
+	if (overlapVertexCount >= 3)
 	{
 		SortConvexPolygonVerticesClockwise(overlapVertexCount, overlapVertices);
 
