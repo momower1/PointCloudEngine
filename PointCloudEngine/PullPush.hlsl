@@ -379,23 +379,25 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 				if (inputOverlapPercentage > outputOverlapPercentage)
 				{
-					outputColor = inputColor;
 					outputNormal = inputNormal;
 					outputPosition = inputPosition;
-				}
-			}
 
-			if (texelBlending)
-			{
-				float blendWeight = inputOverlapPercentage;
-				outputColor.rgb += blendWeight * inputColor.rgb;
-				outputColor.w += blendWeight * inputColor.w;
-			}
-			else if (inputOverlapPercentage >= 0.99f)
-			{
-				outputColor = inputColor;
-				outputNormal = inputNormal;
-				outputPosition = inputPosition;
+					if (!texelBlending)
+					{
+						outputColor = inputColor;
+					}
+				}
+
+				if (texelBlending)
+				{
+					float blendWeight = inputOverlapPercentage;
+					outputColor.rgb += blendWeight * inputColor.rgb;
+					outputColor.w += blendWeight * inputColor.w;
+				}
+				else if (inputOverlapPercentage >= 0.99f)
+				{
+					outputColor = inputColor;
+				}
 			}
 
 			// Normalize accumulated blended color
