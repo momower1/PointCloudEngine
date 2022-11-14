@@ -35,6 +35,72 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 64 bytes with constant buffer packing rules
 
+void GetTexelCoordinates(in uint2 texelId, inout float2 texelNDC[4])
+{
+	// Calculate normalized device coordinates for the four texel corners in clockwise order
+	uint2 offsets[] =
+	{
+		uint2(0, 0),	// Top left
+		uint2(1, 0),	// Top right
+		uint2(1, 1),	// Bottom right
+		uint2(0, 1)		// Bottom left
+	};
+
+	// Go from UV space to NDC space and invert y coordinate
+	for (int i = 0; i < 4; i++)
+	{
+		texelNDC[i] = resolutionPullPush * ((texelId + offsets[i]) / (float)resolutionOutput);
+		texelNDC[i] = 2 * (texelNDC[i] / float2(resolutionX, resolutionY)) - 1;
+		texelNDC[i].y = -texelNDC[i].y;
+	}
+}
+
+void GetProjectedQuad(in float4 quadPositionNDC, in float3 quadNormalWorld, inout float4 quadProjected[4])
+{
+	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
+	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
+	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
+
+	// Transform quad position into world space
+	float4 quadPositionLocal = mul(float4(quadPositionNDC.xyz, 1), WorldViewProjectionInverse);
+	quadPositionLocal /= quadPositionLocal.w;
+
+	float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
+	float3 quadPositionView = mul(float4(quadPositionWorld, 1), View).xyz;
+
+	float3 quadUp;
+	float3 quadRight;
+
+	// Construct quad that faces in the same direction as the normal or it should be aligned with the camera
+	if (orientedSplat)
+	{
+		quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
+		quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));
+	}
+	else
+	{
+		quadUp = 0.5f * splatSize * cameraUp;
+		quadRight = 0.5f * splatSize * cameraRight;
+	}
+
+	// Construct quad in clockwise order
+	quadProjected[0] = float4(quadPositionWorld + quadUp - quadRight, 1);	// Top left
+	quadProjected[1] = float4(quadPositionWorld + quadUp + quadRight, 1);	// Top right
+	quadProjected[2] = float4(quadPositionWorld - quadUp - quadRight, 1);	// Bottom right
+	quadProjected[3] = float4(quadPositionWorld - quadUp - quadRight, 1);	// Bottom left
+
+	// Project quad into NDC space
+	float4x4 VP = mul(View, Projection);
+
+	for (int i = 0; i < 4; i++)
+	{
+		quadProjected[i] = mul(quadProjected[i], VP);
+
+		// Homogeneous division
+		quadProjected[i] /= quadProjected[i].w;
+	}
+}
+
 [numthreads(32, 32, 1)]
 void CS(uint3 id : SV_DispatchThreadID)
 {
