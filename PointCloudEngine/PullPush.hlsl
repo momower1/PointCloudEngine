@@ -2,7 +2,7 @@
 #include "Geometry.hlsli"
 
 #define DEBUG_SPLAT_TEXEL_OVERLAP
-//#define DEBUG_SINGLE_QUAD
+#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
 Texture2D<float> depthTexture : register(t0);
@@ -199,20 +199,20 @@ void CS(uint3 id : SV_DispatchThreadID)
 #endif
 
 #ifdef DEBUG_SINGLE_QUAD
-	float3 pointPositionWorld = float3(0, -1, 1);
-	float3 pointNormalWorld = float3(0, 1, 0);
+	float3 quadPositionWorld = float3(0, -1, 1);
+	float3 quadNormalWorld = float3(0, 1, 0);
 
-	float4 pointPositionNDC = mul(mul(float4(pointPositionWorld, 1), View), Projection);
-	pointPositionNDC = pointPositionNDC / pointPositionNDC.w;
+	float4 quadPositionNDC = mul(mul(float4(quadPositionWorld, 1), View), Projection);
+	quadPositionNDC /= quadPositionNDC.w;
 
-	if (pointPositionNDC.z < 0)
+	if (quadPositionNDC.z < 0)
 	{
 		outputColorTexture[id.xy] = float4(1, 0, 0, 1);
 		return;
 	}
 
-	float3 viewDirection = normalize(pointPositionWorld - cameraPosition);
-	float angle = acos(dot(pointNormalWorld, -viewDirection));
+	float3 viewDirection = normalize(quadPositionWorld - cameraPosition);
+	float angle = acos(dot(quadNormalWorld, -viewDirection));
 
 	if (angle > (PI / 2))
 	{
@@ -220,82 +220,25 @@ void CS(uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-	// Construct a quad in world space
-	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
-	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
-	float3 cameraForward = float3(View[0][2], View[1][2], View[2][2]);
-
-	float3 up;
-	float3 right;
-
-	// Quad should face in the same direction as the normal or it should be aligned with the camera
-	if (orientedSplat)
-	{
-		up = 0.5f * splatSize * normalize(cross(pointNormalWorld, cameraRight));
-		right = 0.5f * splatSize * normalize(cross(pointNormalWorld, up));
-	}
-	else
-	{
-		up = 0.5f * splatSize * cameraUp;
-		right = 0.5f * splatSize * cameraRight;
-	}
-
-	float3 quadCenter = pointPositionWorld;
-	float3 quadTopLeft = quadCenter + up - right;
-	float3 quadTopRight = quadCenter + up + right;
-	float3 quadBottomLeft = quadCenter - up - right;
-	float3 quadBottomRight = quadCenter - up + right;
-
 	// Project quad
-	float4x4 VP = mul(View, Projection);
-	float4 quadCenterNDC = mul(float4(quadCenter, 1), VP);
-	float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
-	float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
-	float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
-	float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
+	float2 quadProjected[4];
+	GetProjectedQuad(quadPositionNDC, quadNormalWorld, quadProjected);
 
-	// Homogeneous division
-	quadCenterNDC /= quadCenterNDC.w;
-	quadTopLeftNDC /= quadTopLeftNDC.w;
-	quadTopRightNDC /= quadTopRightNDC.w;
-	quadBottomLeftNDC /= quadBottomLeftNDC.w;
-	quadBottomRightNDC /= quadBottomRightNDC.w;
-
-	// Calculate edge normal vectors (pointing towards quad center)
-	float2 quadLeftNormal = GetPerpendicularVector(quadTopLeftNDC.xy - quadBottomLeftNDC.xy);
-	float2 quadTopNormal = GetPerpendicularVector(quadTopRightNDC.xy - quadTopLeftNDC.xy);
-	float2 quadRightNormal = GetPerpendicularVector(quadBottomRightNDC.xy - quadTopRightNDC.xy);
-	float2 quadBottomNormal = GetPerpendicularVector(quadBottomLeftNDC.xy - quadBottomRightNDC.xy);
-
-	uint2 texel = uint2(id.x, id.y);
-
-	// Calculate normalized device coordinates for the four texel corners
-	float2 texelTopLeftNDC = resolutionPullPush * (texel / (float)resolutionOutput);
-	texelTopLeftNDC = 2 * (texelTopLeftNDC / float2(resolutionX, resolutionY)) - 1;
-	float2 texelTopRightNDC = resolutionPullPush * ((texel + uint2(1, 0)) / (float)resolutionOutput);
-	texelTopRightNDC = 2 * (texelTopRightNDC / float2(resolutionX, resolutionY)) - 1;
-	float2 texelBottomLeftNDC = resolutionPullPush * ((texel + uint2(0, 1)) / (float)resolutionOutput);
-	texelBottomLeftNDC = 2 * (texelBottomLeftNDC / float2(resolutionX, resolutionY)) - 1;
-	float2 texelBottomRightNDC = resolutionPullPush * ((texel + uint2(1, 1)) / (float)resolutionOutput);
-	texelBottomRightNDC = 2 * (texelBottomRightNDC / float2(resolutionX, resolutionY)) - 1;
-
-	// Need to invert y-coordinate for correct coordinate system
-	texelTopLeftNDC.y = -texelTopLeftNDC.y;
-	texelTopRightNDC.y = -texelTopRightNDC.y;
-	texelBottomLeftNDC.y = -texelBottomLeftNDC.y;
-	texelBottomRightNDC.y = -texelBottomRightNDC.y;
+	// Construct texel to test against
+	float2 texelNDC[4];
+	GetTexelCoordinates(id.xy, texelNDC);
 
 	// Only color the texel if all of its texel corners are inside the projected quad
-	if (IsInsideQuad(texelTopLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
-		&& IsInsideQuad(texelTopRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
-		&& IsInsideQuad(texelBottomLeftNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy)
-		&& IsInsideQuad(texelBottomRightNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+	if (IsInsideQuad(texelNDC[0], quadProjected[0], quadProjected[1], quadProjected[2], quadProjected[3])
+		&& IsInsideQuad(texelNDC[1], quadProjected[0], quadProjected[1], quadProjected[2], quadProjected[3])
+		&& IsInsideQuad(texelNDC[2], quadProjected[0], quadProjected[1], quadProjected[2], quadProjected[3])
+		&& IsInsideQuad(texelNDC[3], quadProjected[0], quadProjected[1], quadProjected[2], quadProjected[3]))
 	{
-		outputColorTexture[texel] = float4(0, 1, 0, 1);
+		outputColorTexture[id.xy] = float4(0, 1, 0, 1);
 	}
 	else
 	{
-		outputColorTexture[texel] = float4(0, 0, 0, 1);
+		outputColorTexture[id.xy] = float4(0, 0, 0, 1);
 	}
 
 	return;
