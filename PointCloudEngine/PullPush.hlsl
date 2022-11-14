@@ -1,7 +1,7 @@
 #include "GroundTruth.hlsl"
 #include "Geometry.hlsli"
 
-//#define DEBUG_SPLAT_TEXEL_OVERLAP
+#define DEBUG_SPLAT_TEXEL_OVERLAP
 //#define DEBUG_SINGLE_QUAD
 
 SamplerState samplerState : register(s0);
@@ -55,7 +55,7 @@ void GetTexelCoordinates(in uint2 texelId, inout float2 texelNDC[4])
 	}
 }
 
-void GetProjectedQuad(in float4 quadPositionNDC, in float3 quadNormalWorld, inout float4 quadProjected[4])
+void GetProjectedQuad(in float4 quadPositionNDC, in float3 quadNormalWorld, inout float2 quadProjected[4])
 {
 	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
 	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
@@ -84,20 +84,26 @@ void GetProjectedQuad(in float4 quadPositionNDC, in float3 quadNormalWorld, inou
 	}
 
 	// Construct quad in clockwise order
-	quadProjected[0] = float4(quadPositionWorld + quadUp - quadRight, 1);	// Top left
-	quadProjected[1] = float4(quadPositionWorld + quadUp + quadRight, 1);	// Top right
-	quadProjected[2] = float4(quadPositionWorld - quadUp - quadRight, 1);	// Bottom right
-	quadProjected[3] = float4(quadPositionWorld - quadUp - quadRight, 1);	// Bottom left
+	float4 quadNDC[] =
+	{
+		float4(quadPositionWorld + quadUp - quadRight, 1),	// Top left
+		float4(quadPositionWorld + quadUp + quadRight, 1),	// Top right
+		float4(quadPositionWorld - quadUp + quadRight, 1),	// Bottom right
+		float4(quadPositionWorld - quadUp - quadRight, 1)	// Bottom left
+	};
 
 	// Project quad into NDC space
 	float4x4 VP = mul(View, Projection);
 
 	for (int i = 0; i < 4; i++)
 	{
-		quadProjected[i] = mul(quadProjected[i], VP);
+		quadNDC[i] = mul(quadNDC[i], VP);
 
 		// Homogeneous division
-		quadProjected[i] /= quadProjected[i].w;
+		quadNDC[i] /= quadNDC[i].w;
+
+		// Assign projected 2D quad
+		quadProjected[i] = quadNDC[i].xy;
 	}
 }
 
@@ -111,90 +117,62 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 #ifdef DEBUG_SPLAT_TEXEL_OVERLAP
-	// Compute overlapping area between a projected quad shaped splat and a texel in screen space (2D)
-	float3 quadPositionWorld = float3(0, 0, 1);
-	float3 quadNormalWorld = normalize(float3(0, 1, -1));
-
-	// Construct a quad in world space
-	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
-	float3 quadUp = 0.5f * splatSize * normalize(cross(quadNormalWorld, cameraRight));
-	float3 quadRight = 0.5f * splatSize * normalize(cross(quadNormalWorld, quadUp));;
-
-	float3 quadTopLeft = quadPositionWorld + quadUp - quadRight;
-	float3 quadTopRight = quadPositionWorld + quadUp + quadRight;
-	float3 quadBottomLeft = quadPositionWorld - quadUp - quadRight;
-	float3 quadBottomRight = quadPositionWorld - quadUp + quadRight;
-
-	// Project quad
-	float4x4 VP = mul(View, Projection);
-	float4 quadTopLeftNDC = mul(float4(quadTopLeft, 1), VP);
-	float4 quadTopRightNDC = mul(float4(quadTopRight, 1), VP);
-	float4 quadBottomLeftNDC = mul(float4(quadBottomLeft, 1), VP);
-	float4 quadBottomRightNDC = mul(float4(quadBottomRight, 1), VP);
-
-	// Homogeneous division
-	quadTopLeftNDC /= quadTopLeftNDC.w;
-	quadTopRightNDC /= quadTopRightNDC.w;
-	quadBottomLeftNDC /= quadBottomLeftNDC.w;
-	quadBottomRightNDC /= quadBottomRightNDC.w;
-
 	float2 pixelNDC = resolutionPullPush * ((id.xy + float2(0.5f, 0.5f)) / (float)resolutionOutput);
 	pixelNDC = 2 * (pixelNDC / float2(resolutionX, resolutionY)) - 1;
 	pixelNDC.y *= -1;
 
+	// Compute overlapping area between a projected quad shaped splat and a texel in screen space (2D)
+	float3 quadPositionWorld = float3(0, 0, 1);
+	float3 quadNormalWorld = normalize(float3(0, 1, -1));
+	float4 quadPositionNDC = mul(mul(float4(quadPositionWorld, 1), View), Projection);
+	quadPositionNDC /= quadPositionNDC.w;
+
+	// Project the quad
+	float2 quadProjected[4];
+	GetProjectedQuad(quadPositionNDC, quadNormalWorld, quadProjected);
+
+	// Construct the texel corners in clockwise order
 	float aspectRatio = resolutionX / (float)resolutionY;
-	float2 texelTopLeftNDC = { -0.5f, -0.5f * aspectRatio };
-	float2 texelTopRightNDC = { 0.5f, -0.5f * aspectRatio };
-	float2 texelBottomLeftNDC = { -0.5f, 0.5f * aspectRatio };
-	float2 texelBottomRightNDC = { 0.5f, 0.5f * aspectRatio };
 
-	float2 texelOrigins[] =
+	float2 texelNDC[] =
 	{
-		texelTopLeftNDC,
-		texelTopRightNDC,
-		texelBottomRightNDC,
-		texelBottomLeftNDC
+		float2(-0.5f, -0.5f * aspectRatio),		// Top left
+		float2(0.5f, -0.5f * aspectRatio),		// Top right
+		float2(0.5f, 0.5f * aspectRatio),		// Bottom right
+		float2(-0.5f, 0.5f * aspectRatio)		// Bottom left
 	};
-
-	float2 quadOrigins[] =
-	{
-		quadTopLeftNDC.xy,
-		quadTopRightNDC.xy,
-		quadBottomRightNDC.xy,
-		quadBottomLeftNDC.xy
-	};
-
-	float overlapPercentage = GetTexelQuadOverlapPercentage(texelOrigins, quadOrigins);
 
 	float vertexSizeNDC = 0.01f;
 	float4 color = { 0, 0, 0, 1 };
 
 	// Color the quad vertices blue
-	if ((distance(pixelNDC, quadTopLeftNDC.xy) < vertexSizeNDC)
-		|| (distance(pixelNDC, quadTopRightNDC.xy) < vertexSizeNDC)
-		|| (distance(pixelNDC, quadBottomLeftNDC.xy) < vertexSizeNDC)
-		|| (distance(pixelNDC, quadBottomRightNDC.xy) < vertexSizeNDC))
+	for (int i = 0; i < 4; i++)
 	{
-		color.b += 1.0f;
+		if (distance(pixelNDC, quadProjected[i]) < vertexSizeNDC)
+		{
+			color.b += 1.0f;
+		}
 	}
 
 	// Color the quad green
-	if (IsInsideQuad(pixelNDC, quadTopLeftNDC.xy, quadTopRightNDC.xy, quadBottomRightNDC.xy, quadBottomLeftNDC.xy))
+	if (IsInsideQuad(pixelNDC, quadProjected[0], quadProjected[1], quadProjected[2], quadProjected[3]))
 	{
 		color.g += 1.0f;
 	}
 
 	// Color the texel red
-	if (IsInsideQuad(pixelNDC, texelTopLeftNDC, texelTopRightNDC, texelBottomRightNDC, texelBottomLeftNDC))
+	if (IsInsideQuad(pixelNDC, texelNDC[0], texelNDC[1], texelNDC[2], texelNDC[3]))
 	{
 		color.r += 1.0f;
 	}
+
+	float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);
 
 	// The overlap area polygon of two quads can at most have 8 vertices
 	float2 overlapVertices[8];
 	uint overlapVertexCount = 0;
 
-	GetQuadQuadOverlappingPolygon(texelOrigins, quadOrigins, overlapVertexCount, overlapVertices);
+	GetQuadQuadOverlappingPolygon(texelNDC, quadProjected, overlapVertexCount, overlapVertices);
 
 	if (overlapVertexCount >= 3)
 	{
