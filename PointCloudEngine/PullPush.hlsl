@@ -145,25 +145,25 @@ void CS(uint3 id : SV_DispatchThreadID)
 	float vertexSizeNDC = 0.01f;
 	float4 color = { 0, 0, 0, 1 };
 
-	// Color the quad vertices blue
-	for (int i = 0; i < 4; i++)
-	{
-		if (distance(pixelNDC, quadProjected[i]) < vertexSizeNDC)
-		{
-			color.b += 1.0f;
-		}
-	}
-
 	// Color the quad green
 	if (IsInsideQuad(pixelNDC, quadProjected[0], quadProjected[1], quadProjected[2], quadProjected[3]))
 	{
-		color.g += 1.0f;
+		color = float4(0, 1, 0, 1);
 	}
 
 	// Color the texel red
 	if (IsInsideQuad(pixelNDC, texelNDC[0], texelNDC[1], texelNDC[2], texelNDC[3]))
 	{
-		color.r += 1.0f;
+		color = float4(1, 0, 0, 1);
+	}
+
+	// Color the quad vertices blue
+	for (int i = 0; i < 4; i++)
+	{
+		if (distance(pixelNDC, quadProjected[i]) < vertexSizeNDC)
+		{
+			color = float4(0, 0, 1, 1);
+		}
 	}
 
 	float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);

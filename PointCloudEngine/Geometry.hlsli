@@ -43,12 +43,59 @@ float2 GetLineLineIntersection(float2 o1, float2 d1, float2 o2, float2 d2)
 
 bool GetLineSegmentIntersection(float2 o1, float2 d1, float2 o2, float2 d2, out float2 intersection)
 {
-	// Assume that the lines are not parallel (otherwise division by zero)
-	// Both lines have origin and direction, calculate distance along second line to the intersection point
-	// Need to explicitly calculate both lambdas, otherwise there is a configuration where one of them is incorrect
-	float lambda1 = (d2.x * o1.y - d2.x * o2.y - d2.y * o1.x + d2.y * o2.x) / (d2.y * d1.x - d2.x * d1.y);
-	float lambda2 = (d1.x * o2.y - d1.x * o1.y - d1.y * o2.x + d1.y * o1.x) / (d1.y * d2.x - d1.x * d2.y);
-	intersection = o2 + lambda2 * d2;
+	float epsilon = 1e-6;
+	float denominator1 = d2.y * d1.x - d2.x * d1.y;
+	float denominator2 = d1.y * d2.x - d1.x * d2.y;
+
+	// Avoid configuration with division by zero
+	if ((abs(denominator1) < epsilon) && (abs(denominator2) < epsilon))
+	{
+		return false;
+	}
+	
+	// Both lines have origin and direction, solve for distance along one of the lines to an intersection point
+	float lambda1;
+	float lambda2;
+	
+	// Use the formula that is numerically more stable (no division by small number)
+	if (abs(denominator1) > abs(denominator2))
+	{
+		lambda1 = (d2.x * o1.y - d2.x * o2.y - d2.y * o1.x + d2.y * o2.x) / denominator1;
+		intersection = o1 + lambda1 * d1;
+
+		if (abs(denominator2) < epsilon)
+		{
+			if (abs(d2.y) < epsilon)
+			{
+				return false;
+			}
+
+			lambda2 = (o1.y - o2.y + lambda1 * d1.y) / d2.y;
+		}
+		else
+		{
+			lambda2 = (d1.x * o2.y - d1.x * o1.y - d1.y * o2.x + d1.y * o1.x) / denominator2;
+		}
+	}
+	else
+	{
+		lambda2 = (d1.x * o2.y - d1.x * o1.y - d1.y * o2.x + d1.y * o1.x) / denominator2;
+		intersection = o2 + lambda2 * d2;
+
+		if (abs(denominator1) < epsilon)
+		{
+			if (abs(d1.x) < epsilon)
+			{
+				return false;
+			}
+
+			lambda1 = (o2.x - o1.x + lambda2 * d2.x) / d1.x;
+		}
+		else
+		{
+			lambda1 = (d2.x * o1.y - d2.x * o2.y - d2.y * o1.x + d2.y * o2.x) / denominator1;
+		}
+	}
 
 	return (lambda1 >= 0) && (lambda1 <= 1) && (lambda2 >= 0) && (lambda2 <= 1);
 }
