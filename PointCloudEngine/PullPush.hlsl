@@ -35,7 +35,7 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 };  // Total: 64 bytes with constant buffer packing rules
 
-void GetTexelCoordinates(in uint2 texelId, inout float2 texelNDC[4])
+void GetTexelCoordinates(uint2 texelId, out float2 texelNDC[4])
 {
 	// Calculate normalized device coordinates for the four texel corners in clockwise order
 	uint2 offsets[] =
@@ -55,7 +55,7 @@ void GetTexelCoordinates(in uint2 texelId, inout float2 texelNDC[4])
 	}
 }
 
-void GetProjectedQuad(in float4 quadPositionNDC, in float3 quadNormalWorld, inout float2 quadProjected[4])
+void GetProjectedQuad(float4 quadPositionNDC, float3 quadNormalWorld, out float2 quadProjected[4])
 {
 	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
 	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
@@ -318,30 +318,11 @@ void CS(uint3 id : SV_DispatchThreadID)
 						{
 							largestOverlapPercentage = overlapPercentage;
 							outputNormal = inputNormal;
+							outputColor = inputColor;
 							outputPosition = inputPosition;
-
-							if (!texelBlending)
-							{
-								outputColor = inputColor;
-							}
-						}
-
-						// Blend splat colors together
-						if (texelBlending)
-						{
-							// Accumulate weighted colors and weights
-							float blendWeight = overlapPercentage;
-							outputColor.rgb += blendWeight * inputColor.rgb;
-							outputColor.w += blendWeight * inputColor.w;
 						}
 					}
 				}
-			}
-
-			// Normalize accumulated blended color
-			if (texelBlending && (outputColor.w > 0.0f))
-			{
-				outputColor /= outputColor.w;
 			}
 		}
 	}
@@ -360,7 +341,7 @@ void CS(uint3 id : SV_DispatchThreadID)
 		if (inputPosition.w >= 1.0f)
 		{
 			float2 texelNDC[4];
-			GetTexelCoordinates(id.xy, texelNDC);
+			GetTexelCoordinates(pixel, texelNDC);
 
 			// Project the quad that corresponds to the input point
 			float2 inputQuadProjected[4];
@@ -368,42 +349,24 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, inputQuadProjected);
 
-			// Need to compare overlay percentages of input and output, only keep splat with larger overlay
-			if (outputPosition.w >= 0)
+			if (inputOverlapPercentage > 0.0f)
 			{
-				// Project the quad that corresponds to the output point
-				float2 outputQuadProjected[4];
-				GetProjectedQuad(outputPosition, outputNormal.xyz, outputQuadProjected);
-
-				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
-
-				if (inputOverlapPercentage > outputOverlapPercentage)
+				// Need to compare overlay percentages of input and output, only keep splat with larger overlay
+				if (outputPosition.w >= 0.0f)
 				{
-					outputNormal = inputNormal;
-					outputPosition = inputPosition;
+					// Project the quad that corresponds to the output point
+					float2 outputQuadProjected[4];
+					GetProjectedQuad(outputPosition, outputNormal.xyz, outputQuadProjected);
 
-					if (!texelBlending)
+					float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
+
+					if (inputOverlapPercentage > outputOverlapPercentage)
 					{
+						outputNormal = inputNormal;
 						outputColor = inputColor;
+						outputPosition = inputPosition;
 					}
 				}
-
-				if (texelBlending)
-				{
-					float blendWeight = inputOverlapPercentage;
-					outputColor.rgb += blendWeight * inputColor.rgb;
-					outputColor.w += blendWeight * inputColor.w;
-				}
-				else if (inputOverlapPercentage >= 0.99f)
-				{
-					outputColor = inputColor;
-				}
-			}
-
-			// Normalize accumulated blended color
-			if (texelBlending && (outputColor.w > 0.0f))
-			{
-				outputColor /= outputColor.w;
 			}
 		}
 	}
