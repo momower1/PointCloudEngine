@@ -317,44 +317,15 @@ void CS(uint3 id : SV_DispatchThreadID)
 						// Get the overlapping area percentage between the quad and the texel
 						float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);
 
-						if (overlapPercentage > 0.99f)
+						if (overlapPercentage > largestOverlapPercentage)
 						{
-							if (texelBlending)
-							{
-								float differenceZ = quadZ - surfaceZ;
-
-								if (differenceZ < 0)
-								{
-									surfaceZ = quadZ;
-									outputNormal = inputNormal;
-									outputPosition = inputPosition;
-
-									if (differenceZ < -blendRange)
-									{
-										outputColor = inputColor;
-									}
-									else
-									{
-										float blendWeight = overlapPercentage;
-										outputColor.rgb += blendWeight * inputColor.rgb;
-										outputColor.w += blendWeight;
-									}
-								}
-								else if (differenceZ < blendRange)
-								{
-									float blendWeight = overlapPercentage;
-									outputColor.rgb += blendWeight * inputColor.rgb;
-									outputColor.w += blendWeight;
-								}
-							}
-							else if (quadZ < surfaceZ)
-							{
-								surfaceZ = quadZ;
-								outputColor = inputColor;
-								outputNormal = inputNormal;
-								outputPosition = inputPosition;
-							}
+							largestOverlapPercentage = overlapPercentage;
+							outputNormal = inputNormal;
+							outputPosition = inputPosition;
 						}
+
+						outputColor.rgb += overlapPercentage * inputColor;
+						outputColor.w += overlapPercentage;
 					}
 				}
 			}
@@ -380,24 +351,27 @@ void CS(uint3 id : SV_DispatchThreadID)
 		// Replace pixels where no point has been rendered to (therefore 4th component is zero) or pixels that are obscured by a closer surface from the higher level pull texture
 		if (inputPosition.w >= 1.0f)
 		{
-			if (outputPosition.w <= 0.0f)
+			float2 texelNDC[4];
+			GetTexelCoordinates(pixel, texelNDC);
+
+			// Project the quad that corresponds to the input point
+			float inputQuadZ;
+			float2 inputQuadProjected[4];
+			GetProjectedQuad(inputPosition, inputNormal.xyz, inputQuadProjected, inputQuadZ);
+
+			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, inputQuadProjected);
+
+			outputColor.rgb += inputOverlapPercentage * inputColor.rgb;
+			outputColor.w += inputOverlapPercentage;
+
+			// Normalize accumulated blended color
+			if (texelBlending && (outputColor.w > 0.0f))
 			{
-				outputNormal = inputNormal;
-				outputColor = inputColor;
-				outputPosition = inputPosition;
+				outputColor /= outputColor.w;
 			}
-			else
+
+			if (outputPosition.w >= 1.0f)
 			{
-				float2 texelNDC[4];
-				GetTexelCoordinates(pixel, texelNDC);
-
-				// Project the quad that corresponds to the input point
-				float inputQuadZ;
-				float2 inputQuadProjected[4];
-				GetProjectedQuad(inputPosition, inputNormal.xyz, inputQuadProjected, inputQuadZ);
-
-				float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, inputQuadProjected);
-
 				// Project the quad that corresponds to the output point
 				float outputQuadZ;
 				float2 outputQuadProjected[4];
@@ -405,34 +379,16 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
 
-				float differenceZ = inputQuadZ - outputQuadZ;
-
-				if (differenceZ < 0)
+				if (inputOverlapPercentage > outputOverlapPercentage)
 				{
 					outputNormal = inputNormal;
 					outputPosition = inputPosition;
-
-					if (!texelBlending || (differenceZ < -blendRange))
-					{
-						outputColor = inputColor;
-					}
-					else
-					{
-						outputColor.rgb = inputOverlapPercentage * inputColor.rgb + outputOverlapPercentage * outputColor.rgb;
-						outputColor.w = inputOverlapPercentage + outputOverlapPercentage;
-					}
-				}
-				else if (texelBlending && (differenceZ < blendRange))
-				{
-					outputColor.rgb = inputOverlapPercentage * inputColor.rgb + outputOverlapPercentage * outputColor.rgb;
-					outputColor.w = inputOverlapPercentage + outputOverlapPercentage;
 				}
 			}
-
-			// Normalize accumulated blended color
-			if (texelBlending && (outputColor.w > 0.0f))
+			else
 			{
-				outputColor /= outputColor.w;
+				outputNormal = inputNormal;
+				outputPosition = inputPosition;
 			}
 		}
 	}
