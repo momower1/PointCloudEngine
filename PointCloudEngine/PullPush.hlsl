@@ -55,7 +55,7 @@ void GetTexelCoordinates(uint2 texelId, out float2 texelNDC[4])
 	}
 }
 
-void GetProjectedQuad(float4 quadPositionNDC, float3 quadNormalWorld, out float2 quadProjected[4])
+void GetProjectedQuad(float4 quadPositionNDC, float3 quadNormalWorld, out float2 quadProjected[4], out float quadZ)
 {
 	float3 cameraRight = float3(View[0][0], View[1][0], View[2][0]);
 	float3 cameraUp = float3(View[0][1], View[1][1], View[2][1]);
@@ -67,6 +67,7 @@ void GetProjectedQuad(float4 quadPositionNDC, float3 quadNormalWorld, out float2
 
 	float3 quadPositionWorld = mul(quadPositionLocal, World).xyz;
 	float3 quadPositionView = mul(float4(quadPositionWorld, 1), View).xyz;
+	quadZ = quadPositionView.z;
 
 	float3 quadUp;
 	float3 quadRight;
@@ -128,8 +129,9 @@ void CS(uint3 id : SV_DispatchThreadID)
 	quadPositionNDC /= quadPositionNDC.w;
 
 	// Project the quad
+	float quadZ;
 	float2 quadProjected[4];
-	GetProjectedQuad(quadPositionNDC, quadNormalWorld, quadProjected);
+	GetProjectedQuad(quadPositionNDC, quadNormalWorld, quadProjected, quadZ);
 
 	// Construct the texel corners in clockwise order
 	float aspectRatio = resolutionX / (float)resolutionY;
@@ -221,8 +223,9 @@ void CS(uint3 id : SV_DispatchThreadID)
 	}
 
 	// Project quad
+	float quadZ;
 	float2 quadProjected[4];
-	GetProjectedQuad(quadPositionNDC, quadNormalWorld, quadProjected);
+	GetProjectedQuad(quadPositionNDC, quadNormalWorld, quadProjected, quadZ);
 
 	// Construct texel to test against
 	float2 texelNDC[4];
@@ -307,22 +310,53 @@ void CS(uint3 id : SV_DispatchThreadID)
 					if (inputPosition.w > 0.0f)
 					{
 						// Project the quad that corresponds to this point
+						float quadZ;
 						float2 quadProjected[4];
-						GetProjectedQuad(inputPosition, inputNormal.xyz, quadProjected);
+						GetProjectedQuad(inputPosition, inputNormal.xyz, quadProjected, quadZ);
 
 						// Get the overlapping area percentage between the quad and the texel
 						float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);
 
-						// Splat covers the yet largest area of the texel so assign it as the new surface splat
-						if (overlapPercentage > largestOverlapPercentage)
+						float differenceZ = quadZ - surfaceZ;
+
+						if (differenceZ < 0)
 						{
-							largestOverlapPercentage = overlapPercentage;
+							surfaceZ = quadZ;
 							outputNormal = inputNormal;
-							outputColor = inputColor;
 							outputPosition = inputPosition;
+
+							if (!texelBlending || (differenceZ < -blendRange))
+							{
+								outputColor = inputColor;
+							}
+							else
+							{
+								outputColor.rgb += overlapPercentage * inputColor.rgb;
+								outputColor.w += overlapPercentage;
+							}
 						}
+						else if (texelBlending && (differenceZ < blendRange))
+						{
+							outputColor.rgb += overlapPercentage * inputColor.rgb;
+							outputColor.w += overlapPercentage;
+						}
+
+						//// Splat covers the yet largest area of the texel so assign it as the new surface splat
+						//if (overlapPercentage > largestOverlapPercentage)
+						//{
+						//	largestOverlapPercentage = overlapPercentage;
+						//	outputNormal = inputNormal;
+						//	outputColor = inputColor;
+						//	outputPosition = inputPosition;
+						//}
 					}
 				}
+			}
+
+			// Normalize accumulated blended color
+			if (texelBlending && (outputColor.w > 0.0f))
+			{
+				outputColor /= outputColor.w;
 			}
 		}
 	}
@@ -344,30 +378,66 @@ void CS(uint3 id : SV_DispatchThreadID)
 			GetTexelCoordinates(pixel, texelNDC);
 
 			// Project the quad that corresponds to the input point
+			float inputQuadZ;
 			float2 inputQuadProjected[4];
-			GetProjectedQuad(inputPosition, inputNormal.xyz, inputQuadProjected);
+			GetProjectedQuad(inputPosition, inputNormal.xyz, inputQuadProjected, inputQuadZ);
 
 			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, inputQuadProjected);
 
 			if (inputOverlapPercentage > 0.0f)
 			{
-				// Need to compare overlay percentages of input and output, only keep splat with larger overlay
-				if (outputPosition.w >= 0.0f)
+				if (outputPosition.w <= 0.0f)
+				{
+					outputNormal = inputNormal;
+					outputColor = inputColor;
+					outputPosition = inputPosition;
+				}
+				else
 				{
 					// Project the quad that corresponds to the output point
+					float outputQuadZ;
 					float2 outputQuadProjected[4];
-					GetProjectedQuad(outputPosition, outputNormal.xyz, outputQuadProjected);
+					GetProjectedQuad(outputPosition, outputNormal.xyz, outputQuadProjected, outputQuadZ);
 
 					float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
 
-					if (inputOverlapPercentage > outputOverlapPercentage)
+					float differenceZ = inputQuadZ - outputQuadZ;
+
+					if (differenceZ < 0)
 					{
 						outputNormal = inputNormal;
-						outputColor = inputColor;
 						outputPosition = inputPosition;
+
+						if (!texelBlending || (differenceZ < -blendRange))
+						{
+							outputColor = inputColor;
+						}
+						else
+						{
+							outputColor.rgb = outputOverlapPercentage * outputColor.rgb + inputOverlapPercentage * inputColor.rgb;
+							outputColor.w = outputOverlapPercentage + inputOverlapPercentage;
+						}
 					}
+					else if (texelBlending && (differenceZ < blendRange))
+					{
+						outputColor.rgb = outputOverlapPercentage * outputColor.rgb + inputOverlapPercentage * inputColor.rgb;
+						outputColor.w = outputOverlapPercentage + inputOverlapPercentage;
+					}
+
+					//if (inputOverlapPercentage > outputOverlapPercentage)
+					//{
+					//	outputNormal = inputNormal;
+					//	outputColor = inputColor;
+					//	outputPosition = inputPosition;
+					//}
 				}
 			}
+		}
+
+		// Normalize accumulated blended color
+		if (texelBlending && (outputColor.w > 0.0f))
+		{
+			outputColor /= outputColor.w;
 		}
 	}
 
