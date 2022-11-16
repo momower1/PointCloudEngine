@@ -295,7 +295,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 			GetTexelCoordinates(id.xy, texelNDC);
 
 			float surfaceZ = farZ;
-			float largestOverlapPercentage = 0;
 
 			// Go over the 2x2 input texels
 			for (int y = 0; y < 2; y++)
@@ -317,17 +316,26 @@ void CS(uint3 id : SV_DispatchThreadID)
 						// Get the overlapping area percentage between the quad and the texel
 						float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);
 
-						if (quadZ < surfaceZ)
+						float differenceZ = quadZ - surfaceZ;
+
+						if (differenceZ < 0)
 						{
-							largestOverlapPercentage = overlapPercentage;
 							surfaceZ = quadZ;
-							outputColor = inputColor;
 							outputNormal = inputNormal;
 							outputPosition = inputPosition;
+
+							if (!texelBlending || (differenceZ < -blendRange))
+							{
+								outputColor = inputColor;
+							}
 						}
 
-						//outputColor.rgb += overlapPercentage * inputColor;
-						//outputColor.w += overlapPercentage;
+						if (texelBlending && (abs(differenceZ) < blendRange))
+						{
+							// Blend colors
+							outputColor.rgb += overlapPercentage * inputColor.rgb;
+							outputColor.w += overlapPercentage;
+						}
 					}
 				}
 			}
@@ -372,29 +380,40 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
 
-				if ((inputOverlapPercentage > 0.99f) && inputQuadZ < outputQuadZ)
+				float differenceZ = inputQuadZ - outputQuadZ;
+
+				// Replace occluded pixels that are behind the closest surface
+				if ((inputOverlapPercentage > 0.99f) && (differenceZ < 0))
 				{
-					outputColor = inputColor;
 					outputNormal = inputNormal;
 					outputPosition = inputPosition;
+
+					if (!texelBlending || (differenceZ < -blendRange))
+					{
+						outputColor = inputColor;
+					}
+					else
+					{
+						outputColor.rgb = inputOverlapPercentage * inputColor.rgb + outputOverlapPercentage * outputColor.rgb;
+						outputColor.w = inputOverlapPercentage + outputOverlapPercentage;
+					}
 				}
-				else
+				else if (texelBlending)
 				{
-					outputColor.rgb += inputOverlapPercentage * inputColor.rgb;
-					outputColor.w += inputOverlapPercentage;
+					outputColor.rgb = inputOverlapPercentage * inputColor.rgb + outputOverlapPercentage * outputColor.rgb;
+					outputColor.w = inputOverlapPercentage + outputOverlapPercentage;
 				}
 			}
 			else
 			{
+				outputColor.rgb = inputOverlapPercentage * inputColor.rgb;
+				outputColor.w = inputOverlapPercentage;
 				outputNormal = inputNormal;
 				outputPosition = inputPosition;
-
-				outputColor.rgb += inputOverlapPercentage * inputColor.rgb;
-				outputColor.w += inputOverlapPercentage;
 			}
 
 			// Normalize accumulated blended color
-			if (texelBlending && (outputColor.w > 0.0f))
+			if (outputColor.w > 0.0f)
 			{
 				outputColor /= outputColor.w;
 			}
