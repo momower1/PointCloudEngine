@@ -317,15 +317,17 @@ void CS(uint3 id : SV_DispatchThreadID)
 						// Get the overlapping area percentage between the quad and the texel
 						float overlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, quadProjected);
 
-						if (overlapPercentage > largestOverlapPercentage)
+						if (quadZ < surfaceZ)
 						{
 							largestOverlapPercentage = overlapPercentage;
+							surfaceZ = quadZ;
+							outputColor = inputColor;
 							outputNormal = inputNormal;
 							outputPosition = inputPosition;
 						}
 
-						outputColor.rgb += overlapPercentage * inputColor;
-						outputColor.w += overlapPercentage;
+						//outputColor.rgb += overlapPercentage * inputColor;
+						//outputColor.w += overlapPercentage;
 					}
 				}
 			}
@@ -361,15 +363,6 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 			float inputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, inputQuadProjected);
 
-			outputColor.rgb += inputOverlapPercentage * inputColor.rgb;
-			outputColor.w += inputOverlapPercentage;
-
-			// Normalize accumulated blended color
-			if (texelBlending && (outputColor.w > 0.0f))
-			{
-				outputColor /= outputColor.w;
-			}
-
 			if (outputPosition.w >= 1.0f)
 			{
 				// Project the quad that corresponds to the output point
@@ -379,16 +372,31 @@ void CS(uint3 id : SV_DispatchThreadID)
 
 				float outputOverlapPercentage = GetTexelQuadOverlapPercentage(texelNDC, outputQuadProjected);
 
-				if (inputOverlapPercentage > outputOverlapPercentage)
+				if ((inputOverlapPercentage > 0.99f) && inputQuadZ < outputQuadZ)
 				{
+					outputColor = inputColor;
 					outputNormal = inputNormal;
 					outputPosition = inputPosition;
+				}
+				else
+				{
+					outputColor.rgb += inputOverlapPercentage * inputColor.rgb;
+					outputColor.w += inputOverlapPercentage;
 				}
 			}
 			else
 			{
 				outputNormal = inputNormal;
 				outputPosition = inputPosition;
+
+				outputColor.rgb += inputOverlapPercentage * inputColor.rgb;
+				outputColor.w += inputOverlapPercentage;
+			}
+
+			// Normalize accumulated blended color
+			if (texelBlending && (outputColor.w > 0.0f))
+			{
+				outputColor /= outputColor.w;
 			}
 		}
 	}
