@@ -282,6 +282,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="HDF5File.cpp" />
+    <ClCompile Include="OBJFile.cpp" />
     <ClCompile Include="PrecompiledHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -317,6 +318,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <ClInclude Include="GUIText.h" />
     <ClInclude Include="GUIValue.h" />
     <ClInclude Include="HDF5File.h" />
+    <ClInclude Include="OBJFile.h" />
     <ClInclude Include="PrecompiledHeader.h" />
     <ClInclude Include="PullPush.h" />
     <ClInclude Include="resource.h" />

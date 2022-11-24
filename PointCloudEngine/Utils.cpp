@@ -39,3 +39,26 @@ Gdiplus::Image* Utils::LoadImageFromResource(DWORD resourceID, std::wstring reso
 
     return image;
 }
+
+std::vector<std::wstring> Utils::SplitString(std::wstring string, std::wstring splitter)
+{
+    std::vector<std::wstring> stringSplits;
+
+    size_t delimiter = string.find_first_of(splitter);
+
+    while ((delimiter > 0) && (delimiter != std::wstring::npos))
+    {
+        std::wstring split = string.substr(0, delimiter);
+        string = string.substr(delimiter + 1, string.length());
+        delimiter = string.find_first_of(splitter);
+
+        stringSplits.push_back(split);
+    }
+
+    if (string.length() > 0)
+    {
+        stringSplits.push_back(string);
+    }
+
+    return stringSplits;
+}

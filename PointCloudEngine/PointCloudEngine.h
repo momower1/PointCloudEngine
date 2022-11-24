@@ -78,6 +78,7 @@ using namespace PointCloudEngine;
 #include "GUI.h"
 #include "Scene.h"
 #include "HDF5File.h"
+#include "OBJFile.h"
 
 // Global variables, accessable in other files
 extern std::wstring executablePath;

@@ -119,6 +119,9 @@
     <ClInclude Include="PullPush.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OBJFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">
@@ -179,6 +182,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PullPush.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OBJFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
