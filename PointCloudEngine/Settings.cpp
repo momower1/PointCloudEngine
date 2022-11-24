@@ -69,11 +69,13 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(sparseSamplingRate), &sparseSamplingRate);
 
 		// Parse pull push parameters
-		TryParse(NAMEOF(usePullPushLinearFilter), &usePullPushLinearFilter);
-		TryParse(NAMEOF(pullPushDepthBias), &pullPushDepthBias);
-		TryParse(NAMEOF(pullPushImportanceScale), &pullPushImportanceScale);
-		TryParse(NAMEOF(pullPushImportanceExponent), &pullPushImportanceExponent);
-		TryParse(NAMEOF(drawPullPushImportance), &drawPullPushImportance);
+		TryParse(NAMEOF(pullPushLinearFilter), &pullPushLinearFilter);
+		TryParse(NAMEOF(pullPushSkipPushPhase), &pullPushSkipPushPhase);
+		TryParse(NAMEOF(pullPushOrientedSplat), &pullPushOrientedSplat);
+		TryParse(NAMEOF(pullPushBlending), &pullPushBlending);
+		TryParse(NAMEOF(pullPushDebugLevel), &pullPushDebugLevel);
+		TryParse(NAMEOF(pullPushSplatSize), &pullPushSplatSize);
+		TryParse(NAMEOF(pullPushBlendRange), &pullPushBlendRange);
 
 		// Parse neural network parameters
 		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
@@ -185,11 +187,13 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << std::endl;
 
 	settingsStream << L"# Pull Push Parameters" << std::endl;
-	settingsStream << NAMEOF(usePullPushLinearFilter) << L"=" << usePullPushLinearFilter << std::endl;
-	settingsStream << NAMEOF(pullPushDepthBias) << L"=" << pullPushDepthBias << std::endl;
-	settingsStream << NAMEOF(pullPushImportanceScale) << L"=" << pullPushImportanceScale << std::endl;
-	settingsStream << NAMEOF(pullPushImportanceExponent) << L"=" << pullPushImportanceExponent << std::endl;
-	settingsStream << NAMEOF(drawPullPushImportance) << L"=" << drawPullPushImportance << std::endl;
+	settingsStream << NAMEOF(pullPushLinearFilter) << L"=" << pullPushLinearFilter << std::endl;
+	settingsStream << NAMEOF(pullPushSkipPushPhase) << L"=" << pullPushSkipPushPhase << std::endl;
+	settingsStream << NAMEOF(pullPushOrientedSplat) << L"=" << pullPushOrientedSplat << std::endl;
+	settingsStream << NAMEOF(pullPushBlending) << L"=" << pullPushBlending << std::endl;
+	settingsStream << NAMEOF(pullPushDebugLevel) << L"=" << pullPushDebugLevel << std::endl;
+	settingsStream << NAMEOF(pullPushSplatSize) << L"=" << pullPushSplatSize << std::endl;
+	settingsStream << NAMEOF(pullPushBlendRange) << L"=" << pullPushBlendRange << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;

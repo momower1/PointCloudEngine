@@ -147,6 +147,16 @@ void GroundTruthRenderer::Draw()
 			}
 
 			d3d11DevCon->CSSetConstantBuffers(0, 1, &constantBuffer);
+			pullPush->SetInitialColorTexture(backBufferTexture);
+
+			constantBufferData.drawNormals = true;
+			d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
+			d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+			d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			d3d11DevCon->Draw(vertexCount, 0);
+			constantBufferData.drawNormals = false;
+
+			pullPush->SetInitialNormalTexture(backBufferTexture);
 			pullPush->Execute(backBufferTexture, depthTextureSRV);
 		}
 	}
