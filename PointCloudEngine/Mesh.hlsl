@@ -28,15 +28,15 @@ SamplerState LinearSampler
 
 struct VS_INPUT
 {
-    uint positionIndex : POSITION;
-    uint textureCoordinateIndex : TEXCOORD;
-    uint normalIndex : NORMAL;
+    uint positionIndex : POSITION_INDEX;
+    uint textureCoordinateIndex : TEXCOORD_INDEX;
+    uint normalIndex : NORMAL_INDEX;
 };
 
 struct VS_OUTPUT
 {
     float4 position : SV_POSITION;
-    float3 positionWorld : POSITION;
+    float3 positionWorld : POSITION_WORLD;
     float2 textureUV : TEXCOORD;
     float3 normal : NORMAL;
 };
@@ -44,8 +44,8 @@ struct VS_OUTPUT
 VS_OUTPUT VS(VS_INPUT input)
 {
     VS_OUTPUT output;
-    output.positionWorld = mul(float4(bufferPositions[input.positionIndex], 1), World);
-    output.position = mul(output.positionWorld, View);
+    output.positionWorld = mul(float4(bufferPositions[input.positionIndex], 1), World).xyz;
+    output.position = mul(float4(output.positionWorld, 1), View);
     output.position = mul(output.position, Projection);
     output.normal = normalize(mul(float4(bufferNormals[input.normalIndex], 0), WorldInverseTranspose)).xyz;
     output.textureUV = bufferTextureCoordinates[input.textureCoordinateIndex];

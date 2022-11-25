@@ -3,60 +3,103 @@
 
 MeshRenderer::MeshRenderer(OBJContainer objContainer)
 {
-    // Create a structured positions buffer description
-    D3D11_BUFFER_DESC bufferPositionsDesc;
-    ZeroMemory(&bufferPositionsDesc, sizeof(bufferPositionsDesc));
-    bufferPositionsDesc.Usage = D3D11_USAGE_DEFAULT;
-    bufferPositionsDesc.ByteWidth = sizeof(Vector3) * objContainer.buffers.positions.size();
-    bufferPositionsDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferPositionsDesc.StructureByteStride = sizeof(Vector3);
-    bufferPositionsDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    // Positions
+    {
+        // Create a structured positions buffer description
+        D3D11_BUFFER_DESC bufferPositionsDesc;
+        ZeroMemory(&bufferPositionsDesc, sizeof(bufferPositionsDesc));
+        bufferPositionsDesc.Usage = D3D11_USAGE_DEFAULT;
+        bufferPositionsDesc.ByteWidth = sizeof(Vector3) * objContainer.buffers.positions.size();
+        bufferPositionsDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        bufferPositionsDesc.StructureByteStride = sizeof(Vector3);
+        bufferPositionsDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
-    // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
-    D3D11_SUBRESOURCE_DATA bufferPositionsData;
-    ZeroMemory(&bufferPositionsData, sizeof(bufferPositionsData));
-    bufferPositionsData.pSysMem = objContainer.buffers.positions.data();
+        // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
+        D3D11_SUBRESOURCE_DATA bufferPositionsData;
+        ZeroMemory(&bufferPositionsData, sizeof(bufferPositionsData));
+        bufferPositionsData.pSysMem = objContainer.buffers.positions.data();
 
-    // Create the buffer
-    hr = d3d11Device->CreateBuffer(&bufferPositionsDesc, &bufferPositionsData, &bufferPositions);
-    ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
+        // Create the buffer
+        hr = d3d11Device->CreateBuffer(&bufferPositionsDesc, &bufferPositionsData, &bufferPositions);
+        ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
 
-    // Create a structured texture coordinates buffer description
-    D3D11_BUFFER_DESC bufferTextureCoordinatesDesc;
-    ZeroMemory(&bufferTextureCoordinatesDesc, sizeof(bufferTextureCoordinatesDesc));
-    bufferTextureCoordinatesDesc.Usage = D3D11_USAGE_DEFAULT;
-    bufferTextureCoordinatesDesc.ByteWidth = sizeof(Vector2) * objContainer.buffers.textureCoordinates.size();
-    bufferTextureCoordinatesDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferTextureCoordinatesDesc.StructureByteStride = sizeof(Vector2);
-    bufferTextureCoordinatesDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        // Create the shader resource view
+        D3D11_SHADER_RESOURCE_VIEW_DESC bufferPositionsSRVDesc;
+        ZeroMemory(&bufferPositionsSRVDesc, sizeof(bufferPositionsSRVDesc));
+        bufferPositionsSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufferPositionsSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+        bufferPositionsSRVDesc.Buffer.ElementWidth = sizeof(Vector3);
+        bufferPositionsSRVDesc.Buffer.NumElements = objContainer.buffers.positions.size();
 
-    // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
-    D3D11_SUBRESOURCE_DATA bufferTextureCoordinatesData;
-    ZeroMemory(&bufferTextureCoordinatesData, sizeof(bufferTextureCoordinatesData));
-    bufferTextureCoordinatesData.pSysMem = objContainer.buffers.textureCoordinates.data();
+        hr = d3d11Device->CreateShaderResourceView(bufferPositions, &bufferPositionsSRVDesc, &bufferPositionsSRV);
+        ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
+    }
 
-    // Create the buffer
-    hr = d3d11Device->CreateBuffer(&bufferTextureCoordinatesDesc, &bufferTextureCoordinatesData, &bufferTextureCoordinates);
-    ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
+    // Texture coordinates
+    {
+        // Create a structured texture coordinates buffer description
+        D3D11_BUFFER_DESC bufferTextureCoordinatesDesc;
+        ZeroMemory(&bufferTextureCoordinatesDesc, sizeof(bufferTextureCoordinatesDesc));
+        bufferTextureCoordinatesDesc.Usage = D3D11_USAGE_DEFAULT;
+        bufferTextureCoordinatesDesc.ByteWidth = sizeof(Vector2) * objContainer.buffers.textureCoordinates.size();
+        bufferTextureCoordinatesDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        bufferTextureCoordinatesDesc.StructureByteStride = sizeof(Vector2);
+        bufferTextureCoordinatesDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
-    // Create a structured normals buffer description
-    D3D11_BUFFER_DESC bufferNormalsDesc;
-    ZeroMemory(&bufferNormalsDesc, sizeof(bufferNormalsDesc));
-    bufferNormalsDesc.Usage = D3D11_USAGE_DEFAULT;
-    bufferNormalsDesc.ByteWidth = sizeof(Vector3) * objContainer.buffers.normals.size();
-    bufferNormalsDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferNormalsDesc.StructureByteStride = sizeof(Vector3);
-    bufferNormalsDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
+        D3D11_SUBRESOURCE_DATA bufferTextureCoordinatesData;
+        ZeroMemory(&bufferTextureCoordinatesData, sizeof(bufferTextureCoordinatesData));
+        bufferTextureCoordinatesData.pSysMem = objContainer.buffers.textureCoordinates.data();
 
-    // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
-    D3D11_SUBRESOURCE_DATA bufferNormalsData;
-    ZeroMemory(&bufferNormalsData, sizeof(bufferNormalsData));
-    bufferNormalsData.pSysMem = objContainer.buffers.normals.data();
+        // Create the buffer
+        hr = d3d11Device->CreateBuffer(&bufferTextureCoordinatesDesc, &bufferTextureCoordinatesData, &bufferTextureCoordinates);
+        ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
 
-    // Create the buffer
-    hr = d3d11Device->CreateBuffer(&bufferNormalsDesc, &bufferNormalsData, &bufferNormals);
-    ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
+        // Create the shader resource view
+        D3D11_SHADER_RESOURCE_VIEW_DESC bufferTextureCoordinatesSRVDesc;
+        ZeroMemory(&bufferTextureCoordinatesSRVDesc, sizeof(bufferTextureCoordinatesSRVDesc));
+        bufferTextureCoordinatesSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufferTextureCoordinatesSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+        bufferTextureCoordinatesSRVDesc.Buffer.ElementWidth = sizeof(Vector2);
+        bufferTextureCoordinatesSRVDesc.Buffer.NumElements = objContainer.buffers.textureCoordinates.size();
 
+        hr = d3d11Device->CreateShaderResourceView(bufferTextureCoordinates, &bufferTextureCoordinatesSRVDesc, &bufferTextureCoordinatesSRV);
+        ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
+    }
+    
+    // Normals
+    {
+        // Create a structured normals buffer description
+        D3D11_BUFFER_DESC bufferNormalsDesc;
+        ZeroMemory(&bufferNormalsDesc, sizeof(bufferNormalsDesc));
+        bufferNormalsDesc.Usage = D3D11_USAGE_DEFAULT;
+        bufferNormalsDesc.ByteWidth = sizeof(Vector3) * objContainer.buffers.normals.size();
+        bufferNormalsDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        bufferNormalsDesc.StructureByteStride = sizeof(Vector3);
+        bufferNormalsDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+        // Fill a D3D11_SUBRESOURCE_DATA struct with the data we want in the buffer
+        D3D11_SUBRESOURCE_DATA bufferNormalsData;
+        ZeroMemory(&bufferNormalsData, sizeof(bufferNormalsData));
+        bufferNormalsData.pSysMem = objContainer.buffers.normals.data();
+
+        // Create the buffer
+        hr = d3d11Device->CreateBuffer(&bufferNormalsDesc, &bufferNormalsData, &bufferNormals);
+        ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
+
+        // Create the shader resource view
+        D3D11_SHADER_RESOURCE_VIEW_DESC bufferNormalsSRVDesc;
+        ZeroMemory(&bufferNormalsSRVDesc, sizeof(bufferNormalsSRVDesc));
+        bufferNormalsSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufferNormalsSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+        bufferNormalsSRVDesc.Buffer.ElementWidth = sizeof(Vector3);
+        bufferNormalsSRVDesc.Buffer.NumElements = objContainer.buffers.normals.size();
+
+        hr = d3d11Device->CreateShaderResourceView(bufferNormals, &bufferNormalsSRVDesc, &bufferNormalsSRV);
+        ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
+    }
+    
+    // Textures
     for (auto it = objContainer.meshes.begin(); it != objContainer.meshes.end(); it++)
     {
         ID3D11Resource* texture = NULL;
@@ -86,9 +129,18 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
         ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
 
         triangles.push_back(bufferTriangles);
+        triangleVertexCounts.push_back(it->triangles.size());
     }
 
-    std::cout << "DONE" << std::endl;
+    // Create the constant buffer
+    D3D11_BUFFER_DESC constantBufferDesc;
+    ZeroMemory(&constantBufferDesc, sizeof(constantBufferDesc));
+    constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    constantBufferDesc.ByteWidth = sizeof(MeshRendererConstantBuffer);
+    constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+    hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
+    ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
 }
 
 void MeshRenderer::Initialize()
@@ -101,6 +153,37 @@ void MeshRenderer::Update()
 
 void MeshRenderer::Draw()
 {
+    d3d11DevCon->VSSetShaderResources(1, 1, &bufferPositionsSRV);
+    d3d11DevCon->VSSetShaderResources(2, 1, &bufferTextureCoordinatesSRV);
+    d3d11DevCon->VSSetShaderResources(3, 1, &bufferNormalsSRV);
+
+    constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+    constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
+    constantBufferData.View = camera->GetViewMatrix().Transpose();
+    constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
+    constantBufferData.cameraPosition = camera->GetPosition();
+
+    d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
+    d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
+    d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
+
+    d3d11DevCon->IASetInputLayout(meshShader->inputLayout);
+    d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    d3d11DevCon->VSSetShader(meshShader->vertexShader, NULL, 0);
+    d3d11DevCon->GSSetShader(NULL, NULL, 0);
+    d3d11DevCon->PSSetShader(meshShader->pixelShader, NULL, 0);
+
+    for (int i = 0; i < triangles.size(); i++)
+    {
+        d3d11DevCon->PSSetShaderResources(0, 1, &textureSRVs[i]);
+
+        UINT offset = 0;
+        UINT stride = sizeof(MeshVertex);
+        d3d11DevCon->IASetVertexBuffers(0, 1, &triangles[i], &stride, &offset);
+
+        d3d11DevCon->Draw(triangleVertexCounts[i], 0);
+    }
+
     // Set structured buffer
     // Set shaders
     // Set input layout
@@ -113,8 +196,12 @@ void MeshRenderer::Draw()
 void MeshRenderer::Release()
 {
     SAFE_RELEASE(bufferPositions);
+    SAFE_RELEASE(bufferPositionsSRV);
     SAFE_RELEASE(bufferTextureCoordinates);
+    SAFE_RELEASE(bufferTextureCoordinatesSRV);
     SAFE_RELEASE(bufferNormals);
+    SAFE_RELEASE(bufferNormalsSRV);
+    SAFE_RELEASE(constantBuffer);
 
     for (int i = 0; i < textures.size(); i++)
     {
@@ -134,4 +221,5 @@ void MeshRenderer::Release()
     textures.clear();
     textureSRVs.clear();
     triangles.clear();
+    triangleVertexCounts.clear();
 }
