@@ -31,6 +31,7 @@ namespace PointCloudEngine
     class Octree;
 	class GUI;
     struct OctreeNode;
+	struct OBJContainer;
 
 	enum class ViewMode
 	{
@@ -70,15 +71,16 @@ using namespace PointCloudEngine;
 #include "IRenderer.h"
 #include "OctreeNode.h"
 #include "Octree.h"
+#include "OBJFile.h"
 #include "TextRenderer.h"
 #include "GroundTruthRenderer.h"
 #include "OctreeRenderer.h"
 #include "WaypointRenderer.h"
+#include "MeshRenderer.h"
 #include "PullPush.h"
 #include "GUI.h"
 #include "Scene.h"
 #include "HDF5File.h"
-#include "OBJFile.h"
 
 // Global variables, accessable in other files
 extern std::wstring executablePath;
@@ -103,6 +105,7 @@ extern Shader* octreeComputeVSShader;
 extern Shader* pullPushShader;
 extern Shader* blendingShader;
 extern Shader* textureConversionShader;
+extern Shader* meshShader;
 extern IDXGISwapChain* swapChain;
 extern ID3D11Device* d3d11Device;
 extern ID3D11DeviceContext* d3d11DevCon;

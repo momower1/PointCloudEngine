@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "OBJFile.h"
 
-OBJFile::OBJFile(std::wstring filename)
+OBJContainer OBJFile::LoadOBJFile(std::wstring filename)
 {
     std::wstring directory = filename.substr(0, filename.find_last_of(L"\\/")) + L"/";
 
@@ -9,12 +9,11 @@ OBJFile::OBJFile(std::wstring filename)
     ERROR_MESSAGE_ON_FAIL(objFile.is_open(), L"Cannot open OBJ file \"" + filename + L"\"!");
 
     // IMPORTANT: The polygonal face elements must all be triangular and have texture as well as normal indices
-    // First read vertex positions, texture coordinates, normals and per material triangles into temporary buffers
+    // First read vertex positions, texture coordinates, normals and per material triangles into the buffers
+    OBJContainer container;
+
     std::wstring materialTemplateLibraryFilename = L"";
-    std::vector<Vector3> positions;
-    std::vector<Vector2> textureCoordinates;
-    std::vector<Vector3> normals;
-    std::map<std::wstring, std::vector<OBJTriangle>> triangles;
+    std::map<std::wstring, std::vector<MeshVertex>> submeshes;
     std::map<std::wstring, std::wstring> materialTextures;
     std::wstring materialName = L"";
 
@@ -22,8 +21,6 @@ OBJFile::OBJFile(std::wstring filename)
 
     while (std::getline(objFile, line))
     {
-        std::cout << std::string(line.begin(), line.end()) << std::endl;
-
         std::vector<std::wstring> values = Utils::SplitString(line, L" ");
 
         if (values.size() > 0)
@@ -40,29 +37,30 @@ OBJFile::OBJFile(std::wstring filename)
             }
             else if (key == L"v")
             {
-                positions.push_back(Vector3(std::stof(values[1]), std::stof(values[2]), std::stof(values[3])));
+                container.buffers.positions.push_back(Vector3(std::stof(values[1]), std::stof(values[2]), std::stof(values[3])));
             }
             else if (key == L"vt")
             {
-                textureCoordinates.push_back(Vector2(std::stof(values[1]), std::stof(values[2])));
+                container.buffers.textureCoordinates.push_back(Vector2(std::stof(values[1]), std::stof(values[2])));
             }
             else if (key == L"vn")
             {
-                normals.push_back(Vector3(std::stof(values[1]), std::stof(values[2]), std::stof(values[3])));
+                container.buffers.normals.push_back(Vector3(std::stof(values[1]), std::stof(values[2]), std::stof(values[3])));
             }
             else if (key == L"f")
             {
-                OBJTriangle objTriangle;
-
                 for (int i = 0; i < 3; i++)
                 {
                     std::vector<std::wstring> indices = Utils::SplitString(values[1 + i], L"/");
-                    objTriangle.vertexIndices[i].positionIndex = std::stoi(indices[0]);
-                    objTriangle.vertexIndices[i].textureCoordinateIndex = std::stoi(indices[1]);
-                    objTriangle.vertexIndices[i].normalIndex = std::stoi(indices[2]);
-                }
 
-                triangles[materialName].push_back(objTriangle);
+                    // Parse the vertex indices (need to substract 1 since OBJ indices start at 1 instead of 0)
+                    MeshVertex vertex;
+                    vertex.positionIndex = std::stoi(indices[0]) - 1;
+                    vertex.textureCoordinateIndex = std::stoi(indices[1]) - 1;
+                    vertex.normalIndex = std::stoi(indices[2]) - 1;
+
+                    submeshes[materialName].push_back(vertex);
+                }
             }
         }
     }
@@ -79,8 +77,6 @@ OBJFile::OBJFile(std::wstring filename)
         // For now this just considers diffuse textures
         while (std::getline(mtlFile, line))
         {
-            std::cout << std::string(line.begin(), line.end()) << std::endl;
-
             std::vector<std::wstring> values = Utils::SplitString(line, L" ");
 
             if (values.size() > 0)
@@ -99,22 +95,14 @@ OBJFile::OBJFile(std::wstring filename)
         }
     }
 
-    // TODO
-    // - convert into single vertex buffer and single index buffer
-    // - load the textures into a texture array (but they might have different sizes!?)
-    std::cout << "TODO" << std::endl;
-}
+    for (auto itSubmesh = submeshes.begin(); itSubmesh != submeshes.end(); itSubmesh++)
+    {
+        OBJMesh mesh;
+        mesh.textureFilename = materialTextures[itSubmesh->first];
+        mesh.triangles = itSubmesh->second;
 
-std::vector<Vertex> OBJFile::GetVertices()
-{
-    return std::vector<Vertex>();
-}
+        container.meshes.push_back(mesh);
+    }
 
-std::vector<UINT> OBJFile::GetTriangles()
-{
-    return std::vector<UINT>();
-}
-
-OBJFile::~OBJFile()
-{
+    return container;
 }

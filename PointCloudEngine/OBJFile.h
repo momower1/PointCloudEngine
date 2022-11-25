@@ -3,25 +3,31 @@
 
 #include "PointCloudEngine.h"
 
-class OBJFile
+namespace PointCloudEngine
 {
-public:
-	OBJFile(std::wstring filename);
-	std::vector<Vertex> GetVertices();
-	std::vector<UINT> GetTriangles();
-	~OBJFile();
-
-private:
-	struct OBJVertexIndices
+	struct OBJMesh
 	{
-		UINT positionIndex;
-		UINT textureCoordinateIndex;
-		UINT normalIndex;
+		std::wstring textureFilename;
+		std::vector<MeshVertex> triangles;
 	};
 
-	struct OBJTriangle
+	struct OBJStructuredBuffers
 	{
-		OBJVertexIndices vertexIndices[3];
+		std::vector<Vector3> positions;
+		std::vector<Vector2> textureCoordinates;
+		std::vector<Vector3> normals;
 	};
-};
+
+	struct OBJContainer
+	{
+		OBJStructuredBuffers buffers;
+		std::vector<OBJMesh> meshes;
+	};
+
+	class OBJFile
+	{
+	public:
+		static OBJContainer LoadOBJFile(std::wstring filename);
+	};
+}
 #endif

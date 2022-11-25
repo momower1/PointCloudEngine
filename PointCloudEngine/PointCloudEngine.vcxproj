@@ -228,6 +228,12 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <FxCompile Include="ImageEffect.hlsl" />
     <FxCompile Include="LightingConstantBuffer.hlsl" />
     <FxCompile Include="Blending.hlsl" />
+    <FxCompile Include="Mesh.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Effect</ShaderType>
+    </FxCompile>
     <FxCompile Include="OctreeCluster.hlsl" />
     <FxCompile Include="OctreeCompute.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -282,6 +288,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="HDF5File.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="OBJFile.cpp" />
     <ClCompile Include="PrecompiledHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -318,6 +325,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
     <ClInclude Include="GUIText.h" />
     <ClInclude Include="GUIValue.h" />
     <ClInclude Include="HDF5File.h" />
+    <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="OBJFile.h" />
     <ClInclude Include="PrecompiledHeader.h" />
     <ClInclude Include="PullPush.h" />

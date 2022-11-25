@@ -122,6 +122,9 @@
     <ClInclude Include="OBJFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MeshRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextRenderer.cpp">
@@ -187,6 +190,9 @@
     <ClCompile Include="OBJFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MeshRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Text.hlsl">
@@ -244,6 +250,9 @@
       <Filter>Shader Files</Filter>
     </FxCompile>
     <FxCompile Include="PullPush.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="Mesh.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>

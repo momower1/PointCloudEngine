@@ -98,6 +98,14 @@ namespace PointCloudEngine
         byte color[3];
     };
 
+	struct MeshVertex
+	{
+		// Instead of storing the actual vertex data, gather it from buffers in the vertex shader
+		UINT positionIndex;
+		UINT textureCoordinateIndex;
+		UINT normalIndex;
+	};
+
 	struct OctreeNodeProperties
 	{
 		// Mask where the lowest 8 bit store one bit for each of the children: 1 when it exists, 0 when it doesn't

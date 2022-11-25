@@ -27,6 +27,7 @@ Shader* pullPushShader;
 Shader* blendingShader;
 Shader* gammaCorrectionShader;
 Shader* textureConversionShader;
+Shader* meshShader;
 
 // DirectX11 interface objects
 IDXGISwapChain* swapChain;		                // Change between front and back buffer
@@ -793,6 +794,7 @@ void InitializeScene()
 	blendingShader = Shader::Create(L"Shader/Blending.hlsl", true, true, true, false, NULL, 0);
 	gammaCorrectionShader = Shader::Create(L"Shader/GammaCorrection.hlsl", true, true, true, false, NULL, 0);
 	textureConversionShader = Shader::Create(L"Shader/TextureConversion.hlsl", true, true, true, false, NULL, 0);
+	meshShader = Shader::Create(L"Shader/Mesh.hlsl", true, false, true, false, Shader::meshLayout, 3);
 
     // Load fonts
 	TextRenderer::CreateSpriteFont(L"Arial", L"Assets/Arial.spritefont");
