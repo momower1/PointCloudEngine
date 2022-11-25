@@ -50,7 +50,7 @@ VS_OUTPUT VS(VS_INPUT input)
 float4 PS(VS_OUTPUT input) : SV_TARGET
 {
     float3 albedo = textureAlbedo.Sample(samplerState, input.textureUV).rgb;
-    float3 color = PhongLighting(cameraPosition, input.positionWorld, input.normal, albedo);
+    float3 color = PhongLighting(cameraPosition, input.positionWorld, normalize(input.normal), albedo);
 
     return float4(color, 1);
 }
