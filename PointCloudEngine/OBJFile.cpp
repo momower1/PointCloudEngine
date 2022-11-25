@@ -41,7 +41,8 @@ OBJContainer OBJFile::LoadOBJFile(std::wstring filename)
             }
             else if (key == L"vt")
             {
-                container.buffers.textureCoordinates.push_back(Vector2(std::stof(values[1]), std::stof(values[2])));
+                // Need to invert vertical texture coordinates for DirectX texture space
+                container.buffers.textureCoordinates.push_back(Vector2(std::stof(values[1]), 1.0f - std::stof(values[2])));
             }
             else if (key == L"vn")
             {

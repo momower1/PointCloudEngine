@@ -32,6 +32,7 @@ namespace PointCloudEngine
         ID3D11ShaderResourceView* bufferTextureCoordinatesSRV = NULL;
         ID3D11ShaderResourceView* bufferNormalsSRV = NULL;
         ID3D11Buffer* constantBuffer = NULL;
+        ID3D11SamplerState* samplerState = NULL;
 
         std::vector<ID3D11Resource*> textures;
         std::vector<ID3D11ShaderResourceView*> textureSRVs;

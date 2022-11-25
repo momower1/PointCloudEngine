@@ -141,6 +141,22 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
 
     hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
     ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
+
+    // Create the texture sampler state
+    D3D11_SAMPLER_DESC samplerDesc;
+    ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+    samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MaxAnisotropy = 16;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    // Create the Sample State
+    hr = d3d11Device->CreateSamplerState(&samplerDesc, &samplerState);
+    ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateSamplerState) + L" failed!");
 }
 
 void MeshRenderer::Initialize()
@@ -172,6 +188,7 @@ void MeshRenderer::Draw()
     d3d11DevCon->VSSetShader(meshShader->vertexShader, NULL, 0);
     d3d11DevCon->GSSetShader(NULL, NULL, 0);
     d3d11DevCon->PSSetShader(meshShader->pixelShader, NULL, 0);
+    d3d11DevCon->PSSetSamplers(0, 1, &samplerState);
 
     for (int i = 0; i < triangles.size(); i++)
     {
@@ -183,14 +200,6 @@ void MeshRenderer::Draw()
 
         d3d11DevCon->Draw(triangleVertexCounts[i], 0);
     }
-
-    // Set structured buffer
-    // Set shaders
-    // Set input layout
-    // Loop
-    //      Set current texture
-    //      Set current vertex buffer
-    //      Draw
 }
 
 void MeshRenderer::Release()
@@ -202,6 +211,7 @@ void MeshRenderer::Release()
     SAFE_RELEASE(bufferNormals);
     SAFE_RELEASE(bufferNormalsSRV);
     SAFE_RELEASE(constantBuffer);
+    SAFE_RELEASE(samplerState);
 
     for (int i = 0; i < textures.size(); i++)
     {

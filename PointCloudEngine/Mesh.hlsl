@@ -1,5 +1,6 @@
 #include "LightingConstantBuffer.hlsl"
 
+SamplerState samplerState : register(s0);
 Texture2D<float4> textureAlbedo : register(t0);
 StructuredBuffer<float3> bufferPositions : register(t1);
 StructuredBuffer<float2> bufferTextureCoordinates : register(t2);
@@ -18,13 +19,6 @@ cbuffer MeshRendererConstantBuffer : register(b0)
     float3 cameraPosition;
     // 4 bytes auto padding
 };  // Total: 272 bytes with constant buffer packing rules
-
-SamplerState LinearSampler
-{
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Clamp;
-};
 
 struct VS_INPUT
 {
@@ -55,7 +49,7 @@ VS_OUTPUT VS(VS_INPUT input)
 
 float4 PS(VS_OUTPUT input) : SV_TARGET
 {
-    float3 albedo = textureAlbedo.Sample(LinearSampler, input.textureUV).rgb;
+    float3 albedo = textureAlbedo.Sample(samplerState, input.textureUV).rgb;
     float3 color = PhongLighting(cameraPosition, input.positionWorld, input.normal, albedo);
 
     return float4(color, 1);
