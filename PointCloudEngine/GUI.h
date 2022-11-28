@@ -58,6 +58,7 @@ namespace PointCloudEngine
 		static std::vector<IGUIElement*> sparseElements;
 		static std::vector<IGUIElement*> pointElements;
 		static std::vector<IGUIElement*> pullPushElements;
+		static std::vector<IGUIElement*> meshElements;
 		static std::vector<IGUIElement*> neuralNetworkElements;
 
 		// Advanced
@@ -80,6 +81,7 @@ namespace PointCloudEngine
 		static void OnSelectTab(int selection);
 		static void OnChangeResolution();
 		static void OnApplyResolution();
+		static void OnLoadMeshFromOBJFile();
 		static void OnWaypointAdd();
 		static void OnWaypointRemove();
 		static void OnWaypointToggle();

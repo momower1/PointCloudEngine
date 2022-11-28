@@ -43,6 +43,7 @@ namespace PointCloudEngine
 		Points,
 		SparsePoints,
 		PullPush,
+		Mesh,
 		NeuralNetwork
 	};
 
@@ -51,7 +52,9 @@ namespace PointCloudEngine
 		Color,
 		Depth,
 		Normal,
-		NormalScreen
+		NormalScreen,
+		OpticalFlowForward,
+		OpticalFlowBackward
 	};
 }
 

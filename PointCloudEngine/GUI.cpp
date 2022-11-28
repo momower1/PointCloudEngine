@@ -58,6 +58,7 @@ std::vector<IGUIElement*> GUI::octreeElements;
 std::vector<IGUIElement*> GUI::sparseElements;
 std::vector<IGUIElement*> GUI::pointElements;
 std::vector<IGUIElement*> GUI::pullPushElements;
+std::vector<IGUIElement*> GUI::meshElements;
 std::vector<IGUIElement*> GUI::neuralNetworkElements;
 
 // Advanced
@@ -123,6 +124,7 @@ void PointCloudEngine::GUI::Release()
 	DeleteElements(sparseElements);
 	DeleteElements(pointElements);
 	DeleteElements(pullPushElements);
+	DeleteElements(meshElements);
 	DeleteElements(neuralNetworkElements);
 	DeleteElements(advancedElements);
 	DeleteElements(datasetElements);
@@ -141,6 +143,7 @@ void PointCloudEngine::GUI::Update()
 	UpdateElements(sparseElements);
 	UpdateElements(pointElements);
 	UpdateElements(pullPushElements);
+	UpdateElements(meshElements);
 	UpdateElements(neuralNetworkElements);
 	UpdateElements(advancedElements);
 	UpdateElements(datasetElements);
@@ -163,6 +166,7 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		HandleMessageElements(sparseElements, msg, wParam, lParam);
 		HandleMessageElements(pointElements, msg, wParam, lParam);
 		HandleMessageElements(pullPushElements, msg, wParam, lParam);
+		HandleMessageElements(meshElements, msg, wParam, lParam);
 		HandleMessageElements(neuralNetworkElements, msg, wParam, lParam);
 		HandleMessageElements(advancedElements, msg, wParam, lParam);
 		HandleMessageElements(datasetElements, msg, wParam, lParam);
@@ -248,7 +252,7 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 void PointCloudEngine::GUI::CreateRendererElements()
 {
 	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(40), GS(100), GS(20), L"View Mode "));
-	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Pull Push", L"Neural Network"}, OnSelectViewMode, &viewModeSelection));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Pull Push", L"Mesh", L"Neural Network"}, OnSelectViewMode, &viewModeSelection));
 	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
 	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(70), GS(150), GS(20), L"Vertex Count "));
 	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(70), GS(200), GS(20), &GUI::vertexCount));
@@ -287,6 +291,8 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 1000, 1000, 0, L"Blend Range", &settings->pullPushBlendRange, 2, GS(148), GS(40)));
 	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(370), GS(130), GS(20), 0, 1000, 1000, 0, L"Splat Size", &settings->pullPushSplatSize, 2, GS(148), GS(40)));
 	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
+
+	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(160), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
 }
@@ -390,6 +396,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(pointElements, SW_HIDE);
 	ShowElements(pullPushElements, SW_HIDE);
+	ShowElements(meshElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 
 	if (settings->useOctree)
@@ -401,7 +408,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	}
 	else
 	{
-		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 9);
+		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 10);
 
 		switch (settings->viewMode)
 		{
@@ -438,6 +445,11 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				sparseElements[1]->SetPosition(GS(160), GS(190));
 				break;
 			}
+			case ViewMode::Mesh:
+			{
+				ShowElements(meshElements);
+				break;
+			}
 			case ViewMode::NeuralNetwork:
 			{
 				ShowElements(neuralNetworkElements);
@@ -455,6 +467,7 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(pointElements, SW_HIDE);
 	ShowElements(pullPushElements, SW_HIDE);
+	ShowElements(meshElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 	ShowElements(advancedElements, SW_HIDE);
 	ShowElements(datasetElements, SW_HIDE);
@@ -510,6 +523,11 @@ void PointCloudEngine::GUI::OnApplyResolution()
 
 	// Octree maximal splat resolution should increase/decrease when changing the resolution
 	((GUISlider<float>*)octreeElements[0])->scale = max(settings->resolutionX, settings->resolutionY) * 4;
+}
+
+void PointCloudEngine::GUI::OnLoadMeshFromOBJFile()
+{
+	std::cout << "TODO" << std::endl;
 }
 
 void PointCloudEngine::GUI::OnWaypointAdd()
