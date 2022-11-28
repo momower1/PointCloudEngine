@@ -358,6 +358,7 @@ copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="ShadingMode.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="PointCloudEngine.manifest" />

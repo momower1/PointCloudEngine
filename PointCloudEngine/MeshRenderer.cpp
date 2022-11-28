@@ -178,6 +178,7 @@ void MeshRenderer::Draw()
     constantBufferData.View = camera->GetViewMatrix().Transpose();
     constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     constantBufferData.cameraPosition = camera->GetPosition();
+    constantBufferData.shadingMode = (int)settings->shadingMode;
 
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
     d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
@@ -206,6 +207,12 @@ void MeshRenderer::Draw()
     }
 
     GUI::vertexCount = vertexCount;
+
+    // After drawing, store the previous matrices for optical flow computation
+    constantBufferData.PreviousWorld = constantBufferData.World;
+    constantBufferData.PreviousView = constantBufferData.View;
+    constantBufferData.PreviousProjection = constantBufferData.Projection;
+    constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
 }
 
 void MeshRenderer::Release()
