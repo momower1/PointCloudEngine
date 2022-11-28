@@ -98,7 +98,7 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
         hr = d3d11Device->CreateShaderResourceView(bufferNormals, &bufferNormalsSRVDesc, &bufferNormalsSRV);
         ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
     }
-    
+
     // Textures
     for (auto it = objContainer.meshes.begin(); it != objContainer.meshes.end(); it++)
     {
@@ -190,6 +190,8 @@ void MeshRenderer::Draw()
     d3d11DevCon->PSSetShader(meshShader->pixelShader, NULL, 0);
     d3d11DevCon->PSSetSamplers(0, 1, &samplerState);
 
+    UINT vertexCount = 0;
+
     for (int i = 0; i < triangles.size(); i++)
     {
         d3d11DevCon->PSSetShaderResources(0, 1, &textureSRVs[i]);
@@ -199,7 +201,11 @@ void MeshRenderer::Draw()
         d3d11DevCon->IASetVertexBuffers(0, 1, &triangles[i], &stride, &offset);
 
         d3d11DevCon->Draw(triangleVertexCounts[i], 0);
+
+        vertexCount += triangleVertexCounts[i];
     }
+
+    GUI::vertexCount = vertexCount;
 }
 
 void MeshRenderer::Release()
