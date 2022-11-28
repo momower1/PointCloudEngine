@@ -30,6 +30,7 @@ namespace PointCloudEngine
 
         // Rendering parameters default values
 		ViewMode viewMode = ViewMode::Points;
+		ShadingMode shadingMode = ShadingMode::Color;
 		Vector4 backgroundColor = Vector4(0, 0, 0, 0);
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
@@ -151,6 +152,10 @@ namespace PointCloudEngine
 				else if (typeid(T) == typeid(ViewMode))
 				{
 					*((ViewMode*)outParameterValue) = (ViewMode)std::stoi(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(ShadingMode))
+				{
+					*((ShadingMode*)outParameterValue) = (ShadingMode)std::stoi(settingsMap[parameterName]);
 				}
 				else
 				{

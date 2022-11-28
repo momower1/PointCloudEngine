@@ -21,8 +21,12 @@ namespace PointCloudEngine
             Matrix View;
             Matrix Projection;
             Matrix WorldInverseTranspose;
+            Matrix PreviousWorld;
+            Matrix PreviousView;
+            Matrix PreviousProjection;
+            Matrix PreviousWorldInverseTranspose;
             Vector3 cameraPosition;
-            float padding;
+            int shadingMode;
         };
 
         ID3D11Buffer* bufferPositions = NULL;

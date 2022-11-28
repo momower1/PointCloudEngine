@@ -43,6 +43,7 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(resolutionY), &resolutionY);
 		TryParse(NAMEOF(windowed), &windowed);
 		TryParse(NAMEOF(viewMode), &viewMode);
+		TryParse(NAMEOF(shadingMode), &shadingMode);
 
 		// Parse pointcloud file parameters
 		TryParse(NAMEOF(pointcloudFile), &pointcloudFile);
@@ -152,6 +153,7 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 
 	settingsStream << L"# Rendering Parameters" << std::endl;
 	settingsStream << NAMEOF(viewMode) << L"=" << (int)viewMode << std::endl;
+	settingsStream << NAMEOF(shadingMode) << L"=" << (int)shadingMode << std::endl;
 	settingsStream << NAMEOF(backgroundColor) << L"=" << ToString(backgroundColor) << std::endl;
 	settingsStream << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
 	settingsStream << NAMEOF(nearZ) << L"=" << nearZ << std::endl;

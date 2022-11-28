@@ -41,6 +41,7 @@ GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
 bool GUI::initialized = false;
 bool GUI::sameOutputChannel = false;
 int GUI::viewModeSelection = 0;
+int GUI::shadingModeSelection = 0;
 int GUI::lossSelfSelection = 0;
 int GUI::lossTargetSelection = 0;
 int GUI::resolutionX = 0;
@@ -84,6 +85,7 @@ void PointCloudEngine::GUI::Initialize()
 		tabOctree = new GUITab(hwndGUI, 0, 0, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), { L"Renderer", L"Advanced" }, OnSelectTab);
 
 		viewModeSelection = (int)settings->viewMode;
+		shadingModeSelection = (int)settings->shadingMode;
 
 		// Load view mode
 		if (settings->useOctree)
@@ -293,6 +295,8 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
 
 	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(160), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(200), GS(100), GS(20), L"Shading Mode "));
+	meshElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(200), GS(180), GS(200), { L"Color", L"Depth", L"Normal", L"NormalScreen", L"OpticalFlowForward", L"OpticalFlowBackward" }, OnSelectShadingMode, &shadingModeSelection));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
 }
@@ -500,6 +504,12 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 			break;
 		}
 	}
+}
+
+void PointCloudEngine::GUI::OnSelectShadingMode()
+{
+	settings->shadingMode = (ShadingMode)shadingModeSelection;
+	std::cout << "Selected shading mode " << std::to_string((int)settings->shadingMode) << std::endl;
 }
 
 void PointCloudEngine::GUI::OnChangeResolution()

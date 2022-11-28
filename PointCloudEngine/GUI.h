@@ -41,6 +41,7 @@ namespace PointCloudEngine
 		static bool initialized;
 		static bool sameOutputChannel;
 		static int viewModeSelection;
+		static int shadingModeSelection;
 		static int lossSelfSelection;
 		static int lossTargetSelection;
 		static int resolutionX;
@@ -79,6 +80,7 @@ namespace PointCloudEngine
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
+		static void OnSelectShadingMode();
 		static void OnChangeResolution();
 		static void OnApplyResolution();
 		static void OnLoadMeshFromOBJFile();
