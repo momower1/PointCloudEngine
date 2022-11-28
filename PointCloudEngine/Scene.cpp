@@ -103,7 +103,11 @@ void Scene::Update(Timer &timer)
 	}
 
     // Scale the point cloud by the value saved in the config file
-    pointCloud->transform->scale = settings->scale * Vector3::One;
+	// Use a negative scale for the X-component to convert the point cloud and mesh to a left handed coordinate system
+	if (pointCloud != NULL)
+	{
+		pointCloud->transform->scale = Vector3(-settings->scale, settings->scale, settings->scale);
+	}
 
     // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))

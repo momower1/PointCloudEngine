@@ -50,9 +50,14 @@ bool OBJFile::LoadOBJFile(std::wstring filename, OBJContainer* container)
                 }
                 else if (key == L"f")
                 {
+                    // Need to convert to DirectX left handed coordinate system (swap triangle order)
+                    // Actually the X-coordinates and X-components of the normals must be flipped too
+                    // But this is done by setting the X-scale on the transform to a negative value
+                    int triangleOrder[] = { 0, 2, 1 };
+
                     for (int i = 0; i < 3; i++)
                     {
-                        std::vector<std::wstring> indices = Utils::SplitString(values[1 + i], L"/");
+                        std::vector<std::wstring> indices = Utils::SplitString(values[1 + triangleOrder[i]], L"/");
 
                         // Parse the vertex indices (need to substract 1 since OBJ indices start at 1 instead of 0)
                         MeshVertex vertex;
