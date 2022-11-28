@@ -41,7 +41,7 @@ VS_OUTPUT VS(VS_INPUT input)
     output.positionWorld = mul(float4(bufferPositions[input.positionIndex], 1), World).xyz;
     output.position = mul(float4(output.positionWorld, 1), View);
     output.position = mul(output.position, Projection);
-    output.normal = normalize(mul(float4(bufferNormals[input.normalIndex], 0), WorldInverseTranspose)).xyz;
+    output.normal = normalize(mul(float4(bufferNormals[input.normalIndex], 0), WorldInverseTranspose).xyz);
     output.textureUV = bufferTextureCoordinates[input.textureCoordinateIndex];
 
     return output;
