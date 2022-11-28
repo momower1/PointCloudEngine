@@ -77,6 +77,10 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(pullPushSplatSize), &pullPushSplatSize);
 		TryParse(NAMEOF(pullPushBlendRange), &pullPushBlendRange);
 
+		// Mesh parameters
+		TryParse(NAMEOF(meshFile), &meshFile);
+		TryParse(NAMEOF(loadMeshFile), &loadMeshFile);
+
 		// Parse neural network parameters
 		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
 		TryParse(NAMEOF(neuralNetworkDescriptionFile), &neuralNetworkDescriptionFile);
@@ -195,6 +199,10 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(pullPushSplatSize) << L"=" << pullPushSplatSize << std::endl;
 	settingsStream << NAMEOF(pullPushBlendRange) << L"=" << pullPushBlendRange << std::endl;
 	settingsStream << std::endl;
+
+	settingsStream << L"# Mesh Parameters" << std::endl;
+	settingsStream << NAMEOF(meshFile) << L"=" << meshFile << std::endl;
+	settingsStream << NAMEOF(loadMeshFile) << L"=" << loadMeshFile << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
 	settingsStream << NAMEOF(neuralNetworkModelFile) << L"=" << neuralNetworkModelFile << std::endl;

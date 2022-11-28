@@ -185,7 +185,7 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	}
 	else
 	{
-		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 4)));
+		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 5)));
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
@@ -527,7 +527,7 @@ void PointCloudEngine::GUI::OnApplyResolution()
 
 void PointCloudEngine::GUI::OnLoadMeshFromOBJFile()
 {
-	std::cout << "TODO" << std::endl;
+	settings->loadMeshFile = Utils::OpenFileDialog(L"OBJ Files\0*.obj\0\0", settings->meshFile);
 }
 
 void PointCloudEngine::GUI::OnWaypointAdd()

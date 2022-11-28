@@ -67,12 +67,6 @@ void GroundTruthRenderer::Draw()
 	else
 #endif
 
-	// Skip drawing if a mesh should be drawn instead of the point cloud
-	if (settings->viewMode == ViewMode::Mesh)
-	{
-		return;
-	}
-
 	if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
 	{
 		// Set the splat shaders
@@ -194,6 +188,11 @@ void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vecto
 void PointCloudEngine::GroundTruthRenderer::RemoveComponentFromSceneObject()
 {
 	sceneObject->RemoveComponent(this);
+}
+
+Component* PointCloudEngine::GroundTruthRenderer::GetComponent()
+{
+	return this;
 }
 
 void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)

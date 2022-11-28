@@ -23,6 +23,7 @@ namespace PointCloudEngine
 		TextRenderer* startupTextRenderer = NULL;
 		TextRenderer* loadingTextRenderer = NULL;
 		WaypointRenderer* waypointRenderer = NULL;
+        MeshRenderer* meshRenderer = NULL;
         IRenderer *pointCloudRenderer = NULL;
 
         Vector2 input;

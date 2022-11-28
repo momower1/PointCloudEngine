@@ -32,6 +32,7 @@ public:
 	static Gdiplus::RectF GetGdiplusRect(RECT rect);
 	static std::vector<BYTE> LoadResourceBinary(DWORD resourceID, std::wstring resourceType);
 	static Gdiplus::Image* LoadImageFromResource(DWORD resourceID, std::wstring resourceType);
+	static bool OpenFileDialog(const wchar_t* filter, std::wstring& outFilename);
 	static std::vector<std::wstring> SplitString(std::wstring string, std::wstring splitter);
 };
 

@@ -71,6 +71,10 @@ namespace PointCloudEngine
 		float pullPushSplatSize = 0.25f;
 		float pullPushBlendRange = 0.1f;
 
+		// Mesh parameters
+		std::wstring meshFile = L"";
+		bool loadMeshFile = false;
+
 		// Neural Network parameters
 		std::wstring neuralNetworkModelFile = L"";
 		std::wstring neuralNetworkDescriptionFile = L"";

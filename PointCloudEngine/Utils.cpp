@@ -40,6 +40,31 @@ Gdiplus::Image* Utils::LoadImageFromResource(DWORD resourceID, std::wstring reso
     return image;
 }
 
+bool Utils::OpenFileDialog(const wchar_t* filter, std::wstring& outFilename)
+{
+    // Show windows explorer open file dialog
+    wchar_t filename[MAX_PATH];
+    OPENFILENAMEW openFileName;
+    ZeroMemory(&openFileName, sizeof(OPENFILENAMEW));
+    openFileName.lStructSize = sizeof(OPENFILENAMEW);
+    openFileName.hwndOwner = hwndEngine;
+    openFileName.lpstrFilter = filter;
+    openFileName.lpstrFile = filename;
+    openFileName.lpstrFile[0] = L'\0';
+    openFileName.nMaxFile = MAX_PATH;
+    openFileName.lpstrTitle = L"Select a file to open!";
+    openFileName.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    openFileName.nFilterIndex = 1;
+
+    if (GetOpenFileNameW(&openFileName))
+    {
+        outFilename = filename;
+        return true;
+    }
+
+    return false;
+}
+
 std::vector<std::wstring> Utils::SplitString(std::wstring string, std::wstring splitter)
 {
     std::vector<std::wstring> stringSplits;

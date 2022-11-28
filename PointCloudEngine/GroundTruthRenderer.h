@@ -17,6 +17,7 @@ namespace PointCloudEngine
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
+		Component* GetComponent();
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		void GenerateSphereDataset();

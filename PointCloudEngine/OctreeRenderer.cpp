@@ -238,6 +238,11 @@ void PointCloudEngine::OctreeRenderer::RemoveComponentFromSceneObject()
 	sceneObject->RemoveComponent(this);
 }
 
+Component* PointCloudEngine::OctreeRenderer::GetComponent()
+{
+    return this;
+}
+
 void PointCloudEngine::OctreeRenderer::DrawOctree()
 {
 	// Create new buffer from the current octree traversal on the cpu

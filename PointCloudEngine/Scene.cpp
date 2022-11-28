@@ -30,10 +30,42 @@ void Scene::Initialize()
 
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
+
+	// Load the last mesh file as well
+	if (settings->meshFile.length() > 0)
+	{
+		settings->loadMeshFile = true;
+	}
 }
 
 void Scene::Update(Timer &timer)
 {
+	// Possibly load or reload the mesh
+	if ((pointCloud != NULL) && settings->loadMeshFile)
+	{
+		if (meshRenderer != NULL)
+		{
+			pointCloud->RemoveComponent(meshRenderer);
+		}
+
+		OBJContainer container = OBJFile::LoadOBJFile(settings->meshFile);
+		meshRenderer = new MeshRenderer(container);
+		pointCloud->AddComponent(meshRenderer);
+
+		settings->loadMeshFile = false;
+	}
+
+	// Toggle between rendering the mesh or the point cloud
+	if (meshRenderer != NULL)
+	{
+		meshRenderer->enabled = (settings->viewMode == ViewMode::Mesh);
+	}
+
+	if (pointCloudRenderer != NULL)
+	{
+		pointCloudRenderer->GetComponent()->enabled = (settings->viewMode != ViewMode::Mesh);
+	}
+
 	// Camera tracking shot using the waypoints
 	if (GUI::waypointPreview)
 	{
@@ -134,7 +166,7 @@ void PointCloudEngine::Scene::OpenPlyOrPointcloudFile()
 
 	std::wstring filename;
 
-	if (OpenFileDialog(L"Ply Files\0*.ply\0Pointcloud Files\0*.pointcloud\0\0", filename))
+	if (Utils::OpenFileDialog(L"Ply Files\0*.ply\0Pointcloud Files\0*.pointcloud\0\0", filename))
 	{
 		LoadFile(filename);
 	}

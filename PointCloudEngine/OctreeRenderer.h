@@ -17,6 +17,7 @@ namespace PointCloudEngine
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
+        Component* GetComponent();
 
     private:
         void DrawOctree();
