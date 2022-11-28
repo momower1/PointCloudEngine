@@ -48,9 +48,13 @@ void Scene::Update(Timer &timer)
 			pointCloud->RemoveComponent(meshRenderer);
 		}
 
-		OBJContainer container = OBJFile::LoadOBJFile(settings->meshFile);
-		meshRenderer = new MeshRenderer(container);
-		pointCloud->AddComponent(meshRenderer);
+		OBJContainer container;
+		
+		if (OBJFile::LoadOBJFile(settings->meshFile, &container))
+		{
+			meshRenderer = new MeshRenderer(container);
+			pointCloud->AddComponent(meshRenderer);
+		}
 
 		settings->loadMeshFile = false;
 	}

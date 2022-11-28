@@ -27,7 +27,7 @@ namespace PointCloudEngine
 	class OBJFile
 	{
 	public:
-		static OBJContainer LoadOBJFile(std::wstring filename);
+		static bool LoadOBJFile(std::wstring filename, OBJContainer* container);
 	};
 }
 #endif
