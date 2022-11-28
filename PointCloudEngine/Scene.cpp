@@ -166,7 +166,7 @@ void PointCloudEngine::Scene::OpenPlyOrPointcloudFile()
 
 	std::wstring filename;
 
-	if (Utils::OpenFileDialog(L"Ply Files\0*.ply\0Pointcloud Files\0*.pointcloud\0\0", filename))
+	if (Utils::OpenFileDialog(L"Pointcloud Files\0*.pointcloud\0Ply Files\0*.ply\0\0", filename))
 	{
 		LoadFile(filename);
 	}
