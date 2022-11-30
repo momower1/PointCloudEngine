@@ -106,7 +106,7 @@ void Scene::Update(Timer &timer)
 	// Use a negative scale for the X-component to convert the point cloud and mesh to a left handed coordinate system
 	if (pointCloud != NULL)
 	{
-		pointCloud->transform->scale = Vector3(-settings->scale, settings->scale, settings->scale);
+		pointCloud->transform->scale = Vector3(settings->useOctree ? settings->scale : -settings->scale, settings->scale, settings->scale);
 	}
 
     // Increase input speed when pressing shift and one of the other keys

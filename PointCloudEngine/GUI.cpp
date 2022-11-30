@@ -275,13 +275,13 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(220), GS(130), GS(20), 0, 100, 10, 0, L"Blend Factor", &settings->blendFactor, 1, GS(148), GS(40)));
 	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 1000, 0, L"Sampling Rate", &settings->samplingRate, 3, GS(148), GS(40)));
 
-	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 4, 100, max(settings->resolutionX, settings->resolutionY) * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, GS(148), GS(50)));
-	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 500, 100, -100, L"Overlap Factor", &settings->overlapFactor, 2, GS(148), GS(40)));
-	octreeElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(310), GS(130), GS(20), 0, 1 + (UINT)settings->maxOctreeDepth, 1, 1, L"Octree Level", &settings->octreeLevel, 1, GS(148), GS(40)));
-	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(340), GS(150), GS(20), L"Culling "));
-	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(340), GS(20), GS(20), L"", NULL, &settings->useCulling));
-	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(370), GS(150), GS(20), L"GPU Traversal "));
-	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(370), GS(20), GS(20), L"", NULL, &settings->useGPUTraversal));
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 4, 100, max(settings->resolutionX, settings->resolutionY) * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, GS(148), GS(50)));
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(310), GS(130), GS(20), 0, 500, 100, -100, L"Overlap Factor", &settings->overlapFactor, 2, GS(148), GS(40)));
+	octreeElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 1 + (UINT)settings->maxOctreeDepth, 1, 1, L"Octree Level", &settings->octreeLevel, 1, GS(148), GS(40)));
+	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(370), GS(150), GS(20), L"Culling "));
+	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(370), GS(20), GS(20), L"", NULL, &settings->useCulling));
+	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(400), GS(150), GS(20), L"GPU Traversal "));
+	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(400), GS(20), GS(20), L"", NULL, &settings->useGPUTraversal));
 
 	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate, 2, GS(148), GS(40)));
 	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 1000, 1000, 0, L"Density", &settings->density, 3, GS(148), GS(40)));
