@@ -10,7 +10,6 @@ GroundTruthRenderer::GroundTruthRenderer(const std::wstring &pointcloudFile)
 
     // Set the default values
     constantBufferData.fovAngleY = settings->fovAngleY;
-	constantBufferData.drawNormals = false;
 }
 
 void GroundTruthRenderer::Initialize()
@@ -103,6 +102,7 @@ void GroundTruthRenderer::Draw()
     constantBufferData.cameraPosition = camera->GetPosition();
 	constantBufferData.blendFactor = settings->blendFactor;
 	constantBufferData.useBlending = false;
+	constantBufferData.shadingMode = (int)settings->shadingMode;
 
 	// The amount of points that will be drawn
 	UINT vertexCount = vertices.size();
@@ -150,12 +150,12 @@ void GroundTruthRenderer::Draw()
 			d3d11DevCon->CSSetConstantBuffers(0, 1, &constantBuffer);
 			pullPush->SetInitialColorTexture(backBufferTexture);
 
-			constantBufferData.drawNormals = true;
+			constantBufferData.shadingMode = (int)ShadingMode::Normal;
 			d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
 			d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
 			d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 			d3d11DevCon->Draw(vertexCount, 0);
-			constantBufferData.drawNormals = false;
+			constantBufferData.shadingMode = (int)settings->shadingMode;
 
 			pullPush->SetInitialNormalTexture(backBufferTexture);
 			pullPush->Execute(backBufferTexture, depthTextureSRV);

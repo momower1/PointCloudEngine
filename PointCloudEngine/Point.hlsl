@@ -1,4 +1,5 @@
 #include "GroundTruth.hlsl"
+#include "ShadingMode.hlsli"
 #include "LightingConstantBuffer.hlsl"
 
 struct GS_POINT_OUTPUT
@@ -40,16 +41,30 @@ void GS(point VS_OUTPUT input[1], inout PointStream<GS_POINT_OUTPUT> output)
 
 float4 PS(GS_POINT_OUTPUT input) : SV_TARGET
 {
-	if (drawNormals)
+	switch (shadingMode)
 	{
-		return float4(0.5f * ((normalsInScreenSpace ? input.normalScreen : input.normal) + 1), 1);
+		case SHADING_MODE_COLOR:
+		{
+			if (useLighting)
+			{
+				return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color), 1);
+			}
+
+			return float4(input.color, 1);
+		}
+		case SHADING_MODE_DEPTH:
+		{
+			return float4(input.position.z, input.position.z, input.position.z, 1);
+		}
+		case SHADING_MODE_NORMAL:
+		{
+			return float4(0.5f * (input.normal + 1), 1);
+		}
+		case SHADING_MODE_NORMAL_SCREEN:
+		{
+			return float4(0.5f * (input.normalScreen + 1), 1);
+		}
 	}
-	else if (useLighting)
-	{
-		return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, input.color), 1);
-	}
-	else
-	{
-		return float4(input.color, 1);
-	}
+	
+	return float4(1, 0, 0, 1);
 }

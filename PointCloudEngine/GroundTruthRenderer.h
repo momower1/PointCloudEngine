@@ -44,10 +44,9 @@ namespace PointCloudEngine
             float samplingRate;
 			float blendFactor;
 			int useBlending;
-			int drawNormals;
-			int normalsInScreenSpace;
 			int backfaceCulling;
-			float padding[2];
+			int shadingMode;
+			float padding[3];
         };
 
         std::vector<Vertex> vertices;

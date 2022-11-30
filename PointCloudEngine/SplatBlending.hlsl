@@ -87,6 +87,7 @@ float4 SplatBlendingPS(bool useLighting, bool useBlending, float3 cameraPosition
 	if (factor > 1)
 	{
 		discard;
+		return float4(0, 0, 0, 0);
 	}
 
 	// Calculate the final pixel color
@@ -119,6 +120,7 @@ float4 SplatBlendingPS(bool useLighting, bool useBlending, float3 cameraPosition
 		if (distance(position, surfacePosition) > blendFactor * input.radius)
 		{
 			discard;
+			return float4(0, 0, 0, 0);
 		}
 
 		// Blending weight should be 1 in the center and close to 0 at the edge (0 at the edge introduces artifacts)
