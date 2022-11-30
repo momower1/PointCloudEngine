@@ -132,37 +132,41 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
     input.normal = normalize(input.normal);
     input.normalScreen = normalize(input.normalScreen);
 
-    if (shadingMode == SHADING_MODE_COLOR)
+    switch (shadingMode)
     {
-        float3 albedo = textureAlbedo.Sample(samplerState, input.textureUV).rgb;
-
-        // Need to perform texture gamma correction for same results as point cloud
-        albedo = pow(albedo, 2.2f);
-
-        if (useLighting)
+        case SHADING_MODE_COLOR:
         {
-            return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, albedo), 1);
+            float3 albedo = textureAlbedo.Sample(samplerState, input.textureUV).rgb;
+
+            // Need to perform texture gamma correction for same results as point cloud
+            albedo = pow(albedo, 2.2f);
+
+            if (useLighting)
+            {
+                return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, albedo), 1);
+            }
+            else
+            {
+                return float4(albedo, 1);
+            }
         }
-        else
+        case SHADING_MODE_DEPTH:
         {
-            return float4(albedo, 1);
+            return float4(input.position.z, input.position.z, input.position.z, 1);
         }
-    }
-    else if (shadingMode == SHADING_MODE_DEPTH)
-    {
-        return float4(input.position.z, input.position.z, input.position.z, 1);
-    }
-    else if (shadingMode == SHADING_MODE_NORMAL)
-    {
-        return float4(0.5f * (input.normal + 1.0f), 1);
-    }
-    else if (shadingMode == SHADING_MODE_NORMAL_SCREEN)
-    {
-        return float4(0.5f * (input.normalScreen + 1.0f), 1);
-    }
-    else if ((shadingMode == SHADING_MODE_OPTICAL_FLOW_FORWARD) || (shadingMode == SHADING_MODE_OPTICAL_FLOW_BACKWARD))
-    {
-        return FlowToColor(input.opticalFlow);
+        case SHADING_MODE_NORMAL:
+        {
+            return float4(0.5f * (input.normal + 1.0f), 1);
+        }
+        case SHADING_MODE_NORMAL_SCREEN:
+        {
+            return float4(0.5f * (input.normalScreen + 1.0f), 1);
+        }
+        case SHADING_MODE_OPTICAL_FLOW_FORWARD:
+        case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
+        {
+            return FlowToColor(input.opticalFlow);
+        }
     }
 
     return float4(1, 0, 0, 1);
