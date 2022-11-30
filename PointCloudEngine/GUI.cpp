@@ -261,17 +261,19 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(40), GS(100), GS(20), L"View Mode "));
 	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Pull Push", L"Mesh", L"Neural Network"}, OnSelectViewMode, &viewModeSelection));
 	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
-	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(70), GS(150), GS(20), L"Vertex Count "));
-	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(70), GS(200), GS(20), &GUI::vertexCount));
-	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(100), GS(150), GS(20), L"Frames per second "));
-	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(100), GS(50), GS(20), &GUI::fps));
-	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(130), GS(150), GS(20), L"Lighting "));
-	rendererElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(130), GS(20), GS(20), L"", NULL, &settings->useLighting));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(70), GS(100), GS(20), L"Shading Mode "));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(65), GS(180), GS(200), { L"Color", L"Depth", L"Normal", L"NormalScreen", L"OpticalFlowForward", L"OpticalFlowBackward" }, OnSelectShadingMode, &shadingModeSelection));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(100), GS(150), GS(20), L"Vertex Count "));
+	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(100), GS(200), GS(20), &GUI::vertexCount));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(130), GS(150), GS(20), L"Frames per second "));
+	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(130), GS(50), GS(20), &GUI::fps));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(150), GS(20), L"Lighting "));
+	rendererElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(160), GS(20), GS(20), L"", NULL, &settings->useLighting));
 
-	splatElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(150), GS(20), L"Blending "));
-	splatElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(160), GS(20), GS(20), L"", NULL, &settings->useBlending));
-	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(190), GS(130), GS(20), 0, 100, 10, 0, L"Blend Factor", &settings->blendFactor, 1, GS(148), GS(40)));
-	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(220), GS(130), GS(20), 0, 1000, 1000, 0, L"Sampling Rate", &settings->samplingRate, 3, GS(148), GS(40)));
+	splatElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Blending "));
+	splatElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(190), GS(20), GS(20), L"", NULL, &settings->useBlending));
+	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(220), GS(130), GS(20), 0, 100, 10, 0, L"Blend Factor", &settings->blendFactor, 1, GS(148), GS(40)));
+	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 1000, 0, L"Sampling Rate", &settings->samplingRate, 3, GS(148), GS(40)));
 
 	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 4, 100, max(settings->resolutionX, settings->resolutionY) * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, GS(148), GS(50)));
 	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 500, 100, -100, L"Overlap Factor", &settings->overlapFactor, 2, GS(148), GS(40)));
@@ -281,39 +283,37 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(370), GS(150), GS(20), L"GPU Traversal "));
 	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(370), GS(20), GS(20), L"", NULL, &settings->useGPUTraversal));
 
-	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(220), GS(130), GS(20), 0, 1000, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate, 2, GS(148), GS(40)));
-	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 1000, 0, L"Density", &settings->density, 3, GS(148), GS(40)));
+	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate, 2, GS(148), GS(40)));
+	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 1000, 1000, 0, L"Density", &settings->density, 3, GS(148), GS(40)));
 
-	pointElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(150), GS(20), L"Backface Culling "));
-	pointElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(160), GS(20), GS(20), L"", NULL, &settings->backfaceCulling));
+	pointElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Backface Culling "));
+	pointElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(190), GS(20), GS(20), L"", NULL, &settings->backfaceCulling));
 
-	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(220), GS(150), GS(20), L"Linear Filtering "));
-	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(220), GS(20), GS(20), L"", NULL, &settings->pullPushLinearFilter));
-	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Skip Push Phase "));
-	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(250), GS(20), GS(20), L"", NULL, &settings->pullPushSkipPushPhase));
-	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(280), GS(150), GS(20), L"Oriented Splat "));
-	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(280), GS(20), GS(20), L"", NULL, &settings->pullPushOrientedSplat));
-	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(310), GS(150), GS(20), L"Texel Blending "));
-	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(310), GS(20), GS(20), L"", NULL, &settings->pullPushBlending));
-	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 1000, 1000, 0, L"Blend Range", &settings->pullPushBlendRange, 2, GS(148), GS(40)));
-	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(370), GS(130), GS(20), 0, 1000, 1000, 0, L"Splat Size", &settings->pullPushSplatSize, 2, GS(148), GS(40)));
-	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Linear Filtering "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(250), GS(20), GS(20), L"", NULL, &settings->pullPushLinearFilter));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(280), GS(150), GS(20), L"Skip Push Phase "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(280), GS(20), GS(20), L"", NULL, &settings->pullPushSkipPushPhase));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(310), GS(150), GS(20), L"Oriented Splat "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(310), GS(20), GS(20), L"", NULL, &settings->pullPushOrientedSplat));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(340), GS(150), GS(20), L"Texel Blending "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(340), GS(20), GS(20), L"", NULL, &settings->pullPushBlending));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(370), GS(130), GS(20), 0, 1000, 1000, 0, L"Blend Range", &settings->pullPushBlendRange, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 1000, 1000, 0, L"Splat Size", &settings->pullPushSplatSize, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(430), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
 
-	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(160), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
-	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(200), GS(100), GS(20), L"Shading Mode "));
-	meshElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(200), GS(180), GS(200), { L"Color", L"Depth", L"Normal", L"NormalScreen", L"OpticalFlowForward", L"OpticalFlowBackward" }, OnSelectShadingMode, &shadingModeSelection));
-	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(230), GS(150), GS(20), L"Triangle Count "));
-	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(230), GS(200), GS(20), &GUI::triangleCount));
-	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(260), GS(150), GS(20), L"UV Count "));
-	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(260), GS(200), GS(20), &GUI::uvCount));
-	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(290), GS(150), GS(20), L"Normal Count "));
-	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(290), GS(200), GS(20), &GUI::normalCount));
-	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(320), GS(150), GS(20), L"Submesh Count "));
-	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(320), GS(200), GS(20), &GUI::submeshCount));
-	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(350), GS(150), GS(20), L"Texture Count "));
-	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(350), GS(200), GS(20), &GUI::textureCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Triangle Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(190), GS(200), GS(20), &GUI::triangleCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(220), GS(150), GS(20), L"UV Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(220), GS(200), GS(20), &GUI::uvCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Normal Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(250), GS(200), GS(20), &GUI::normalCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(280), GS(150), GS(20), L"Submesh Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(280), GS(200), GS(20), &GUI::submeshCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(310), GS(150), GS(20), L"Texture Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(310), GS(200), GS(20), &GUI::textureCount));
+	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(340), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
 
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(100), GS(20), L"TODO"));
 }
 
 void PointCloudEngine::GUI::CreateAdvancedElements()
@@ -441,7 +441,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				ShowElements(splatElements);
 				ShowElements(sparseElements);
 				splatElements[3]->Show(SW_HIDE);
-				sparseElements[1]->SetPosition(GS(160), GS(250));
+				sparseElements[1]->SetPosition(GS(160), GS(280));
 				break;
 			}
 			case ViewMode::Points:
@@ -453,7 +453,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 			{
 				ShowElements(pointElements);
 				sparseElements[1]->Show(SW_SHOW);
-				sparseElements[1]->SetPosition(GS(160), GS(190));
+				sparseElements[1]->SetPosition(GS(160), GS(220));
 				break;
 			}
 			case ViewMode::PullPush:
@@ -461,7 +461,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				ShowElements(pointElements);
 				ShowElements(pullPushElements);
 				sparseElements[1]->Show(SW_SHOW);
-				sparseElements[1]->SetPosition(GS(160), GS(190));
+				sparseElements[1]->SetPosition(GS(160), GS(220));
 				break;
 			}
 			case ViewMode::Mesh:
