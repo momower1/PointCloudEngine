@@ -33,6 +33,8 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
 
         hr = d3d11Device->CreateShaderResourceView(bufferPositions, &bufferPositionsSRVDesc, &bufferPositionsSRV);
         ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
+
+        vertexCount = objContainer.buffers.positions.size();
     }
 
     // Texture coordinates
@@ -65,6 +67,8 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
 
         hr = d3d11Device->CreateShaderResourceView(bufferTextureCoordinates, &bufferTextureCoordinatesSRVDesc, &bufferTextureCoordinatesSRV);
         ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
+
+        uvCount = objContainer.buffers.textureCoordinates.size();
     }
     
     // Normals
@@ -97,6 +101,8 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
 
         hr = d3d11Device->CreateShaderResourceView(bufferNormals, &bufferNormalsSRVDesc, &bufferNormalsSRV);
         ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateShaderResourceView) + L" failed!");
+
+        normalCount = objContainer.buffers.normals.size();
     }
 
     // Textures
@@ -128,9 +134,14 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
         hr = d3d11Device->CreateBuffer(&bufferTrianglesDesc, &bufferTrianglesData, &bufferTriangles);
         ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
 
-        triangles.push_back(bufferTriangles);
-        triangleVertexCounts.push_back(it->triangles.size());
+        submeshVertices.push_back(bufferTriangles);
+        submeshVertexCounts.push_back(it->triangles.size());
+
+        triangleCount += (it->triangles.size() / 3);
     }
+
+    submeshCount = objContainer.meshes.size();
+    textureCount = objContainer.meshes.size();
 
     // Create the constant buffer
     D3D11_BUFFER_DESC constantBufferDesc;
@@ -191,28 +202,29 @@ void MeshRenderer::Draw()
     d3d11DevCon->PSSetShader(meshShader->pixelShader, NULL, 0);
     d3d11DevCon->PSSetSamplers(0, 1, &samplerState);
 
-    UINT vertexCount = 0;
-
-    for (int i = 0; i < triangles.size(); i++)
+    for (int i = 0; i < submeshVertices.size(); i++)
     {
         d3d11DevCon->PSSetShaderResources(0, 1, &textureSRVs[i]);
 
         UINT offset = 0;
         UINT stride = sizeof(MeshVertex);
-        d3d11DevCon->IASetVertexBuffers(0, 1, &triangles[i], &stride, &offset);
-
-        d3d11DevCon->Draw(triangleVertexCounts[i], 0);
-
-        vertexCount += triangleVertexCounts[i];
+        d3d11DevCon->IASetVertexBuffers(0, 1, &submeshVertices[i], &stride, &offset);
+        d3d11DevCon->Draw(submeshVertexCounts[i], 0);
     }
-
-    GUI::vertexCount = vertexCount;
 
     // After drawing, store the previous matrices for optical flow computation
     constantBufferData.PreviousWorld = constantBufferData.World;
     constantBufferData.PreviousView = constantBufferData.View;
     constantBufferData.PreviousProjection = constantBufferData.Projection;
     constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
+
+    // Update GUI elements
+    GUI::vertexCount = vertexCount;
+    GUI::triangleCount = triangleCount;
+    GUI::uvCount = uvCount;
+    GUI::normalCount = normalCount;
+    GUI::submeshCount = submeshCount;
+    GUI::textureCount = textureCount;
 }
 
 void MeshRenderer::Release()
@@ -236,13 +248,13 @@ void MeshRenderer::Release()
         SAFE_RELEASE(textureSRVs[i]);
     }
 
-    for (int i = 0; i < triangles.size(); i++)
+    for (int i = 0; i < submeshVertices.size(); i++)
     {
-        SAFE_RELEASE(triangles[i]);
+        SAFE_RELEASE(submeshVertices[i]);
     }
 
     textures.clear();
     textureSRVs.clear();
-    triangles.clear();
-    triangleVertexCounts.clear();
+    submeshVertices.clear();
+    submeshVertexCounts.clear();
 }

@@ -18,6 +18,7 @@ namespace PointCloudEngine
 	public:
 		static UINT fps;
 		static UINT vertexCount;
+		static UINT triangleCount, uvCount, normalCount, submeshCount, textureCount;
 		static UINT cameraRecording;
 		static int lossFunctionSelection;
 		static float l1Loss, mseLoss, smoothL1Loss;

@@ -5,6 +5,11 @@
 
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
+UINT GUI::triangleCount = 0;
+UINT GUI::uvCount = 0;
+UINT GUI::normalCount = 0;
+UINT GUI::submeshCount = 0;
+UINT GUI::textureCount = 0;
 UINT GUI::cameraRecording = 0;
 int GUI::lossFunctionSelection = 0;
 float GUI::l1Loss = 0;
@@ -297,6 +302,16 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(160), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
 	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(200), GS(100), GS(20), L"Shading Mode "));
 	meshElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(200), GS(180), GS(200), { L"Color", L"Depth", L"Normal", L"NormalScreen", L"OpticalFlowForward", L"OpticalFlowBackward" }, OnSelectShadingMode, &shadingModeSelection));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(230), GS(150), GS(20), L"Triangle Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(230), GS(200), GS(20), &GUI::triangleCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(260), GS(150), GS(20), L"UV Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(260), GS(200), GS(20), &GUI::uvCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(290), GS(150), GS(20), L"Normal Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(290), GS(200), GS(20), &GUI::normalCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(320), GS(150), GS(20), L"Submesh Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(320), GS(200), GS(20), &GUI::submeshCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(350), GS(150), GS(20), L"Texture Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(350), GS(200), GS(20), &GUI::textureCount));
 
 	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(100), GS(20), L"TODO"));
 }

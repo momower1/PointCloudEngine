@@ -15,6 +15,13 @@ namespace PointCloudEngine
         void Release();
 
     private:
+        UINT vertexCount = 0;
+        UINT triangleCount = 0;
+        UINT uvCount = 0;
+        UINT normalCount = 0;
+        UINT submeshCount = 0;
+        UINT textureCount = 0;
+
         struct MeshRendererConstantBuffer
         {
             Matrix World;
@@ -40,8 +47,8 @@ namespace PointCloudEngine
 
         std::vector<ID3D11Resource*> textures;
         std::vector<ID3D11ShaderResourceView*> textureSRVs;
-        std::vector<ID3D11Buffer*> triangles;
-        std::vector<UINT> triangleVertexCounts;
+        std::vector<ID3D11Buffer*> submeshVertices;
+        std::vector<UINT> submeshVertexCounts;
 
         MeshRendererConstantBuffer constantBufferData;
     };
