@@ -34,6 +34,8 @@ namespace PointCloudEngine
             Matrix PreviousWorldInverseTranspose;
             Vector3 cameraPosition;
             int shadingMode;
+            int textureLOD;
+            int padding[3];
         };
 
         ID3D11Buffer* bufferPositions = NULL;

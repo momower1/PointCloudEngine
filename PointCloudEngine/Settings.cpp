@@ -81,6 +81,7 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		// Mesh parameters
 		TryParse(NAMEOF(meshFile), &meshFile);
 		TryParse(NAMEOF(loadMeshFile), &loadMeshFile);
+		TryParse(NAMEOF(textureLOD), &textureLOD);
 
 		// Parse neural network parameters
 		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
@@ -205,6 +206,7 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << L"# Mesh Parameters" << std::endl;
 	settingsStream << NAMEOF(meshFile) << L"=" << meshFile << std::endl;
 	settingsStream << NAMEOF(loadMeshFile) << L"=" << loadMeshFile << std::endl;
+	settingsStream << NAMEOF(textureLOD) << L"=" << textureLOD << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
 	settingsStream << NAMEOF(neuralNetworkModelFile) << L"=" << neuralNetworkModelFile << std::endl;

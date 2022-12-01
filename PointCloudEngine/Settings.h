@@ -75,6 +75,7 @@ namespace PointCloudEngine
 		// Mesh parameters
 		std::wstring meshFile = L"";
 		bool loadMeshFile = false;
+		int textureLOD = 0;
 
 		// Neural Network parameters
 		std::wstring neuralNetworkModelFile = L"";

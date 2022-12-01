@@ -27,7 +27,10 @@ cbuffer MeshRendererConstantBuffer : register(b0)
     //------------------------------------------------------------------------------ (64 byte boundary)
     float3 cameraPosition;
     int shadingMode;
-};  // Total: 272 bytes with constant buffer packing rules
+    //------------------------------------------------------------------------------ (16 byte boundary)
+    int textureLOD;
+    // 12 bytes auto padding
+};  // Total: 528 bytes with constant buffer packing rules
 
 float3 HUEtoRGB(in float H)
 {
@@ -136,7 +139,7 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
     {
         case SHADING_MODE_COLOR:
         {
-            float3 albedo = textureAlbedo.Sample(samplerState, input.textureUV).rgb;
+            float3 albedo = textureAlbedo.SampleLevel(samplerState, input.textureUV, textureLOD).rgb;
 
             // Need to perform texture gamma correction for same results as point cloud
             albedo = pow(albedo, 2.2f);

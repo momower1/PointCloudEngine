@@ -190,6 +190,7 @@ void MeshRenderer::Draw()
     constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
     constantBufferData.cameraPosition = camera->GetPosition();
     constantBufferData.shadingMode = (int)settings->shadingMode;
+    constantBufferData.textureLOD = settings->textureLOD;
 
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
     d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
