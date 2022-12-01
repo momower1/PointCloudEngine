@@ -15,6 +15,7 @@ namespace PointCloudEngine
         void Release();
 		void OpenPlyOrPointcloudFile();
 		void LoadFile(std::wstring filepath);
+        void GenerateWaypointDataset();
 
     private:
 		SceneObject *startupText = NULL;

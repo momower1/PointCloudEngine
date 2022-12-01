@@ -18,6 +18,7 @@ namespace H5
 
 namespace PointCloudEngine
 {
+	class Scene;
     class SceneObject;
     class Shader;
     class Transform;
@@ -97,6 +98,7 @@ extern HWND hwndScene;
 extern HWND hwndGUI;
 extern Settings* settings;
 extern Camera* camera;
+extern Scene* scene;
 extern Shader* textShader;
 extern Shader* splatShader;
 extern Shader* pointShader;

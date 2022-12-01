@@ -11,9 +11,9 @@ HWND hwndScene = NULL;
 HWND hwndGUI = NULL;
 double dt = 0;
 Timer timer;
-Scene scene;
 Settings* settings;
 Camera* camera;
+Scene* scene = NULL;
 Shader* textShader;
 Shader* splatShader;
 Shader* pointShader;
@@ -701,19 +701,19 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			{
 				case ID_FILE_OPEN_FILE:
 				{
-					scene.OpenPlyOrPointcloudFile();
+					scene->OpenPlyOrPointcloudFile();
 					break;
 				}
 				case ID_RENDERER_USE_GROUND_TRUTH_RENDERER:
 				{
 					settings->useOctree = false;
-					scene.LoadFile(settings->pointcloudFile);
+					scene->LoadFile(settings->pointcloudFile);
 					break;
 				}
 				case ID_RENDERER_USE_OCTREE_RENDERER:
 				{
 					settings->useOctree = true;
-					scene.LoadFile(settings->pointcloudFile);
+					scene->LoadFile(settings->pointcloudFile);
 					break;
 				}
 				case ID_FILE_TAKE_SCREENSHOT:
@@ -786,7 +786,8 @@ void InitializeScene()
 	hr = d3d11Device->CreateBuffer(&lightingConstantBufferDesc, NULL, &lightingConstantBuffer);
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(lightingConstantBuffer));
 
-	scene.Initialize();
+	scene = new Scene();
+	scene->Initialize();
     timer.ResetElapsedTime();
 }
 
@@ -799,7 +800,7 @@ void UpdateScene()
         dt = timer.GetElapsedSeconds();
     });
 
-    scene.Update(timer);
+    scene->Update(timer);
 }
 
 void DrawScene()
@@ -848,7 +849,7 @@ void DrawScene()
 	camera->PrepareDraw();
 
     // Draw scene
-	scene.Draw();
+	scene->Draw();
 
 	// Gamma correction is automatically applied in full screen mode, only apply it to the texture after presenting it to the screen (then screenshots will also be gamma corrected)
 	// In window mode the gamma correction has to be done before presenting it to the screen
@@ -890,7 +891,8 @@ void DrawScene()
 void ReleaseObjects()
 {
 	// Release scene objects
-	scene.Release();
+	scene->Release();
+	SAFE_DELETE(scene);
 
     // Delete settings (also saves them to the hard drive)
     SAFE_DELETE(settings);

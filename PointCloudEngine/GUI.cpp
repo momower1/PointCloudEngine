@@ -614,6 +614,8 @@ void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 	}
 #endif
 	((GUISlider<UINT>*)datasetElements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
+
+	scene->GenerateWaypointDataset();
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()

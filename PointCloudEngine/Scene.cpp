@@ -297,3 +297,8 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     // Reset camera rotation
 	camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(0, 0, 0));
 }
+
+void PointCloudEngine::Scene::GenerateWaypointDataset()
+{
+	std::cout << "TODO" << std::endl;
+}
