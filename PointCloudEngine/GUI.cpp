@@ -525,7 +525,6 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 void PointCloudEngine::GUI::OnSelectShadingMode()
 {
 	settings->shadingMode = (ShadingMode)shadingModeSelection;
-	std::cout << "Selected shading mode " << std::to_string((int)settings->shadingMode) << std::endl;
 }
 
 void PointCloudEngine::GUI::OnChangeResolution()
