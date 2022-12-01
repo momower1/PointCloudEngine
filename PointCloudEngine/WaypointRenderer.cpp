@@ -38,6 +38,7 @@ void PointCloudEngine::WaypointRenderer::Initialize()
 
 void PointCloudEngine::WaypointRenderer::Update()
 {
+	GUI::waypointCount = GetWaypointSize();
 }
 
 void PointCloudEngine::WaypointRenderer::Draw()

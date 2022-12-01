@@ -6,7 +6,6 @@ void Scene::Initialize()
     pointCloud = Hierarchy::Create(L"PointCloud");
 	waypointRenderer = new WaypointRenderer();
 	pointCloud->AddComponent(waypointRenderer);
-	GUI::waypointRenderer = waypointRenderer;
 	waypointRenderer->enabled = false;
 
 	// Create startup text
@@ -71,14 +70,14 @@ void Scene::Update(Timer &timer)
 	}
 
 	// Camera tracking shot using the waypoints
-	if (GUI::waypointPreview)
+	if (waypointPreview)
 	{
 		// While preview
 		Vector3 newCameraPosition = camera->GetPosition();
 		Matrix newCameraRotation = camera->GetRotationMatrix();
 
-		waypointRenderer->LerpWaypoints(GUI::waypointPreviewLocation, newCameraPosition, newCameraRotation);
-		GUI::waypointPreviewLocation += settings->waypointPreviewStepSize;
+		waypointRenderer->LerpWaypoints(waypointPreviewLocation, newCameraPosition, newCameraRotation);
+		waypointPreviewLocation += settings->waypointPreviewStepSize;
 
 		camera->SetPosition(newCameraPosition);
 		camera->SetRotationMatrix(newCameraRotation);
@@ -256,7 +255,6 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 		else
 		{
 			GroundTruthRenderer* groundTruthRenderer = new GroundTruthRenderer(settings->pointcloudFile);
-			GUI::groundTruthRenderer = groundTruthRenderer;
 			pointCloudRenderer = groundTruthRenderer;
 		}
 
@@ -298,7 +296,62 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 	camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(0, 0, 0));
 }
 
+void PointCloudEngine::Scene::AddWaypoint()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = true;
+		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
+	}
+}
+
+void PointCloudEngine::Scene::RemoveWaypoint()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = true;
+		waypointRenderer->RemoveWaypoint();
+	}
+}
+
+void PointCloudEngine::Scene::ToggleWaypoints()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = !waypointRenderer->enabled;
+	}
+}
+
+void PointCloudEngine::Scene::PreviewWaypoints()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = true;
+		waypointPreview = !waypointPreview;
+
+		// Camera tracking shot using the waypoints
+		if (waypointPreview)
+		{
+			// Start preview
+			waypointPreviewLocation = 0;
+			waypointStartPosition = camera->GetPosition();
+			waypointStartRotation = camera->GetRotationMatrix();
+		}
+		else
+		{
+			// End of preview
+			camera->SetPosition(waypointStartPosition);
+			camera->SetRotationMatrix(waypointStartRotation);
+		}
+	}
+}
+
 void PointCloudEngine::Scene::GenerateWaypointDataset()
+{
+	std::cout << "TODO" << std::endl;
+}
+
+void PointCloudEngine::Scene::GenerateSphereDataset()
 {
 	std::cout << "TODO" << std::endl;
 }

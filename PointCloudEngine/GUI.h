@@ -19,36 +19,20 @@ namespace PointCloudEngine
 		static UINT fps;
 		static UINT vertexCount;
 		static UINT triangleCount, uvCount, normalCount, submeshCount, textureCount;
-		static UINT cameraRecording;
-		static int lossFunctionSelection;
-		static float l1Loss, mseLoss, smoothL1Loss;
-		static std::vector<Vector3> cameraRecordingPositions;
-		static std::vector<Matrix> cameraRecordingRotations;
-		static bool waypointPreview;
-		static float waypointPreviewLocation;
-		static WaypointRenderer* waypointRenderer;
-		static GroundTruthRenderer* groundTruthRenderer;
+		static UINT waypointCount;
 
 		static void Initialize();
 		static void Release();
 		static void Update();
 		static void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 		static void SetVisible(bool visible);
-		static void SetNeuralNetworkOutputChannels(std::vector<std::wstring> outputChannels);
-		static void SetNeuralNetworkLossSelfChannels(std::map<std::wstring, XMUINT2> renderModes);
-		static void SetNeuralNetworkLossTargetChannels(std::vector<std::wstring> lossTargetChannels);
 
 	private:
 		static bool initialized;
-		static bool sameOutputChannel;
 		static int viewModeSelection;
 		static int shadingModeSelection;
-		static int lossSelfSelection;
-		static int lossTargetSelection;
 		static int resolutionX;
 		static int resolutionY;
-		static Vector3 waypointStartPosition;
-		static Matrix waypointStartRotation;
 
 		static GUITab* tabGroundTruth;
 		static GUITab* tabOctree;
@@ -76,8 +60,6 @@ namespace PointCloudEngine
 		static void CreateRendererElements();
 		static void CreateAdvancedElements();
 		static void CreateDatasetElements();
-		static void LoadCameraRecording();
-		static void SaveCameraRecording();
 
 		static void OnSelectViewMode();
 		static void OnSelectTab(int selection);
@@ -91,15 +73,6 @@ namespace PointCloudEngine
 		static void OnWaypointPreview();
 		static void OnGenerateWaypointDataset();
 		static void OnGenerateSphereDataset();
-		static void OnChangeCameraRecording();
-		static void OnSelectNeuralNetworkLossFunction();
-		static void OnSelectNeuralNetworkLossSelf();
-		static void OnSelectNeuralNetworkLossTarget();
-		static void OnSelectNeuralNetworkOutputRed();
-		static void OnSelectNeuralNetworkOutputGreen();
-		static void OnSelectNeuralNetworkOutputBlue();
-		static void OnLoadPytorchModel();
-		static void OnLoadDescriptionFile();
 	};
 }
 #endif

@@ -1,8 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "GUI.h"
 
-#define CAMERARECORDINGS_FILENAME L"/CameraRecordings.vector"
-
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
 UINT GUI::triangleCount = 0;
@@ -10,49 +8,15 @@ UINT GUI::uvCount = 0;
 UINT GUI::normalCount = 0;
 UINT GUI::submeshCount = 0;
 UINT GUI::textureCount = 0;
-UINT GUI::cameraRecording = 0;
-int GUI::lossFunctionSelection = 0;
-float GUI::l1Loss = 0;
-float GUI::mseLoss = 0;
-float GUI::smoothL1Loss = 0;
+UINT GUI::waypointCount = 0;
 
 HFONT IGUIElement::hFont = NULL;
 
-std::vector<Vector3> GUI::cameraRecordingPositions =
-{
-	Vector3(0, 0, -10),
-	Vector3(0, 0, 10),
-	Vector3(-10, 0, 0),
-	Vector3(10, 0, 0),
-	Vector3(0, 10, 0),
-	Vector3(0, -10, 0)
-};
-
-std::vector<Matrix> GUI::cameraRecordingRotations =
-{
-	Matrix::CreateFromYawPitchRoll(0, 0, 0),
-	Matrix::CreateFromYawPitchRoll(XM_PI, 0, 0),
-	Matrix::CreateFromYawPitchRoll(XM_PI / 2, 0, 0),
-	Matrix::CreateFromYawPitchRoll(-XM_PI / 2, 0, 0),
-	Matrix::CreateFromYawPitchRoll(0, XM_PI / 2, 0),
-	Matrix::CreateFromYawPitchRoll(0, -XM_PI / 2, 0)
-};
-
-bool GUI::waypointPreview = false;
-float GUI::waypointPreviewLocation = 0;
-WaypointRenderer* GUI::waypointRenderer = NULL;
-GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
-
 bool GUI::initialized = false;
-bool GUI::sameOutputChannel = false;
 int GUI::viewModeSelection = 0;
 int GUI::shadingModeSelection = 0;
-int GUI::lossSelfSelection = 0;
-int GUI::lossTargetSelection = 0;
 int GUI::resolutionX = 0;
 int GUI::resolutionY = 0;
-Vector3 GUI::waypointStartPosition;
-Matrix GUI::waypointStartRotation;
 
 GUITab* GUI::tabGroundTruth = NULL;
 GUITab* GUI::tabOctree = NULL;
@@ -77,8 +41,6 @@ void PointCloudEngine::GUI::Initialize()
 {
 	if (!initialized)
 	{
-		LoadCameraRecording();
-
 		// Place the gui window for changing settings next to the main window
 		RECT rect;
 		GetWindowRect(hwndScene, &rect);
@@ -112,13 +74,12 @@ void PointCloudEngine::GUI::Initialize()
 
 	OnSelectTab(0);
 	OnSelectViewMode();
+	OnSelectShadingMode();
 	UpdateWindow(hwndGUI);
 }
 
 void PointCloudEngine::GUI::Release()
 {
-	SaveCameraRecording();
-
 	initialized = false;
 
 	// SafeDelete all GUI elements, HWNDs are released automatically
@@ -196,30 +157,6 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
-}
-
-void PointCloudEngine::GUI::SetNeuralNetworkOutputChannels(std::vector<std::wstring> outputChannels)
-{
-	((GUIDropdown*)neuralNetworkElements[11])->SetEntries(outputChannels);
-	((GUIDropdown*)neuralNetworkElements[13])->SetEntries(outputChannels);
-	((GUIDropdown*)neuralNetworkElements[15])->SetEntries(outputChannels);
-}
-
-void PointCloudEngine::GUI::SetNeuralNetworkLossSelfChannels(std::map<std::wstring, XMUINT2> renderModes)
-{
-	std::vector<std::wstring> selfChannels;
-
-	for (auto it = renderModes.begin(); it != renderModes.end(); it++)
-	{
-		selfChannels.push_back(it->first);
-	}
-
-	((GUIDropdown*)neuralNetworkElements[5])->SetEntries(selfChannels);
-}
-
-void PointCloudEngine::GUI::SetNeuralNetworkLossTargetChannels(std::vector<std::wstring> lossTargetChannels)
-{
-	((GUIDropdown*)neuralNetworkElements[7])->SetEntries(lossTargetChannels);
 }
 
 void PointCloudEngine::GUI::ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND)
@@ -347,10 +284,9 @@ void PointCloudEngine::GUI::CreateAdvancedElements()
 
 void PointCloudEngine::GUI::CreateDatasetElements()
 {
-	// Use this to select a camera position from the HDF5 file generation
-	datasetElements.push_back(new GUISlider<UINT>(hwndGUI, GS(160), GS(40), GS(130), GS(20), 0, (UINT)cameraRecordingPositions.size() - 1, 1, 0, L"Camera Recording", &cameraRecording, 0, GS(148), GS(40), OnChangeCameraRecording));
-
-	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(80), GS(300), GS(20), L"Waypoint Dataset Generation"));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(50), GS(300), GS(20), L"Waypoint Dataset Generation"));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(80), GS(150), GS(20), L"Waypoint Count "));
+	datasetElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(80), GS(200), GS(20), &GUI::waypointCount));
 	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(110), GS(130), GS(20), 1, 1000, 1000, 0, L"Step Size", &settings->waypointStepSize, 3, GS(148), GS(40)));
 	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(140), GS(130), GS(20), 1, 1000, 1000, 0, L"Preview Step Size", &settings->waypointPreviewStepSize, 3, GS(148), GS(40)));
 	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(170), GS(150), GS(20), L"Range Min/Max"));
@@ -371,42 +307,6 @@ void PointCloudEngine::GUI::CreateDatasetElements()
 	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, GS(28)));
 	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, GS(28)));
 	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(450), GS(325), GS(25), L"Generate Sphere Dataset", OnGenerateSphereDataset));
-}
-
-void PointCloudEngine::GUI::LoadCameraRecording()
-{
-	// Load the stored camera recordings from a file
-	std::ifstream file(executableDirectory + CAMERARECORDINGS_FILENAME, std::ios::in | std::ios::binary);
-
-	if (file.is_open())
-	{
-		UINT cameraRecordingSize = 0;
-
-		// Read the count
-		file.read((char*)&cameraRecordingSize, sizeof(UINT));
-
-		// Reserve memory
-		cameraRecordingPositions.resize(cameraRecordingSize);
-		cameraRecordingRotations.resize(cameraRecordingSize);
-
-		// Read the positions and rotations into the vectors
-		file.read((char*)cameraRecordingPositions.data(), sizeof(Vector3) * cameraRecordingSize);
-		file.read((char*)cameraRecordingRotations.data(), sizeof(Matrix) * cameraRecordingSize);
-	}
-}
-
-void PointCloudEngine::GUI::SaveCameraRecording()
-{
-	// Save camera recordings to file
-	std::ofstream file(executableDirectory + CAMERARECORDINGS_FILENAME, std::ios::out | std::ios::binary);
-
-	UINT cameraRecordingSize = cameraRecordingPositions.size();
-
-	file.write((char*)&cameraRecordingSize, sizeof(UINT));
-	file.write((char*)cameraRecordingPositions.data(), sizeof(Vector3) * cameraRecordingSize);
-	file.write((char*)cameraRecordingRotations.data(), sizeof(Matrix) * cameraRecordingSize);
-	file.flush();
-	file.close();
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()
@@ -557,157 +457,30 @@ void PointCloudEngine::GUI::OnLoadMeshFromOBJFile()
 
 void PointCloudEngine::GUI::OnWaypointAdd()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = true;
-		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
-	}
+	scene->AddWaypoint();
 }
 
 void PointCloudEngine::GUI::OnWaypointRemove()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = true;
-		waypointRenderer->RemoveWaypoint();
-	}
+	scene->RemoveWaypoint();
 }
 
 void PointCloudEngine::GUI::OnWaypointToggle()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = !waypointRenderer->enabled;
-	}
+	scene->ToggleWaypoints();
 }
 
 void PointCloudEngine::GUI::OnWaypointPreview()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = true;
-		waypointPreview = !waypointPreview;
-
-		// Camera tracking shot using the waypoints
-		if (waypointPreview)
-		{
-			// Start preview
-			waypointPreviewLocation = 0;
-			waypointStartPosition = camera->GetPosition();
-			waypointStartRotation = camera->GetRotationMatrix();
-		}
-		else
-		{
-			// End of preview
-			camera->SetPosition(waypointStartPosition);
-			camera->SetRotationMatrix(waypointStartRotation);
-		}
-	}
+	scene->PreviewWaypoints();
 }
 
 void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 {
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-	if (groundTruthRenderer != NULL)
-	{
-		groundTruthRenderer->GenerateWaypointDataset();
-	}
-#endif
-	((GUISlider<UINT>*)datasetElements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
-
 	scene->GenerateWaypointDataset();
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
 {
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-	if (groundTruthRenderer != NULL)
-	{
-		groundTruthRenderer->GenerateSphereDataset();
-	}
-#endif
-	((GUISlider<UINT>*)datasetElements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
-}
-
-void PointCloudEngine::GUI::OnChangeCameraRecording()
-{
-	camera->SetPosition(cameraRecordingPositions[cameraRecording]);
-	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording]);
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkLossFunction()
-{
-	if (lossFunctionSelection == 1)
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = &l1Loss;
-	}
-	else if (lossFunctionSelection == 2)
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = &mseLoss;
-	}
-	else if (lossFunctionSelection == 3)
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = &smoothL1Loss;
-	}
-	else
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = NULL;
-	}
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkLossSelf()
-{
-	settings->lossCalculationSelf = ((GUIDropdown*)neuralNetworkElements[5])->GetSelectedString();
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkLossTarget()
-{
-	settings->lossCalculationTarget = ((GUIDropdown*)neuralNetworkElements[7])->GetSelectedString();
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputRed()
-{
-	if (sameOutputChannel)
-	{
-		((GUIDropdown*)neuralNetworkElements[13])->SetSelection(settings->neuralNetworkOutputRed);
-		((GUIDropdown*)neuralNetworkElements[15])->SetSelection(settings->neuralNetworkOutputRed);
-	}
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputGreen()
-{
-	if (sameOutputChannel)
-	{
-		((GUIDropdown*)neuralNetworkElements[11])->SetSelection(settings->neuralNetworkOutputGreen);
-		((GUIDropdown*)neuralNetworkElements[15])->SetSelection(settings->neuralNetworkOutputGreen);
-	}
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputBlue()
-{
-	if (sameOutputChannel)
-	{
-		((GUIDropdown*)neuralNetworkElements[11])->SetSelection(settings->neuralNetworkOutputBlue);
-		((GUIDropdown*)neuralNetworkElements[13])->SetSelection(settings->neuralNetworkOutputBlue);
-	}
-}
-
-void PointCloudEngine::GUI::OnLoadPytorchModel()
-{
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-	if (OpenFileDialog(L"Pytorch Jit Model Files\0*.pt\0\0", settings->neuralNetworkModelFile))
-	{
-		groundTruthRenderer->LoadNeuralNetworkPytorchModel();
-	}
-#endif
-}
-
-void PointCloudEngine::GUI::OnLoadDescriptionFile()
-{
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-	if (OpenFileDialog(L"Model Description Files\0*.txt\0\0", settings->neuralNetworkDescriptionFile))
-	{
-		groundTruthRenderer->LoadNeuralNetworkDescriptionFile();
-	}
-#endif
+	scene->GenerateSphereDataset();
 }

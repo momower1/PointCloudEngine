@@ -15,7 +15,12 @@ namespace PointCloudEngine
         void Release();
 		void OpenPlyOrPointcloudFile();
 		void LoadFile(std::wstring filepath);
+        void AddWaypoint();
+        void RemoveWaypoint();
+        void ToggleWaypoints();
+        void PreviewWaypoints();
         void GenerateWaypointDataset();
+        void GenerateSphereDataset();
 
     private:
 		SceneObject *startupText = NULL;
@@ -29,8 +34,13 @@ namespace PointCloudEngine
 
         Vector2 input;
 
-		// Speed up WASD, Q/E, V/N and so on for faster movement and parameter tweaking
+		// Speed up WASD for faster movement
         float inputSpeed = 0;
+
+        bool waypointPreview;
+        float waypointPreviewLocation;
+        Vector3 waypointStartPosition;
+        Matrix waypointStartRotation;
     };
 }
 #endif
