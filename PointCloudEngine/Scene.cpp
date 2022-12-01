@@ -349,6 +349,7 @@ void PointCloudEngine::Scene::PreviewWaypoints()
 void PointCloudEngine::Scene::GenerateWaypointDataset()
 {
 	ViewMode startViewMode = settings->viewMode;
+	ShadingMode startShadingMode = settings->shadingMode;
 	Vector3 startPosition = camera->GetPosition();
 	Matrix startRotation = camera->GetRotationMatrix();
 
@@ -378,6 +379,7 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 	camera->SetPosition(startPosition);
 	camera->SetRotationMatrix(startRotation);
 	settings->viewMode = startViewMode;
+	settings->shadingMode = startShadingMode;
 }
 
 void PointCloudEngine::Scene::GenerateSphereDataset()
