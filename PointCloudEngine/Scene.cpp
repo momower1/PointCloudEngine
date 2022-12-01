@@ -348,10 +348,101 @@ void PointCloudEngine::Scene::PreviewWaypoints()
 
 void PointCloudEngine::Scene::GenerateWaypointDataset()
 {
-	std::cout << "TODO" << std::endl;
+	ViewMode startViewMode = settings->viewMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	if (waypointRenderer != NULL)
+	{
+		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
+		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
+
+		UINT counter = 0;
+		float waypointLocation = start;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
+
+		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
+		{
+			camera->SetPosition(newCameraPosition);
+			camera->SetRotationMatrix(newCameraRotation);
+
+			DrawAndSaveDatasetEntry(counter);
+			counter++;
+
+			waypointLocation += settings->waypointStepSize;
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
 }
 
 void PointCloudEngine::Scene::GenerateSphereDataset()
 {
-	std::cout << "TODO" << std::endl;
+	ViewMode startViewMode = settings->viewMode;
+	ShadingMode startShadingMode = settings->shadingMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	float boundingCubeSize;
+	Vector3 boundingCubePosition;
+	pointCloudRenderer->GetBoundingCubePositionAndSize(boundingCubePosition, boundingCubeSize);
+
+	Vector3 center = boundingCubePosition * pointCloud->transform->scale;
+	float r = Vector3::Distance(camera->GetPosition(), center);
+
+	UINT counter = 0;
+	float h = settings->sphereStepSize;
+
+	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
+	{
+		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
+		{
+			// Rotate around and look at the center
+			Vector3 newPosition = center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+			camera->SetPosition(newPosition);
+			camera->LookAt(center);
+
+			DrawAndSaveDatasetEntry(counter);
+			counter++;
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+	settings->shadingMode = startShadingMode;
+}
+
+void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
+{
+	// Go over all the render modes
+	for (auto it = datasetRenderModes.begin(); it != datasetRenderModes.end(); it++)
+	{
+		// Clear the render target and depth/stencil view
+		d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+		d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		settings->viewMode = it->viewMode;
+		settings->shadingMode = it->shadingMode;
+
+		if (it->viewMode == ViewMode::Mesh)
+		{
+			meshRenderer->Draw();
+		}
+		else
+		{
+			pointCloudRenderer->GetComponent()->Draw();
+		}
+
+		// Present the result to the screen
+		swapChain->Present(0, 0);
+
+		// TODO: Either directly save backbuffer to image or first copy it to a CPU readback texture and then save it as tensor
+		std::cout << "TODO: Save the dataset render mode " << std::string(it->name.begin(), it->name.end()) << " for the entry with index " << std::to_string(index) << std::endl;
+	}
 }

@@ -34,6 +34,8 @@ void PointCloudEngine::WaypointRenderer::Initialize()
 
 	hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
+
+	GUI::waypointCount = GetWaypointSize();
 }
 
 void PointCloudEngine::WaypointRenderer::Update()
