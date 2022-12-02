@@ -17,27 +17,18 @@ width = texture.shape[1]
 
 #texture = numpy.transpose(texture, axes=(0, 1, 2))
 
+# Create a mask that only selects elements from the non-alpha channels where the alpha channel is non-zero
 textureMask = texture[:, :, 3] > 0
 textureMask = numpy.reshape(textureMask, (height, width, 1))
-textureMask = numpy.repeat(textureMask, 3, axis=2)
+textureMask = numpy.repeat(textureMask, 4, axis=2)
+textureMask[:, :, 3] = False
 
-print(textureMask)
-print(textureMask.shape)
-
-texture = texture[:, :, 0:3]
+# Compute minimum and maximum depth values (mask only selects among the RGB elements)
 textureMin = texture[textureMask].min()
 textureMax = texture[textureMask].max()
 
-print(textureMin)
-print(textureMax)
-print(textureMax - textureMin)
-
+# Normalize RGB values to [0, 1] but keep the alpha channel the same
 texture[textureMask] = (texture[textureMask] - textureMin) / (textureMax - textureMin)
-
-print(rowCount)
-print(texture.shape)
-print(texture.min())
-print(texture.max())
 
 plt.imshow(texture)
 plt.show()
