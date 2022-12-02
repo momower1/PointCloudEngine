@@ -72,7 +72,7 @@ namespace PointCloudEngine
             { L"MeshDepth", ViewMode::Mesh, ShadingMode::Depth },
             { L"MeshNormalScreen", ViewMode::Mesh, ShadingMode::NormalScreen },
             { L"MeshOpticalFlowForward", ViewMode::Mesh, ShadingMode::OpticalFlowForward },
-            { L"MeshOpticalFlowBackward", ViewMode::Mesh, ShadingMode::OpticalFlowForward },
+            { L"MeshOpticalFlowBackward", ViewMode::Mesh, ShadingMode::OpticalFlowBackward },
 
             { L"PullPushColor", ViewMode::PullPush, ShadingMode::Color },
             { L"PullPushDepth", ViewMode::PullPush, ShadingMode::Depth },

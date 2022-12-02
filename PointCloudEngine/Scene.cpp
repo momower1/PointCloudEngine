@@ -62,6 +62,7 @@ void Scene::Update(Timer &timer)
 	if (meshRenderer != NULL)
 	{
 		meshRenderer->enabled = (settings->viewMode == ViewMode::Mesh);
+		meshRenderer->UpdatePreviousMatrices();
 	}
 
 	if (pointCloudRenderer != NULL)
@@ -428,6 +429,10 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 		// Clear the render target and depth/stencil view
 		d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
 		d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+		d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
+
+		camera->PrepareDraw();
 
 		settings->viewMode = it->viewMode;
 		settings->shadingMode = it->shadingMode;
@@ -444,7 +449,11 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 		// Present the result to the screen
 		swapChain->Present(0, 0);
 
-		// TODO: Either directly save backbuffer to image or first copy it to a CPU readback texture and then save it as tensor
-		std::cout << "TODO: Save the dataset render mode " << std::string(it->name.begin(), it->name.end()) << " for the entry with index " << std::to_string(index) << std::endl;
+		SaveWICTextureToFile(d3d11DevCon, backBufferTexture, GUID_ContainerFormatPng, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".png").c_str());
 	}
+
+	// Explicitly update the previous frame matrices for optical flow computation
+	meshRenderer->UpdatePreviousMatrices();
+
+	std::cout << "Saved dataset entry " << std::to_string(index) << std::endl;
 }

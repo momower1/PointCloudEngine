@@ -13,6 +13,7 @@ namespace PointCloudEngine
         void Update();
         void Draw();
         void Release();
+        void UpdatePreviousMatrices();
 
     private:
         UINT vertexCount = 0;

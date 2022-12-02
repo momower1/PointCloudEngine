@@ -213,12 +213,6 @@ void MeshRenderer::Draw()
         d3d11DevCon->Draw(submeshVertexCounts[i], 0);
     }
 
-    // After drawing, store the previous matrices for optical flow computation
-    constantBufferData.PreviousWorld = constantBufferData.World;
-    constantBufferData.PreviousView = constantBufferData.View;
-    constantBufferData.PreviousProjection = constantBufferData.Projection;
-    constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
-
     // Update GUI elements
     GUI::vertexCount = vertexCount;
     GUI::triangleCount = triangleCount;
@@ -258,4 +252,13 @@ void MeshRenderer::Release()
     textureSRVs.clear();
     submeshVertices.clear();
     submeshVertexCounts.clear();
+}
+
+void PointCloudEngine::MeshRenderer::UpdatePreviousMatrices()
+{
+    // Store the previous matrices for optical flow computation
+    constantBufferData.PreviousWorld = constantBufferData.World;
+    constantBufferData.PreviousView = constantBufferData.View;
+    constantBufferData.PreviousProjection = constantBufferData.Projection;
+    constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
 }
