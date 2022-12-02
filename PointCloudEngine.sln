@@ -10,30 +10,44 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PointCloudEngine", "PointCl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlyToPointcloud", "PlyToPointcloud\PlyToPointcloud.vcxproj", "{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "NeuralNetwork", "NeuralNetwork\NeuralNetwork.pyproj", "{D7B48EC1-AE48-491F-B89A-AE2A5196425F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Debug|x64.ActiveCfg = Debug|x64
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Debug|x64.Build.0 = Debug|x64
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Debug|x86.ActiveCfg = Debug|Win32
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Debug|x86.Build.0 = Debug|Win32
+		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Release|Any CPU.ActiveCfg = Release|Win32
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Release|x64.ActiveCfg = Release|x64
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Release|x64.Build.0 = Release|x64
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Release|x86.ActiveCfg = Release|Win32
 		{BCAE4168-9799-4426-B4C2-86FD79E6B772}.Release|x86.Build.0 = Release|Win32
+		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Debug|x64.ActiveCfg = Debug|x64
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Debug|x64.Build.0 = Debug|x64
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Debug|x86.ActiveCfg = Debug|Win32
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Debug|x86.Build.0 = Debug|Win32
+		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Release|Any CPU.ActiveCfg = Release|Win32
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Release|x64.ActiveCfg = Release|x64
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Release|x64.Build.0 = Release|x64
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Release|x86.ActiveCfg = Release|Win32
 		{27054A9E-369E-4BEB-9F20-3A2561DEB9D6}.Release|x86.Build.0 = Release|Win32
+		{D7B48EC1-AE48-491F-B89A-AE2A5196425F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7B48EC1-AE48-491F-B89A-AE2A5196425F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D7B48EC1-AE48-491F-B89A-AE2A5196425F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D7B48EC1-AE48-491F-B89A-AE2A5196425F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7B48EC1-AE48-491F-B89A-AE2A5196425F}.Release|x64.ActiveCfg = Release|Any CPU
+		{D7B48EC1-AE48-491F-B89A-AE2A5196425F}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

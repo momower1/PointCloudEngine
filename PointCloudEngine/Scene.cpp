@@ -446,6 +446,41 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 			pointCloudRenderer->GetComponent()->Draw();
 		}
 
+		D3D11_TEXTURE2D_DESC readableTextureDesc;
+		backBufferTexture->GetDesc(&readableTextureDesc);
+
+		readableTextureDesc.Usage = D3D11_USAGE_STAGING;
+		readableTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		readableTextureDesc.BindFlags = 0;
+		readableTextureDesc.MiscFlags = 0;
+
+		ID3D11Texture2D* readableTexture = NULL;
+
+		hr = d3d11Device->CreateTexture2D(&readableTextureDesc, NULL, &readableTexture);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+		d3d11DevCon->CopyResource(readableTexture, backBufferTexture);
+
+		D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+		ZeroMemory(&mappedSubresource, sizeof(mappedSubresource));
+		
+		hr = d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
+
+		// TODO: There might be padding between rows and depth
+		// Maybe just compute actual row byte size (based on the DXGI_FORMAT), calculate amount of rows and skip padding?
+		int rowCount = mappedSubresource.DepthPitch / mappedSubresource.RowPitch;
+
+		std::ofstream file(L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".texture", std::ios::out | std::ios::binary);
+		file.write((char*)&rowCount, sizeof(int));
+		file.write((char*)mappedSubresource.pData, mappedSubresource.DepthPitch);
+		file.flush();
+		file.close();
+
+		d3d11DevCon->Unmap(readableTexture, 0);
+
+		SAFE_RELEASE(readableTexture);
+
 		// Need to do this before presenting the texture to the screen to preserve alpha channel
 		SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
 
