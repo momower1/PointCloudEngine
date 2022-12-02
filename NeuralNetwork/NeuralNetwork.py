@@ -12,17 +12,27 @@ rowCount = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=
 texture = numpy.frombuffer(buffer=textureBytes, dtype='float16', count=-1, offset=4)
 texture = numpy.reshape(texture, (rowCount.item(), -1, 4))
 texture = texture.astype('float32')
+height = texture.shape[0]
+width = texture.shape[1]
 
 #texture = numpy.transpose(texture, axes=(0, 1, 2))
 
-textureMin = texture[texture[:, :, 3] > 0].min()
-textureMax = texture[texture[:, :, 3] > 0].max()
+textureMask = texture[:, :, 3] > 0
+textureMask = numpy.reshape(textureMask, (height, width, 1))
+textureMask = numpy.repeat(textureMask, 3, axis=2)
+
+print(textureMask)
+print(textureMask.shape)
+
+texture = texture[:, :, 0:3]
+textureMin = texture[textureMask].min()
+textureMax = texture[textureMask].max()
 
 print(textureMin)
 print(textureMax)
+print(textureMax - textureMin)
 
-texture = (texture - textureMin) / (textureMax - textureMin)
-texture = texture[:, :, 0:3]
+texture[textureMask] = (texture[textureMask] - textureMin) / (textureMax - textureMin)
 
 print(rowCount)
 print(texture.shape)
