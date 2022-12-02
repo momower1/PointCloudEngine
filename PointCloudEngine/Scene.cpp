@@ -446,10 +446,11 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 			pointCloudRenderer->GetComponent()->Draw();
 		}
 
+		// Need to do this before presenting the texture to the screen to preserve alpha channel
+		SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
+
 		// Present the result to the screen
 		swapChain->Present(0, 0);
-
-		SaveWICTextureToFile(d3d11DevCon, backBufferTexture, GUID_ContainerFormatPng, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".png").c_str());
 	}
 
 	// Explicitly update the previous frame matrices for optical flow computation
