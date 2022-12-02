@@ -5,6 +5,25 @@ import matplotlib.pyplot as plt
 # Use different matplotlib backend to avoid weird error
 #matplotlib.use('Agg')
 
+def NormalizeDepthTexture(texture):
+    h, w, c = texture.shape
+
+    # Create a mask that only selects elements from the non-alpha channels where the alpha channel is non-zero
+    mask = texture[:, :, 3] > 0
+    mask = numpy.reshape(mask, (h, w, 1))
+    mask = numpy.repeat(mask, 4, axis=2)
+    mask[:, :, 3] = False
+
+    # Compute minimum and maximum depth values (mask only selects among the RGB elements)
+    depthMin = texture[mask].min()
+    depthMax = texture[mask].max()
+
+    # Normalize RGB values to [0, 1] but keep the alpha channel the same
+    textureNormalized = numpy.copy(texture)
+    textureNormalized[mask] = (texture[mask] - depthMin) / (depthMax - depthMin)
+
+    return textureNormalized
+
 textureFile = open('D:/Downloads/PointCloudEngineDataset/MeshDepth.texture', 'rb')
 textureBytes = textureFile.read()
 
@@ -17,18 +36,7 @@ width = texture.shape[1]
 
 #texture = numpy.transpose(texture, axes=(0, 1, 2))
 
-# Create a mask that only selects elements from the non-alpha channels where the alpha channel is non-zero
-textureMask = texture[:, :, 3] > 0
-textureMask = numpy.reshape(textureMask, (height, width, 1))
-textureMask = numpy.repeat(textureMask, 4, axis=2)
-textureMask[:, :, 3] = False
-
-# Compute minimum and maximum depth values (mask only selects among the RGB elements)
-textureMin = texture[textureMask].min()
-textureMax = texture[textureMask].max()
-
-# Normalize RGB values to [0, 1] but keep the alpha channel the same
-texture[textureMask] = (texture[textureMask] - textureMin) / (textureMax - textureMin)
+texture = NormalizeDepthTexture(texture)
 
 plt.imshow(texture)
 plt.show()
