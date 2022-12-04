@@ -27,12 +27,13 @@ def NormalizeDepthTexture(texture):
 textureFile = open('D:/Downloads/PointCloudEngineDataset/MeshDepth.texture', 'rb')
 textureBytes = textureFile.read()
 
-rowCount = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=0)
-texture = numpy.frombuffer(buffer=textureBytes, dtype='float16', count=-1, offset=4)
-texture = numpy.reshape(texture, (rowCount.item(), -1, 4))
+width = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=0).item()
+height = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=4).item()
+channels = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=8).item()
+elementSizeInBytes = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=12).item()
+texture = numpy.frombuffer(buffer=textureBytes, dtype='float16', count=-1, offset=16)
+texture = numpy.reshape(texture, (height, width, channels))
 texture = texture.astype('float32')
-height = texture.shape[0]
-width = texture.shape[1]
 
 #texture = numpy.transpose(texture, axes=(0, 1, 2))
 

@@ -449,6 +449,11 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 		D3D11_TEXTURE2D_DESC readableTextureDesc;
 		backBufferTexture->GetDesc(&readableTextureDesc);
 
+		if (readableTextureDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+		{
+			ERROR_MESSAGE(L"Cannot save dataset texture since it is not in DXGI_FORMAT_R16G16B16A16_FLOAT format!");
+		}
+
 		readableTextureDesc.Usage = D3D11_USAGE_STAGING;
 		readableTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		readableTextureDesc.BindFlags = 0;
@@ -467,13 +472,28 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 		hr = d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &mappedSubresource);
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
 
-		// TODO: There might be padding between rows and depth
-		// Maybe just compute actual row byte size (based on the DXGI_FORMAT), calculate amount of rows and skip padding?
-		int rowCount = mappedSubresource.DepthPitch / mappedSubresource.RowPitch;
-
+		// Create a custom binary file that stores the raw bytes of the texture
 		std::ofstream file(L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".texture", std::ios::out | std::ios::binary);
-		file.write((char*)&rowCount, sizeof(int));
-		file.write((char*)mappedSubresource.pData, mappedSubresource.DepthPitch);
+
+		// Write a header to the file
+		int width = readableTextureDesc.Width;
+		int height = readableTextureDesc.Height;
+		int channels = 4;
+		int elementSizeInBytes = 2;
+
+		file.write((char*)&width, sizeof(int));
+		file.write((char*)&height, sizeof(int));
+		file.write((char*)&channels, sizeof(int));
+		file.write((char*)&elementSizeInBytes, sizeof(int));
+
+		// Need to skip padding that the texture might have in between rows and depth
+		size_t rowPitchWithoutPadding = (size_t)width * (size_t)channels * (size_t)elementSizeInBytes;
+
+		for (size_t rowIndex = 0; rowIndex < height; rowIndex++)
+		{
+			file.write((char*)mappedSubresource.pData + rowIndex * mappedSubresource.RowPitch, rowPitchWithoutPadding);
+		}
+
 		file.flush();
 		file.close();
 
