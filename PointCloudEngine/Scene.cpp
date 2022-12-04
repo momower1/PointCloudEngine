@@ -501,10 +501,9 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 
 		SAFE_RELEASE(readableTexture);
 
-		// Need to do this before presenting the texture to the screen to preserve alpha channel
-		SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
+		//SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
 
-		// Present the result to the screen
+		// Need to do everything before presenting the texture to the screen to preserve alpha channel
 		swapChain->Present(0, 0);
 	}
 
