@@ -423,6 +423,9 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 
 void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 {
+	std::wstring datasetDirectory = L"D:/Downloads/PointCloudEngineDataset/";
+	std::wstring datasetFilenames = L"";
+
 	// Go over all the render modes
 	for (auto it = datasetRenderModes.begin(); it != datasetRenderModes.end(); it++)
 	{
@@ -473,7 +476,8 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
 
 		// Create a custom binary file that stores the raw bytes of the texture
-		std::ofstream file(L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".texture", std::ios::out | std::ios::binary);
+		std::wstring datasetFilename = it->name + std::to_wstring(index) + L".texture";
+		std::ofstream file(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
 
 		// Write a header to the file
 		int width = readableTextureDesc.Width;
@@ -501,6 +505,13 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 
 		SAFE_RELEASE(readableTexture);
 
+		datasetFilenames += datasetFilename;
+
+		if ((it + 1) != datasetRenderModes.end())
+		{
+			datasetFilenames += L", ";
+		}
+
 		//SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
 
 		// Need to do everything before presenting the texture to the screen to preserve alpha channel
@@ -509,6 +520,22 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 
 	// Explicitly update the previous frame matrices for optical flow computation
 	meshRenderer->UpdatePreviousMatrices();
+
+	// Pack all the files into a ZIP archive and delete the old files
+	std::wstring command = L"powershell ";
+	command += L"cd " + datasetDirectory + L"; ";
+
+	command += L"Compress-Archive ";
+	command += L"-Path " + datasetFilenames + L" ";
+	command += L"-DestinationPath " + std::to_wstring(index) + L".zip ";
+	command += L"-Update ";
+	command += L"-CompressionLevel Optimal; ";
+
+	command += L"Remove-Item ";
+	command += L"-Path " + datasetFilenames;
+	_wsystem(command.c_str());
+
+	std::cout << std::string(command.begin(), command.end()) << std::endl;
 
 	std::cout << "Saved dataset entry " << std::to_string(index) << std::endl;
 }
