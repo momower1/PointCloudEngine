@@ -132,7 +132,7 @@ void GroundTruthRenderer::Draw()
 	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
 	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
 
-	if ((settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats) && settings->useBlending)
+	if (settings->useBlending && (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats) && (settings->shadingMode != ShadingMode::Depth))
 	{
 		DrawBlended(vertexCount, constantBuffer, &constantBufferData, constantBufferData.useBlending);
 	}

@@ -461,26 +461,47 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 			pointCloudRenderer->GetComponent()->Draw();
 		}
 
-		D3D11_TEXTURE2D_DESC readableTextureDesc;
-		backBufferTexture->GetDesc(&readableTextureDesc);
+		// In order to save the rendering to a file, first copy the backbuffer/depth to a CPU readback texture
+		ID3D11Texture2D* sourceTexture = NULL;
+		DXGI_FORMAT sourceFormat;
+		int elementSizeInBytes;
+		int channels;
 
-		if (readableTextureDesc.Format != DXGI_FORMAT_R16G16B16A16_FLOAT)
+		// Either save 32-bit float depth texture or 16-bit float RGBA texture
+		if (it->shadingMode == ShadingMode::Depth)
 		{
-			ERROR_MESSAGE(L"Cannot save dataset texture since it is not in DXGI_FORMAT_R16G16B16A16_FLOAT format!");
+			sourceTexture = depthStencilTexture;
+			sourceFormat = DXGI_FORMAT_D32_FLOAT;
+			elementSizeInBytes = 4;
+			channels = 1;
+		}
+		else
+		{
+			sourceTexture = backBufferTexture;
+			sourceFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			elementSizeInBytes = 2;
+			channels = 4;
 		}
 
+		// Create a CPU read access texure with the same dimensions
+		D3D11_TEXTURE2D_DESC readableTextureDesc;
+		sourceTexture->GetDesc(&readableTextureDesc);
+
+		readableTextureDesc.Format = sourceFormat;
 		readableTextureDesc.Usage = D3D11_USAGE_STAGING;
 		readableTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		readableTextureDesc.BindFlags = 0;
 		readableTextureDesc.MiscFlags = 0;
 
 		ID3D11Texture2D* readableTexture = NULL;
-
 		hr = d3d11Device->CreateTexture2D(&readableTextureDesc, NULL, &readableTexture);
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
 
-		d3d11DevCon->CopyResource(readableTexture, backBufferTexture);
+		// Copy the source texture to the created CPU readback texture
+		d3d11DevCon->Flush();
+		d3d11DevCon->CopyResource(readableTexture, sourceTexture);
 
+		// Map the texture to CPU memory
 		D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 		ZeroMemory(&mappedSubresource, sizeof(mappedSubresource));
 		
@@ -494,8 +515,6 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		// Write a header to the file
 		int width = readableTextureDesc.Width;
 		int height = readableTextureDesc.Height;
-		int channels = 4;
-		int elementSizeInBytes = 2;
 
 		file.write((char*)&width, sizeof(int));
 		file.write((char*)&height, sizeof(int));
@@ -515,6 +534,9 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 
 		d3d11DevCon->Unmap(readableTexture, 0);
 
+		// THIS IS FOR DEBUGGING
+		//SaveDDSTextureToFile(d3d11DevCon, readableTexture, (datasetDirectory + it->name + L".dds").c_str());
+
 		SAFE_RELEASE(readableTexture);
 
 		// Concatentate the filenames into a string array for the Compress-Archive powershell command
@@ -524,8 +546,6 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		{
 			archiveFilenames += L", ";
 		}
-
-		//SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
 
 		// Need to do everything before presenting the texture to the screen to preserve alpha channel
 		swapChain->Present(0, 0);
