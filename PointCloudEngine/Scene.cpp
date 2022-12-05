@@ -349,6 +349,10 @@ void PointCloudEngine::Scene::PreviewWaypoints()
 
 void PointCloudEngine::Scene::GenerateWaypointDataset()
 {
+	std::wstring datasetDirectory;
+	success = Utils::OpenDirectoryDialog(datasetDirectory);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+
 	ViewMode startViewMode = settings->viewMode;
 	ShadingMode startShadingMode = settings->shadingMode;
 	Vector3 startPosition = camera->GetPosition();
@@ -374,7 +378,7 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 			camera->SetPosition(newCameraPosition);
 			camera->SetRotationMatrix(newCameraRotation);
 
-			DrawAndSaveDatasetEntry(counter);
+			DrawAndSaveDatasetEntry(datasetDirectory, counter);
 			counter++;
 
 			waypointLocation += settings->waypointStepSize;
@@ -390,6 +394,10 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 
 void PointCloudEngine::Scene::GenerateSphereDataset()
 {
+	std::wstring datasetDirectory;
+	success = Utils::OpenDirectoryDialog(datasetDirectory);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+
 	ViewMode startViewMode = settings->viewMode;
 	ShadingMode startShadingMode = settings->shadingMode;
 	Vector3 startPosition = camera->GetPosition();
@@ -414,7 +422,7 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 			camera->SetPosition(newPosition);
 			camera->LookAt(center);
 
-			DrawAndSaveDatasetEntry(counter);
+			DrawAndSaveDatasetEntry(datasetDirectory, counter);
 			counter++;
 		}
 	}
@@ -426,9 +434,8 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 	settings->shadingMode = startShadingMode;
 }
 
-void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
+void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datasetDirectory, UINT index)
 {
-	std::wstring datasetDirectory = L"D:/Downloads/PointCloudEngineDataset/";
 	std::wstring archiveFilenames = L"";
 
 	// Go over all the render modes

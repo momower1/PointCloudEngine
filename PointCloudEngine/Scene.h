@@ -79,7 +79,7 @@ namespace PointCloudEngine
             { L"PullPushNormalScreen", ViewMode::PullPush, ShadingMode::NormalScreen },
         };
 
-        void DrawAndSaveDatasetEntry(UINT index);
+        void DrawAndSaveDatasetEntry(const std::wstring &datasetDirectory, UINT index);
     };
 }
 #endif

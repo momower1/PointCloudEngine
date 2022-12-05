@@ -65,6 +65,34 @@ bool Utils::OpenFileDialog(const wchar_t* filter, std::wstring& outFilename)
     return false;
 }
 
+bool Utils::OpenDirectoryDialog(std::wstring& outDirectory)
+{
+    wchar_t buffer[MAX_PATH];
+    ZeroMemory(buffer, sizeof(wchar_t) * MAX_PATH);
+
+    BROWSEINFO browseInfo;
+    ZeroMemory(&browseInfo, sizeof(browseInfo));
+    browseInfo.lpszTitle = L"Select the directory where the dataset files will be placed";
+    browseInfo.pszDisplayName = buffer;
+
+    PIDLIST_ABSOLUTE location = SHBrowseForFolder(&browseInfo);
+
+    if (location == NULL)
+    {
+        return false;
+    }
+
+    if (!SHGetPathFromIDList(location, buffer))
+    {
+        return false;
+    }
+
+    outDirectory = buffer;
+    outDirectory += L"\\";
+
+    return true;
+}
+
 std::vector<std::wstring> Utils::SplitString(std::wstring string, std::wstring splitter)
 {
     std::vector<std::wstring> stringSplits;
