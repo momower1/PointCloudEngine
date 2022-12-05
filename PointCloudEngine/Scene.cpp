@@ -356,6 +356,11 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 
 	if (waypointRenderer != NULL)
 	{
+		if (waypointRenderer->GetWaypointSize() == 0)
+		{
+			WARNING_MESSAGE(L"Please add waypoints before creating a dataset!");
+		}
+
 		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
 		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
 
@@ -540,7 +545,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 	ZeroMemory(&startupInfo, sizeof(startupInfo));
 	startupInfo.cb = sizeof(startupInfo);
 
-	success = CreateProcess(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, 0, NULL, datasetDirectory.c_str(), &startupInfo, &processInformation);
+	success = CreateProcess(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, datasetDirectory.c_str(), &startupInfo, &processInformation);
 	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(CreateProcess) + L" failed!");
 
 	// Releasing the handles does not terminate the process
