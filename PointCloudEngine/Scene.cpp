@@ -424,7 +424,7 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 {
 	std::wstring datasetDirectory = L"D:/Downloads/PointCloudEngineDataset/";
-	std::wstring datasetFilenames = L"";
+	std::wstring archiveFilenames = L"";
 
 	// Go over all the render modes
 	for (auto it = datasetRenderModes.begin(); it != datasetRenderModes.end(); it++)
@@ -505,11 +505,12 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 
 		SAFE_RELEASE(readableTexture);
 
-		datasetFilenames += datasetFilename;
+		// Concatentate the filenames into a string array for the Compress-Archive powershell command
+		archiveFilenames += datasetFilename;
 
 		if ((it + 1) != datasetRenderModes.end())
 		{
-			datasetFilenames += L", ";
+			archiveFilenames += L", ";
 		}
 
 		//SaveDDSTextureToFile(d3d11DevCon, backBufferTexture, (L"D:/Downloads/PointCloudEngineDataset/" + it->name + L".dds").c_str());
@@ -523,19 +524,28 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index)
 
 	// Pack all the files into a ZIP archive and delete the old files
 	std::wstring command = L"powershell ";
-	command += L"cd " + datasetDirectory + L"; ";
-
 	command += L"Compress-Archive ";
-	command += L"-Path " + datasetFilenames + L" ";
+	command += L"-Path " + archiveFilenames + L" ";
 	command += L"-DestinationPath " + std::to_wstring(index) + L".zip ";
 	command += L"-Update ";
 	command += L"-CompressionLevel Optimal; ";
-
 	command += L"Remove-Item ";
-	command += L"-Path " + datasetFilenames;
-	_wsystem(command.c_str());
+	command += L"-Path " + archiveFilenames;
 
-	std::cout << std::string(command.begin(), command.end()) << std::endl;
+	// Create an asynchronous process that executes the command
+	PROCESS_INFORMATION processInformation;
+	ZeroMemory(&processInformation, sizeof(processInformation));
+
+	STARTUPINFO startupInfo;
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+
+	success = CreateProcess(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, 0, NULL, datasetDirectory.c_str(), &startupInfo, &processInformation);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(CreateProcess) + L" failed!");
+
+	// Releasing the handles does not terminate the process
+	CloseHandle(processInformation.hProcess);
+	CloseHandle(processInformation.hThread);
 
 	std::cout << "Saved dataset entry " << std::to_string(index) << std::endl;
 }
