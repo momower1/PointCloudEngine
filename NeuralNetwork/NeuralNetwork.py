@@ -49,7 +49,13 @@ for filename in archive.namelist():
     #texture = numpy.transpose(texture, axes=(0, 1, 2))
 
     if filename.find('Depth') >= 0:
-        foreground, background = GetForegroundBackgroundMasks(texture)
+        if filename.find('PullPush') >= 0:
+            foreground = texture[:, :, 3:4] >= 1.0
+            background = texture[:, :, 3:4] <= 0.0
+            texture = texture[:, :, 0:1]
+        else:
+            foreground, background = GetForegroundBackgroundMasks(texture)
+        
         texture = NormalizeDepthTexture(texture, foreground, background)
 
         # Visualize in grayscale with alpha channel for foreground/background mask

@@ -468,7 +468,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		int channels;
 
 		// Either save 32-bit float depth texture or 16-bit float RGBA texture
-		if (it->shadingMode == ShadingMode::Depth)
+		if ((it->shadingMode == ShadingMode::Depth) && (it->viewMode != ViewMode::PullPush))
 		{
 			sourceTexture = depthStencilTexture;
 			sourceFormat = DXGI_FORMAT_D32_FLOAT;
