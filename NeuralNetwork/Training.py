@@ -43,7 +43,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'PullPushModel Fuse 7 7 16/'
+checkpointDirectory += 'PullPushModel Fuse Residual 7 7 16/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there

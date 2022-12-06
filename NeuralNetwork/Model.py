@@ -107,18 +107,20 @@ class PullPushModel(torch.nn.Module):
 
         act = self.preluStart(self.convStart(input))
 
-        embeddings = [act]
+        residuals = [act]
 
         for i in range(exponent):
             act = self.pullBlock(act)
-            embeddings.append(act)
+            residuals.append(act)
 
-        embeddings.pop()
+        residuals.pop()
 
         for i in range(exponent):
+            residual = residuals.pop()
             act = self.pushBlock(act)
-            act = torch.cat([act, embeddings.pop()], dim=1)
+            act = torch.cat([act, residual], dim=1)
             act = self.fuseBlock(act)
+            act = act + residual
 
         act = self.sigmoid(self.convEnd(act))
 
