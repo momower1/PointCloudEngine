@@ -564,7 +564,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 	command += L"Remove-Item ";
 	command += L"-Path " + archiveFilenames;
 
-	// Create an asynchronous process that executes the command
+	// Create a process that executes the command
 	PROCESS_INFORMATION processInformation;
 	ZeroMemory(&processInformation, sizeof(processInformation));
 
@@ -574,6 +574,8 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 
 	success = CreateProcess(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, datasetDirectory.c_str(), &startupInfo, &processInformation);
 	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(CreateProcess) + L" failed!");
+
+	WaitForSingleObject(processInformation.hProcess, INFINITE);
 
 	// Releasing the handles does not terminate the process
 	CloseHandle(processInformation.hProcess);
