@@ -22,7 +22,7 @@ def SaveCheckpoint(filename, epoch, batchIndex, model, optimizer, scheduler):
     time.sleep(0.01)
     os.replace(filename + '.tmp', filename)
 
-dataset = Dataset('G:/PointCloudEngineDataset/')
+dataset = Dataset('G:/PointCloudEngineDataset/', 0)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -35,7 +35,7 @@ batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
-batchCount = dataset.sequenceCount // batchSize
+batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
 model = Model(7, 7, 1).to(device)
@@ -54,12 +54,12 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     scheduler.load_state_dict(checkpoint['Scheduler'])
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Test/'
+checkpointDirectory += 'Model 7 7 1/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
-randomIndices = numpy.arange(dataset.sequenceCount)
+randomIndices = numpy.arange(dataset.trainingSequenceCount)
 
 # Restore state of random order
 for i in range(epoch + 1):
@@ -71,7 +71,7 @@ preloadThreads = [None] * preloadThreadCount
 batchNextTensors = [None] * batchSize
 
 for threadIndex in range(preloadThreadCount):
-    tensors = dataset[randomIndices[batchIndexStart * batchSize + threadIndex]]
+    tensors = dataset.GetTrainingSequence(randomIndices[batchIndexStart * batchSize + threadIndex])
     batchNextTensors[threadIndex] = tensors
 
 # Train for infinite epochs
@@ -104,7 +104,7 @@ while True:
         batchNextTensors = [None] * batchSize
 
         def preload_thread_load_next(batchNextTensors, threadIndex, sequenceIndex):
-            tensors = dataset[sequenceIndex]
+            tensors = dataset.GetTrainingSequence(sequenceIndex)
             batchNextTensors[threadIndex] = tensors
 
         for threadIndex in range(preloadThreadCount):

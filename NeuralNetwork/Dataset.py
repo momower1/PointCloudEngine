@@ -38,29 +38,32 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     return depthNormalized
 
 class Dataset:
-    def __init__(self, directory):
+    def __init__(self, directory, testSetPercentage=0.2):
         self.directory = directory
-        self.frames = []
+        self.entries = []
 
         filenames = os.listdir(self.directory)
 
         for filename in filenames:
             if filename.lower().endswith('.zip'):
-                self.frames.append(self.directory + filename)
+                self.entries.append(self.directory + filename)
 
-        self.frameCount = len(self.frames)
-        self.sequenceCount = self.frameCount - 2
+        self.entryCount = len(self.entries)
+        self.trainingFrames = self.entries[int(testSetPercentage * self.entryCount):self.entryCount]
+        self.testFrames = self.entries[0:int(testSetPercentage * self.entryCount)]
+        self.trainingSequenceCount = len(self.trainingFrames) - 2
+        self.testSequenceCount = len(self.testFrames) - 2
 
         print('Initialized dataset from "' + directory + '"')
-        print('\t- ' + str(self.frameCount) + ' frames')
-        print('\t- ' + str(self.sequenceCount) + ' sequences')
+        print('\t- ' + str(self.entryCount) + ' entries')
+        print('\t- ' + str(self.trainingSequenceCount) + ' training sequences')
+        print('\t- ' + str(self.testSequenceCount) + ' test sequences')
 
     def __len__(self):
         return self.frameCount - 2
 
-    def __getitem__(self, sequenceIndex):
-        # TODO: Return 3 frames, with optical flow warped previous/next frame onto current frame
-        archive = ZipFile(self.frames[sequenceIndex], 'r')
+    def GetFrame(self, frames, index):
+        archive = ZipFile(frames[index], 'r')
 
         tensors = {}
 
@@ -97,3 +100,10 @@ class Dataset:
             tensors[renderMode] = texture
 
         return tensors
+
+    def GetTrainingSequence(self, trainingSequenceIndex):
+        # TODO: Return 3 frames, with optical flow warped previous/next frame onto current frame
+        return self.GetFrame(self.trainingFrames, trainingSequenceIndex)
+
+    def GetTestSequence(self, testSequenceIndex):
+        return self.GetFrame(self.testFrames, testSequenceIndex)
