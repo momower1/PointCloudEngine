@@ -36,6 +36,8 @@ class PullBlock(torch.nn.Module):
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
+        self.moduleList.append(torch.nn.PReLU(1, 0.25))
         self.moduleList.append(torch.nn.MaxPool2d(2))
 
         # Initialize parameters
@@ -57,6 +59,8 @@ class PushBlock(torch.nn.Module):
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, 4 * inoutChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.Conv2d(4 * inoutChannels, 4 * inoutChannels, 3, 1, 1))
+        self.moduleList.append(torch.nn.PReLU(1, 0.25))
         self.moduleList.append(torch.nn.PixelShuffle(2))
 
     def forward(self, input):
@@ -71,6 +75,8 @@ class FuseBlock(torch.nn.Module):
     def __init__(self, inChannels=32, outChannels=16):
         super(FuseBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
+        self.moduleList.append(torch.nn.Conv2d(inChannels, inChannels, 3, 1, 1))
+        self.moduleList.append(torch.nn.PReLU(1, 0.25))
         self.moduleList.append(torch.nn.Conv2d(inChannels, outChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.PReLU(1, 0.25))
 
