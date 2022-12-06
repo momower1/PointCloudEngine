@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d7b48ec1-ae48-491f-b89a-ae2a5196425f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>NeuralNetwork.py</StartupFile>
+    <StartupFile>Training.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,7 +22,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="NeuralNetwork.py" />
+    <Compile Include="Training.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Dataset.py" />
+    <Compile Include="Utils.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda39-64" />
