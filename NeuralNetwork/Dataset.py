@@ -4,9 +4,6 @@ import numpy
 from zipfile import ZipFile
 from Utils import *
 
-# Use different matplotlib backend to avoid weird error
-#matplotlib.use('Agg')
-
 def LoadTextureFromBytes(textureBytes):
     dataTypeMap = { 2 : 'float16', 4 : 'float32' }
     width = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=0).item()

@@ -1,9 +1,13 @@
+import time
 import threading
 import matplotlib
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from Dataset import *
 from Model import *
+
+# Use different matplotlib backend to avoid weird error
+matplotlib.use('Agg')
 
 def SaveCheckpoint(filename, epoch, batchIndex, model, optimizer, scheduler):
     checkpoint = {
@@ -148,35 +152,35 @@ while True:
             outputDepth = output[snapshotSampleIndex, 3:4, :, :]
             outputNormal = output[snapshotSampleIndex, 4:7, :, :]
 
-            fig = plt.figure(figsize=(3, 3))#, dpi=dataset.targetFrameSize)
-            fig.add_subplot(3, 3, 1).title.set_text('Input Color')
-            plt.imshow(tensor_to_image(inputColor))
+            fig = plt.figure(figsize=(3, 3), dpi=inputColor.size(2))
+            fig.add_subplot(3, 3, 1).title#.set_text('Input Color')
+            plt.imshow(TensorToImage(inputColor))
             plt.axis('off')
-            fig.add_subplot(3, 3, 2).title.set_text('Input Depth')
-            plt.imshow(tensor_to_image(inputDepth))
+            fig.add_subplot(3, 3, 2).title#.set_text('Input Depth')
+            plt.imshow(TensorToImage(inputDepth))
             plt.axis('off')
-            fig.add_subplot(3, 3, 3).title.set_text('Input Normal')
-            plt.imshow(tensor_to_image(inputNext))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 4).title.set_text('Output Color')
-            plt.imshow(tensor_to_image(outputColor))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 5).title.set_text('Output Depth')
-            plt.imshow(tensor_to_image(outputDepth))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 6).title.set_text('Output Normal')
-            plt.imshow(tensor_to_image(outputNormal))
+            fig.add_subplot(3, 3, 3).title#.set_text('Input Normal')
+            plt.imshow(TensorToImage(inputNormal))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 7).title.set_text('Target Color')
-            plt.imshow(tensor_to_image(outputReversedPrevious))
+            fig.add_subplot(3, 3, 4).title#.set_text('Output Color')
+            plt.imshow(TensorToImage(outputColor))
             plt.axis('off')
-            fig.add_subplot(3, 3, 8).title.set_text('Target Depth')
-            plt.imshow(tensor_to_image(outputReversed))
+            fig.add_subplot(3, 3, 5).title#.set_text('Output Depth')
+            plt.imshow(TensorToImage(outputDepth))
             plt.axis('off')
-            fig.add_subplot(3, 3, 9).title.set_text('Target Normal')
-            plt.imshow(tensor_to_image(outputReversedNext))
+            fig.add_subplot(3, 3, 6).title#.set_text('Output Normal')
+            plt.imshow(TensorToImage(outputNormal))
+            plt.axis('off')
+
+            fig.add_subplot(3, 3, 7).title#.set_text('Target Color')
+            plt.imshow(TensorToImage(targetColor))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 8).title#.set_text('Target Depth')
+            plt.imshow(TensorToImage(targetDepth))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 9).title#.set_text('Target Normal')
+            plt.imshow(TensorToImage(targetNormal))
             plt.axis('off')
 
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
