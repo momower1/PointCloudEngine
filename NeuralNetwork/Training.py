@@ -38,9 +38,13 @@ schedulerDecaySkip = 100000
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
-model = Model(7, 7, 1).to(device)
+model = PullPushModel(7, 7, 16).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.999))
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
+
+# Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
+checkpointDirectory += 'PullPushModel 7 7 16/'
+summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
 if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd):
@@ -52,10 +56,6 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     model.load_state_dict(checkpoint['Model'])
     optimizer.load_state_dict(checkpoint['Optimizer'])
     scheduler.load_state_dict(checkpoint['Scheduler'])
-
-# Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Model 7 7 1/'
-summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
