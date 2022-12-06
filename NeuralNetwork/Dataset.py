@@ -68,6 +68,8 @@ class Dataset:
         tensors = {}
 
         for filename in archive.namelist():
+            renderMode = filename.split('_')[0]
+
             textureBytes = archive.read(filename)
             texture = LoadTextureFromBytes(textureBytes)
             texture = torch.from_numpy(texture)
@@ -75,8 +77,8 @@ class Dataset:
             texture = torch.permute(texture, dims=(2, 0, 1))
 
             # Normalize depth into [0, 1] range and add a foreground/background mask
-            if filename.find('Depth') >= 0:
-                viewMode = filename.split('Depth')[0]
+            if renderMode.find('Depth') >= 0:
+                viewMode = renderMode.split('Depth')[0]
 
                 if viewMode == 'PullPush':
                     foreground = texture[3:4, :, :] >= 1.0
@@ -95,6 +97,6 @@ class Dataset:
                 # Slice away alpha channel
                 texture = texture[0:3, :, :]
 
-            tensors[filename.split('.')[0]] = texture
+            tensors[renderMode] = texture
 
         return tensors

@@ -509,7 +509,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
 
 		// Create a custom binary file that stores the raw bytes of the texture
-		std::wstring datasetFilename = it->name + std::to_wstring(index) + L".texture";
+		std::wstring datasetFilename = it->name + L"_" + std::to_wstring(index) + L".texture";
 		std::ofstream file(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
 
 		// Write a header to the file
