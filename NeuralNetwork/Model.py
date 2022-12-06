@@ -67,6 +67,21 @@ class PushBlock(torch.nn.Module):
 
         return act
 
+class FuseBlock(torch.nn.Module):
+    def __init__(self, inChannels=32, outChannels=16):
+        super(FuseBlock, self).__init__()
+        self.moduleList = torch.nn.ModuleList()
+        self.moduleList.append(torch.nn.Conv2d(inChannels, outChannels, 3, 1, 1))
+        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+
+    def forward(self, input):
+        act = input
+
+        for module in self.moduleList:
+            act = module(act)
+
+        return act
+
 class PullPushModel(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerChannels=16):
         super(PullPushModel, self).__init__()
@@ -76,8 +91,7 @@ class PullPushModel(torch.nn.Module):
         self.sigmoid = torch.nn.Sigmoid()
         self.pullBlock = PullBlock(innerChannels)
         self.pushBlock = PushBlock(innerChannels)
-
-        print('PullPush')
+        self.fuseBlock = FuseBlock(2 * innerChannels, innerChannels)
 
     def forward(self, input):
         n, c, h, w = input.shape
@@ -102,7 +116,9 @@ class PullPushModel(torch.nn.Module):
         embeddings.pop()
 
         for i in range(exponent):
-            act = self.pushBlock(act) + embeddings.pop()
+            act = self.pushBlock(act)
+            act = torch.cat([act, embeddings.pop()], dim=1)
+            act = self.fuseBlock(act)
 
         act = self.sigmoid(self.convEnd(act))
 
