@@ -8,7 +8,6 @@ dataset = Dataset('G:/PointCloudEngineDatasetLarge/', 0)
 
 fps = 30
 duration = dataset.trainingSequenceCount / fps
-duration = 10
 
 # Load model
 checkpoint = torch.load(checkpointFilename)
