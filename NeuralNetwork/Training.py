@@ -174,45 +174,73 @@ while True:
             outputColor = output[snapshotSampleIndex, 1:4, :, :]
             outputNormal = output[snapshotSampleIndex, 4:7, :, :]
 
-            fig = plt.figure(figsize=(3, 4), dpi=inputColor.size(2))
-            fig.add_subplot(4, 3, 1).title#.set_text('Input Color')
+            splatsDepth = tensors['SplatsSparseDepth'][snapshotSampleIndex]
+            splatsColor = tensors['SplatsSparseColor'][snapshotSampleIndex]
+            splatsNormal = tensors['SplatsSparseNormalScreen'][snapshotSampleIndex]
+
+            pullPushDepth = tensors['PullPushDepth'][snapshotSampleIndex]
+            pullPushColor = tensors['PullPushColor'][snapshotSampleIndex]
+            pullPushNormal = tensors['PullPushNormalScreen'][snapshotSampleIndex]
+
+            fig = plt.figure(figsize=(3, 6), dpi=inputColor.size(2))
+            fig.add_subplot(6, 3, 1).title#.set_text('Input Color')
             plt.imshow(TensorToImage(inputColor))
             plt.axis('off')
-            fig.add_subplot(4, 3, 2).title#.set_text('Input Depth')
+            fig.add_subplot(6, 3, 2).title#.set_text('Input Depth')
             plt.imshow(TensorToImage(inputDepth))
             plt.axis('off')
-            fig.add_subplot(4, 3, 3).title#.set_text('Input Normal')
+            fig.add_subplot(6, 3, 3).title#.set_text('Input Normal')
             plt.imshow(TensorToImage(inputNormal))
             plt.axis('off')
 
-            fig.add_subplot(4, 3, 4).title#.set_text('Input Color')
+            fig.add_subplot(6, 3, 4).title#.set_text('Input Color')
             plt.imshow(TensorToImage(inputSurfaceColor))
             plt.axis('off')
-            fig.add_subplot(4, 3, 5).title#.set_text('Input Depth')
+            fig.add_subplot(6, 3, 5).title#.set_text('Input Depth')
             plt.imshow(TensorToImage(inputSurfaceDepth))
             plt.axis('off')
-            fig.add_subplot(4, 3, 6).title#.set_text('Input Normal')
+            fig.add_subplot(6, 3, 6).title#.set_text('Input Normal')
             plt.imshow(TensorToImage(inputSurfaceNormal))
             plt.axis('off')
 
-            fig.add_subplot(4, 3, 7).title#.set_text('Output Color')
+            fig.add_subplot(6, 3, 7).title#.set_text('Output Color')
             plt.imshow(TensorToImage(outputColor))
             plt.axis('off')
-            fig.add_subplot(4, 3, 8).title#.set_text('Output Depth')
+            fig.add_subplot(6, 3, 8).title#.set_text('Output Depth')
             plt.imshow(TensorToImage(outputDepth))
             plt.axis('off')
-            fig.add_subplot(4, 3, 9).title#.set_text('Output Normal')
+            fig.add_subplot(6, 3, 9).title#.set_text('Output Normal')
             plt.imshow(TensorToImage(outputNormal))
             plt.axis('off')
 
-            fig.add_subplot(4, 3, 10).title#.set_text('Target Color')
+            fig.add_subplot(6, 3, 10).title#.set_text('Target Color')
             plt.imshow(TensorToImage(targetColor))
             plt.axis('off')
-            fig.add_subplot(4, 3, 11).title#.set_text('Target Depth')
+            fig.add_subplot(6, 3, 11).title#.set_text('Target Depth')
             plt.imshow(TensorToImage(targetDepth))
             plt.axis('off')
-            fig.add_subplot(4, 3, 12).title#.set_text('Target Normal')
+            fig.add_subplot(6, 3, 12).title#.set_text('Target Normal')
             plt.imshow(TensorToImage(targetNormal))
+            plt.axis('off')
+
+            fig.add_subplot(6, 3, 13).title#.set_text('Splats Color')
+            plt.imshow(TensorToImage(splatsColor))
+            plt.axis('off')
+            fig.add_subplot(6, 3, 14).title#.set_text('Splats Depth')
+            plt.imshow(TensorToImage(splatsDepth))
+            plt.axis('off')
+            fig.add_subplot(6, 3, 15).title#.set_text('Splats Normal')
+            plt.imshow(TensorToImage(splatsNormal))
+            plt.axis('off')
+
+            fig.add_subplot(6, 3, 16).title#.set_text('Pull Push Color')
+            plt.imshow(TensorToImage(pullPushColor))
+            plt.axis('off')
+            fig.add_subplot(6, 3, 17).title#.set_text('Pull Push Depth')
+            plt.imshow(TensorToImage(pullPushDepth))
+            plt.axis('off')
+            fig.add_subplot(6, 3, 18).title#.set_text('Pull Push Normal')
+            plt.imshow(TensorToImage(pullPushNormal))
             plt.axis('off')
 
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
