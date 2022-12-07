@@ -47,7 +47,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Occlusion Test/'
+checkpointDirectory += 'Sparse Occlusion And Inpainting/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -118,8 +118,8 @@ while True:
                 preloadThreads[threadIndex].start()
 
         # Train the occlusion network
-        inputOcclusion = torch.cat([tensors['PointsForeground'], tensors['PointsDepth'], tensors['PointsNormalScreen']], dim=1)
-        targetOcclusion = tensors['PointsOcclusion']
+        inputOcclusion = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseNormalScreen']], dim=1)
+        targetOcclusion = tensors['PointsSparseOcclusion']
         outputOcclusion = modelOcclusion(inputOcclusion)
         lossOcclusion = torch.nn.functional.binary_cross_entropy(outputOcclusion, targetOcclusion, reduction='mean')
         modelOcclusion.zero_grad()
@@ -130,7 +130,7 @@ while True:
         summaryWriter.add_scalar('Loss Occlusion', lossOcclusion, iteration)
 
         # Train the inpainting network
-        input = torch.cat([tensors['PointsForeground'], tensors['PointsDepth'], tensors['PointsColor'], tensors['PointsNormalScreen']], dim=1)
+        input = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseColor'], tensors['PointsSparseNormalScreen']], dim=1)
 
         outputOcclusionMask = (outputOcclusion.detach() > 0.5).repeat(1, model.inChannels, 1, 1)
         input[outputOcclusionMask] = 0.0
@@ -158,9 +158,9 @@ while True:
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
 
-            inputDepth = tensors['PointsDepth'][snapshotSampleIndex]
-            inputColor = tensors['PointsColor'][snapshotSampleIndex]
-            inputNormal = tensors['PointsNormalScreen'][snapshotSampleIndex]
+            inputDepth = tensors['PointsSparseDepth'][snapshotSampleIndex]
+            inputColor = tensors['PointsSparseColor'][snapshotSampleIndex]
+            inputNormal = tensors['PointsSparseNormalScreen'][snapshotSampleIndex]
 
             inputSurfaceDepth = input[snapshotSampleIndex, 1:2, :, :]
             inputSurfaceColor = input[snapshotSampleIndex, 2:5, :, :]
@@ -224,11 +224,11 @@ while True:
             inputNormal = inputOcclusion[snapshotSampleIndex, 2:5, :, :]
 
             targetOcclusion = targetOcclusion[snapshotSampleIndex, :, :, :]
-            targetSurface = torch.clone(tensors['PointsColor'][snapshotSampleIndex])
+            targetSurface = torch.clone(tensors['PointsSparseColor'][snapshotSampleIndex])
             targetSurface[(targetOcclusion > 0.5).repeat(3, 1, 1)] = 0.0
 
             outputOcclusion = outputOcclusion[snapshotSampleIndex, :, :, :]
-            outputSurface = torch.clone(tensors['PointsColor'][snapshotSampleIndex])
+            outputSurface = torch.clone(tensors['PointsSparseColor'][snapshotSampleIndex])
             outputSurface[(outputOcclusion > 0.5).repeat(3, 1, 1)] = 0.0
 
             fig = plt.figure(figsize=(2, 3), dpi=inputDepth.size(2))

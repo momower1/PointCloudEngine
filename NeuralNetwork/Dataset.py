@@ -108,9 +108,9 @@ class Dataset:
         pointsOcclusion = torch.abs(meshDepth - pointDepth) > depthEpsilon
         pointsSparseOcclusion = torch.abs(meshDepth - pointsSparseDepth) > depthEpsilon
         pointsOcclusion[tensors['PointsBackground'] > 0.5] = 0.0
-        pointsSparseOcclusion[tensors['PointsBackground'] > 0.5] = 0.0
+        pointsSparseOcclusion[tensors['PointsSparseBackground'] > 0.5] = 0.0
         pointsOcclusion = pointsOcclusion.float()
-        pointsSparseOcclusion.float()
+        pointsSparseOcclusion = pointsSparseOcclusion.float()
 
         tensors['PointsOcclusion'] = pointsOcclusion
         tensors['PointsSparseOcclusion'] = pointsSparseOcclusion
