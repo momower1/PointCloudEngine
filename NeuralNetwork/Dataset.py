@@ -46,8 +46,10 @@ class Dataset:
 
         for filename in filenames:
             if filename.lower().endswith('.zip'):
-                self.entries.append(self.directory + filename)
+                frameIndex = int(filename.lower().split('.zip')[0])
+                self.entries.append(frameIndex)
 
+        self.entries.sort()
         self.entryCount = len(self.entries)
         self.trainingFrames = self.entries[int(testSetPercentage * self.entryCount):self.entryCount]
         self.testFrames = self.entries[0:int(testSetPercentage * self.entryCount)]
@@ -63,7 +65,7 @@ class Dataset:
         return self.frameCount - 2
 
     def GetFrame(self, frames, index):
-        archive = ZipFile(frames[index], 'r')
+        archive = ZipFile(self.directory + str(frames[index]) + '.zip', 'r')
 
         tensors = {}
 
