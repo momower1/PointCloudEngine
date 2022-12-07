@@ -99,6 +99,22 @@ class Dataset:
 
             tensors[renderMode] = texture
 
+        # Add point occlusion mask
+        meshDepth = tensors['MeshDepth']
+        pointDepth = tensors['PointsDepth']
+        pointsSparseDepth = tensors['PointsSparseDepth']
+
+        depthEpsilon = 0.1
+        pointsOcclusion = torch.abs(meshDepth - pointDepth) > depthEpsilon
+        pointsSparseOcclusion = torch.abs(meshDepth - pointsSparseDepth) > depthEpsilon
+        pointsOcclusion[tensors['PointsBackground'].bool()] = 0.0
+        pointsSparseOcclusion[tensors['PointsBackground'].bool()] = 0.0
+        pointsOcclusion = pointsOcclusion.float()
+        pointsSparseOcclusion.float()
+
+        tensors['PointsOcclusion'] = pointsOcclusion
+        tensors['PointsSparseOcclusion'] = pointsSparseOcclusion
+
         return tensors
 
     def GetTrainingSequence(self, trainingSequenceIndex):
