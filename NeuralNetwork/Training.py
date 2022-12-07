@@ -9,19 +9,6 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-def SaveCheckpoint(filename, epoch, batchIndex, model, optimizer, scheduler):
-    checkpoint = {
-        'Epoch' : epoch,
-        'BatchIndexStart' : batchIndex + 1,
-        'Model' : model.state_dict(),
-        'Optimizer' : optimizer.state_dict(),
-        'Scheduler' : scheduler.state_dict()
-    }
-
-    torch.save(checkpoint, filename + '.tmp')
-    time.sleep(0.01)
-    os.replace(filename + '.tmp', filename)
-
 dataset = Dataset('G:/PointCloudEngineDatasetLarge/', 0)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
@@ -57,6 +44,9 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
 
     epoch = checkpoint['Epoch']
     batchIndexStart = checkpoint['BatchIndexStart']
+    modelOcclusion.load_state_dict(checkpoint['ModelOcclusion'])
+    optimizerOcclusion.load_state_dict(checkpoint['OptimizerOcclusion'])
+    schedulerOcclusion.load_state_dict(checkpoint['SchedulerOcclusion'])
     model.load_state_dict(checkpoint['Model'])
     optimizer.load_state_dict(checkpoint['Optimizer'])
     scheduler.load_state_dict(checkpoint['Scheduler'])
@@ -286,7 +276,22 @@ while True:
 
             summaryWriter.add_figure('SnapshotsOcclusion/Epoch' + str(epoch), plt.gcf(), iteration)
 
-            SaveCheckpoint(checkpointDirectory + checkpointNameStart + checkpointNameEnd, epoch, batchIndex, model, optimizer, scheduler)
+            # Save a checkpoint to file
+            checkpoint = {
+                'Epoch' : epoch,
+                'BatchIndexStart' : batchIndex + 1,
+                'ModelOcclusion' : modelOcclusion.state_dict(),
+                'OptimizerOcclusion' : optimizerOcclusion.state_dict(),
+                'SchedulerOcclusion' : schedulerOcclusion.state_dict(),
+                'Model' : model.state_dict(),
+                'Optimizer' : optimizer.state_dict(),
+                'Scheduler' : scheduler.state_dict()
+            }
+
+            checkpointFilename = checkpointDirectory + checkpointNameStart + checkpointNameEnd
+            torch.save(checkpoint, checkpointFilename + '.tmp')
+            time.sleep(0.01)
+            os.replace(checkpointFilename + '.tmp', checkpointFilename)
 
     # Move to next epoch
     numpy.random.shuffle(randomIndices)

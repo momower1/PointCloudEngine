@@ -57,11 +57,10 @@ class PushBlock(torch.nn.Module):
     def __init__(self, inoutChannels=16):
         super(PushBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
-        self.moduleList.append(torch.nn.Conv2d(inoutChannels, 4 * inoutChannels, 3, 1, 1))
+        self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.PReLU(1, 0.25))
-        self.moduleList.append(torch.nn.Conv2d(4 * inoutChannels, 4 * inoutChannels, 3, 1, 1))
+        self.moduleList.append(torch.nn.ConvTranspose2d(inoutChannels, inoutChannels, 4, 2, 1))
         self.moduleList.append(torch.nn.PReLU(1, 0.25))
-        self.moduleList.append(torch.nn.PixelShuffle(2))
 
     def forward(self, input):
         act = input
