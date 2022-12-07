@@ -22,14 +22,14 @@ def SaveCheckpoint(filename, epoch, batchIndex, model, optimizer, scheduler):
     time.sleep(0.01)
     os.replace(filename + '.tmp', filename)
 
-dataset = Dataset('G:/PointCloudEngineDataset/', 0)
+dataset = Dataset('G:/PointCloudEngineDatasetLarge/', 0)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 2
+batchSize = 4
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
@@ -38,12 +38,16 @@ schedulerDecaySkip = 100000
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
-model = PullPushModel(7, 7, 16).to(device)
+modelOcclusion = PullPushModel(5, 1, 16).to(device)
+optimizerOcclusion = torch.optim.Adam(modelOcclusion.parameters(), lr=learningRate, betas=(0.9, 0.999))
+schedulerOcclusion = torch.optim.lr_scheduler.ExponentialLR(optimizerOcclusion, gamma=schedulerDecayRate, verbose=False)
+
+model = PullPushModel(8, 7, 16).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.999))
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'PullPushModel FusedResidual TwoLayers 7 7 16/'
+checkpointDirectory += 'Occlusion Test/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -113,22 +117,31 @@ while True:
                 preloadThreads[threadIndex] = threading.Thread(target=preload_thread_load_next, args=(batchNextTensors, threadIndex, sequenceIndex))
                 preloadThreads[threadIndex].start()
 
-        # Train the neural network
-        input = torch.cat([tensors['PointsColor'], tensors['PointsDepth'], tensors['PointsNormalScreen']], dim=1)
-        target = torch.cat([tensors['MeshColor'], tensors['MeshDepth'], tensors['MeshNormalScreen']], dim=1)
+        # Train the neural network(s)
+        inputOcclusion = torch.cat([tensors['PointsForeground'], tensors['PointsDepth'], tensors['PointsNormalScreen']], dim=1)
+        targetOcclusion = tensors['PointsOcclusion']
+        outputOcclusion = modelOcclusion(inputOcclusion)
+        lossOcclusion = torch.nn.functional.binary_cross_entropy(outputOcclusion, targetOcclusion, reduction='mean')
+        modelOcclusion.zero_grad()
+        lossOcclusion.backward(retain_graph=False)
+        optimizerOcclusion.step()
 
+        # Plot loss
+        summaryWriter.add_scalar('Loss Occlusion', lossOcclusion, iteration)
+
+        input = torch.cat([tensors['PointsForeground'], tensors['PointsDepth'], tensors['PointsColor'], tensors['PointsNormalScreen']], dim=1)
+        target = torch.cat([tensors['MeshDepth'], tensors['MeshColor'], tensors['MeshNormalScreen']], dim=1)
         output = model(input)
-
         loss = torch.nn.functional.mse_loss(output, target, reduction='mean')
-
         model.zero_grad()
         loss.backward(retain_graph=False)
         optimizer.step()
 
-        # Plot critic losses
+        # Plot loss
         summaryWriter.add_scalar('Loss', loss, iteration)
 
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
+            schedulerOcclusion.step()
             scheduler.step()
             print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
 
@@ -140,16 +153,16 @@ while True:
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
 
-            inputColor = input[snapshotSampleIndex, 0:3, :, :]
-            inputDepth = input[snapshotSampleIndex, 3:4, :, :]
-            inputNormal = input[snapshotSampleIndex, 4:7, :, :]
+            inputDepth = input[snapshotSampleIndex, 1:2, :, :]
+            inputColor = input[snapshotSampleIndex, 2:5, :, :]
+            inputNormal = input[snapshotSampleIndex, 5:8, :, :]
 
-            targetColor = target[snapshotSampleIndex, 0:3, :, :]
-            targetDepth = target[snapshotSampleIndex, 3:4, :, :]
+            targetDepth = target[snapshotSampleIndex, 0:1, :, :]
+            targetColor = target[snapshotSampleIndex, 1:4, :, :]
             targetNormal = target[snapshotSampleIndex, 4:7, :, :]
 
-            outputColor = output[snapshotSampleIndex, 0:3, :, :]
-            outputDepth = output[snapshotSampleIndex, 3:4, :, :]
+            outputDepth = output[snapshotSampleIndex, 0:1, :, :]
+            outputColor = output[snapshotSampleIndex, 1:4, :, :]
             outputNormal = output[snapshotSampleIndex, 4:7, :, :]
 
             fig = plt.figure(figsize=(3, 3), dpi=inputColor.size(2))
@@ -187,6 +200,44 @@ while True:
             plt.margins(0, 0)
 
             summaryWriter.add_figure('Snapshots/Epoch' + str(epoch), plt.gcf(), iteration)
+
+            inputDepth = inputOcclusion[snapshotSampleIndex, 1:2, :, :]
+            inputNormal = inputOcclusion[snapshotSampleIndex, 2:5, :, :]
+
+            targetOcclusion = targetOcclusion[snapshotSampleIndex, :, :, :]
+            targetSurface = torch.clone(tensors['PointsColor'][snapshotSampleIndex])
+            targetSurface[targetOcclusion.bool().repeat(3, 1, 1)] = 0.0
+
+            outputOcclusion = outputOcclusion[snapshotSampleIndex, :, :, :]
+            outputSurface = torch.clone(tensors['PointsColor'][snapshotSampleIndex])
+            outputSurface[(outputOcclusion > 0.5).repeat(3, 1, 1)] = 0.0
+
+            fig = plt.figure(figsize=(2, 3), dpi=inputDepth.size(2))
+            fig.add_subplot(3, 2, 1).title#.set_text('Input Depth')
+            plt.imshow(TensorToImage(inputDepth))
+            plt.axis('off')
+            fig.add_subplot(3, 2, 2).title#.set_text('Input Normal')
+            plt.imshow(TensorToImage(inputNormal))
+            plt.axis('off')
+
+            fig.add_subplot(3, 2, 3).title#.set_text('Output Occlusion')
+            plt.imshow(TensorToImage(outputOcclusion))
+            plt.axis('off')
+            fig.add_subplot(3, 2, 4).title#.set_text('Output Surface')
+            plt.imshow(TensorToImage(outputSurface))
+            plt.axis('off')
+
+            fig.add_subplot(3, 2, 5).title#.set_text('Target Occlusion')
+            plt.imshow(TensorToImage(targetOcclusion))
+            plt.axis('off')
+            fig.add_subplot(3, 2, 6).title#.set_text('Target Surface')
+            plt.imshow(TensorToImage(targetSurface))
+            plt.axis('off')
+
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+
+            summaryWriter.add_figure('SnapshotsOcclusion/Epoch' + str(epoch), plt.gcf(), iteration)
 
             SaveCheckpoint(checkpointDirectory + checkpointNameStart + checkpointNameEnd, epoch, batchIndex, model, optimizer, scheduler)
 
