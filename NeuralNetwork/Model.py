@@ -91,6 +91,8 @@ class FuseBlock(torch.nn.Module):
 class PullPushModel(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerChannels=16):
         super(PullPushModel, self).__init__()
+        self.inChannels = inChannels
+        self.outChannels = outChannels
         self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
         self.preluStart = torch.nn.PReLU(1, 0.25)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)

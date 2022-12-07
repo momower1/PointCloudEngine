@@ -117,7 +117,7 @@ while True:
                 preloadThreads[threadIndex] = threading.Thread(target=preload_thread_load_next, args=(batchNextTensors, threadIndex, sequenceIndex))
                 preloadThreads[threadIndex].start()
 
-        # Train the neural network(s)
+        # Train the occlusion network
         inputOcclusion = torch.cat([tensors['PointsForeground'], tensors['PointsDepth'], tensors['PointsNormalScreen']], dim=1)
         targetOcclusion = tensors['PointsOcclusion']
         outputOcclusion = modelOcclusion(inputOcclusion)
@@ -129,7 +129,12 @@ while True:
         # Plot loss
         summaryWriter.add_scalar('Loss Occlusion', lossOcclusion, iteration)
 
+        # Train the inpainting network
         input = torch.cat([tensors['PointsForeground'], tensors['PointsDepth'], tensors['PointsColor'], tensors['PointsNormalScreen']], dim=1)
+
+        outputOcclusionMask = (outputOcclusion.detach() > 0.5).repeat(1, model.inChannels, 1, 1)
+        input[outputOcclusionMask] = 0.0
+
         target = torch.cat([tensors['MeshDepth'], tensors['MeshColor'], tensors['MeshNormalScreen']], dim=1)
         output = model(input)
         loss = torch.nn.functional.mse_loss(output, target, reduction='mean')
@@ -153,9 +158,13 @@ while True:
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
 
-            inputDepth = input[snapshotSampleIndex, 1:2, :, :]
-            inputColor = input[snapshotSampleIndex, 2:5, :, :]
-            inputNormal = input[snapshotSampleIndex, 5:8, :, :]
+            inputDepth = tensors['PointsDepth'][snapshotSampleIndex]
+            inputColor = tensors['PointsColor'][snapshotSampleIndex]
+            inputNormal = tensors['PointsNormalScreen'][snapshotSampleIndex]
+
+            inputSurfaceDepth = input[snapshotSampleIndex, 1:2, :, :]
+            inputSurfaceColor = input[snapshotSampleIndex, 2:5, :, :]
+            inputSurfaceNormal = input[snapshotSampleIndex, 5:8, :, :]
 
             targetDepth = target[snapshotSampleIndex, 0:1, :, :]
             targetColor = target[snapshotSampleIndex, 1:4, :, :]
@@ -165,34 +174,44 @@ while True:
             outputColor = output[snapshotSampleIndex, 1:4, :, :]
             outputNormal = output[snapshotSampleIndex, 4:7, :, :]
 
-            fig = plt.figure(figsize=(3, 3), dpi=inputColor.size(2))
-            fig.add_subplot(3, 3, 1).title#.set_text('Input Color')
+            fig = plt.figure(figsize=(3, 4), dpi=inputColor.size(2))
+            fig.add_subplot(4, 3, 1).title#.set_text('Input Color')
             plt.imshow(TensorToImage(inputColor))
             plt.axis('off')
-            fig.add_subplot(3, 3, 2).title#.set_text('Input Depth')
+            fig.add_subplot(4, 3, 2).title#.set_text('Input Depth')
             plt.imshow(TensorToImage(inputDepth))
             plt.axis('off')
-            fig.add_subplot(3, 3, 3).title#.set_text('Input Normal')
+            fig.add_subplot(4, 3, 3).title#.set_text('Input Normal')
             plt.imshow(TensorToImage(inputNormal))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 4).title#.set_text('Output Color')
+            fig.add_subplot(4, 3, 4).title#.set_text('Input Color')
+            plt.imshow(TensorToImage(inputSurfaceColor))
+            plt.axis('off')
+            fig.add_subplot(4, 3, 5).title#.set_text('Input Depth')
+            plt.imshow(TensorToImage(inputSurfaceDepth))
+            plt.axis('off')
+            fig.add_subplot(4, 3, 6).title#.set_text('Input Normal')
+            plt.imshow(TensorToImage(inputSurfaceNormal))
+            plt.axis('off')
+
+            fig.add_subplot(4, 3, 7).title#.set_text('Output Color')
             plt.imshow(TensorToImage(outputColor))
             plt.axis('off')
-            fig.add_subplot(3, 3, 5).title#.set_text('Output Depth')
+            fig.add_subplot(4, 3, 8).title#.set_text('Output Depth')
             plt.imshow(TensorToImage(outputDepth))
             plt.axis('off')
-            fig.add_subplot(3, 3, 6).title#.set_text('Output Normal')
+            fig.add_subplot(4, 3, 9).title#.set_text('Output Normal')
             plt.imshow(TensorToImage(outputNormal))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 7).title#.set_text('Target Color')
+            fig.add_subplot(4, 3, 10).title#.set_text('Target Color')
             plt.imshow(TensorToImage(targetColor))
             plt.axis('off')
-            fig.add_subplot(3, 3, 8).title#.set_text('Target Depth')
+            fig.add_subplot(4, 3, 11).title#.set_text('Target Depth')
             plt.imshow(TensorToImage(targetDepth))
             plt.axis('off')
-            fig.add_subplot(3, 3, 9).title#.set_text('Target Normal')
+            fig.add_subplot(4, 3, 12).title#.set_text('Target Normal')
             plt.imshow(TensorToImage(targetNormal))
             plt.axis('off')
 
@@ -206,7 +225,7 @@ while True:
 
             targetOcclusion = targetOcclusion[snapshotSampleIndex, :, :, :]
             targetSurface = torch.clone(tensors['PointsColor'][snapshotSampleIndex])
-            targetSurface[targetOcclusion.bool().repeat(3, 1, 1)] = 0.0
+            targetSurface[(targetOcclusion > 0.5).repeat(3, 1, 1)] = 0.0
 
             outputOcclusion = outputOcclusion[snapshotSampleIndex, :, :, :]
             outputSurface = torch.clone(tensors['PointsColor'][snapshotSampleIndex])
