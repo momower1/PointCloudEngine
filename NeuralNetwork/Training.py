@@ -172,7 +172,7 @@ while True:
             pullPushColor = tensors['PullPushColor'][snapshotSampleIndex]
             pullPushNormal = tensors['PullPushNormalScreen'][snapshotSampleIndex]
 
-            fig = plt.figure(figsize=(3, 6), dpi=inputColor.size(2))
+            fig = plt.figure(figsize=(3 * inputDepth.size(2), 6 * inputDepth.size(1)), dpi=1)
             fig.add_subplot(6, 3, 1).title#.set_text('Input Color')
             plt.imshow(TensorToImage(inputColor))
             plt.axis('off')
@@ -249,7 +249,7 @@ while True:
             outputSurface = torch.clone(tensors['PointsSparseColor'][snapshotSampleIndex])
             outputSurface[(outputOcclusion > 0.5).repeat(3, 1, 1)] = 0.0
 
-            fig = plt.figure(figsize=(2, 3), dpi=inputDepth.size(2))
+            fig = plt.figure(figsize=(2 * inputDepth.size(2), 3 * inputDepth.size(1)), dpi=1)
             fig.add_subplot(3, 2, 1).title#.set_text('Input Depth')
             plt.imshow(TensorToImage(inputDepth))
             plt.axis('off')
