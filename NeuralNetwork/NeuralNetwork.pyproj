@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d7b48ec1-ae48-491f-b89a-ae2a5196425f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Video.py</StartupFile>
+    <StartupFile>Benchmark.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Benchmark.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Model.py">
       <SubType>Code</SubType>
     </Compile>
