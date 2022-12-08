@@ -42,8 +42,8 @@ struct VS_OUTPUT
 VS_OUTPUT VS(VS_INPUT input)
 {
 	VS_OUTPUT output;
-	output.position = mul(float4(input.position, 1), World);
-	output.normal = normalize(mul(input.normal, WorldInverseTranspose));
+	output.position = mul(float4(input.position, 1), World).xyz;
+	output.normal = normalize(mul(float4(input.normal, 0), WorldInverseTranspose)).xyz;
 	output.color = input.color / 255.0f;
 
 	return output;
