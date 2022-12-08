@@ -3,6 +3,8 @@ from Utils import *
 class Model(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerLayers=1):
         super(Model, self).__init__()
+        self.inChannels = inChannels
+        self.outChannels = outChannels
         self.moduleList = torch.nn.ModuleList()
 
         innerChannels = max(inChannels, outChannels)
