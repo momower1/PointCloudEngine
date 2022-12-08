@@ -19,10 +19,10 @@
 #define ERROR_MESSAGE_ON_NULL(pointer, message) if (pointer == NULL) { ERROR_MESSAGE(message); }
 #define ERROR_MESSAGE_ON_FAIL(success, message) if (!success) { ERROR_MESSAGE(message); }
 #define ERROR_MESSAGE_ON_HR(hr, message) if (FAILED(hr)) { ERROR_MESSAGE(message); }
-#define CONTINUE_ON_FAIL(success, message) if (!success) { continue; }
-#define CONTINUE_ON_HR(hr, message) if (FAILED(hr)) { continue; }
-#define RETURN_ON_FAIL(success, message) if (!success) { return; }
-#define RETURN_ON_HR(hr, message) if (FAILED(hr)) { return; }
+#define CONTINUE_ON_FAIL(success) if (!success) { continue; }
+#define CONTINUE_ON_HR(hr) if (FAILED(hr)) { continue; }
+#define RETURN_ON_FAIL(success) if (!success) { return; }
+#define RETURN_ON_HR(hr) if (FAILED(hr)) { return; }
 #define GUI_SCALED(number) (settings->guiScaleFactor * number)
 #define GS(number) GUI_SCALED(number)
 

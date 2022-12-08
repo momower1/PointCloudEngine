@@ -351,7 +351,7 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 {
 	std::wstring datasetDirectory;
 	success = Utils::OpenDirectoryDialog(datasetDirectory);
-	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+	RETURN_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
 
 	ViewMode startViewMode = settings->viewMode;
 	ShadingMode startShadingMode = settings->shadingMode;
@@ -396,7 +396,7 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 {
 	std::wstring datasetDirectory;
 	success = Utils::OpenDirectoryDialog(datasetDirectory);
-	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+	RETURN_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
 
 	ViewMode startViewMode = settings->viewMode;
 	ShadingMode startShadingMode = settings->shadingMode;
@@ -439,7 +439,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 	std::wstring archiveFilenames = L"";
 
 	// Go over all the render modes
-	for (auto it = datasetRenderModes.begin(); it != datasetRenderModes.end(); it++)
+	for (int renderModeIndex = 0; renderModeIndex < datasetRenderModes.size(); renderModeIndex++)
 	{
 		// Clear the render target and depth/stencil view
 		d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
@@ -449,10 +449,11 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 
 		camera->PrepareDraw();
 
-		settings->viewMode = it->viewMode;
-		settings->shadingMode = it->shadingMode;
+		RenderMode renderMode = datasetRenderModes[renderModeIndex];
+		settings->viewMode = renderMode.viewMode;
+		settings->shadingMode = renderMode.shadingMode;
 
-		if (it->viewMode == ViewMode::Mesh)
+		if (renderMode.viewMode == ViewMode::Mesh)
 		{
 			meshRenderer->Draw();
 		}
@@ -468,7 +469,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		int channels;
 
 		// Either save 32-bit float depth texture or 16-bit float RGBA texture
-		if ((it->shadingMode == ShadingMode::Depth) && (it->viewMode != ViewMode::PullPush))
+		if ((renderMode.shadingMode == ShadingMode::Depth) && (renderMode.viewMode != ViewMode::PullPush))
 		{
 			sourceTexture = depthStencilTexture;
 			sourceFormat = DXGI_FORMAT_D32_FLOAT;
@@ -509,7 +510,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
 
 		// Create a custom binary file that stores the raw bytes of the texture
-		std::wstring datasetFilename = it->name + L"_" + std::to_wstring(index) + L".texture";
+		std::wstring datasetFilename = renderMode.name + L"_" + std::to_wstring(index) + L".texture";
 		std::ofstream file(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
 
 		// Write a header to the file
@@ -542,19 +543,23 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 		// Concatentate the filenames into a string array for the Compress-Archive powershell command
 		archiveFilenames += datasetFilename;
 
-		if ((it + 1) != datasetRenderModes.end())
+		if (renderModeIndex < datasetRenderModes.size() - 1)
 		{
 			archiveFilenames += L", ";
 		}
 
 		// Need to do everything before presenting the texture to the screen to preserve alpha channel
-		swapChain->Present(0, 0);
+		// Also only display a single render mode each frame for a more pleasent viewing experience
+		if (renderModeIndex == (index % datasetRenderModes.size()))
+		{
+			swapChain->Present(0, 0);
+		}
 	}
 
 	// Explicitly update the previous frame matrices for optical flow computation
 	meshRenderer->UpdatePreviousMatrices();
 
-	// Pack all the files into a ZIP archive and delete the old files
+	// Pack all the files into a ZIP archive and delete the old files (CompressionLevel can be "Optimal", "Fastest" or "NoCompression")
 	std::wstring command = L"powershell ";
 	command += L"Compress-Archive ";
 	command += L"-Path " + archiveFilenames + L" ";
