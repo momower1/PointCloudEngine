@@ -103,35 +103,46 @@ class PullPushModel(torch.nn.Module):
     def forward(self, input):
         n, c, h, w = input.shape
 
-        # Calculate padding to a power of 2
-        exponent = int(math.log2(max(h, w)))
-        size = int(pow(2, exponent))
-        widthPadding = (size - (w % size)) % size
-        heightPadding = (size - (h % size)) % size
-
-        # Pad so that the downscale and shuffle operation is valid
-        input = torch.nn.functional.pad(input, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
-
         act = self.preluStart(self.convStart(input))
 
+        paddings = []
         residuals = [act]
+        resolutionCount = int(math.ceil(math.log2(max(h, w))))
 
-        for i in range(exponent):
+        for i in range(resolutionCount):
+            # Pad such that width and height are dividable by 2
+            multiple = 2
+            height = act.size(2)
+            width = act.size(3)
+            heightPadding = (multiple - (height % multiple)) % multiple
+            widthPadding = (multiple - (width % multiple)) % multiple
+            paddings.append([heightPadding, widthPadding])
+
+            if heightPadding > 0 or widthPadding > 0:
+                act = torch.nn.functional.pad(act, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+
             act = self.pullBlock(act)
             residuals.append(act)
 
         residuals.pop()
 
-        for i in range(exponent):
-            residual = residuals.pop()
+        for i in range(resolutionCount):
             act = self.pushBlock(act)
+
+            # Slice away the padding
+            height = act.size(2)
+            width = act.size(3)
+            heightPadding, widthPadding = paddings.pop()
+
+            if heightPadding > 0 or widthPadding > 0:
+                act = act[:, :, 0:height-heightPadding, 0:width-widthPadding]
+
+            # Fuse and add residual from pull phase
+            residual = residuals.pop()
             act = torch.cat([act, residual], dim=1)
             act = self.fuseBlock(act)
             act = act + residual
 
         act = self.sigmoid(self.convEnd(act))
-
-        # Slice away the padding
-        act = act[:, :, 0:h, 0:w]
 
         return act
