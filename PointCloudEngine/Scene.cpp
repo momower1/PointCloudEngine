@@ -577,7 +577,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 	// Explicitly update the previous frame matrices for optical flow computation
 	meshRenderer->UpdatePreviousMatrices();
 
-	UINT maxProcessCount = 16;
+	UINT maxProcessCount = 32;
 
 	// Possibly need to wait for a process to finish to avoid overwhelming the system
 	if (processes.size() >= maxProcessCount)
