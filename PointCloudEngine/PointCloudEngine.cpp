@@ -862,6 +862,7 @@ void DrawScene()
 	d3d11DevCon->GSSetShader(gammaCorrectionShader->geometryShader, NULL, 0);
 	d3d11DevCon->PSSetShader(gammaCorrectionShader->pixelShader, NULL, 0);
 	d3d11DevCon->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 1, &backBufferTextureUAV, NULL);
+	d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	if (fullscreen)
 	{

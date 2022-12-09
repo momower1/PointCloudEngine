@@ -141,9 +141,6 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
         {
             float3 albedo = textureAlbedo.SampleLevel(samplerState, input.textureUV, textureLOD).rgb;
 
-            // Need to perform texture gamma correction for same results as point cloud
-            albedo = pow(albedo, 2.2f);
-
             if (useLighting)
             {
                 return float4(PhongLighting(cameraPosition, input.positionWorld, input.normal, albedo), 1);
