@@ -353,6 +353,8 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 	success = Utils::OpenDirectoryDialog(datasetDirectory);
 	RETURN_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
 
+	std::vector<PROCESS_INFORMATION> processes;
+
 	ViewMode startViewMode = settings->viewMode;
 	ShadingMode startShadingMode = settings->shadingMode;
 	Vector3 startPosition = camera->GetPosition();
@@ -378,7 +380,7 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 			camera->SetPosition(newCameraPosition);
 			camera->SetRotationMatrix(newCameraRotation);
 
-			DrawAndSaveDatasetEntry(datasetDirectory, counter);
+			DrawAndSaveDatasetEntry(counter, datasetDirectory, processes);
 			counter++;
 
 			waypointLocation += settings->waypointStepSize;
@@ -390,6 +392,13 @@ void PointCloudEngine::Scene::GenerateWaypointDataset()
 	camera->SetRotationMatrix(startRotation);
 	settings->viewMode = startViewMode;
 	settings->shadingMode = startShadingMode;
+
+	// Close process handles
+	for (auto it = processes.begin(); it != processes.end(); it++)
+	{
+		CloseHandle(it->hProcess);
+		CloseHandle(it->hThread);
+	}
 }
 
 void PointCloudEngine::Scene::GenerateSphereDataset()
@@ -397,6 +406,8 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 	std::wstring datasetDirectory;
 	success = Utils::OpenDirectoryDialog(datasetDirectory);
 	RETURN_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+
+	std::vector<PROCESS_INFORMATION> processes;
 
 	ViewMode startViewMode = settings->viewMode;
 	ShadingMode startShadingMode = settings->shadingMode;
@@ -422,7 +433,7 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 			camera->SetPosition(newPosition);
 			camera->LookAt(center);
 
-			DrawAndSaveDatasetEntry(datasetDirectory, counter);
+			DrawAndSaveDatasetEntry(counter, datasetDirectory, processes);
 			counter++;
 		}
 	}
@@ -432,9 +443,16 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 	camera->SetRotationMatrix(startRotation);
 	settings->viewMode = startViewMode;
 	settings->shadingMode = startShadingMode;
+
+	// Close process handles
+	for (auto it = processes.begin(); it != processes.end(); it++)
+	{
+		CloseHandle(it->hProcess);
+		CloseHandle(it->hThread);
+	}
 }
 
-void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datasetDirectory, UINT index)
+void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wstring& datasetDirectory, std::vector<PROCESS_INFORMATION>& processes)
 {
 	std::wstring archiveFilenames = L"";
 
@@ -559,6 +577,18 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 	// Explicitly update the previous frame matrices for optical flow computation
 	meshRenderer->UpdatePreviousMatrices();
 
+	UINT maxProcessCount = 16;
+
+	// Possibly need to wait for a process to finish to avoid overwhelming the system
+	if (processes.size() >= maxProcessCount)
+	{
+		PROCESS_INFORMATION processInformation = processes.front();
+		WaitForSingleObject(processInformation.hProcess, INFINITE);
+		CloseHandle(processInformation.hProcess);
+		CloseHandle(processInformation.hThread);
+		processes.erase(processes.begin(), processes.begin() + 1);
+	}
+
 	// Pack all the files into a ZIP archive and delete the old files (CompressionLevel can be "Optimal", "Fastest" or "NoCompression")
 	std::wstring command = L"powershell ";
 	command += L"Compress-Archive ";
@@ -580,11 +610,7 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(const std::wstring& datase
 	success = CreateProcess(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, datasetDirectory.c_str(), &startupInfo, &processInformation);
 	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(CreateProcess) + L" failed!");
 
-	WaitForSingleObject(processInformation.hProcess, INFINITE);
-
-	// Releasing the handles does not terminate the process
-	CloseHandle(processInformation.hProcess);
-	CloseHandle(processInformation.hThread);
+	processes.push_back(processInformation);
 
 	std::cout << "Saved dataset entry " << std::to_string(index) << std::endl;
 }
