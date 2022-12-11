@@ -111,6 +111,10 @@ while True:
         inputOcclusion = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseNormalScreen']], dim=1)
         targetOcclusion = tensors['PointsSparseOcclusion']
         outputOcclusion = modelOcclusion(inputOcclusion)
+
+        # There should be no values for non-foreground pixels
+        outputOcclusion = outputOcclusion * tensors['PointsSparseForeground']
+
         lossOcclusion = torch.nn.functional.binary_cross_entropy(outputOcclusion, targetOcclusion, reduction='mean')
         modelOcclusion.zero_grad()
         lossOcclusion.backward(retain_graph=False)
