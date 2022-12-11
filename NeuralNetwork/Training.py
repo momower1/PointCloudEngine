@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset('G:/PointCloudEngineDatasetLarge/', 0)
+dataset = Dataset('G:/PointCloudEngineDataset/', 0)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -34,7 +34,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Sparse Occlusion And Inpainting/'
+checkpointDirectory += 'Dataset Fix Sparse Occlusion And Inpainting Surface Keeping/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -127,6 +127,11 @@ while True:
 
         target = torch.cat([tensors['MeshDepth'], tensors['MeshColor'], tensors['MeshNormalScreen']], dim=1)
         output = model(input)
+
+        # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
+        maskSurface = tensors['PointsSparseForeground'] * outputOcclusion.le(0.5).float()
+        output = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * output
+
         loss = torch.nn.functional.mse_loss(output, target, reduction='mean')
         model.zero_grad()
         loss.backward(retain_graph=False)
