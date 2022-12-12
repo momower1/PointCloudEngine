@@ -34,7 +34,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 factorDepth = 1.0
-factorColor = 1.0
+factorColor = 3.0
 factorNormal = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
@@ -140,9 +140,9 @@ while True:
         maskSurface = tensors['PointsSparseForeground'] * outputOcclusion.le(0.5).float()
         output = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * output
 
-        lossDepth = factorColor * torch.nn.functional.mse_loss(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
+        lossDepth = factorDepth * torch.nn.functional.mse_loss(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
         lossColor = factorColor * torch.nn.functional.mse_loss(output[:, 1:4, :, :], target[:, 1:4, :, :], reduction='mean')
-        lossNormal = factorColor * torch.nn.functional.mse_loss(output[:, 4:7, :, :], target[:, 4:7, :, :], reduction='mean')
+        lossNormal = factorNormal * torch.nn.functional.mse_loss(output[:, 4:7, :, :], target[:, 4:7, :, :], reduction='mean')
 
         loss = torch.stack([lossDepth, lossColor, lossNormal], dim=0).mean()
         model.zero_grad()
