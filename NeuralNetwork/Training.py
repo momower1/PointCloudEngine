@@ -33,8 +33,12 @@ model = PullPushModel(8, 7, 16).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.999))
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
+factorDepth = 1.0
+factorColor = 1.0
+factorNormal = 1.0
+
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Dataset Fix Sparse Occlusion And Inpainting Surface Keeping/'
+checkpointDirectory += 'Dataset Fix Sparse Occlusion And Inpainting Surface Keeping Fix/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -121,7 +125,7 @@ while True:
         optimizerOcclusion.step()
 
         # Plot loss
-        summaryWriter.add_scalar('Loss Occlusion', lossOcclusion, iteration)
+        summaryWriter.add_scalar('Occlusion/Loss', lossOcclusion, iteration)
 
         # Train the inpainting network
         input = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseColor'], tensors['PointsSparseNormalScreen']], dim=1)
@@ -136,13 +140,20 @@ while True:
         maskSurface = tensors['PointsSparseForeground'] * outputOcclusion.le(0.5).float()
         output = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * output
 
-        loss = torch.nn.functional.mse_loss(output, target, reduction='mean')
+        lossDepth = factorColor * torch.nn.functional.mse_loss(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
+        lossColor = factorColor * torch.nn.functional.mse_loss(output[:, 1:4, :, :], target[:, 1:4, :, :], reduction='mean')
+        lossNormal = factorColor * torch.nn.functional.mse_loss(output[:, 4:7, :, :], target[:, 4:7, :, :], reduction='mean')
+
+        loss = torch.stack([lossDepth, lossColor, lossNormal], dim=0).mean()
         model.zero_grad()
         loss.backward(retain_graph=False)
         optimizer.step()
 
         # Plot loss
-        summaryWriter.add_scalar('Loss', loss, iteration)
+        summaryWriter.add_scalar('Inpainting/Loss', loss, iteration)
+        summaryWriter.add_scalar('Inpainting/Loss Depth', lossDepth, iteration)
+        summaryWriter.add_scalar('Inpainting/Loss Color', lossColor, iteration)
+        summaryWriter.add_scalar('Inpainting/Loss Normal', lossNormal, iteration)
 
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
             schedulerOcclusion.step()
