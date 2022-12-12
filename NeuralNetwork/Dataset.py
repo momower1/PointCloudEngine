@@ -89,8 +89,6 @@ class Dataset:
                 else:
                     foreground, background = GetForegroundBackgroundMasks(texture)
 
-                texture = NormalizeDepthTexture(texture, foreground, background)
-
                 # Add a foreground/background mask for each view mode
                 tensors[viewMode + 'Foreground'] = foreground.float()
                 tensors[viewMode + 'Background'] = background.float()
@@ -106,7 +104,7 @@ class Dataset:
         pointDepth = tensors['PointsDepth']
         pointsSparseDepth = tensors['PointsSparseDepth']
 
-        depthEpsilon = 0.1
+        depthEpsilon = 1e-3
         pointsOcclusion = torch.abs(meshDepth - pointDepth) > depthEpsilon
         pointsSparseOcclusion = torch.abs(meshDepth - pointsSparseDepth) > depthEpsilon
         pointsOcclusion[tensors['PointsBackground'] > 0.5] = 0.0
@@ -116,6 +114,16 @@ class Dataset:
 
         tensors['PointsOcclusion'] = pointsOcclusion
         tensors['PointsSparseOcclusion'] = pointsSparseOcclusion
+
+        # Normalize depth after occlusion mask calculation
+        # Be careful: normalized depth can be quite different between points and mesh due to occluded pixel depth
+        tensorNames = tensors.keys()
+
+        for tensorName in tensorNames:
+            if tensorName.find('Depth') >= 0:
+                viewMode = tensorName.split('Depth')[0]
+
+                tensors[tensorName] = NormalizeDepthTexture(tensors[tensorName], tensors[viewMode + 'Foreground'].bool(), tensors[viewMode + 'Background'].bool())
 
         return tensors
 
