@@ -84,10 +84,10 @@ struct VS_OUTPUT
 {
     float4 position : SV_POSITION;
     float3 positionWorld : POSITION;
+    float3 positionWorldPrevious : POSITION1;
     float2 textureUV : TEXCOORD;
     float3 normal : NORMAL;
     float3 normalScreen : NORMAL_SCREEN;
-    float2 opticalFlow : FLOW;
 };
 
 VS_OUTPUT VS(VS_INPUT input)
@@ -97,34 +97,21 @@ VS_OUTPUT VS(VS_INPUT input)
     float3 normalLocal = bufferNormals[input.normalIndex];
 
     float4x4 VP = mul(View, Projection);
-    float3 positionWorld = mul(float4(positionLocal, 1), World).xyz;
-    float4 position = mul(float4(positionWorld, 1), VP);
-    float3 normalWorld = normalize(mul(float4(normalLocal, 0), WorldInverseTranspose).xyz);
-    float3 normalScreen = normalize(mul(float4(normalWorld, 0), VP).xyz);
-    normalScreen.z *= -1;
-
-    float4x4 previousVP = mul(PreviousView, PreviousProjection);
-    float3 previousPositionWorld = mul(float4(positionLocal, 1), PreviousWorld).xyz;
-    float4 previousPosition = mul(float4(previousPositionWorld, 1), previousVP);
 
     VS_OUTPUT output;
-    output.positionWorld = positionWorld;
-    output.position = position;
+    output.positionWorld = mul(float4(positionLocal, 1), World).xyz;
+    output.position = mul(float4(output.positionWorld, 1), VP);
+    output.positionWorldPrevious = mul(float4(positionLocal, 1), PreviousWorld).xyz;
     output.textureUV = textureUV;
-    output.normal = normalWorld;
-    output.normalScreen = normalScreen;
-    output.opticalFlow = float2(0, 0);
+    output.normal = normalize(mul(float4(normalLocal, 0), WorldInverseTranspose).xyz);
+    output.normalScreen = normalize(mul(float4(output.normal, 0), VP).xyz);
+    output.normalScreen.z *= -1;
 
+    // Render previous frame triangles instead of current frame if performing forward optical flow
     if (shadingMode == SHADING_MODE_OPTICAL_FLOW_FORWARD)
     {
-        // Render previous frame triangles and interpolate the flow towards the next frame
-        output.position = previousPosition;
-        output.opticalFlow = position.xy - previousPosition.xy;
-    }
-    else if (shadingMode == SHADING_MODE_OPTICAL_FLOW_BACKWARD)
-    {
-        // Render current frame triangles and interpolate the flow towards the previous frame triangles
-        output.opticalFlow = previousPosition.xy - position.xy;
+        float4x4 PreviousVP = mul(PreviousView, PreviousProjection);
+        output.position = mul(float4(output.positionWorldPrevious, 1), PreviousVP);
     }
 
     return output;
@@ -163,12 +150,34 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
             return float4(0.5f * (input.normalScreen + 1.0f), 1);
         }
         case SHADING_MODE_OPTICAL_FLOW_FORWARD:
+        {
+            float4 previousPositionNDC = mul(float4(input.positionWorldPrevious, 1), PreviousView);
+            previousPositionNDC = mul(previousPositionNDC, PreviousProjection);
+            previousPositionNDC /= previousPositionNDC.w;
+
+            float4 positionNDC = mul(float4(input.positionWorld, 1), View);
+            positionNDC = mul(positionNDC, Projection);
+            positionNDC /= positionNDC.w;
+
+            float2 flow = positionNDC.xy - previousPositionNDC.xy;
+
+            return float4(flow.x, flow.y, 0, 1);
+            //return FlowToColor(flow);
+        }
         case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
         {
-            input.opticalFlow /= input.position.w;
+            float4 previousPositionNDC = mul(float4(input.positionWorldPrevious, 1), PreviousView);
+            previousPositionNDC = mul(previousPositionNDC, PreviousProjection);
+            previousPositionNDC /= previousPositionNDC.w;
 
-            return float4(input.opticalFlow.x, input.opticalFlow.y, 0, 1);
-            return FlowToColor(input.opticalFlow);
+            float4 positionNDC = mul(float4(input.positionWorld, 1), View);
+            positionNDC = mul(positionNDC, Projection);
+            positionNDC /= positionNDC.w;
+
+            float2 flow = previousPositionNDC - positionNDC.xy;
+
+            return float4(flow.x, flow.y, 0, 1);
+            //return FlowToColor(flow);
         }
     }
 

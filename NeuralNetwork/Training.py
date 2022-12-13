@@ -313,6 +313,9 @@ while True:
             motionVectorForward = 127.5 * sequence['MeshOpticalFlowForward'][2][snapshotSampleIndex]
             motionVectorBackward = 127.5 * sequence['MeshOpticalFlowBackward'][1][snapshotSampleIndex]
 
+            motionVectorForward[1:2, :, :] *= -1.0
+            motionVectorBackward[1:2, :, :] *= -1.0
+
             print(motionVectorForward.min())
             print(motionVectorForward.max())
 
