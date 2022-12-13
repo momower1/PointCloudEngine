@@ -154,10 +154,12 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
             float4 previousPositionNDC = mul(float4(input.positionWorldPrevious, 1), PreviousView);
             previousPositionNDC = mul(previousPositionNDC, PreviousProjection);
             previousPositionNDC /= previousPositionNDC.w;
+            previousPositionNDC.y *= -1;
 
             float4 positionNDC = mul(float4(input.positionWorld, 1), View);
             positionNDC = mul(positionNDC, Projection);
             positionNDC /= positionNDC.w;
+            positionNDC.y *= -1;
 
             float2 flow = positionNDC.xy - previousPositionNDC.xy;
 
@@ -169,10 +171,12 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
             float4 previousPositionNDC = mul(float4(input.positionWorldPrevious, 1), PreviousView);
             previousPositionNDC = mul(previousPositionNDC, PreviousProjection);
             previousPositionNDC /= previousPositionNDC.w;
+            previousPositionNDC.y *= -1;
 
             float4 positionNDC = mul(float4(input.positionWorld, 1), View);
             positionNDC = mul(positionNDC, Projection);
             positionNDC /= positionNDC.w;
+            positionNDC.y *= -1;
 
             float2 flow = previousPositionNDC - positionNDC.xy;
 
