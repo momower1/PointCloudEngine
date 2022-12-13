@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset('G:/PointCloudEngineDataset/', 0)
+dataset = Dataset(directory='G:/PointCloudEngineDatasetFlow/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -38,7 +38,7 @@ factorColor = 3.0
 factorNormal = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Dataset Fix Sparse Occlusion And Inpainting Surface Keeping Fix/'
+checkpointDirectory += 'Sequence with Flow/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -66,11 +66,10 @@ for i in range(epoch + 1):
 # Use threads to concurrently preload the next items in the dataset (slightly reduces sequence loading bottleneck)
 preloadThreadCount = batchSize
 preloadThreads = [None] * preloadThreadCount
-batchNextTensors = [None] * batchSize
+batchNextSequence = [None] * batchSize
 
 for threadIndex in range(preloadThreadCount):
-    tensors = dataset.GetTrainingSequence(randomIndices[batchIndexStart * batchSize + threadIndex])
-    batchNextTensors[threadIndex] = tensors
+    batchNextSequence[threadIndex] = dataset.GetTrainingSequence(randomIndices[batchIndexStart * batchSize + threadIndex])
 
 # Train for infinite epochs
 while True:
@@ -86,30 +85,41 @@ while True:
                 preloadThreads[threadIndex].join()
                 preloadThreads[threadIndex] = None
 
-        # Get all the data and stack them into batches
-        tensorNames = batchNextTensors[0].keys()
-        tensors = {}
+        # Move data into a dictionary using render modes as keys and value tensors of shape (sequenceFrameCount, batchSize, C, H, W)
+        sequence = {}
+        
+        for renderMode in dataset.renderModes:
+            sequence[renderMode] = []
 
-        for tensorName in tensorNames:
-            tensorsToStack = []
+        for frameIndex in range(dataset.sequenceFrameCount):
+            for renderMode in dataset.renderModes:
+                tensorsBatch = []
 
-            for sampleIndex in range(batchSize):
-                tensorsToStack.append(batchNextTensors[sampleIndex][tensorName])
+                for sampleIndex in range(batchSize):
+                    tensorsBatch.append(batchNextSequence[sampleIndex][frameIndex][renderMode])
 
-            tensors[tensorName] = torch.stack(tensorsToStack, dim=0)
+                sequence[renderMode].append(torch.stack(tensorsBatch, dim=0))
+
+        for renderMode in dataset.renderModes:
+            sequence[renderMode] = torch.stack(sequence[renderMode], dim=0)
 
         # Reset for next iteration
-        batchNextTensors = [None] * batchSize
+        batchNextSequence = [None] * batchSize
 
-        def preload_thread_load_next(batchNextTensors, threadIndex, sequenceIndex):
-            tensors = dataset.GetTrainingSequence(sequenceIndex)
-            batchNextTensors[threadIndex] = tensors
+        def preload_thread_load_next(batchNextSequence, threadIndex, sequenceIndex):
+            batchNextSequence[threadIndex] = dataset.GetTrainingSequence(sequenceIndex)
 
         for threadIndex in range(preloadThreadCount):
             if preloadThreads[threadIndex] is None:
                 sequenceIndex = randomIndices[batchIndex * batchSize + threadIndex]
-                preloadThreads[threadIndex] = threading.Thread(target=preload_thread_load_next, args=(batchNextTensors, threadIndex, sequenceIndex))
+                preloadThreads[threadIndex] = threading.Thread(target=preload_thread_load_next, args=(batchNextSequence, threadIndex, sequenceIndex))
                 preloadThreads[threadIndex].start()
+
+        # TODO: Actually use whole sequence
+        tensors = {}
+
+        for renderMode in dataset.renderModes:
+            tensors[renderMode] = sequence[renderMode][0]
 
         # Train the occlusion network
         inputOcclusion = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseNormalScreen']], dim=1)

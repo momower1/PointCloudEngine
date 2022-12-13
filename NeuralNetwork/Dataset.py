@@ -38,31 +38,38 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     return depthNormalized
 
 class Dataset:
-    def __init__(self, directory, testSetPercentage=0.2):
+    def __init__(self, directory, sequenceFrameCount=3, testSetPercentage=0.0):
         self.directory = directory
-        self.entries = []
+        self.sequenceFrameCount = sequenceFrameCount
+        self.testSetPercentage = testSetPercentage
+        
+        if self.sequenceFrameCount < 3:
+            print('Error: Sequence frame count must at least be 3!')
+            exit(0)
 
+        frameIndices = []
         filenames = os.listdir(self.directory)
 
         for filename in filenames:
             if filename.lower().endswith('.zip'):
                 frameIndex = int(filename.lower().split('.zip')[0])
-                self.entries.append(frameIndex)
+                frameIndices.append(frameIndex)
 
-        self.entries.sort()
-        self.entryCount = len(self.entries)
-        self.trainingFrames = self.entries[int(testSetPercentage * self.entryCount):self.entryCount]
-        self.testFrames = self.entries[0:int(testSetPercentage * self.entryCount)]
-        self.trainingSequenceCount = len(self.trainingFrames) - 2
-        self.testSequenceCount = len(self.testFrames) - 2
+        frameIndices.sort()
+        frameCount = len(frameIndices)
+
+        self.trainingFrames = frameIndices[int(testSetPercentage * frameCount):frameCount]
+        self.testFrames = frameIndices[0:int(testSetPercentage * frameCount)]
+        self.trainingSequenceCount = max(0, len(self.trainingFrames) - (self.sequenceFrameCount - 1))
+        self.testSequenceCount = max(0, len(self.testFrames) - (self.sequenceFrameCount - 1))
+        self.renderModes = self.GetFrame(frameIndices, 0).keys()
 
         print('Initialized dataset from "' + directory + '"')
-        print('\t- ' + str(self.entryCount) + ' entries')
+        print('\t- ' + str(frameCount) + ' total frames')
+        print('\t- ' + str(self.sequenceFrameCount) + ' frames per sequence')
         print('\t- ' + str(self.trainingSequenceCount) + ' training sequences')
         print('\t- ' + str(self.testSequenceCount) + ' test sequences')
-
-    def __len__(self):
-        return self.frameCount - 2
+        print('\t- ' + str(self.renderModes) + ' render modes ')
 
     def GetFrame(self, frames, index):
         archive = ZipFile(self.directory + str(frames[index]) + '.zip', 'r')
@@ -127,9 +134,23 @@ class Dataset:
 
         return tensors
 
+    def GetSequence(self, frames, sequenceIndex):
+        sequence = []
+
+        for frameIndex in range(self.sequenceFrameCount):
+            tensors = self.GetFrame(frames, sequenceIndex + frameIndex)
+            sequence.append(tensors)
+
+        return sequence
+
+    def GetTrainingSequenceCount(self):
+        return self.trainingSequenceCount
+
+    def GetTestSequenceCount(self):
+        return self.testSequenceCount
+
     def GetTrainingSequence(self, trainingSequenceIndex):
-        # TODO: Return 3 frames, with optical flow warped previous/next frame onto current frame
-        return self.GetFrame(self.trainingFrames, trainingSequenceIndex)
+        return self.GetSequence(self.trainingFrames, trainingSequenceIndex)
 
     def GetTestSequence(self, testSequenceIndex):
-        return self.GetFrame(self.testFrames, testSequenceIndex)
+        return self.GetSequence(self.testFrames, testSequenceIndex)
