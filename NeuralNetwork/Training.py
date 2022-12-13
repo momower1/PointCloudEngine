@@ -310,15 +310,16 @@ while True:
             frameCurrent = sequence['MeshColor'][1][snapshotSampleIndex]
             frameNext = sequence['MeshColor'][2][snapshotSampleIndex]
 
-            motionVectorForward = sequence['MeshOpticalFlowForward'][1][snapshotSampleIndex]
-            motionVectorBackward = sequence['MeshOpticalFlowBackward'][2][snapshotSampleIndex]
+            motionVectorForward = 127.5 * sequence['MeshOpticalFlowForward'][2][snapshotSampleIndex]
+            motionVectorBackward = 127.5 * sequence['MeshOpticalFlowBackward'][1][snapshotSampleIndex]
 
             print(motionVectorForward.min())
             print(motionVectorForward.max())
 
-            framePreviousWarped = WarpImage(framePrevious.unsqueeze(0), motionVectorForward.unsqueeze(0)).squeeze(0)
-            frameNextWarped = WarpImage(frameNext.unsqueeze(0), motionVectorBackward.unsqueeze(0)).squeeze(0)
-            frameOverlay = (framePreviousWarped + frameCurrent + frameNextWarped) / 3.0
+            frameBackwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorBackward.unsqueeze(0), -1.0).squeeze(0)
+            frameForwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorForward.unsqueeze(0), 1.0).squeeze(0)
+            frameBackwardOverlay = (framePrevious + frameBackwardWarped) / 2.0
+            frameForwardOverlay = (frameNext + frameForwardWarped) / 2.0
 
             fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
             fig.add_subplot(3, 3, 1).title#.set_text('Frame Previous')
@@ -331,21 +332,18 @@ while True:
             plt.imshow(TensorToImage(frameNext))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 4).title#.set_text('Frame Previous Warped')
-            plt.imshow(TensorToImage(framePreviousWarped))
+            fig.add_subplot(3, 3, 4).title#.set_text('Frame Backward Warped')
+            plt.imshow(TensorToImage(frameBackwardWarped))
             plt.axis('off')
-            fig.add_subplot(3, 3, 5).title#.set_text('Frame Overlay')
-            plt.imshow(TensorToImage(frameOverlay))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 6).title#.set_text('Frame Next Warped')
-            plt.imshow(TensorToImage(frameNextWarped))
+            fig.add_subplot(3, 3, 6).title#.set_text('Frame Forward Warped')
+            plt.imshow(TensorToImage(frameForwardWarped))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 7).title#.set_text('Flow Forward')
-            plt.imshow(TensorToImage(motionVectorForward.repeat(2, 1, 1)[0:3, :, :]))
+            fig.add_subplot(3, 3, 7).title#.set_text('Overlay Backward')
+            plt.imshow(TensorToImage(frameBackwardOverlay))
             plt.axis('off')
-            fig.add_subplot(3, 3, 9).title#.set_text('Flow Backward')
-            plt.imshow(TensorToImage(motionVectorBackward.repeat(2, 1, 1)[0:3, :, :]))
+            fig.add_subplot(3, 3, 9).title#.set_text('Overlay Forward')
+            plt.imshow(TensorToImage(frameForwardOverlay))
             plt.axis('off')
 
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)

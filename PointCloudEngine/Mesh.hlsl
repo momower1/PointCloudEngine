@@ -165,6 +165,8 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
         case SHADING_MODE_OPTICAL_FLOW_FORWARD:
         case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
         {
+            input.opticalFlow /= input.position.w;
+
             return float4(input.opticalFlow.x, input.opticalFlow.y, 0, 1);
             return FlowToColor(input.opticalFlow);
         }
