@@ -320,7 +320,7 @@ while True:
             print(motionVectorForward.max())
 
             frameBackwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorBackward.unsqueeze(0), -1.0).squeeze(0)
-            frameForwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorForward.unsqueeze(0), 1.0).squeeze(0)
+            frameForwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorForward.unsqueeze(0), -1.0).squeeze(0)
             frameBackwardOverlay = (framePrevious + frameBackwardWarped) / 2.0
             frameForwardOverlay = (frameNext + frameForwardWarped) / 2.0
 
