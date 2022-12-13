@@ -17,7 +17,7 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 4
-snapshotSkip = 256
+snapshotSkip = 32#256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
@@ -305,6 +305,46 @@ while True:
             plt.margins(0, 0)
 
             summaryWriter.add_figure('SnapshotsOcclusion/Epoch' + str(epoch), plt.gcf(), iteration)
+
+            framePrevious = sequence['MeshColor'][0][snapshotSampleIndex]
+            frameCurrent = sequence['MeshColor'][1][snapshotSampleIndex]
+            frameNext = sequence['MeshColor'][2][snapshotSampleIndex]
+
+            motionVectorForward = sequence['MeshOpticalFlowForward'][1][snapshotSampleIndex]
+            motionVectorBackward = sequence['MeshOpticalFlowBackward'][2][snapshotSampleIndex]
+
+            print(motionVectorForward.min())
+            print(motionVectorForward.max())
+
+            framePreviousWarped = WarpImage(framePrevious.unsqueeze(0), motionVectorForward.unsqueeze(0)).squeeze(0)
+            frameNextWarped = WarpImage(frameNext.unsqueeze(0), motionVectorBackward.unsqueeze(0)).squeeze(0)
+            frameOverlay = (framePreviousWarped + frameCurrent + frameNextWarped) / 3.0
+
+            fig = plt.figure(figsize=(3 * frameCurrent.size(2), 2 * frameCurrent.size(1)), dpi=1)
+            fig.add_subplot(2, 3, 1).title#.set_text('Frame Previous')
+            plt.imshow(TensorToImage(framePrevious))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 2).title#.set_text('Frame Current')
+            plt.imshow(TensorToImage(frameCurrent))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 3).title#.set_text('Frame Next')
+            plt.imshow(TensorToImage(frameNext))
+            plt.axis('off')
+
+            fig.add_subplot(2, 3, 4).title#.set_text('Frame Previous Warped')
+            plt.imshow(TensorToImage(framePreviousWarped))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 5).title#.set_text('Frame Overlay')
+            plt.imshow(TensorToImage(frameOverlay))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 6).title#.set_text('Frame Next Warped')
+            plt.imshow(TensorToImage(frameNextWarped))
+            plt.axis('off')
+
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+
+            summaryWriter.add_figure('SnapshotsFlow/Epoch' + str(epoch), plt.gcf(), iteration)
 
             # Save a checkpoint to file
             checkpoint = {

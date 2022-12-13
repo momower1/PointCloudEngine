@@ -69,7 +69,7 @@ class Dataset:
         print('\t- ' + str(self.sequenceFrameCount) + ' frames per sequence')
         print('\t- ' + str(self.trainingSequenceCount) + ' training sequences')
         print('\t- ' + str(self.testSequenceCount) + ' test sequences')
-        print('\t- ' + str(self.renderModes) + ' render modes ')
+        print('\t- ' + str(len(self.renderModes)) + ' render modes ')
 
     def GetFrame(self, frames, index):
         archive = ZipFile(self.directory + str(frames[index]) + '.zip', 'r')
@@ -99,10 +99,13 @@ class Dataset:
                 # Add a foreground/background mask for each view mode
                 tensors[viewMode + 'Foreground'] = foreground.float()
                 tensors[viewMode + 'Background'] = background.float()
-
             else:
                 # Slice away alpha channel
                 texture = texture[0:3, :, :]
+
+            # Slice away optical flow channels that are not needed
+            if renderMode.find('OpticalFlow') >= 0:
+                texture = texture[0:2, :, :]
 
             tensors[renderMode] = texture
 
