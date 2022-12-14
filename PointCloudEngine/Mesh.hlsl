@@ -127,6 +127,21 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
     input.normal = normalize(input.normal);
     input.normalScreen = normalize(input.normalScreen);
 
+    // Compute pixel positions for optical flow calculation (motion vectors in pixel space)
+    float4 previousPositionNDC = input.positionClipPrevious / input.positionClipPrevious.w;
+    previousPositionNDC.y *= -1;
+
+    float4 positionNDC = input.positionClip / input.positionClip.w;
+    positionNDC.y *= -1;
+
+    float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
+    //previousPixel -= 0.5f / float2(width, height);
+    previousPixel *= float2(width, height);
+
+    float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
+    //pixel -= 0.5f / float2(width, height);
+    pixel *= float2(width, height);
+
     switch (shadingMode)
     {
         case SHADING_MODE_COLOR:
@@ -156,43 +171,13 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
         }
         case SHADING_MODE_OPTICAL_FLOW_FORWARD:
         {
-            float4 previousPositionNDC = input.positionClipPrevious / input.positionClipPrevious.w;
-            previousPositionNDC.y *= -1;
-
-            float4 positionNDC = input.positionClip / input.positionClip.w;
-            positionNDC.y *= -1;
-
-            float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
-            previousPixel -= 0.5f / float2(width, height);
-            previousPixel *= float2(width, height);
-
-            float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
-            pixel -= 0.5f / float2(width, height);
-            pixel *= float2(width, height);
-
-            float2 flow = pixel - previousPixel;
-
+            float2 flow = previousPixel - pixel;
             return float4(flow.x, flow.y, 0, 1);
             //return FlowToColor(flow);
         }
         case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
         {
-            float4 previousPositionNDC = input.positionClipPrevious / input.positionClipPrevious.w;
-            previousPositionNDC.y *= -1;
-
-            float4 positionNDC = input.positionClip / input.positionClip.w;
-            positionNDC.y *= -1;
-
-            float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
-            previousPixel -= 0.5f / float2(width, height);
-            previousPixel *= float2(width, height);
-
-            float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
-            pixel -= 0.5f / float2(width, height);
-            pixel *= float2(width, height);
-
-            float2 flow = previousPixel - pixel;
-
+            float2 flow = pixel - previousPixel;
             return float4(flow.x, flow.y, 0, 1);
             //return FlowToColor(flow);
         }
