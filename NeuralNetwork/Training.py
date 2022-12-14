@@ -312,6 +312,8 @@ while True:
 
             motionVectorForward = sequence['MeshOpticalFlowForward'][2][snapshotSampleIndex]
             motionVectorBackward = sequence['MeshOpticalFlowBackward'][1][snapshotSampleIndex]
+            occlusionForward = EstimateOcclusion(motionVectorForward.unsqueeze(0), distance=-1.0).squeeze(0)
+            occlusionBackward = EstimateOcclusion(motionVectorBackward.unsqueeze(0), distance=-1.0).squeeze(0)
 
             #motionVectorForward = ((motionVectorForward + 1.0) / 2.0) * 256
             #motionVectorBackward = ((motionVectorBackward + 1.0) / 2.0) * 256
@@ -319,11 +321,10 @@ while True:
             #motionVectorForward[1:2, :, :] *= -1.0
             #motionVectorBackward[1:2, :, :] *= -1.0
 
-            print(motionVectorForward.min())
-            print(motionVectorForward.max())
-
             frameBackwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorBackward.unsqueeze(0), -1.0).squeeze(0)
             frameForwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorForward.unsqueeze(0), -1.0).squeeze(0)
+            frameBackwardWarped *= occlusionForward
+            frameForwardWarped *= occlusionBackward
             frameBackwardOverlay = (framePrevious + frameBackwardWarped) / 2.0
             frameForwardOverlay = (frameNext + frameForwardWarped) / 2.0
 
