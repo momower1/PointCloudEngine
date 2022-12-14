@@ -191,6 +191,8 @@ void MeshRenderer::Draw()
     constantBufferData.cameraPosition = camera->GetPosition();
     constantBufferData.shadingMode = (int)settings->shadingMode;
     constantBufferData.textureLOD = settings->textureLOD;
+    constantBufferData.width = settings->resolutionX;
+    constantBufferData.height = settings->resolutionY;
 
     d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
     d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);

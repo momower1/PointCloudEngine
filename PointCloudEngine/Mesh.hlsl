@@ -29,7 +29,9 @@ cbuffer MeshRendererConstantBuffer : register(b0)
     int shadingMode;
     //------------------------------------------------------------------------------ (16 byte boundary)
     int textureLOD;
-    // 12 bytes auto padding
+    int width;
+    int height;
+    // 4 bytes auto padding
 };  // Total: 528 bytes with constant buffer packing rules
 
 float3 HUEtoRGB(in float H)
@@ -84,7 +86,8 @@ struct VS_OUTPUT
 {
     float4 position : SV_POSITION;
     float3 positionWorld : POSITION;
-    float3 positionWorldPrevious : POSITION1;
+    float4 positionClip : POSITION1;
+    float4 positionClipPrevious : POSITION2;
     float2 textureUV : TEXCOORD;
     float3 normal : NORMAL;
     float3 normalScreen : NORMAL_SCREEN;
@@ -97,21 +100,23 @@ VS_OUTPUT VS(VS_INPUT input)
     float3 normalLocal = bufferNormals[input.normalIndex];
 
     float4x4 VP = mul(View, Projection);
+    float4x4 PreviousVP = mul(PreviousView, PreviousProjection);
 
     VS_OUTPUT output;
     output.positionWorld = mul(float4(positionLocal, 1), World).xyz;
     output.position = mul(float4(output.positionWorld, 1), VP);
-    output.positionWorldPrevious = mul(float4(positionLocal, 1), PreviousWorld).xyz;
+    output.positionClip = output.position;
+    output.positionClipPrevious = mul(float4(positionLocal, 1), PreviousWorld);
+    output.positionClipPrevious = mul(output.positionClipPrevious, PreviousVP);
     output.textureUV = textureUV;
     output.normal = normalize(mul(float4(normalLocal, 0), WorldInverseTranspose).xyz);
     output.normalScreen = normalize(mul(float4(output.normal, 0), VP).xyz);
     output.normalScreen.z *= -1;
 
     // Render previous frame triangles instead of current frame if performing forward optical flow
-    if (shadingMode == SHADING_MODE_OPTICAL_FLOW_FORWARD)
+    if (shadingMode == SHADING_MODE_OPTICAL_FLOW_BACKWARD)
     {
-        float4x4 PreviousVP = mul(PreviousView, PreviousProjection);
-        output.position = mul(float4(output.positionWorldPrevious, 1), PreviousVP);
+        output.position = output.positionClipPrevious;
     }
 
     return output;
@@ -151,34 +156,42 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
         }
         case SHADING_MODE_OPTICAL_FLOW_FORWARD:
         {
-            float4 previousPositionNDC = mul(float4(input.positionWorldPrevious, 1), PreviousView);
-            previousPositionNDC = mul(previousPositionNDC, PreviousProjection);
-            previousPositionNDC /= previousPositionNDC.w;
+            float4 previousPositionNDC = input.positionClipPrevious / input.positionClipPrevious.w;
             previousPositionNDC.y *= -1;
 
-            float4 positionNDC = mul(float4(input.positionWorld, 1), View);
-            positionNDC = mul(positionNDC, Projection);
-            positionNDC /= positionNDC.w;
+            float4 positionNDC = input.positionClip / input.positionClip.w;
             positionNDC.y *= -1;
 
-            float2 flow = positionNDC.xy - previousPositionNDC.xy;
+            float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
+            previousPixel -= 0.5f / float2(width, height);
+            previousPixel *= float2(width, height);
+
+            float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
+            pixel -= 0.5f / float2(width, height);
+            pixel *= float2(width, height);
+
+            float2 flow = pixel - previousPixel;
 
             return float4(flow.x, flow.y, 0, 1);
             //return FlowToColor(flow);
         }
         case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
         {
-            float4 previousPositionNDC = mul(float4(input.positionWorldPrevious, 1), PreviousView);
-            previousPositionNDC = mul(previousPositionNDC, PreviousProjection);
-            previousPositionNDC /= previousPositionNDC.w;
+            float4 previousPositionNDC = input.positionClipPrevious / input.positionClipPrevious.w;
             previousPositionNDC.y *= -1;
 
-            float4 positionNDC = mul(float4(input.positionWorld, 1), View);
-            positionNDC = mul(positionNDC, Projection);
-            positionNDC /= positionNDC.w;
+            float4 positionNDC = input.positionClip / input.positionClip.w;
             positionNDC.y *= -1;
 
-            float2 flow = previousPositionNDC - positionNDC.xy;
+            float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
+            previousPixel -= 0.5f / float2(width, height);
+            previousPixel *= float2(width, height);
+
+            float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
+            pixel -= 0.5f / float2(width, height);
+            pixel *= float2(width, height);
+
+            float2 flow = previousPixel - pixel;
 
             return float4(flow.x, flow.y, 0, 1);
             //return FlowToColor(flow);

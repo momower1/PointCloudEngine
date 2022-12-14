@@ -310,8 +310,11 @@ while True:
             frameCurrent = sequence['MeshColor'][1][snapshotSampleIndex]
             frameNext = sequence['MeshColor'][2][snapshotSampleIndex]
 
-            motionVectorForward = 127.5 * sequence['MeshOpticalFlowForward'][2][snapshotSampleIndex]
-            motionVectorBackward = 127.5 * sequence['MeshOpticalFlowBackward'][1][snapshotSampleIndex]
+            motionVectorForward = sequence['MeshOpticalFlowForward'][2][snapshotSampleIndex]
+            motionVectorBackward = sequence['MeshOpticalFlowBackward'][1][snapshotSampleIndex]
+
+            #motionVectorForward = ((motionVectorForward + 1.0) / 2.0) * 256
+            #motionVectorBackward = ((motionVectorBackward + 1.0) / 2.0) * 256
 
             #motionVectorForward[1:2, :, :] *= -1.0
             #motionVectorBackward[1:2, :, :] *= -1.0

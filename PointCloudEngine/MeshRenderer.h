@@ -36,7 +36,9 @@ namespace PointCloudEngine
             Vector3 cameraPosition;
             int shadingMode;
             int textureLOD;
-            int padding[3];
+            int width;
+            int height;
+            int padding[1];
         };
 
         ID3D11Buffer* bufferPositions = NULL;
