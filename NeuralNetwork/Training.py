@@ -174,6 +174,7 @@ while True:
         if iteration % snapshotSkip == (snapshotSkip - 1):
             snapshotIndex = (iteration // snapshotSkip)
             snapshotSampleIndex = snapshotIndex % batchSize
+            snapshotFrameIndex = 1 + (snapshotIndex % (dataset.sequenceFrameCount - 2))
 
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
@@ -306,24 +307,24 @@ while True:
 
             summaryWriter.add_figure('SnapshotsOcclusion/Epoch' + str(epoch), plt.gcf(), iteration)
 
-            framePrevious = sequence['MeshColor'][0][snapshotSampleIndex]
-            frameCurrent = sequence['MeshColor'][1][snapshotSampleIndex]
-            frameNext = sequence['MeshColor'][2][snapshotSampleIndex]
+            framePrevious = sequence['MeshColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
+            frameCurrent = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
+            frameNext = sequence['MeshColor'][snapshotFrameIndex + 1][snapshotSampleIndex]
 
-            motionVectorForward = sequence['MeshOpticalFlowForward'][2][snapshotSampleIndex]
-            motionVectorBackward = sequence['MeshOpticalFlowBackward'][1][snapshotSampleIndex]
+            motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][snapshotFrameIndex][snapshotSampleIndex]
+            motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][snapshotFrameIndex + 1][snapshotSampleIndex]
+            framePreviousWarpedToCurrent = WarpImage(framePrevious.unsqueeze(0), motionVectorPreviousToCurrent.unsqueeze(0)).squeeze(0)
+            frameNextWarpedToCurrent = WarpImage(frameNext.unsqueeze(0), motionVectorNextToCurrent.unsqueeze(0)).squeeze(0)
+            frameOverlay = (framePreviousWarpedToCurrent + frameCurrent + frameNextWarpedToCurrent) / 3.0
 
-            motionOcclusionBackwardWarped = sequence['MeshOpticalFlowBackward'][2][snapshotSampleIndex]
-            motionOcclusionForwardWarped = sequence['MeshOpticalFlowForward'][0][snapshotSampleIndex]
-            occlusionForwardWarped = EstimateOcclusion(motionOcclusionForwardWarped.unsqueeze(0), distance=1.0).squeeze(0)
-            occlusionBackwardWarped = EstimateOcclusion(motionOcclusionBackwardWarped.unsqueeze(0), distance=1.0).squeeze(0)
+            occlusionPrevious = sequence['MeshOpticalFlowBackward'][snapshotFrameIndex][snapshotSampleIndex]
+            occlusionPrevious = EstimateOcclusion(occlusionPrevious.unsqueeze(0)).squeeze(0)
+            framePreviousWarpedToCurrentOccluded = occlusionPrevious * framePreviousWarpedToCurrent
 
-            frameBackwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorBackward.unsqueeze(0), 1.0).squeeze(0)
-            frameForwardWarped = WarpImage(frameCurrent.unsqueeze(0), motionVectorForward.unsqueeze(0), 1.0).squeeze(0)
-            #frameBackwardWarped *= occlusionBackwardWarped
-            #frameForwardWarped *= occlusionForwardWarped
-            frameBackwardOverlay = (framePrevious + frameBackwardWarped) / 2.0
-            frameForwardOverlay = (frameNext + frameForwardWarped) / 2.0
+            occlusionNext = sequence['MeshOpticalFlowForward'][snapshotFrameIndex + 1][snapshotSampleIndex]
+            occlusionNext = EstimateOcclusion(occlusionNext.unsqueeze(0)).squeeze(0)
+            frameNextWarpedToCurrentOccluded = occlusionNext * frameNextWarpedToCurrent
+            frameOverlayOccluded = (framePreviousWarpedToCurrentOccluded + frameCurrent + frameNextWarpedToCurrentOccluded) / 3.0
 
             fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
             fig.add_subplot(3, 3, 1).title#.set_text('Frame Previous')
@@ -336,18 +337,24 @@ while True:
             plt.imshow(TensorToImage(frameNext))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 4).title#.set_text('Frame Backward Warped')
-            plt.imshow(TensorToImage(frameBackwardWarped))
+            fig.add_subplot(3, 3, 4).title#.set_text('Frame Previous Warped')
+            plt.imshow(TensorToImage(framePreviousWarpedToCurrent))
             plt.axis('off')
-            fig.add_subplot(3, 3, 6).title#.set_text('Frame Forward Warped')
-            plt.imshow(TensorToImage(frameForwardWarped))
+            fig.add_subplot(3, 3, 5).title#.set_text('Frame Overlay')
+            plt.imshow(TensorToImage(frameOverlay))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 6).title#.set_text('Frame Next Warped')
+            plt.imshow(TensorToImage(frameNextWarpedToCurrent))
             plt.axis('off')
 
-            fig.add_subplot(3, 3, 7).title#.set_text('Overlay Backward')
-            plt.imshow(TensorToImage(frameBackwardOverlay))
+            fig.add_subplot(3, 3, 7).title#.set_text('Frame Previous Warped Occluded')
+            plt.imshow(TensorToImage(framePreviousWarpedToCurrentOccluded))
             plt.axis('off')
-            fig.add_subplot(3, 3, 9).title#.set_text('Overlay Forward')
-            plt.imshow(TensorToImage(frameForwardOverlay))
+            fig.add_subplot(3, 3, 8).title#.set_text('Frame Overlay Occluded')
+            plt.imshow(TensorToImage(frameOverlayOccluded))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 9).title#.set_text('Frame Next Warped Occluded')
+            plt.imshow(TensorToImage(frameNextWarpedToCurrentOccluded))
             plt.axis('off')
 
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
