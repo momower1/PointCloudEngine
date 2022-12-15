@@ -122,9 +122,11 @@ while True:
 
             # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
             output = model(input)
-            #outputOcclusion = output[:, 0:1, :, :]
-            #maskSurface = sequence['PointsSparseForeground'][frameIndex] * (1.0 - outputOcclusion)
-            #output[:, 1:8, :, :] = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * output[:, 1:8, :, :]
+            outputOcclusion = output[:, 0:1, :, :]
+            outputDepthColorNormal = output[:, 1:8, :, :]
+            maskSurface = sequence['PointsSparseForeground'][frameIndex] * (1.0 - outputOcclusion)
+            outputDepthColorNormal = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * outputDepthColorNormal
+            output = torch.cat([outputOcclusion, outputDepthColorNormal], dim=1)
 
             target = torch.cat([sequence['PointsSparseOcclusion'][frameIndex], sequence['MeshDepth'][frameIndex], sequence['MeshColor'][frameIndex], sequence['MeshNormalScreen'][frameIndex]], dim=1)
 
