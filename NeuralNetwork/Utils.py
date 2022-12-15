@@ -49,24 +49,26 @@ def WarpImage(imageTensor, motionVectorTensor, distance=1.0):
 
     return imageWarpedTensor
 
-def EstimateOcclusion(motionVectorTensor, distance=1.0):
+def EstimateOcclusion(motionVectorTensor, distance=1.0, artifactFilterSize=1):
     n, c, h, w = motionVectorTensor.shape
-    pixels = PixelGrid(w, h)
-
+    
     # Apply the motion vector to the pixel positions
-    pixelsWarped = torch.round(pixels + distance * motionVectorTensor).long()
+    pixels = PixelGrid(w, h).repeat(n, 1, 1, 1)
+    pixelsWarped = WarpImage(pixels, motionVectorTensor, distance).long()
     pixelsWarped[:, 0, :, :] = pixelsWarped[:, 0, :, :].clamp(0, w - 1)
     pixelsWarped[:, 1, :, :] = pixelsWarped[:, 1, :, :].clamp(0, h - 1)
 
     # Create occlusion mask (should be 1 if a pixel is being warped to the coordinate)
     occlusion = torch.zeros((n, 1, h, w),dtype=torch.float, device=device)
 
+    # Need to perform indexing per sample in the batch (otherwise too many values will be filled)
     for sampleIndex in range(n):
         occlusion[sampleIndex, :, pixelsWarped[sampleIndex, 1, :, :], pixelsWarped[sampleIndex, 0, :, :]] = 1.0
 
     # Resolve artifacts due to sampling
-    occlusion = torch.nn.functional.max_pool2d(occlusion, 3, 1, 1)
-    occlusion = -torch.nn.functional.max_pool2d(-occlusion, 3, 1, 1)
+    k = (2 * artifactFilterSize) - 1
+    occlusion = torch.nn.functional.max_pool2d(occlusion, k, 1, k // 2)
+    occlusion = -torch.nn.functional.max_pool2d(-occlusion, k, 1, k // 2)
 
     return occlusion
 
