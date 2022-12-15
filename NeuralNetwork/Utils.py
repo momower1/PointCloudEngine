@@ -51,16 +51,7 @@ def WarpImage(imageTensor, motionVectorTensor, distance=1.0):
 
 def EstimateOcclusion(motionVectorTensor, distance=1.0):
     n, c, h, w = motionVectorTensor.shape
-            
-    # Create a tensor with the pixel positions
-    pixelsVertical = torch.arange(0, h, dtype=torch.float, device=device)
-    pixelsHorizontal = torch.arange(0, w, dtype=torch.float, device=device)
-    pixelsHorizontal = pixelsHorizontal.unsqueeze(0).repeat(h, 1)
-    pixelsVertical = pixelsVertical.unsqueeze(0).reshape(-1, 1).repeat(1, w)
-
-    # Pixel positions are at the center of the pixel, not the top left corner
-    pixels = torch.stack([pixelsHorizontal, pixelsVertical], dim=0).unsqueeze(0)
-    pixels += 0.5
+    pixels = PixelGrid(w, h)
 
     # Apply the motion vector to the pixel positions
     pixelsWarped = torch.round(pixels + distance * motionVectorTensor).long()
