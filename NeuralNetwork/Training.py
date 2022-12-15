@@ -30,9 +30,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 factorOcclusion = 1.0
-factorDepth = 1.0
-factorColor = 1.0
-factorNormal = 1.0
+factorDepth = 5.0
+factorColor = 10.0
+factorNormal = 5.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
 checkpointDirectory += 'Sequence with Flow Inpainting Only/'
