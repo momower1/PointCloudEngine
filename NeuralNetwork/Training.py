@@ -32,7 +32,7 @@ scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDec
 factorOcclusion = 1.0
 factorDepth = 5.0
 factorColor = 10.0
-factorNormal = 5.0
+factorNormal = 2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
 checkpointDirectory += 'Sequence with Flow Inpainting Only/'
