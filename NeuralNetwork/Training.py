@@ -9,19 +9,19 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
+dataset = Dataset(directory='G:/PointCloudEngineDataset128/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 4
+batchSize = 8
 stepsGenerator = 0
 stepsCritic = 0
 snapshotSkip = 256
 batchIndexStart = 0
-learningRate = 1e-3
+learningRate = 1e-4
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
 adaptiveUpdateCoefficient = 1.0
@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN/'
+checkpointDirectory += 'WGAN No Surface Keeping 1e-4 128 Batch 8/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -139,13 +139,14 @@ while True:
         for frameIndex in frameGenerationOrder:
             input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseColor'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex]], dim=1)
 
-            # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
             output = generator(input)
-            outputOcclusion = output[:, 0:1, :, :]
-            outputDepthColorNormal = output[:, 1:8, :, :]
-            maskSurface = sequence['PointsSparseForeground'][frameIndex] * (1.0 - outputOcclusion)
-            outputDepthColorNormal = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * outputDepthColorNormal
-            output = torch.cat([outputOcclusion, outputDepthColorNormal], dim=1)
+
+            # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
+            #outputOcclusion = output[:, 0:1, :, :]
+            #outputDepthColorNormal = output[:, 1:8, :, :]
+            #maskSurface = sequence['PointsSparseForeground'][frameIndex] * (1.0 - outputOcclusion)
+            #outputDepthColorNormal = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * outputDepthColorNormal
+            #output = torch.cat([outputOcclusion, outputDepthColorNormal], dim=1)
 
             target = torch.cat([sequence['PointsSparseOcclusion'][frameIndex], sequence['MeshDepth'][frameIndex], sequence['MeshColor'][frameIndex], sequence['MeshNormalScreen'][frameIndex]], dim=1)
 
