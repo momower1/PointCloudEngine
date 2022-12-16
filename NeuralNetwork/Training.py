@@ -25,9 +25,13 @@ schedulerDecaySkip = 100000
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
-model = PullPushModel(8, 8, 16).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.999))
-scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
+generator = PullPushModel(8, 8, 16).to(device)
+optimizerGenerator = torch.optim.Adam(generator.parameters(), lr=learningRate, betas=(0.5, 0.9))
+schedulerGenerator = torch.optim.lr_scheduler.ExponentialLR(optimizerGenerator, gamma=schedulerDecayRate, verbose=False)
+
+critic = Critic(16, 1, 16).to(device)
+optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
+schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
 factorOcclusion = 1.0
 factorDepth = 5.0
@@ -35,7 +39,7 @@ factorColor = 10.0
 factorNormal = 2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Sequence with Flow Inpainting Only/'
+checkpointDirectory += 'WGAN/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -45,9 +49,12 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
 
     epoch = checkpoint['Epoch']
     batchIndexStart = checkpoint['BatchIndexStart']
-    model.load_state_dict(checkpoint['Model'])
-    optimizer.load_state_dict(checkpoint['Optimizer'])
-    scheduler.load_state_dict(checkpoint['Scheduler'])
+    generator.load_state_dict(checkpoint['Generator'])
+    optimizerGenerator.load_state_dict(checkpoint['OptimizerGenerator'])
+    schedulerGenerator.load_state_dict(checkpoint['SchedulerGenerator'])
+    critic.load_state_dict(checkpoint['Critic'])
+    optimizerCritic.load_state_dict(checkpoint['OptimizerCritic'])
+    schedulerCritic.load_state_dict(checkpoint['SchedulerCritic'])
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
@@ -67,7 +74,8 @@ for threadIndex in range(preloadThreadCount):
 
 # Train for infinite epochs
 while True:
-    print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
+    print('Learning rate generator: ' + str(schedulerGenerator.get_last_lr()[0]))
+    print('Learning rate critic: ' + str(schedulerCritic.get_last_lr()[0]))
 
     # Loop over the dataset batches
     for batchIndex in range(batchIndexStart, batchCount):
@@ -121,7 +129,7 @@ while True:
             input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseColor'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex]], dim=1)
 
             # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
-            output = model(input)
+            output = generator(input)
             outputOcclusion = output[:, 0:1, :, :]
             outputDepthColorNormal = output[:, 1:8, :, :]
             maskSurface = sequence['PointsSparseForeground'][frameIndex] * (1.0 - outputOcclusion)
@@ -175,10 +183,10 @@ while True:
         lossNormal = torch.stack(lossNormal, dim=0).mean()
         loss = torch.stack([lossOcclusion, lossDepth, lossColor, lossNormal], dim=0).mean()
 
-        # Update model parameters
-        model.zero_grad()
+        # Update generator parameters
+        generator.zero_grad()
         loss.backward(retain_graph=False)
-        optimizer.step()
+        optimizerGenerator.step()
 
         # Plot loss
         summaryWriter.add_scalar('Losses/Loss', loss, iteration)
@@ -188,8 +196,10 @@ while True:
         summaryWriter.add_scalar('Losses/Loss Normal', lossNormal, iteration)
 
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
-            scheduler.step()
-            print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
+            schedulerGenerator.step()
+            schedulerCritic.step()
+            print('Learning rate generator: ' + str(schedulerGenerator.get_last_lr()[0]))
+            print('Learning rate critic: ' + str(schedulerCritic.get_last_lr()[0]))
 
         # Print progress, save checkpoints, create snapshots and plot loss graphs in certain intervals
         if iteration % snapshotSkip == (snapshotSkip - 1):
@@ -347,9 +357,12 @@ while True:
             checkpoint = {
                 'Epoch' : epoch,
                 'BatchIndexStart' : batchIndex + 1,
-                'Model' : model.state_dict(),
-                'Optimizer' : optimizer.state_dict(),
-                'Scheduler' : scheduler.state_dict()
+                'Generator' : generator.state_dict(),
+                'OptimizerGenerator' : optimizerGenerator.state_dict(),
+                'SchedulerGenerator' : schedulerGenerator.state_dict(),
+                'Critic' : critic.state_dict(),
+                'OptimizerCritic' : optimizerCritic.state_dict(),
+                'SchedulerCritic' : schedulerCritic.state_dict()
             }
 
             checkpointFilename = checkpointDirectory + checkpointNameStart + checkpointNameEnd

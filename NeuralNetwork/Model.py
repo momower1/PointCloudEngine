@@ -89,6 +89,41 @@ class FuseBlock(torch.nn.Module):
 
         return act
 
+class Critic(torch.nn.Module):
+    def __init__(self, inChannels=3, outChannels=3, innerChannels=16):
+        super(Critic, self).__init__()
+        self.inChannels = inChannels
+        self.outChannels = outChannels
+        self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
+        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
+        self.pullBlock = PullBlock(innerChannels)
+
+    def forward(self, input):
+        n, c, h, w = input.shape
+
+        act = self.preluStart(self.convStart(input))
+
+        resolutionCount = int(math.ceil(math.log2(max(h, w))))
+
+        for i in range(resolutionCount):
+            # Pad such that width and height are dividable by 2
+            multiple = 2
+            height = act.size(2)
+            width = act.size(3)
+            heightPadding = (multiple - (height % multiple)) % multiple
+            widthPadding = (multiple - (width % multiple)) % multiple
+
+            if heightPadding > 0 or widthPadding > 0:
+                act = torch.nn.functional.pad(act, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+
+            act = self.pullBlock(act)
+
+        act = self.convEnd(act)
+        act = act.view(n)
+
+        return act
+
 class PullPushModel(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerChannels=16):
         super(PullPushModel, self).__init__()
