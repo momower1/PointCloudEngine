@@ -72,6 +72,25 @@ def EstimateOcclusion(motionVectorTensor, distance=1.0, artifactFilterSize=1):
 
     return occlusion
 
+# Add this term to enforce the 1-Lipshitz constraint that is required for improved WGAN training
+def GradientPenalty(critic, batchReal, batchFake, gamma=27.0):
+    n = batchReal.size(0)
+    alpha = torch.rand((n, 1, 1, 1), dtype=torch.float, device=device)
+    batchMixed = alpha * batchReal + (1.0 - alpha) * batchFake
+    batchMixed = torch.autograd.Variable(batchMixed, requires_grad=True)
+
+    criticMixed = critic(batchMixed)
+
+    gradOutputs = torch.ones(n, dtype=torch.float, device=device)
+    gradients = torch.autograd.grad(outputs=criticMixed, inputs=batchMixed, grad_outputs=gradOutputs, retain_graph=True, create_graph=True)
+    gradients = gradients[0].view(n, -1)
+
+    gradientNorm = torch.sqrt(torch.sum(torch.square(gradients), dim=1, keepdim=True) + 1e-12)
+    gradientPenalty = gamma * torch.square(gradientNorm - 1.0)
+    gradientPenalty = gradientPenalty.view(n)
+
+    return gradientPenalty
+
 # Tensor (0, 1), Brightness (0, 2), Contrast (0, 2), Hue (-0.5, 0.5), Saturation (0, 2)
 def ColorShift(tensor, brightness, contrast, hue, saturation):
     tensor = torchvision.transforms.functional.adjust_brightness(tensor, brightness)

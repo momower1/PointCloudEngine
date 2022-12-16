@@ -17,11 +17,14 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 4
+stepsGenerator = 0
+stepsCritic = 0
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
+adaptiveUpdateCoefficient = 1.0
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
@@ -29,14 +32,14 @@ generator = PullPushModel(8, 8, 16).to(device)
 optimizerGenerator = torch.optim.Adam(generator.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerGenerator = torch.optim.lr_scheduler.ExponentialLR(optimizerGenerator, gamma=schedulerDecayRate, verbose=False)
 
-critic = Critic(16, 1, 16).to(device)
+critic = Critic(48, 1, 48).to(device)
 optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
-factorOcclusion = 1.0
-factorDepth = 5.0
-factorColor = 10.0
-factorNormal = 2.5
+factorOcclusion = 0#1.0
+factorDepth = 0#5.0
+factorColor = 0#10.0
+factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
 checkpointDirectory += 'WGAN/'
@@ -48,6 +51,8 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     checkpoint = torch.load(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
 
     epoch = checkpoint['Epoch']
+    stepsGenerator = checkpoint['StepsGenerator']
+    stepsCritic = checkpoint['StepsCritic']
     batchIndexStart = checkpoint['BatchIndexStart']
     generator.load_state_dict(checkpoint['Generator'])
     optimizerGenerator.load_state_dict(checkpoint['OptimizerGenerator'])
@@ -71,6 +76,12 @@ batchNextSequence = [None] * batchSize
 
 for threadIndex in range(preloadThreadCount):
     batchNextSequence[threadIndex] = dataset.GetTrainingSequence(randomIndices[batchIndexStart * batchSize + threadIndex])
+
+# Required for adaptive WGAN update strategy
+lossGeneratorWassersteinPrevious = None
+lossCriticWassersteinPrevious = None
+ratioGenerator = 1.0
+ratioCritic = 1.0
 
 # Train for infinite epochs
 while True:
@@ -146,12 +157,19 @@ while True:
         outputs = torch.stack(outputs, dim=0)
         targets = torch.stack(targets, dim=0)
 
-        # Accumulate loss terms over triplets in the sequence
-        lossOcclusion = []
-        lossDepth = []
-        lossColor = []
-        lossNormal = []
+        # Adaptively either update critic or generator depending on the wasserstein loss ratios
+        updateCritic = ratioCritic >= adaptiveUpdateCoefficient * ratioGenerator
 
+        # Accumulate loss terms over triplets in the sequence
+        lossGeneratorWasserstein = []
+        lossGeneratorOcclusion = []
+        lossGeneratorDepth = []
+        lossGeneratorColor = []
+        lossGeneratorNormal = []
+        lossCriticWasserstein = []
+        lossCriticGradientPenalty = []
+
+        # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
             inputPrevious = inputs[tripletFrameIndex - 1]
             input = inputs[tripletFrameIndex]
@@ -165,36 +183,89 @@ while True:
             target = targets[tripletFrameIndex]
             targetNext = targets[tripletFrameIndex + 1]
 
-            # TODO: Add temporal loss term using warped frames
-            lossOcclusionTriplet = factorOcclusion * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
-            lossDepthTriplet = factorDepth * torch.nn.functional.mse_loss(output[:, 1:2, :, :], target[:, 1:2, :, :], reduction='mean')
-            lossColorTriplet = factorColor * torch.nn.functional.mse_loss(output[:, 2:5, :, :], target[:, 2:5, :, :], reduction='mean')
-            lossNormalTriplet = factorNormal * torch.nn.functional.mse_loss(output[:, 5:8, :, :], target[:, 5:8, :, :], reduction='mean')
+            sequenceInput = torch.cat([inputPrevious, input, inputNext], dim=1)
+            sequenceOutput = torch.cat([outputPrevious, output, outputNext], dim=1)
+            sequenceTarget = torch.cat([targetPrevious, target, targetNext], dim=1)
 
-            lossOcclusion.append(lossOcclusionTriplet)
-            lossDepth.append(lossDepthTriplet)
-            lossColor.append(lossColorTriplet)
-            lossNormal.append(lossNormalTriplet)
+            # Add WGAN loss terms
+            sequenceReal = torch.cat([sequenceInput, sequenceTarget], dim=1)
+            sequenceFake = torch.cat([sequenceInput, sequenceOutput], dim=1)
+
+            criticReal = critic(sequenceReal)
+            criticFake = critic(sequenceFake)
+
+            lossGeneratorWassersteinTriplet = -criticFake
+            lossCriticWassersteinTriplet = criticFake - criticReal
+            
+            lossGeneratorWasserstein.append(lossGeneratorWassersteinTriplet)
+            lossCriticWasserstein.append(lossCriticWassersteinTriplet)
+
+            # Only add computationally expensive gradient penalty term for improved wasserstein GAN training if it is necessary
+            if updateCritic:
+                lossCriticGradientPenaltyTriplet = GradientPenalty(critic, sequenceReal, sequenceFake)
+                lossCriticGradientPenalty.append(lossCriticGradientPenaltyTriplet)
+
+            # Add supervised generator loss terms
+            lossGeneratorOcclusionTriplet = factorOcclusion * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
+            lossGeneratorDepthTriplet = factorDepth * torch.nn.functional.mse_loss(output[:, 1:2, :, :], target[:, 1:2, :, :], reduction='mean')
+            lossGeneratorColorTriplet = factorColor * torch.nn.functional.mse_loss(output[:, 2:5, :, :], target[:, 2:5, :, :], reduction='mean')
+            lossGeneratorNormalTriplet = factorNormal * torch.nn.functional.mse_loss(output[:, 5:8, :, :], target[:, 5:8, :, :], reduction='mean')
+
+            lossGeneratorOcclusion.append(lossGeneratorOcclusionTriplet)
+            lossGeneratorDepth.append(lossGeneratorDepthTriplet)
+            lossGeneratorColor.append(lossGeneratorColorTriplet)
+            lossGeneratorNormal.append(lossGeneratorNormalTriplet)
 
         # Average all loss terms across the sequence and combine into final loss
-        lossOcclusion = torch.stack(lossOcclusion, dim=0).mean()
-        lossDepth = torch.stack(lossDepth, dim=0).mean()
-        lossColor = torch.stack(lossColor, dim=0).mean()
-        lossNormal = torch.stack(lossNormal, dim=0).mean()
-        loss = torch.stack([lossOcclusion, lossDepth, lossColor, lossNormal], dim=0).mean()
+        lossGeneratorWasserstein = torch.stack(lossGeneratorWasserstein, dim=0).mean()
+        lossGeneratorOcclusion = torch.stack(lossGeneratorOcclusion, dim=0).mean()
+        lossGeneratorDepth = torch.stack(lossGeneratorDepth, dim=0).mean()
+        lossGeneratorColor = torch.stack(lossGeneratorColor, dim=0).mean()
+        lossGeneratorNormal = torch.stack(lossGeneratorNormal, dim=0).mean()
+        lossGenerator = torch.stack([lossGeneratorWasserstein, lossGeneratorOcclusion, lossGeneratorDepth, lossGeneratorColor, lossGeneratorNormal], dim=0).mean()
+        
+        lossCriticWasserstein = torch.stack(lossCriticWasserstein, dim=0).mean()
 
-        # Update generator parameters
-        generator.zero_grad()
-        loss.backward(retain_graph=False)
-        optimizerGenerator.step()
+        if updateCritic:
+            lossCriticGradientPenalty = torch.stack(lossCriticGradientPenalty, dim=0).mean()
+            lossCritic = torch.stack([lossCriticWasserstein, lossCriticGradientPenalty], dim=0).mean()
 
-        # Plot loss
-        summaryWriter.add_scalar('Losses/Loss', loss, iteration)
-        summaryWriter.add_scalar('Losses/Loss Occlusion', lossOcclusion, iteration)
-        summaryWriter.add_scalar('Losses/Loss Depth', lossDepth, iteration)
-        summaryWriter.add_scalar('Losses/Loss Color', lossColor, iteration)
-        summaryWriter.add_scalar('Losses/Loss Normal', lossNormal, iteration)
+        # Update model parameters
+        if updateCritic:
+            # Train the critic
+            critic.zero_grad()
+            lossCritic.backward(retain_graph=False)
+            optimizerCritic.step()
+            stepsCritic += 1
 
+            # Plot critic losses
+            summaryWriter.add_scalar('Critic/Loss Critic', lossCritic, iteration)
+            summaryWriter.add_scalar('Critic/Loss Critic Wasserstein', lossCriticWasserstein, iteration)
+            summaryWriter.add_scalar('Critic/Loss Critic Gradient Penalty', lossCriticGradientPenalty, iteration)
+        else:
+            # Train the generator
+            generator.zero_grad()
+            lossGenerator.backward(retain_graph=False)
+            optimizerGenerator.step()
+            stepsGenerator += 1
+
+            # Plot generator losses
+            summaryWriter.add_scalar('Generator/Loss Generator', lossGenerator, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Wasserstein', lossGeneratorWasserstein, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Occlusion', lossGeneratorOcclusion, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Depth', lossGeneratorDepth, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Color', lossGeneratorColor, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Normal', lossGeneratorNormal, iteration)
+
+        # Update wasserstein loss ratios for adaptive WGAN training
+        if lossCriticWassersteinPrevious is not None and lossGeneratorWassersteinPrevious is not None:
+            ratioCritic = torch.abs((lossCriticWasserstein - lossCriticWassersteinPrevious) / (lossCriticWassersteinPrevious + 1e-8))
+            ratioGenerator = torch.abs((lossGeneratorWasserstein - lossGeneratorWassersteinPrevious) / (lossGeneratorWassersteinPrevious + 1e-8))
+
+        lossCriticWassersteinPrevious = lossCriticWasserstein
+        lossGeneratorWassersteinPrevious = lossGeneratorWasserstein
+
+        # Update learning rate using schedulers
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
             schedulerGenerator.step()
             schedulerCritic.step()
@@ -208,6 +279,7 @@ while True:
             snapshotFrameIndex = 1 + (snapshotIndex % (dataset.sequenceFrameCount - 2))
 
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
+            progress += '\tStepsCritic: ' + str(stepsCritic) + '\tStepsGenerator: ' + str(stepsGenerator)
             print(progress)
 
             inputForeground = inputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
@@ -356,6 +428,8 @@ while True:
             # Save a checkpoint to file
             checkpoint = {
                 'Epoch' : epoch,
+                'StepsGenerator' : stepsGenerator,
+                'StepsCritic' : stepsCritic,
                 'BatchIndexStart' : batchIndex + 1,
                 'Generator' : generator.state_dict(),
                 'OptimizerGenerator' : optimizerGenerator.state_dict(),
