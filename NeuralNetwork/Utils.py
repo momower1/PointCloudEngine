@@ -74,8 +74,8 @@ def EstimateOcclusion(motionVectorTensor, distance=1.0, artifactFilterSize=1):
 
 # Add this term to enforce the 1-Lipshitz constraint that is required for improved WGAN training
 def GradientPenalty(critic, batchReal, batchFake, gamma=27.0):
-    n = batchReal.size(0)
-    alpha = torch.rand((n, 1, 1, 1), dtype=torch.float, device=device)
+    n, c, h, w = batchReal.size()
+    alpha = torch.rand((n, c, h, w), dtype=torch.float, device=device)
     batchMixed = alpha * batchReal + (1.0 - alpha) * batchFake
     batchMixed = torch.autograd.Variable(batchMixed, requires_grad=True)
 
