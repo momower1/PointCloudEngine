@@ -59,21 +59,25 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     return depthNormalized
 
 class Dataset:
-    def __init__(self, directory, sequenceFrameCount=3, testSetPercentage=0.0):
+    def __init__(self, directory, sequenceFrameCount=3, zipCompressed=False, testSetPercentage=0.0):
         self.directory = directory
         self.sequenceFrameCount = sequenceFrameCount
+        self.zipCompressed = zipCompressed
         self.testSetPercentage = testSetPercentage
         
         if self.sequenceFrameCount < 3:
             print('Error: Sequence frame count must at least be 3!')
             exit(0)
 
+        # Either use compressed or uncompressed dataset files
+        fileSuffix = '.zip' if zipCompressed else '.textures'
+
         frameIndices = []
         filenames = os.listdir(self.directory)
 
         for filename in filenames:
-            if filename.lower().endswith('.zip'):
-                frameIndex = int(filename.lower().split('.zip')[0])
+            if filename.lower().endswith(fileSuffix):
+                frameIndex = int(filename.lower().split(fileSuffix)[0])
                 frameIndices.append(frameIndex)
 
         frameIndices.sort()
@@ -93,8 +97,12 @@ class Dataset:
         print('\t- ' + str(len(self.renderModes)) + ' render modes ')
 
     def GetFrame(self, frames, index):
-        archive = ZipFile(self.directory + str(frames[index]) + '.zip', 'r')
-        texturesBytes = archive.read(str(index) + '.textures')
+        if self.zipCompressed:
+            archive = ZipFile(self.directory + str(frames[index]) + '.zip', 'r')
+            texturesBytes = archive.read(str(index) + '.textures')
+        else:
+            texturesBytes = open(self.directory + str(frames[index]) + '.textures', 'rb').read()
+
         textures = LoadTexturesFromBytes(texturesBytes)
 
         tensors = {}
