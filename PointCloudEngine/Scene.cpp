@@ -454,7 +454,9 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 
 void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wstring& datasetDirectory, std::vector<PROCESS_INFORMATION>& processes)
 {
-	std::wstring archiveFilenames = L"";
+	// Create a custom binary file that stores the raw bytes of all the textures
+	std::wstring datasetFilename = std::to_wstring(index) + L".textures";
+	std::ofstream datasetFile(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
 
 	// Go over all the render modes
 	for (int renderModeIndex = 0; renderModeIndex < datasetRenderModes.size(); renderModeIndex++)
@@ -527,29 +529,25 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 		hr = d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &mappedSubresource);
 		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
 
-		// Create a custom binary file that stores the raw bytes of the texture
-		std::wstring datasetFilename = renderMode.name + L"_" + std::to_wstring(index) + L".texture";
-		std::ofstream file(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
-
 		// Write a header to the file
+		int renderModeNameSize = renderMode.name.length() * sizeof(wchar_t);
 		int width = readableTextureDesc.Width;
 		int height = readableTextureDesc.Height;
 
-		file.write((char*)&width, sizeof(int));
-		file.write((char*)&height, sizeof(int));
-		file.write((char*)&channels, sizeof(int));
-		file.write((char*)&elementSizeInBytes, sizeof(int));
+		datasetFile.write((char*)&renderModeNameSize, sizeof(int));
+		datasetFile.write((char*)renderMode.name.data(), renderModeNameSize);
+		datasetFile.write((char*)&width, sizeof(int));
+		datasetFile.write((char*)&height, sizeof(int));
+		datasetFile.write((char*)&channels, sizeof(int));
+		datasetFile.write((char*)&elementSizeInBytes, sizeof(int));
 
 		// Need to skip padding that the texture might have in between rows and depth
 		size_t rowPitchWithoutPadding = (size_t)width * (size_t)channels * (size_t)elementSizeInBytes;
 
 		for (size_t rowIndex = 0; rowIndex < height; rowIndex++)
 		{
-			file.write((char*)mappedSubresource.pData + rowIndex * mappedSubresource.RowPitch, rowPitchWithoutPadding);
+			datasetFile.write((char*)mappedSubresource.pData + rowIndex * mappedSubresource.RowPitch, rowPitchWithoutPadding);
 		}
-
-		file.flush();
-		file.close();
 
 		d3d11DevCon->Unmap(readableTexture, 0);
 
@@ -557,14 +555,6 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 		//SaveDDSTextureToFile(d3d11DevCon, readableTexture, (datasetDirectory + it->name + L".dds").c_str());
 
 		SAFE_RELEASE(readableTexture);
-
-		// Concatentate the filenames into a string array for the Compress-Archive powershell command
-		archiveFilenames += datasetFilename;
-
-		if (renderModeIndex < datasetRenderModes.size() - 1)
-		{
-			archiveFilenames += L", ";
-		}
 
 		// Need to do everything before presenting the texture to the screen to preserve alpha channel
 		// Also only display a single render mode each frame for a more pleasent viewing experience
@@ -576,6 +566,10 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 
 	// Explicitly update the previous frame matrices for optical flow computation
 	meshRenderer->UpdatePreviousMatrices();
+
+	// Make sure that all data has been written to the hard drive before compressing it
+	datasetFile.flush();
+	datasetFile.close();
 
 	UINT maxProcessCount = 32;
 
@@ -589,15 +583,15 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 		processes.erase(processes.begin(), processes.begin() + 1);
 	}
 
-	// Pack all the files into a ZIP archive and delete the old files (CompressionLevel can be "Optimal", "Fastest" or "NoCompression")
+	// Pack the file into a ZIP archive and delete the old file (CompressionLevel can be "Optimal", "Fastest" or "NoCompression")
 	std::wstring command = L"powershell ";
 	command += L"Compress-Archive ";
-	command += L"-Path " + archiveFilenames + L" ";
+	command += L"-Path " + datasetFilename + L" ";
 	command += L"-DestinationPath " + std::to_wstring(index) + L".zip ";
 	command += L"-Update ";
 	command += L"-CompressionLevel Optimal; ";
 	command += L"Remove-Item ";
-	command += L"-Path " + archiveFilenames;
+	command += L"-Path " + datasetFilename;
 
 	// Create a process that executes the command
 	PROCESS_INFORMATION processInformation;

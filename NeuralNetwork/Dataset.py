@@ -4,17 +4,38 @@ import numpy
 from zipfile import ZipFile
 from Utils import *
 
-def LoadTextureFromBytes(textureBytes):
+def LoadTexturesFromBytes(texturesBytes):
     dataTypeMap = { 2 : 'float16', 4 : 'float32' }
-    width = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=0).item()
-    height = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=4).item()
-    channels = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=8).item()
-    elementSizeInBytes = numpy.frombuffer(buffer=textureBytes, dtype='int32', count=1, offset=12).item()
-    texture = numpy.frombuffer(buffer=textureBytes, dtype=dataTypeMap[elementSizeInBytes], count=-1, offset=16)
-    texture = numpy.reshape(texture, (height, width, channels))
-    texture = texture.astype('float32')
 
-    return texture
+    totalBytesToRead = len(texturesBytes)
+    bytesRead = 0
+    textures = {}
+
+    while bytesRead < totalBytesToRead:
+        renderModeNameSize = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+        bytesRead += 4
+        renderMode = texturesBytes[bytesRead:bytesRead+renderModeNameSize].decode('utf-16')
+        bytesRead += renderModeNameSize
+        width = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+        bytesRead += 4
+        height = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+        bytesRead += 4
+        channels = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+        bytesRead += 4
+        elementSizeInBytes = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+        bytesRead += 4
+        textureElementCount = width * height * channels
+        texture = numpy.frombuffer(buffer=texturesBytes, dtype=dataTypeMap[elementSizeInBytes], count=textureElementCount, offset=bytesRead)
+        bytesRead += textureElementCount * elementSizeInBytes
+        texture = numpy.reshape(texture, (height, width, channels))
+        texture = texture.astype('float32')
+        texture = torch.from_numpy(texture)
+        texture = texture.to(device)
+        texture = torch.permute(texture, dims=(2, 0, 1))
+
+        textures[renderMode] = texture
+
+    return textures
 
 def GetForegroundBackgroundMasks(depthTexture):
     maskForeground = depthTexture < 1.0
@@ -73,17 +94,13 @@ class Dataset:
 
     def GetFrame(self, frames, index):
         archive = ZipFile(self.directory + str(frames[index]) + '.zip', 'r')
+        texturesBytes = archive.read(str(index) + '.textures')
+        textures = LoadTexturesFromBytes(texturesBytes)
 
         tensors = {}
 
-        for filename in archive.namelist():
-            renderMode = filename.split('_')[0]
-
-            textureBytes = archive.read(filename)
-            texture = LoadTextureFromBytes(textureBytes)
-            texture = torch.from_numpy(texture)
-            texture = texture.to(device)
-            texture = torch.permute(texture, dims=(2, 0, 1))
+        for renderMode in textures.keys():
+            texture = textures[renderMode]
 
             # Normalize depth into [0, 1] range and add a foreground/background mask
             if renderMode.find('Depth') >= 0:
@@ -132,7 +149,6 @@ class Dataset:
         for tensorName in tensorNames:
             if tensorName.find('Depth') >= 0:
                 viewMode = tensorName.split('Depth')[0]
-
                 tensors[tensorName] = NormalizeDepthTexture(tensors[tensorName], tensors[viewMode + 'Foreground'].bool(), tensors[viewMode + 'Background'].bool())
 
         return tensors
