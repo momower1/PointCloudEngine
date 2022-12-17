@@ -435,6 +435,42 @@ while True:
 
             summaryWriter.add_figure('SnapshotsFlow/Epoch' + str(epoch), plt.gcf(), iteration)
 
+            fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
+            fig.add_subplot(3, 3, 1).title#.set_text('Input Previous Warped')
+            plt.imshow(TensorToImage(inputPreviousWarped[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 2).title#.set_text('Input Current')
+            plt.imshow(TensorToImage(input[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 3).title#.set_text('Input Next Warped')
+            plt.imshow(TensorToImage(inputNextWarped[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+
+            fig.add_subplot(3, 3, 4).title#.set_text('Output Previous Warped')
+            plt.imshow(TensorToImage(outputPreviousWarped[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 5).title#.set_text('Output Current')
+            plt.imshow(TensorToImage(output[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 6).title#.set_text('Output Next Warped')
+            plt.imshow(TensorToImage(outputNextWarped[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+
+            fig.add_subplot(3, 3, 7).title#.set_text('Target Previous Warped')
+            plt.imshow(TensorToImage(targetPreviousWarped[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 8).title#.set_text('Target Current')
+            plt.imshow(TensorToImage(target[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 9).title#.set_text('Target Next Warped')
+            plt.imshow(TensorToImage(targetNextWarped[snapshotSampleIndex, 2:5, :, :]))
+            plt.axis('off')
+
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+
+            summaryWriter.add_figure('SnapshotsTriplet/Epoch' + str(epoch), plt.gcf(), iteration)
+
             # Save a checkpoint to file
             checkpoint = {
                 'Epoch' : epoch,
