@@ -5,6 +5,11 @@ def ApplyWeightNormalization(model):
         if type(module) is torch.nn.Conv2d or type(module) is torch.nn.PReLU:
             module = torch.nn.utils.weight_norm(module)
 
+def InitializeParameters(model):
+    for module in model.modules():
+        if type(module) is torch.nn.Conv2d or type(module) is torch.nn.ConvTranspose2d:
+            torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
+
 class Model(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerLayers=1):
         super(Model, self).__init__()
@@ -24,10 +29,8 @@ class Model(torch.nn.Module):
         self.moduleList.append(torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.Sigmoid())
 
-        # Initialize parameters
-        for module in self.modules():
-            if isinstance(module, torch.nn.Conv2d):
-                torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
+        InitializeParameters(self)
+        ApplyWeightNormalization(self)
 
     def forward(self, input):
         act = input
@@ -46,11 +49,6 @@ class PullBlock(torch.nn.Module):
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.PReLU(1, 0.25))
         self.moduleList.append(torch.nn.MaxPool2d(2))
-
-        # Initialize parameters
-        for module in self.modules():
-            if isinstance(module, torch.nn.Conv2d):
-                torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
 
     def forward(self, input):
         act = input
@@ -104,6 +102,9 @@ class Critic(torch.nn.Module):
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.pullBlock = PullBlock(innerChannels)
 
+        InitializeParameters(self)
+        ApplyWeightNormalization(self)
+
     def forward(self, input):
         n, c, h, w = input.shape
 
@@ -141,6 +142,9 @@ class PullPushModel(torch.nn.Module):
         self.pullBlock = PullBlock(innerChannels)
         self.pushBlock = PushBlock(innerChannels)
         self.fuseBlock = FuseBlock(2 * innerChannels, innerChannels)
+
+        InitializeParameters(self)
+        ApplyWeightNormalization(self)
 
     def forward(self, input):
         n, c, h, w = input.shape
@@ -202,10 +206,8 @@ class CriticDeep(torch.nn.Module):
 
         self.moduleList.append(torch.nn.Conv2d(pow(2, self.layerCount) * inChannels, 1, int(frameSize / pow(2, self.layerCount)), 1))
 
-        # Initialize parameters
-        for module in self.modules():
-            if isinstance(module, torch.nn.Conv2d):
-                torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
+        InitializeParameters(self)
+        ApplyWeightNormalization(self)
 
     def forward(self, input):
         n, c, h, w = input.shape
