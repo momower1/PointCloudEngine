@@ -32,7 +32,7 @@ generator = PullPushModel(8, 8, 16).to(device)
 optimizerGenerator = torch.optim.Adam(generator.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerGenerator = torch.optim.lr_scheduler.ExponentialLR(optimizerGenerator, gamma=schedulerDecayRate, verbose=False)
 
-critic = Critic(48, 1, 48).to(device)
+critic = CriticDeep(128, 48).to(device)
 optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN No Surface Keeping 1e-3 128 Batch 8/'
+checkpointDirectory += 'WGAN Deep Critic No Surface Keeping 1e-3 128 Batch 8/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -440,10 +440,8 @@ while True:
                 'SchedulerCritic' : schedulerCritic.state_dict()
             }
 
-            checkpointFilename = checkpointDirectory + checkpointNameStart + checkpointNameEnd
-            torch.save(checkpoint, checkpointFilename + '.tmp')
-            time.sleep(0.01)
-            os.replace(checkpointFilename + '.tmp', checkpointFilename)
+            torch.save(checkpoint, checkpointDirectory + checkpointNameStart + checkpointNameEnd)
+            torch.save(checkpoint, checkpointDirectory + checkpointNameStart + str(epoch) + checkpointNameEnd)
 
     # Move to next epoch
     numpy.random.shuffle(randomIndices)

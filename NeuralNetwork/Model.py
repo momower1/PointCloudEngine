@@ -1,5 +1,10 @@
 from Utils import *
 
+def ApplyWeightNormalization(model):
+    for module in model.modules():
+        if type(module) is torch.nn.Conv2d or type(module) is torch.nn.PReLU:
+            module = torch.nn.utils.weight_norm(module)
+
 class Model(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerLayers=1):
         super(Model, self).__init__()
@@ -181,5 +186,34 @@ class PullPushModel(torch.nn.Module):
             act = act + residual
 
         act = self.sigmoid(self.convEnd(act))
+
+        return act
+
+class CriticDeep(torch.nn.Module):
+    def __init__(self, frameSize=128, inChannels=48):
+        super(CriticDeep, self).__init__()
+        self.moduleList = torch.nn.ModuleList()
+        self.layerCount = int(math.log2(frameSize)) - 2
+
+        # Create a critic with variable layer count depending on the input frame size (must be a power of 2)
+        for layerIndex in range(self.layerCount):
+            self.moduleList.append(torch.nn.Conv2d(pow(2, layerIndex) * inChannels, pow(2, layerIndex + 1) * inChannels, 4, 2, 1))
+            self.moduleList.append(torch.nn.PReLU(1, 0.25))
+
+        self.moduleList.append(torch.nn.Conv2d(pow(2, self.layerCount) * inChannels, 1, int(frameSize / pow(2, self.layerCount)), 1))
+
+        # Initialize parameters
+        for module in self.modules():
+            if isinstance(module, torch.nn.Conv2d):
+                torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
+
+    def forward(self, input):
+        n, c, h, w = input.shape
+        act = input
+
+        for moduleIndex in range(len(self.moduleList)):
+            act = self.moduleList[moduleIndex](act)
+
+        act = act.view(n)
 
         return act
