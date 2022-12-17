@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Deep Critic No Surface Keeping 1e-3 128 Batch 8/'
+checkpointDirectory += 'WGAN Deep Critic No Surface Keeping 1e-3 128 Batch 8 Weight Norm Critic Warping/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -172,21 +172,30 @@ while True:
 
         # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
+            motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][tripletFrameIndex]
+            motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][tripletFrameIndex + 1]
+
             inputPrevious = inputs[tripletFrameIndex - 1]
+            inputPreviousWarped = WarpImage(inputPrevious, motionVectorPreviousToCurrent)
             input = inputs[tripletFrameIndex]
             inputNext = inputs[tripletFrameIndex + 1]
+            inputNextWarped = WarpImage(inputNext, motionVectorNextToCurrent)
 
             outputPrevious = outputs[tripletFrameIndex - 1]
+            outputPreviousWarped = WarpImage(outputPrevious, motionVectorPreviousToCurrent)
             output = outputs[tripletFrameIndex]
             outputNext = outputs[tripletFrameIndex + 1]
+            outputNextWarped = WarpImage(outputNext, motionVectorNextToCurrent)
 
             targetPrevious = targets[tripletFrameIndex - 1]
+            targetPreviousWarped = WarpImage(targetPrevious, motionVectorPreviousToCurrent)
             target = targets[tripletFrameIndex]
             targetNext = targets[tripletFrameIndex + 1]
+            targetNextWarped = WarpImage(targetNext, motionVectorNextToCurrent)
 
-            sequenceInput = torch.cat([inputPrevious, input, inputNext], dim=1)
-            sequenceOutput = torch.cat([outputPrevious, output, outputNext], dim=1)
-            sequenceTarget = torch.cat([targetPrevious, target, targetNext], dim=1)
+            sequenceInput = torch.cat([inputPreviousWarped, input, inputNextWarped], dim=1)
+            sequenceOutput = torch.cat([outputPreviousWarped, output, outputNextWarped], dim=1)
+            sequenceTarget = torch.cat([targetPreviousWarped, target, targetNextWarped], dim=1)
 
             # Add WGAN loss terms
             sequenceReal = torch.cat([sequenceInput, sequenceTarget], dim=1)
