@@ -1,6 +1,7 @@
 import os
 import torch
 import numpy
+import random
 from zipfile import ZipFile
 from Utils import *
 
@@ -59,9 +60,10 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     return depthNormalized
 
 class Dataset:
-    def __init__(self, directory, sequenceFrameCount=3, zipCompressed=False, testSetPercentage=0.0):
+    def __init__(self, directory, sequenceFrameCount=3, dataAugmentation=True, zipCompressed=False, testSetPercentage=0.0):
         self.directory = directory
         self.sequenceFrameCount = sequenceFrameCount
+        self.dataAugmentation = dataAugmentation
         self.zipCompressed = zipCompressed
         self.testSetPercentage = testSetPercentage
         
@@ -167,6 +169,65 @@ class Dataset:
         for frameIndex in range(self.sequenceFrameCount):
             tensors = self.GetFrame(frames, sequenceIndex + frameIndex)
             sequence.append(tensors)
+
+        if self.dataAugmentation:
+            # Augment data by color shifting the frames according to a normal distribution with low variance
+            brightness = max(0, min(2, random.normalvariate(1.0, 0.1)))
+            contrast = max(0, min(2, random.normalvariate(1.0, 0.1)))
+            hue = max(-0.5, min(0.5, random.normalvariate(0.0, 0.05)))
+            saturation = max(0, min(2, random.normalvariate(1.0, 0.1)))
+
+            # Apply the same color augmentation to all frames in the sequence
+            for frameIndex in range(self.sequenceFrameCount):
+                for renderMode in self.renderModes:
+                    if 'Color' in renderMode:
+                        sequence[frameIndex][renderMode] = ColorShift(sequence[frameIndex][renderMode], brightness, contrast, hue, saturation)
+
+            # Randomly flip frames and motion vectors (either no flip or flip at x, y or x-y axis)
+            flipDimIndex = random.randint(0, 3)
+
+            if flipDimIndex > 0:
+                flipDims = [[], [1], [2], [1, 2]]
+                flipDim = flipDims[flipDimIndex]
+
+                for frameIndex in range(self.sequenceFrameCount):
+                    for renderMode in self.renderModes:
+                        sequence[frameIndex][renderMode] = torch.flip(sequence[frameIndex][renderMode], flipDim)
+
+                        # Need to also invert motion vector signs for the flipped axis
+                        if 'OpticalFlow' in renderMode:
+                            motionVector = sequence[frameIndex][renderMode]
+
+                            if 1 in flipDim:
+                                motionVector[1, :, :] *= -1.0
+
+                            if 2 in flipDim:
+                                motionVector[0, :, :] *= -1.0
+
+                            sequence[frameIndex][renderMode] = motionVector
+
+                        # Need to also invert normal vector sign in screen space for the flipped axis (also do this in [-1, 1] range)
+                        if 'NormalScreen' in renderMode:
+                            normalVector = (sequence[frameIndex][renderMode] * 2.0) - 1.0
+
+                            if 1 in flipDim:
+                                normalVector[1, :, :] *= -1.0
+
+                            if 2 in flipDim:
+                                normalVector[0, :, :] *= -1.0
+
+                            sequence[frameIndex][renderMode] = (normalVector + 1.0) / 2.0
+
+                    # Normal value can be (0, 0, 0) before flipping if there is no normal, need to handle this case to avoid error
+                    for renderMode in self.renderModes:
+                        if 'NormalScreen' in renderMode:
+                            viewMode = renderMode.split('NormalScreen')[0]
+                            sequence[frameIndex][renderMode] *= sequence[frameIndex][viewMode + 'Foreground']
+
+            # Add a tiny bit of noise
+            for frameIndex in range(self.sequenceFrameCount):
+                for renderMode in self.renderModes:
+                    sequence[frameIndex][renderMode] += torch.normal(mean=0.0, std=1.0 / 256.0, size=sequence[frameIndex][renderMode].shape, device=device)
 
         return sequence
 

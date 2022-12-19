@@ -1,5 +1,6 @@
 import math
 import torch
+import torchvision
 
 # Use cuda if possible
 if torch.cuda.is_available():
