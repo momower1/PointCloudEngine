@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 8
+batchSize = 4
 stepsGenerator = 0
 stepsCritic = 0
 snapshotSkip = 256
@@ -24,7 +24,7 @@ batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
-adaptiveUpdateCoefficient = 1.0
+adaptiveUpdateCoefficient = 2.0
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Deep Critic No Surface Keeping 1e-3 128 Batch 8 Weight Norm Critic Warping/'
+checkpointDirectory += 'WGAN Deep No Surface Keeping 1e-3 Warping Augmented Adaptive 2 Batch 4/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
