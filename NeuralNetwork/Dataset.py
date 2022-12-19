@@ -165,9 +165,23 @@ class Dataset:
 
     def GetSequence(self, frames, sequenceIndex):
         sequence = []
+        reverseSequence = self.dataAugmentation and (sequenceIndex % 2) == 0
 
-        for frameIndex in range(self.sequenceFrameCount):
-            tensors = self.GetFrame(frames, sequenceIndex + frameIndex)
+        # Possibly reverse the order of frames in the sequence (then also need to swap forward and backward motion vectors)
+        if reverseSequence:
+            frameOrder = range(sequenceIndex + self.sequenceFrameCount - 1, sequenceIndex - 1, -1)
+        else:
+            frameOrder = range(sequenceIndex, sequenceIndex + self.sequenceFrameCount, 1)
+
+        for frameIndex in frameOrder:
+            tensors = self.GetFrame(frames, frameIndex)
+
+            # Need to swap forward and backward motion vectors
+            if reverseSequence:
+                tmp = tensors['MeshOpticalFlowForward']
+                tensors['MeshOpticalFlowForward'] = tensors['MeshOpticalFlowBackward']
+                tensors['MeshOpticalFlowBackward'] = tmp
+
             sequence.append(tensors)
 
         if self.dataAugmentation:
