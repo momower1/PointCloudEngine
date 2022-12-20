@@ -165,7 +165,7 @@ class Dataset:
 
     def GetSequence(self, frames, sequenceIndex):
         sequence = []
-        reverseSequence = self.dataAugmentation and (sequenceIndex % 2) == 0
+        reverseSequence = self.dataAugmentation and random.randint(0, 1) == 0
 
         # Possibly reverse the order of frames in the sequence (then also need to swap forward and backward motion vectors)
         if reverseSequence:
