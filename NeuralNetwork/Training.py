@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 4
+batchSize = 32
 stepsGenerator = 0
 stepsCritic = 0
 snapshotSkip = 256
@@ -24,7 +24,7 @@ batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
-adaptiveUpdateCoefficient = 2.0
+adaptiveUpdateCoefficient = 1.0
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Deep No Surface Keeping 1e-3 Warping Augmented Adaptive 2 Batch 4/'
+checkpointDirectory += 'WGAN Deep No Surface Keeping 1e-3 Warping Augmented Adaptive 1 Batch 32/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -470,6 +470,30 @@ while True:
             plt.margins(0, 0)
 
             summaryWriter.add_figure('SnapshotsTriplet/Epoch' + str(epoch), plt.gcf(), iteration)
+
+            # Save an animated gif with input, output and target (quality is worse due to compression)
+            height = inputs.size(3)
+            width = inputs.size(4)
+            videoTensor = torch.zeros((1, dataset.sequenceFrameCount, 3, 3 * height, 3 * width), dtype=torch.float, device=device)
+
+            for frameIndex in range(dataset.sequenceFrameCount):
+                # Color
+                videoTensor[0, frameIndex, :, 0:height, 0:width] = inputs[frameIndex, snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, height:2*height, 0:width] = outputs[frameIndex, snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, 2*height:3*height, 0:width] = targets[frameIndex, snapshotSampleIndex, 2:5, :, :]
+
+                # Depth
+                videoTensor[0, frameIndex, :, 0:height, width:2*width] = inputs[frameIndex, snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, height:2*height, width:2*width] = outputs[frameIndex, snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 2*height:3*height, width:2*width] = targets[frameIndex, snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+
+                # Normal
+                videoTensor[0, frameIndex, :, 0:height, 2*width:3*width] = inputs[frameIndex, snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, height:2*height, 2*width:3*width] = outputs[frameIndex, snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, 2*height:3*height, 2*width:3*width] = targets[frameIndex, snapshotSampleIndex, 5:8, :, :]
+
+            videoTensor = torch.clamp(videoTensor, 0, 1)
+            summaryWriter.add_video('Videos/Epoch' + str(epoch), videoTensor, iteration, fps=10)
 
             # Save a checkpoint to file
             checkpoint = {
