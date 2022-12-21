@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 32
+batchSize = 16
 stepsGenerator = 0
 stepsCritic = 0
 snapshotSkip = 256
@@ -36,13 +36,13 @@ critic = CriticDeep(128, 48).to(device)
 optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
-factorOcclusion = 0#1.0
+factorSurface = 0#1.0
 factorDepth = 0#5.0
 factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Deep No Surface Keeping 1e-3 Warping Augmented Adaptive 1 Batch 32/'
+checkpointDirectory += 'WGAN Deep Surface Keeping 1e-3 Warping Augmented Adaptive 1 Batch 16/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -142,13 +142,14 @@ while True:
             output = generator(input)
 
             # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
-            #outputOcclusion = output[:, 0:1, :, :]
-            #outputDepthColorNormal = output[:, 1:8, :, :]
-            #maskSurface = sequence['PointsSparseForeground'][frameIndex] * (1.0 - outputOcclusion)
-            #outputDepthColorNormal = maskSurface * input[:, 1:8, :, :] + (1.0 - maskSurface) * outputDepthColorNormal
-            #output = torch.cat([outputOcclusion, outputDepthColorNormal], dim=1)
+            outputSurface = output[:, 0:1, :, :]
+            outputDepthColorNormal = output[:, 1:8, :, :]
+            inputDepthColorNormal = input[:, 1:8, :, :]
+            outputSurfaceMask = outputSurface.ge(0.5).float()
+            outputDepthColorNormal = outputSurfaceMask * inputDepthColorNormal + (1.0 - outputSurfaceMask) * outputDepthColorNormal
+            output = torch.cat([outputSurface, outputDepthColorNormal], dim=1)
 
-            target = torch.cat([sequence['PointsSparseOcclusion'][frameIndex], sequence['MeshDepth'][frameIndex], sequence['MeshColor'][frameIndex], sequence['MeshNormalScreen'][frameIndex]], dim=1)
+            target = torch.cat([sequence['PointsSparseSurface'][frameIndex], sequence['MeshDepth'][frameIndex], sequence['MeshColor'][frameIndex], sequence['MeshNormalScreen'][frameIndex]], dim=1)
 
             inputs.append(input)
             outputs.append(output)
@@ -163,7 +164,7 @@ while True:
 
         # Accumulate loss terms over triplets in the sequence
         lossGeneratorWasserstein = []
-        lossGeneratorOcclusion = []
+        lossGeneratorSurface = []
         lossGeneratorDepth = []
         lossGeneratorColor = []
         lossGeneratorNormal = []
@@ -216,23 +217,23 @@ while True:
                 lossCriticGradientPenalty.append(lossCriticGradientPenaltyTriplet)
 
             # Add supervised generator loss terms
-            lossGeneratorOcclusionTriplet = factorOcclusion * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
+            lossGeneratorSurfaceTriplet = factorSurface * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
             lossGeneratorDepthTriplet = factorDepth * torch.nn.functional.mse_loss(output[:, 1:2, :, :], target[:, 1:2, :, :], reduction='mean')
             lossGeneratorColorTriplet = factorColor * torch.nn.functional.mse_loss(output[:, 2:5, :, :], target[:, 2:5, :, :], reduction='mean')
             lossGeneratorNormalTriplet = factorNormal * torch.nn.functional.mse_loss(output[:, 5:8, :, :], target[:, 5:8, :, :], reduction='mean')
 
-            lossGeneratorOcclusion.append(lossGeneratorOcclusionTriplet)
+            lossGeneratorSurface.append(lossGeneratorSurfaceTriplet)
             lossGeneratorDepth.append(lossGeneratorDepthTriplet)
             lossGeneratorColor.append(lossGeneratorColorTriplet)
             lossGeneratorNormal.append(lossGeneratorNormalTriplet)
 
         # Average all loss terms across the sequence and combine into final loss
         lossGeneratorWasserstein = torch.stack(lossGeneratorWasserstein, dim=0).mean()
-        lossGeneratorOcclusion = torch.stack(lossGeneratorOcclusion, dim=0).mean()
+        lossGeneratorSurface = torch.stack(lossGeneratorSurface, dim=0).mean()
         lossGeneratorDepth = torch.stack(lossGeneratorDepth, dim=0).mean()
         lossGeneratorColor = torch.stack(lossGeneratorColor, dim=0).mean()
         lossGeneratorNormal = torch.stack(lossGeneratorNormal, dim=0).mean()
-        lossGenerator = torch.stack([lossGeneratorWasserstein, lossGeneratorOcclusion, lossGeneratorDepth, lossGeneratorColor, lossGeneratorNormal], dim=0).mean()
+        lossGenerator = torch.stack([lossGeneratorWasserstein, lossGeneratorSurface, lossGeneratorDepth, lossGeneratorColor, lossGeneratorNormal], dim=0).mean()
         
         lossCriticWasserstein = torch.stack(lossCriticWasserstein, dim=0).mean()
 
@@ -262,7 +263,7 @@ while True:
             # Plot generator losses
             summaryWriter.add_scalar('Generator/Loss Generator', lossGenerator, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Wasserstein', lossGeneratorWasserstein, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Occlusion', lossGeneratorOcclusion, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Surface', lossGeneratorSurface, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Depth', lossGeneratorDepth, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Color', lossGeneratorColor, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Normal', lossGeneratorNormal, iteration)
@@ -297,12 +298,12 @@ while True:
             inputColor = inputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
             inputNormal = inputs[snapshotFrameIndex, snapshotSampleIndex, 5:8, :, :]
 
-            outputOcclusion = outputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
+            outputSurface = outputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             outputDepth = outputs[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
             outputColor = outputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
             outputNormal = outputs[snapshotFrameIndex, snapshotSampleIndex, 5:8, :, :]
 
-            targetOcclusion = targets[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
+            targetSurface = targets[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             targetDepth = targets[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
             targetColor = targets[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
             targetNormal = targets[snapshotFrameIndex, snapshotSampleIndex, 5:8, :, :]
@@ -329,8 +330,8 @@ while True:
             plt.imshow(TensorToImage(inputNormal))
             plt.axis('off')
 
-            fig.add_subplot(5, 4, 5).title#.set_text('Output Occlusion')
-            plt.imshow(TensorToImage(outputOcclusion))
+            fig.add_subplot(5, 4, 5).title#.set_text('Output Surface')
+            plt.imshow(TensorToImage(outputSurface))
             plt.axis('off')
             fig.add_subplot(5, 4, 6).title#.set_text('Output Color')
             plt.imshow(TensorToImage(outputColor))
@@ -342,8 +343,8 @@ while True:
             plt.imshow(TensorToImage(outputNormal))
             plt.axis('off')
 
-            fig.add_subplot(5, 4, 9).title#.set_text('Target Occlusion')
-            plt.imshow(TensorToImage(targetOcclusion))
+            fig.add_subplot(5, 4, 9).title#.set_text('Target Surface')
+            plt.imshow(TensorToImage(targetSurface))
             plt.axis('off')
             fig.add_subplot(5, 4, 10).title#.set_text('Target Color')
             plt.imshow(TensorToImage(targetColor))

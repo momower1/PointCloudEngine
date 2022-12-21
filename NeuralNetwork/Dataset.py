@@ -136,24 +136,24 @@ class Dataset:
 
             tensors[renderMode] = texture
 
-        # Add point occlusion mask
+        # Add point surface mask (only points that are on the surface have the value 1)
         meshDepth = tensors['MeshDepth']
         pointDepth = tensors['PointsDepth']
         pointsSparseDepth = tensors['PointsSparseDepth']
 
-        depthEpsilon = 1e-3
-        pointsOcclusion = torch.abs(meshDepth - pointDepth) > depthEpsilon
-        pointsSparseOcclusion = torch.abs(meshDepth - pointsSparseDepth) > depthEpsilon
-        pointsOcclusion[tensors['PointsBackground'] > 0.5] = 0.0
-        pointsSparseOcclusion[tensors['PointsSparseBackground'] > 0.5] = 0.0
-        pointsOcclusion = pointsOcclusion.float()
-        pointsSparseOcclusion = pointsSparseOcclusion.float()
+        depthEpsilon = 1e-2
+        pointsSurface = torch.abs(meshDepth - pointDepth) < depthEpsilon
+        pointsSparseSurface = torch.abs(meshDepth - pointsSparseDepth) < depthEpsilon
+        pointsSurface[tensors['PointsBackground'] > 0.5] = False
+        pointsSparseSurface[tensors['PointsSparseBackground'] > 0.5] = False
+        pointsSurface = pointsSurface.float()
+        pointsSparseSurface = pointsSparseSurface.float()
 
-        tensors['PointsOcclusion'] = pointsOcclusion
-        tensors['PointsSparseOcclusion'] = pointsSparseOcclusion
+        tensors['PointsSurface'] = pointsSurface
+        tensors['PointsSparseSurface'] = pointsSparseSurface
 
-        # Normalize depth after occlusion mask calculation
-        # Be careful: normalized depth can be quite different between points and mesh due to occluded pixel depth
+        # Normalize depth after surface mask calculation
+        # Be careful: normalized depth can be quite different between points and mesh due to non-surface pixel depth
         tensorNames = tensors.keys()
 
         for tensorName in tensorNames:
