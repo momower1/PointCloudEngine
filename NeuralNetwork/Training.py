@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 16
+batchSize = 8
 stepsGenerator = 0
 stepsCritic = 0
 snapshotSkip = 256
@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Deep Surface Keeping 1e-3 Warping Augmented Adaptive 1 Batch 16/'
+checkpointDirectory += 'WGAN Recurrent Generator with Perfect Warping/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -139,15 +139,17 @@ while True:
         for frameIndex in frameGenerationOrder:
             input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseColor'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex]], dim=1)
 
-            output = generator(input)
+            # Generate the output frame, also use the motion vector from the previous frame to the current frame to warp the previous output
+            output = generator(input, sequence['MeshOpticalFlowForward'][frameIndex])
 
+            # TODO: Only do this during evaluation since it makes WGAN training unstable
             # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
-            outputSurface = output[:, 0:1, :, :]
-            outputDepthColorNormal = output[:, 1:8, :, :]
-            inputDepthColorNormal = input[:, 1:8, :, :]
-            outputSurfaceMask = outputSurface.ge(0.5).float()
-            outputDepthColorNormal = outputSurfaceMask * inputDepthColorNormal + (1.0 - outputSurfaceMask) * outputDepthColorNormal
-            output = torch.cat([outputSurface, outputDepthColorNormal], dim=1)
+            #outputSurface = output[:, 0:1, :, :]
+            #outputDepthColorNormal = output[:, 1:8, :, :]
+            #inputDepthColorNormal = input[:, 1:8, :, :]
+            #outputSurfaceMask = outputSurface.ge(0.5).float()
+            #outputDepthColorNormal = outputSurfaceMask * inputDepthColorNormal + (1.0 - outputSurfaceMask) * outputDepthColorNormal
+            #output = torch.cat([outputSurface, outputDepthColorNormal], dim=1)
 
             target = torch.cat([sequence['PointsSparseSurface'][frameIndex], sequence['MeshDepth'][frameIndex], sequence['MeshColor'][frameIndex], sequence['MeshNormalScreen'][frameIndex]], dim=1)
 
@@ -267,6 +269,9 @@ while True:
             summaryWriter.add_scalar('Generator/Loss Generator Depth', lossGeneratorDepth, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Color', lossGeneratorColor, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Normal', lossGeneratorNormal, iteration)
+
+        # Need to detach previous output for next generator iteration
+        generator.DetachPrevious()
 
         # Update wasserstein loss ratios for adaptive WGAN training
         if lossCriticWassersteinPrevious is not None and lossGeneratorWassersteinPrevious is not None:
