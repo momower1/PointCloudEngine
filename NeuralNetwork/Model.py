@@ -8,7 +8,8 @@ def ApplyWeightNormalization(model):
 def InitializeParameters(model):
     for module in model.modules():
         if type(module) is torch.nn.Conv2d or type(module) is torch.nn.ConvTranspose2d:
-            torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
+            #torch.nn.init.xavier_uniform_(module.weight, torch.nn.init.calculate_gain('leaky_relu', 0.25))
+            torch.nn.init.xavier_normal_(module.weight, 0.1)
 
 class Model(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerLayers=1):

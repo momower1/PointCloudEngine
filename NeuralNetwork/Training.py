@@ -21,7 +21,7 @@ stepsGenerator = 0
 stepsCritic = 0
 snapshotSkip = 256
 batchIndexStart = 0
-learningRate = 5e-4
+learningRate = 1e-3
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
 adaptiveUpdateCoefficient = 1.0
@@ -42,7 +42,7 @@ factorColor = 0#10.0
 factorNormal = 0#2.5
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Recurrent Generator Perfect Warping 8 Frames Batch 2 5e-4/'
+checkpointDirectory += 'WGAN Recurrent Generator Perfect Warping 8 Frames Batch 2 1e-3 Normal Init/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
