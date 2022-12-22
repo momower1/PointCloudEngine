@@ -54,6 +54,16 @@ void Scene::Initialize()
 		CUgraphicsResource cudaResource;
 		cudaResult = cuGraphicsD3D11RegisterResource(&cudaResource, backBufferTexture, CU_GRAPHICS_REGISTER_FLAGS_NONE);
 
+		// Possibly the mapping is not even necessary, depending on how a tensor is created in pytorch
+		CUstream cudaStream;
+		cudaResult = cuStreamCreate(&cudaStream, CU_STREAM_DEFAULT);
+		cudaResult = cuGraphicsMapResources(1, &cudaResource, cudaStream);
+
+		CUarray cudaArray;
+		cudaResult = cuGraphicsSubResourceGetMappedArray(&cudaArray, cudaResource, 0, 0);
+
+		cudaResult = cuGraphicsUnmapResources(1, &cudaResource, cudaStream);
+
 		cudaResult = cuGraphicsUnregisterResource(cudaResource);
 
 		cudaResult = cuCtxDestroy(cudaContext);
