@@ -90,8 +90,11 @@ void Scene::Initialize()
 
 		cudaResult = cuMemcpy2D(&memCopy2D);
 
+		WARNING_MESSAGE_ON_FAIL(torch::cuda::is_available(), L"CUDA not available!");
+
 		// TODO: Maybe need to copy to some pointer (that can be used in pytorch) with cuMemcpy2D
 		c10::TensorOptions tensorOptions = c10::TensorOptions().device(torch::kCUDA).dtype(torch::kF16).layout(torch::kStrided);
+		at::Tensor test = torch::zeros({ 1, h, w, c }, c10::TensorOptions().device(torch::kCUDA, cudaDevice).dtype(torch::kF32));
 		at::Tensor tensor = torch::from_blob((void*)cudaData, { 1, h, w, c }, tensorOptions);
 
 		cudaResult = cuGraphicsUnmapResources(1, &cudaResource, cudaStream);
