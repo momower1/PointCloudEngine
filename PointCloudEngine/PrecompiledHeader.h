@@ -1,11 +1,9 @@
 // FOR NOW IGNORE THE OLD PYTORCH AND HDF5 IMPLEMENTATION
 #define IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 // Pytorch
 #include <torch/script.h>
 #include <torch/torch.h>
-#endif
 
 #include <windows.h>
 #include <windowsx.h>

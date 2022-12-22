@@ -42,14 +42,14 @@ void Scene::Initialize()
 		cudaResult = cuInit(0);
 
 		UINT cudaDeviceCount;
-		CUdevice cudaDevices;
-		cudaResult = cuD3D11GetDevices(&cudaDeviceCount, &cudaDevices, 1, d3d11Device, CUd3d11DeviceList::CU_D3D11_DEVICE_LIST_ALL);
+		CUdevice cudaDevice;
+		cudaResult = cuD3D11GetDevices(&cudaDeviceCount, &cudaDevice, 1, d3d11Device, CUd3d11DeviceList::CU_D3D11_DEVICE_LIST_ALL);
 
 		CUcontext cudaContext;
 		//CUdevice cudaDevice;
 		//cudaResult = cuD3D11CtxCreate(&cudaContext, &cudaDevice, CU_CTX_SCHED_AUTO, d3d11Device);
 
-		cudaResult = cuCtxCreate(&cudaContext, CU_CTX_SCHED_AUTO, cudaDevices);
+		cudaResult = cuCtxCreate(&cudaContext, CU_CTX_SCHED_AUTO, cudaDevice);
 
 		CUgraphicsResource cudaResource;
 		cudaResult = cuGraphicsD3D11RegisterResource(&cudaResource, backBufferTexture, CU_GRAPHICS_REGISTER_FLAGS_NONE);
@@ -61,6 +61,38 @@ void Scene::Initialize()
 
 		CUarray cudaArray;
 		cudaResult = cuGraphicsSubResourceGetMappedArray(&cudaArray, cudaResource, 0, 0);
+
+		CUDA_ARRAY_DESCRIPTOR cudaArrayDescriptor;
+		cudaResult = cuArrayGetDescriptor(&cudaArrayDescriptor, cudaArray);
+
+		long long elementSizeInBytes = 2;
+		long long c = cudaArrayDescriptor.NumChannels;
+		long long h = cudaArrayDescriptor.Height;
+		long long w = cudaArrayDescriptor.Width;
+
+		CUdeviceptr cudaData;
+		cudaResult = cuMemAlloc(&cudaData, elementSizeInBytes * c * h * w);
+
+		//c10::Device device(c10::DeviceType::CUDA, cudaDevice);
+
+		CUDA_MEMCPY2D memCopy2D;
+		ZeroMemory(&memCopy2D, sizeof(memCopy2D));
+		memCopy2D.srcMemoryType = CU_MEMORYTYPE_ARRAY;
+		memCopy2D.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+		memCopy2D.dstDevice = cudaData;
+		memCopy2D.dstPitch = elementSizeInBytes * c * w;
+		memCopy2D.srcXInBytes = 0;
+		memCopy2D.srcY = 0;
+		memCopy2D.dstXInBytes = 0;
+		memCopy2D.dstY = 0;
+		memCopy2D.WidthInBytes = elementSizeInBytes * c * w;
+		memCopy2D.Height = h;
+
+		cudaResult = cuMemcpy2D(&memCopy2D);
+
+		// TODO: Maybe need to copy to some pointer (that can be used in pytorch) with cuMemcpy2D
+		c10::TensorOptions tensorOptions = c10::TensorOptions().device(torch::kCUDA).dtype(torch::kF16).layout(torch::kStrided);
+		at::Tensor tensor = torch::from_blob((void*)cudaData, { 1, h, w, c }, tensorOptions);
 
 		cudaResult = cuGraphicsUnmapResources(1, &cudaResource, cudaStream);
 
