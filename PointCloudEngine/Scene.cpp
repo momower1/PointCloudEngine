@@ -35,6 +35,31 @@ void Scene::Initialize()
 	{
 		settings->loadMeshFile = true;
 	}
+
+	// TODO: Testing CUDA and D3D11 interoperability
+	{
+		CUresult cudaResult;
+		cudaResult = cuInit(0);
+
+		UINT cudaDeviceCount;
+		CUdevice cudaDevices;
+		cudaResult = cuD3D11GetDevices(&cudaDeviceCount, &cudaDevices, 1, d3d11Device, CUd3d11DeviceList::CU_D3D11_DEVICE_LIST_ALL);
+
+		CUcontext cudaContext;
+		//CUdevice cudaDevice;
+		//cudaResult = cuD3D11CtxCreate(&cudaContext, &cudaDevice, CU_CTX_SCHED_AUTO, d3d11Device);
+
+		cudaResult = cuCtxCreate(&cudaContext, CU_CTX_SCHED_AUTO, cudaDevices);
+
+		CUgraphicsResource cudaResource;
+		cudaResult = cuGraphicsD3D11RegisterResource(&cudaResource, backBufferTexture, CU_GRAPHICS_REGISTER_FLAGS_NONE);
+
+		cudaResult = cuGraphicsUnregisterResource(cudaResource);
+
+		cudaResult = cuCtxDestroy(cudaContext);
+
+		std::cout << "Done" << std::endl;
+	}
 }
 
 void Scene::Update(Timer &timer)

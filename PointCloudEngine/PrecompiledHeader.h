@@ -52,3 +52,7 @@
 #include "SpriteFont.h"
 #include "VertexTypes.h"
 #include "WICTextureLoader.h"
+
+// Cuda Toolkit
+#include "cuda.h"
+#include "cudaD3D11.h"
