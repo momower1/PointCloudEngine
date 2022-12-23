@@ -943,6 +943,8 @@ void DrawScene()
 
 		cudaResult = cuGraphicsUnregisterResource(cudaResource);
 
+		cudaResult = cuMemFree(cudaData);
+
 		cudaResult = cuCtxDestroy(cudaContext);
 
 		std::cout << "Done" << std::endl;
