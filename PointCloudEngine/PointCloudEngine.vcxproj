@@ -89,7 +89,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -97,7 +97,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
@@ -109,7 +109,8 @@
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"</Command>
+copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -123,7 +124,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -131,7 +132,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
@@ -143,7 +144,8 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"</Command>
+copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -159,7 +161,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -169,7 +171,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
@@ -181,7 +183,8 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"</Command>
+copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -197,7 +200,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -207,7 +210,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
@@ -219,7 +222,8 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"</Command>
+copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
