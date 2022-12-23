@@ -32,17 +32,18 @@ generator = PullPushModel(8, 8, 16).to(device)
 optimizerGenerator = torch.optim.Adam(generator.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerGenerator = torch.optim.lr_scheduler.ExponentialLR(optimizerGenerator, gamma=schedulerDecayRate, verbose=False)
 
-critic = CriticDeep(128, 48).to(device)
+critic = Critic(48, 1, 48).to(device)
 optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
-factorSurface = 0#1.0
-factorDepth = 0#5.0
-factorColor = 0#10.0
-factorNormal = 0#2.5
+factorSurface = 1.0
+factorDepth = 5.0
+factorColor = 10.0
+factorNormal = 2.5
+factorTemporal = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Recurrent Generator Perfect Warping 8 Frames Batch 2 1e-3 Normal Init/'
+checkpointDirectory += 'WGAN Recurrent Perfect Warping 8 Frames Batch 2 1e-3/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -170,6 +171,7 @@ while True:
         lossGeneratorDepth = []
         lossGeneratorColor = []
         lossGeneratorNormal = []
+        lossGeneratorTemporal = []
         lossCriticWasserstein = []
         lossCriticGradientPenalty = []
 
@@ -223,11 +225,15 @@ while True:
             lossGeneratorDepthTriplet = factorDepth * torch.nn.functional.mse_loss(output[:, 1:2, :, :], target[:, 1:2, :, :], reduction='mean')
             lossGeneratorColorTriplet = factorColor * torch.nn.functional.mse_loss(output[:, 2:5, :, :], target[:, 2:5, :, :], reduction='mean')
             lossGeneratorNormalTriplet = factorNormal * torch.nn.functional.mse_loss(output[:, 5:8, :, :], target[:, 5:8, :, :], reduction='mean')
+            lossGeneratorTemporalPrevious = factorTemporal * torch.nn.functional.mse_loss(outputPreviousWarped, output, reduction='mean')
+            lossGeneratorTemporalNext = factorTemporal * torch.nn.functional.mse_loss(outputNextWarped, output, reduction='mean')
+            lossGeneratorTemporalTriplet = lossGeneratorTemporalPrevious + lossGeneratorTemporalNext
 
             lossGeneratorSurface.append(lossGeneratorSurfaceTriplet)
             lossGeneratorDepth.append(lossGeneratorDepthTriplet)
             lossGeneratorColor.append(lossGeneratorColorTriplet)
             lossGeneratorNormal.append(lossGeneratorNormalTriplet)
+            lossGeneratorTemporal.append(lossGeneratorTemporalTriplet)
 
         # Average all loss terms across the sequence and combine into final loss
         lossGeneratorWasserstein = torch.stack(lossGeneratorWasserstein, dim=0).mean()
@@ -235,7 +241,8 @@ while True:
         lossGeneratorDepth = torch.stack(lossGeneratorDepth, dim=0).mean()
         lossGeneratorColor = torch.stack(lossGeneratorColor, dim=0).mean()
         lossGeneratorNormal = torch.stack(lossGeneratorNormal, dim=0).mean()
-        lossGenerator = torch.stack([lossGeneratorWasserstein, lossGeneratorSurface, lossGeneratorDepth, lossGeneratorColor, lossGeneratorNormal], dim=0).mean()
+        lossGeneratorTemporal = torch.stack(lossGeneratorTemporal, dim=0).mean()
+        lossGenerator = torch.stack([lossGeneratorWasserstein, lossGeneratorSurface, lossGeneratorDepth, lossGeneratorColor, lossGeneratorNormal, lossGeneratorTemporal], dim=0).mean()
         
         lossCriticWasserstein = torch.stack(lossCriticWasserstein, dim=0).mean()
 
@@ -269,6 +276,7 @@ while True:
             summaryWriter.add_scalar('Generator/Loss Generator Depth', lossGeneratorDepth, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Color', lossGeneratorColor, iteration)
             summaryWriter.add_scalar('Generator/Loss Generator Normal', lossGeneratorNormal, iteration)
+            summaryWriter.add_scalar('Generator/Loss Generator Temporal', lossGeneratorTemporal, iteration)
 
         # Need to detach previous output for next generator iteration
         generator.DetachPrevious()
