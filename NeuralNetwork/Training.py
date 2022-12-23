@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=8)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -36,14 +36,14 @@ critic = Critic(48, 1, 48).to(device)
 optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
-factorSurface = 1.0
-factorDepth = 5.0
-factorColor = 10.0
-factorNormal = 2.5
-factorTemporal = 1.0
+factorSurface = 100.0
+factorDepth = 100.0
+factorColor = 100.0
+factorNormal = 100.0
+factorTemporal = 100.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Recurrent Perfect Warping 8 Frames Batch 2 1e-3/'
+checkpointDirectory += 'WGAN Recurrent Perfect Warping 3 Frames Batch 2 1e-3/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
