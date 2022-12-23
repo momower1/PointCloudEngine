@@ -885,6 +885,7 @@ void DrawScene()
 		cudaResult = cuGraphicsSubResourceGetMappedArray(&cudaArray, cudaResource, 0, 0);
 
 		// TODO: Try directly taking the pointer instead to avoid additional memory copy (but apparently there will be errors due to texture layout)
+		// TODO: For the model, actually only share a single buffer instead of a texture
 		//cuGraphicsResourceGetMappedPointer()
 
 		CUDA_ARRAY_DESCRIPTOR cudaArrayDescriptor;
