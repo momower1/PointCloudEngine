@@ -90,6 +90,11 @@ void Scene::Initialize()
 
 		cudaResult = cuMemcpy2D(&memCopy2D);
 
+		//LoadLibrary(L"c10_cuda.dll");
+		//LoadLibrary(L"torch_cuda.dll");
+		//LoadLibrary(L"torch_cuda_cpp.dll");
+		//LoadLibrary(L"torch_cuda_cu.dll");
+
 		WARNING_MESSAGE_ON_FAIL(torch::cuda::is_available(), L"CUDA not available!");
 
 		// TODO: Maybe need to copy to some pointer (that can be used in pytorch) with cuMemcpy2D

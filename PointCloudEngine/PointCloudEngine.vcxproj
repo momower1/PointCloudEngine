@@ -98,7 +98,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -132,7 +132,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -170,7 +170,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -208,7 +208,7 @@ copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dl
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
