@@ -36,11 +36,11 @@ critic = Critic(48, 1, 48).to(device)
 optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
 schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
 
-factorSurface = 100.0
-factorDepth = 100.0
-factorColor = 100.0
-factorNormal = 100.0
-factorTemporal = 100.0
+factorSurface = 200.0
+factorDepth = 1000.0
+factorColor = 3000.0
+factorNormal = 1000.0
+factorTemporal = 1000.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
 checkpointDirectory += 'WGAN Recurrent Perfect Warping 3 Frames Batch 2 1e-3/'
