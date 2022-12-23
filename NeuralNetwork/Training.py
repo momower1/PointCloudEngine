@@ -221,6 +221,7 @@ while True:
                 lossCriticGradientPenalty.append(lossCriticGradientPenaltyTriplet)
 
             # Add supervised generator loss terms
+            # TODO: Temporal loss term should consider occlusion/invalid motion ouf warped output (remove these areas before computing the MSE)
             lossGeneratorSurfaceTriplet = factorSurface * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
             lossGeneratorDepthTriplet = factorDepth * torch.nn.functional.mse_loss(output[:, 1:2, :, :], target[:, 1:2, :, :], reduction='mean')
             lossGeneratorColorTriplet = factorColor * torch.nn.functional.mse_loss(output[:, 2:5, :, :], target[:, 2:5, :, :], reduction='mean')
