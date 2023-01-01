@@ -238,3 +238,63 @@ class CriticDeep(torch.nn.Module):
         act = act.view(n)
 
         return act
+
+class Unet(torch.nn.Module):
+    def __init__(self, inChannels=8, outChannels=8, innerChannels=8, layerCount=4):
+        super(Unet, self).__init__()
+        self.layerCount = layerCount
+        self.encoderConvs = torch.nn.ModuleList()
+        self.encoderPrelus = torch.nn.ModuleList()
+        self.decoderConvs = torch.nn.ModuleList()
+        self.decoderPrelus = torch.nn.ModuleList()
+        self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
+        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
+        self.sigmoid = torch.nn.Sigmoid()
+
+        for layerIndex in range(self.layerCount):
+            self.encoderConvs.append(torch.nn.Conv2d(pow(2, layerIndex) * innerChannels, pow(2, layerIndex + 1) * innerChannels, 4, 2, 1))
+            self.encoderPrelus.append(torch.nn.PReLU(1, 0.25))
+
+        for layerIndex in range(self.layerCount - 1, -1, -1):
+            self.decoderConvs.append(torch.nn.ConvTranspose2d(pow(2, layerIndex + 1) * innerChannels, pow(2, layerIndex) * innerChannels, 4, 2, 1))
+            self.decoderPrelus.append(torch.nn.PReLU(1, 0.25))
+
+        InitializeParameters(self)
+        ApplyWeightNormalization(self)
+
+    def forward(self, input):
+        n, c, h, w = input.shape
+
+        # Calculate padding
+        multiple = pow(2, self.layerCount)
+        widthPadding = (multiple - (w % multiple)) % multiple
+        heightPadding = (multiple - (h % multiple)) % multiple
+
+        # Pad so that the strided convolution operations are valid
+        input = torch.nn.functional.pad(input, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+
+        # Perform start convolution
+        act = self.preluStart(self.convStart(input))
+
+        # Store encoder embeddings for residual connection during decoder phase
+        residuals = [act]
+
+        # Encoder layers
+        for layerIndex in range(self.layerCount):
+            act = self.encoderPrelus[layerIndex](self.encoderConvs[layerIndex](act))
+            residuals.append(act)
+
+        residuals.pop()
+
+        # Decoder layers
+        for layerIndex in range(self.layerCount):
+            act = self.decoderPrelus[layerIndex](self.decoderConvs[layerIndex](act))
+
+            # Residual connection
+            act = act + residuals.pop()
+
+        # Perform end convolution
+        act = self.sigmoid(self.convEnd(act))
+
+        return act
