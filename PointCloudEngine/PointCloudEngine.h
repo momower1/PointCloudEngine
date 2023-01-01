@@ -142,6 +142,8 @@ void InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 void ResizeSceneAndUserInterface();
 void InitializeDirectXCudaPytorchInteroperability();
 void ExecuteDirectXCudaPytorchInteroperability();
+void InitializeDirectXCudaResources();
+void ReleaseDirectXCudaResources();
 void ReleaseDirectXCudaPytorchInteroperability();
 int Messageloop();
 LRESULT CALLBACK WindowProcEngine(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

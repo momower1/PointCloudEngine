@@ -61,7 +61,7 @@ ID3D11ShaderResourceView* nullSRV[1] = { NULL };
 
 // CUDA
 CUresult cudaResult;
-CUdevice cudaDevice = NULL;
+CUdevice cudaDevice;
 CUcontext cudaContext = NULL;
 CUstream cudaStream = NULL;
 CUgraphicsResource cudaGraphicsResourceBackbuffer = NULL;
@@ -350,30 +350,22 @@ void ResizeSceneAndUserInterface()
 
 void InitializeDirectXCudaPytorchInteroperability()
 {
-	ReleaseDirectXCudaPytorchInteroperability();
-
 	// Need to explicitly load Pytorch cuda dll in order for CUDA to be found by Pytorch
-	if (pytorchDllLibrary == NULL)
-	{
-		pytorchDllLibrary = LoadLibrary(L"torch_cuda.dll");
-		//LoadLibrary(L"c10_cuda.dll");
-		//LoadLibrary(L"torch_cuda_cpp.dll");
-		//LoadLibrary(L"torch_cuda_cu.dll");
-	}
+	LoadLibrary(L"torch_cuda.dll");
+	//LoadLibrary(L"c10_cuda.dll");
+	//LoadLibrary(L"torch_cuda_cpp.dll");
+	//LoadLibrary(L"torch_cuda_cu.dll");
 
 	ERROR_MESSAGE_ON_FAIL(torch::cuda::is_available(), L"Pytorch: CUDA not available!");
 
-	if (cudaDevice == NULL)
-	{
-		// Initialize the CUDA library
-		cudaResult = cuInit(0);
-		ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuInit) + L" failed!");
+	// Initialize the CUDA library
+	cudaResult = cuInit(0);
+	ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuInit) + L" failed!");
 
-		// Get the CUDA device that matches the DirectX device
-		UINT cudaDeviceCount;
-		cudaResult = cuD3D11GetDevices(&cudaDeviceCount, &cudaDevice, 1, d3d11Device, CUd3d11DeviceList::CU_D3D11_DEVICE_LIST_ALL);
-		ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuD3D11GetDevices) + L" failed!");
-	}
+	// Get the CUDA device that matches the DirectX device
+	UINT cudaDeviceCount;
+	cudaResult = cuD3D11GetDevices(&cudaDeviceCount, &cudaDevice, 1, d3d11Device, CUd3d11DeviceList::CU_D3D11_DEVICE_LIST_ALL);
+	ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuD3D11GetDevices) + L" failed!");
 
 	// Create a CUDA device context
 	cudaResult = cuCtxCreate(&cudaContext, CU_CTX_SCHED_AUTO, cudaDevice);
@@ -382,10 +374,6 @@ void InitializeDirectXCudaPytorchInteroperability()
 	// Create a CUDA stream that is required for memory mapping
 	cudaResult = cuStreamCreate(&cudaStream, CU_STREAM_DEFAULT);
 	ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuStreamCreate) + L" failed!");
-
-	// Register a shared handle to the DirectX backbuffer texture
-	cudaResult = cuGraphicsD3D11RegisterResource(&cudaGraphicsResourceBackbuffer, backBufferTexture, CU_GRAPHICS_REGISTER_FLAGS_NONE);
-	ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuGraphicsD3D11RegisterResource) + L" failed!");
 }
 
 void ExecuteDirectXCudaPytorchInteroperability()
@@ -464,20 +452,37 @@ void ExecuteDirectXCudaPytorchInteroperability()
 	ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuMemFree) + L" failed!");
 }
 
-void ReleaseDirectXCudaPytorchInteroperability()
+void InitializeDirectXCudaResources()
 {
-	if (cudaStream != NULL)
-	{
-		cudaResult = cuStreamDestroy(cudaStream);
-		ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuStreamDestroy) + L" failed!");
-		cudaStream = NULL;
-	}
+	ReleaseDirectXCudaResources();
 
+	if (cudaGraphicsResourceBackbuffer == NULL)
+	{
+		// Register a shared handle to the DirectX backbuffer texture
+		cudaResult = cuGraphicsD3D11RegisterResource(&cudaGraphicsResourceBackbuffer, backBufferTexture, CU_GRAPHICS_REGISTER_FLAGS_NONE);
+		ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuGraphicsD3D11RegisterResource) + L" failed!");
+	}
+}
+
+void ReleaseDirectXCudaResources()
+{
 	if (cudaGraphicsResourceBackbuffer != NULL)
 	{
 		cudaResult = cuGraphicsUnregisterResource(cudaGraphicsResourceBackbuffer);
 		ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuGraphicsUnregisterResource) + L" failed!");
 		cudaGraphicsResourceBackbuffer = NULL;
+	}
+}
+
+void ReleaseDirectXCudaPytorchInteroperability()
+{
+	ReleaseDirectXCudaResources();
+
+	if (cudaStream != NULL)
+	{
+		cudaResult = cuStreamDestroy(cudaStream);
+		ERROR_MESSAGE_ON_CUDA(cudaResult, NAMEOF(cuStreamDestroy) + L" failed!");
+		cudaStream = NULL;
 	}
 
 	if (cudaContext != NULL)
@@ -591,8 +596,9 @@ void InitializeRenderingResources()
 	}
 	else
 	{
+		ReleaseDirectXCudaResources();
+
 		// There is already an exisiting device, context and swap chain, just resize the buffer
-		ReleaseDirectXCudaPytorchInteroperability();
 		swapChain->ResizeBuffers(0, settings->resolutionX, settings->resolutionY, DXGI_FORMAT_R16G16B16A16_FLOAT, 0);
 	}
 
@@ -740,7 +746,13 @@ void InitializeRenderingResources()
 	hr = d3d11Device->CreateDepthStencilState(&disabledDepthStencilStateDesc, &disabledDepthStencilState);
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateDepthStencilState) + L" failed for the " + NAMEOF(disabledDepthStencilState));
 
-	InitializeDirectXCudaPytorchInteroperability();
+	// Only initialize the DirectX to CUDA to Pytorch interoperability once
+	if (cudaContext == NULL)
+	{
+		InitializeDirectXCudaPytorchInteroperability();
+	}
+
+	InitializeDirectXCudaResources();
 }
 
 // Main part of the program
