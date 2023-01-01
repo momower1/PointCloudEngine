@@ -140,6 +140,9 @@ extern void InitializeRenderingResources();
 // Function declarations
 void InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 void ResizeSceneAndUserInterface();
+void InitializeDirectXCudaPytorchInteroperability();
+void ExecuteDirectXCudaPytorchInteroperability();
+void ReleaseDirectXCudaPytorchInteroperability();
 int Messageloop();
 LRESULT CALLBACK WindowProcEngine(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void ReleaseObjects();
