@@ -66,9 +66,6 @@ CUcontext cudaContext = NULL;
 CUstream cudaStream = NULL;
 CUgraphicsResource cudaGraphicsResourceBackbuffer = NULL;
 
-// Pytorch
-HMODULE pytorchDllLibrary = NULL;
-
 bool LoadPointcloudFile(std::vector<Vertex>& outVertices, Vector3& outBoundingCubePosition, float& outBoundingCubeSize, const std::wstring& pointcloudFile)
 {
 	try
