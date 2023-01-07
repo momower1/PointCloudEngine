@@ -73,8 +73,6 @@ void PointCloudEngine::GUI::Initialize()
 	}
 
 	OnSelectTab(0);
-	OnSelectViewMode();
-	OnSelectShadingMode();
 	UpdateWindow(hwndGUI);
 }
 
@@ -153,7 +151,7 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	}
 	else
 	{
-		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 5)));
+		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 6)));
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
@@ -397,7 +395,6 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 		case 0:
 		{
 			ShowElements(rendererElements);
-			OnSelectViewMode();
 
 			if (settings->useOctree)
 			{
@@ -407,6 +404,9 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 			{
 				rendererElements[2]->Show(SW_HIDE);
 			}
+
+			OnSelectViewMode();
+			OnSelectShadingMode();
 			break;
 		}
 		case 1:
