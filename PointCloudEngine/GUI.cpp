@@ -141,8 +141,8 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 
 void PointCloudEngine::GUI::SetVisible(bool visible)
 {
-	ShowWindow(hwndGUI, visible ? SW_SHOW : SW_HIDE);
-	
+	ShowWindow(hwndGUI, SW_HIDE);
+
 	if (settings->useOctree)
 	{
 		((GUIDropdown*)rendererElements[2])->SetSelection(min((int)settings->viewMode, 2));
@@ -152,9 +152,12 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	else
 	{
 		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 6)));
+		((GUIDropdown*)rendererElements[4])->SetSelection((int)settings->shadingMode);
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
+
+	ShowWindow(hwndGUI, visible ? SW_SHOW : SW_HIDE);
 }
 
 void PointCloudEngine::GUI::ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND)
