@@ -12,6 +12,7 @@ public:
 	static void Release();
 	static void InitializeSharedResources();
 	static void ReleaseSharedResources();
+	static torch::Tensor GetDepthTensor();
 	static void Execute();
 
 private:
@@ -20,7 +21,12 @@ private:
 	static CUdevice cudaDevice;
 	static CUcontext cudaContext;
 	static CUstream cudaStream;
+	static ID3D11Texture2D* depthTextureCopy;
+	static CUgraphicsResource cudaGraphicsResourceDepth;
 	static CUgraphicsResource cudaGraphicsResourceBackbuffer;
+
+	static torch::Tensor GetTensorFromSharedTexture(CUgraphicsResource &cudaGraphicsResource);
+	static void SetSharedTextureFromTensor(CUgraphicsResource &cudaGraphicsResource, torch::Tensor &tensor);
 };
 
 #endif
