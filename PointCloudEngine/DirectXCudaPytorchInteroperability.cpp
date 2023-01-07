@@ -120,25 +120,19 @@ void DirectXCudaPytorchInteroperability::ReleaseSharedResources()
 
 torch::Tensor DirectXCudaPytorchInteroperability::GetDepthTensor()
 {
-	return torch::Tensor();
+	// Need to first copy data from the actual depth texture to the mappable texture copy
+	d3d11DevCon->CopyResource(depthTextureCopy, depthStencilTexture);
+
+	return GetTensorFromSharedTexture(cudaGraphicsResourceDepth);
 }
 
-void DirectXCudaPytorchInteroperability::Execute()
+torch::Tensor DirectXCudaPytorchInteroperability::GetBackbufferTensor()
 {
-	at::Tensor tensor = GetTensorFromSharedTexture(cudaGraphicsResourceBackbuffer);
+	return GetTensorFromSharedTexture(cudaGraphicsResourceBackbuffer);
+}
 
-	long long n = tensor.size(0);
-	long long h = tensor.size(1);
-	long long w = tensor.size(2);
-	long long c = tensor.size(3);
-
-	// Perform operations on the tensor
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 2), at::indexing::Slice() }, 0.0f);
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, h / 3), at::indexing::Slice(0, w / 2), at::indexing::Slice(0, 1) }, 1.0f);
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(h / 3, (2 * h) / 3), at::indexing::Slice(0, w / 2), at::indexing::Slice(1, 2) }, 1.0f);
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice((2 * h) / 3, h), at::indexing::Slice(0, w / 2), at::indexing::Slice(2, 3) }, 1.0f);
-	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 2, w), at::indexing::Slice() }, 1.0f);
-
+void DirectXCudaPytorchInteroperability::SetBackbufferFromTensor(torch::Tensor& tensor)
+{
 	SetSharedTextureFromTensor(cudaGraphicsResourceBackbuffer, tensor);
 }
 

@@ -13,7 +13,8 @@ public:
 	static void InitializeSharedResources();
 	static void ReleaseSharedResources();
 	static torch::Tensor GetDepthTensor();
-	static void Execute();
+	static torch::Tensor GetBackbufferTensor();
+	static void SetBackbufferFromTensor(torch::Tensor& tensor);
 
 private:
 	static bool initialized;

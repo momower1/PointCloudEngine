@@ -857,9 +857,6 @@ void DrawScene()
     // Draw scene
 	scene->Draw();
 
-	// TODO: Testing CUDA and D3D11 interoperability
-	DXCUDATORCH::Execute();
-
 	// Gamma correction is automatically applied in full screen mode, only apply it to the texture after presenting it to the screen (then screenshots will also be gamma corrected)
 	// In window mode the gamma correction has to be done before presenting it to the screen
 	BOOL fullscreen;

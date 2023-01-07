@@ -214,6 +214,36 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	// - Evaluate neural network
 	// - Copy result based on shading mode back to backbuffer
 	// - Present
+	ShadingMode startShadingMode = settings->shadingMode;
+
+	settings->viewMode = ViewMode::SparsePoints;
+	settings->shadingMode = ShadingMode::Color;
+
+	Redraw(false);
+
+	at::Tensor depthTensor = DXCUDATORCH::GetDepthTensor();
+	at::Tensor colorTensor = DXCUDATORCH::GetBackbufferTensor();
+
+	long long h = colorTensor.size(1);
+	long long w = colorTensor.size(2);
+	long long c = colorTensor.size(3);
+
+	// Perform operations on the tensor
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 2), at::indexing::Slice() }, 0.0f);
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, h / 3), at::indexing::Slice(0, w / 2), at::indexing::Slice(0, 1) }, 1.0f);
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(h / 3, (2 * h) / 3), at::indexing::Slice(0, w / 2), at::indexing::Slice(1, 2) }, 1.0f);
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice((2 * h) / 3, h), at::indexing::Slice(0, w / 2), at::indexing::Slice(2, 3) }, 1.0f);
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 2, w), at::indexing::Slice() }, 1.0f);
+
+	torch::Tensor backgroundMask = depthTensor.ge(1.0f);
+
+	torch::Tensor tensor = depthTensor * (1.0f - backgroundMask.to(torch::kFloat));
+	tensor = tensor.repeat({ 1, 1, 1, 4 }).to(torch::kHalf);
+
+	DXCUDATORCH::SetBackbufferFromTensor(tensor);
+
+	settings->viewMode = ViewMode::NeuralNetwork;
+	settings->shadingMode = startShadingMode;
 }
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
