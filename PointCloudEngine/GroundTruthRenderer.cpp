@@ -56,17 +56,13 @@ void GroundTruthRenderer::Update()
 
 void GroundTruthRenderer::Draw()
 {
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Evaluate neural network and present the result to the screen
 	if (settings->viewMode == ViewMode::NeuralNetwork)
 	{
 		DrawNeuralNetwork();
 		return;
 	}
-	else
-#endif
-
-	if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
+	else if (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats)
 	{
 		// Set the splat shaders
 		d3d11DevCon->VSSetShader(splatShader->vertexShader, 0, 0);
@@ -208,6 +204,16 @@ void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)
 		// Present the result to the screen
 		swapChain->Present(0, 0);
 	}
+}
+
+void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
+{
+	// TODO
+	// - Draw point depth, color, normal screen, optical flow
+	// - Convert to pytorch tensors
+	// - Evaluate neural network
+	// - Copy result based on shading mode back to backbuffer
+	// - Present
 }
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION

@@ -60,6 +60,7 @@ namespace PointCloudEngine
 		PullPush* pullPush = NULL;
 
 		void Redraw(bool present);
+		void DrawNeuralNetwork();
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		// Maps from the name of the render mode to the view mode (x) and the shading mode (y)
@@ -114,7 +115,6 @@ namespace PointCloudEngine
 		// Since we don't use model.backward() it should be fine
 		torch::NoGradGuard noGradGuard;
 
-		void DrawNeuralNetwork();
 		void CalculateLosses();
 		void RenderToTensor(std::wstring renderMode, torch::Tensor& tensor);
 		void CopyBackbufferTextureToTensor(torch::Tensor &tensor);
