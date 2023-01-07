@@ -294,6 +294,7 @@ copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(Out
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DirectXCudaPytorchInteroperability.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="HDF5File.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
@@ -323,6 +324,7 @@ copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(Out
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="DirectXCudaPytorchInteroperability.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="GUIButton.h" />
     <ClInclude Include="GUICheckbox.h" />

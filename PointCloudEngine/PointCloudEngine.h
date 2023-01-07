@@ -62,6 +62,7 @@ namespace PointCloudEngine
 
 using namespace PointCloudEngine;
 
+#include "DirectXCudaPytorchInteroperability.h"
 #include "Transform.h"
 #include "Camera.h"
 #include "Input.h"
@@ -140,11 +141,6 @@ extern void InitializeRenderingResources();
 // Function declarations
 void InitializeWindow(HINSTANCE hInstance, int ShowWnd);
 void ResizeSceneAndUserInterface();
-void InitializeDirectXCudaPytorchInteroperability();
-void ExecuteDirectXCudaPytorchInteroperability();
-void InitializeDirectXCudaResources();
-void ReleaseDirectXCudaResources();
-void ReleaseDirectXCudaPytorchInteroperability();
 int Messageloop();
 LRESULT CALLBACK WindowProcEngine(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void ReleaseObjects();
