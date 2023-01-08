@@ -113,7 +113,7 @@ class Dataset:
             texture = textures[renderMode]
 
             # Normalize depth into [0, 1] range and add a foreground/background mask
-            if renderMode.find('Depth') >= 0:
+            if 'Depth' in renderMode:
                 viewMode = renderMode.split('Depth')[0]
 
                 if viewMode == 'PullPush':
@@ -131,7 +131,7 @@ class Dataset:
                 texture = texture[0:3, :, :]
 
             # Slice away optical flow channels that are not needed
-            if renderMode.find('OpticalFlow') >= 0:
+            if 'OpticalFlow' in renderMode:
                 texture = texture[0:2, :, :]
 
             tensors[renderMode] = texture
@@ -157,7 +157,7 @@ class Dataset:
         tensorNames = tensors.keys()
 
         for tensorName in tensorNames:
-            if tensorName.find('Depth') >= 0:
+            if 'Depth' in tensorName:
                 viewMode = tensorName.split('Depth')[0]
                 tensors[tensorName] = NormalizeDepthTexture(tensors[tensorName], tensors[viewMode + 'Foreground'].bool(), tensors[viewMode + 'Background'].bool())
 
