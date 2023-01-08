@@ -220,13 +220,13 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	settings->shadingMode = ShadingMode::Color;
 	Redraw(false);
 
-	torch::Tensor depthTensor = DXCUDATORCH::GetDepthTensor();
-	torch::Tensor colorTensor = DXCUDATORCH::GetBackbufferTensor();
+	torch::Tensor depthTensor = DXCUDATORCH::GetDepthTensor().permute({ 0, 3, 1, 2 });
+	torch::Tensor colorTensor = DXCUDATORCH::GetBackbufferTensor().permute({ 0, 3, 1, 2 });
 
 	settings->shadingMode = ShadingMode::NormalScreen;
 	Redraw(false);
 
-	torch::Tensor normalTensor = DXCUDATORCH::GetBackbufferTensor();
+	torch::Tensor normalTensor = DXCUDATORCH::GetBackbufferTensor().permute({ 0, 3, 1, 2 });
 
 	long long h = settings->resolutionY;
 	long long w = settings->resolutionX;
@@ -235,14 +235,16 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 	torch::Tensor backgroundMask = depthTensor.ge(1.0f).to(torch::kFloat16);
 	torch::Tensor foregroundMask = 1.0f - backgroundMask;
 
-	torch::Tensor depthSlice = (depthTensor * foregroundMask).index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3), at::indexing::Slice() });
-	torch::Tensor colorSlice = colorTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)), at::indexing::Slice() });
-	torch::Tensor normalSlice = normalTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w), at::indexing::Slice() });
+	torch::Tensor depthSlice = (depthTensor * foregroundMask).index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3) });
+	torch::Tensor colorSlice = colorTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)) });
+	torch::Tensor normalSlice = normalTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w) });
 
-	torch::Tensor tensor = torch::zeros({ 1, h, w, 4 }, c10::TensorOptions().device(torch::kCUDA).dtype(torch::kFloat16));
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3), at::indexing::Slice() }, depthSlice.repeat({ 1, 1, 1, 4 }));
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)), at::indexing::Slice() }, colorSlice);
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w), at::indexing::Slice() }, normalSlice);
+	torch::Tensor tensor = torch::zeros({ 1, 4, h, w }, c10::TensorOptions().device(torch::kCUDA).dtype(torch::kFloat16));
+	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3) }, depthSlice.repeat({ 1, 4, 1, 1 }));
+	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)) }, colorSlice);
+	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w) }, normalSlice);
+
+	tensor = tensor.permute({ 0, 2, 3, 1 }).contiguous();
 
 	DXCUDATORCH::SetBackbufferFromTensor(tensor);
 
