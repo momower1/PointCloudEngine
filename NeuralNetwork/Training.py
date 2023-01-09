@@ -486,6 +486,62 @@ while True:
 
             summaryWriter.add_figure('SnapshotsTriplet/Epoch' + str(epoch), plt.gcf(), iteration)
 
+            # SPARSE FLOW
+            framePrevious = sequence['PointsSparseColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
+            frameCurrent = sequence['PointsSparseColor'][snapshotFrameIndex][snapshotSampleIndex]
+            frameNext = sequence['PointsSparseColor'][snapshotFrameIndex + 1][snapshotSampleIndex]
+
+            motionVectorPreviousToCurrent = sequence['PointsSparseOpticalFlowForward'][snapshotFrameIndex][snapshotSampleIndex]
+            motionVectorNextToCurrent = sequence['PointsSparseOpticalFlowBackward'][snapshotFrameIndex + 1][snapshotSampleIndex]
+            framePreviousWarpedToCurrent = WarpImage(framePrevious.unsqueeze(0), motionVectorPreviousToCurrent.unsqueeze(0)).squeeze(0)
+            frameNextWarpedToCurrent = WarpImage(frameNext.unsqueeze(0), motionVectorNextToCurrent.unsqueeze(0)).squeeze(0)
+            frameOverlay = (framePreviousWarpedToCurrent + frameCurrent + frameNextWarpedToCurrent) / 3.0
+
+            occlusionPrevious = sequence['PointsSparseOpticalFlowBackward'][snapshotFrameIndex][snapshotSampleIndex]
+            occlusionPrevious = EstimateOcclusion(occlusionPrevious.unsqueeze(0)).squeeze(0)
+            framePreviousWarpedToCurrentOccluded = occlusionPrevious * framePreviousWarpedToCurrent
+
+            occlusionNext = sequence['PointsSparseOpticalFlowForward'][snapshotFrameIndex + 1][snapshotSampleIndex]
+            occlusionNext = EstimateOcclusion(occlusionNext.unsqueeze(0)).squeeze(0)
+            frameNextWarpedToCurrentOccluded = occlusionNext * frameNextWarpedToCurrent
+            frameOverlayOccluded = (framePreviousWarpedToCurrentOccluded + frameCurrent + frameNextWarpedToCurrentOccluded) / 3.0
+
+            fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
+            fig.add_subplot(3, 3, 1).title#.set_text('Frame Previous')
+            plt.imshow(TensorToImage(framePrevious))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 2).title#.set_text('Frame Current')
+            plt.imshow(TensorToImage(frameCurrent))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 3).title#.set_text('Frame Next')
+            plt.imshow(TensorToImage(frameNext))
+            plt.axis('off')
+
+            fig.add_subplot(3, 3, 4).title#.set_text('Frame Previous Warped')
+            plt.imshow(TensorToImage(framePreviousWarpedToCurrent))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 5).title#.set_text('Frame Overlay')
+            plt.imshow(TensorToImage(frameOverlay))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 6).title#.set_text('Frame Next Warped')
+            plt.imshow(TensorToImage(frameNextWarpedToCurrent))
+            plt.axis('off')
+
+            fig.add_subplot(3, 3, 7).title#.set_text('Frame Previous Warped Occluded')
+            plt.imshow(TensorToImage(framePreviousWarpedToCurrentOccluded))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 8).title#.set_text('Frame Overlay Occluded')
+            plt.imshow(TensorToImage(frameOverlayOccluded))
+            plt.axis('off')
+            fig.add_subplot(3, 3, 9).title#.set_text('Frame Next Warped Occluded')
+            plt.imshow(TensorToImage(frameNextWarpedToCurrentOccluded))
+            plt.axis('off')
+
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+
+            summaryWriter.add_figure('SnapshotsSparseFlow/Epoch' + str(epoch), plt.gcf(), iteration)
+
             # Save an animated gif with input, output and target (quality is worse due to compression)
             height = inputs.size(3)
             width = inputs.size(4)

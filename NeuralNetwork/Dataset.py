@@ -138,19 +138,18 @@ class Dataset:
 
         # Add point surface mask (only points that are on the surface have the value 1)
         meshDepth = tensors['MeshDepth']
-        pointDepth = tensors['PointsDepth']
-        pointsSparseDepth = tensors['PointsSparseDepth']
 
-        depthEpsilon = 1e-2
-        pointsSurface = torch.abs(meshDepth - pointDepth) < depthEpsilon
-        pointsSparseSurface = torch.abs(meshDepth - pointsSparseDepth) < depthEpsilon
-        pointsSurface[tensors['PointsBackground'] > 0.5] = False
-        pointsSparseSurface[tensors['PointsSparseBackground'] > 0.5] = False
-        pointsSurface = pointsSurface.float()
-        pointsSparseSurface = pointsSparseSurface.float()
+        for renderMode in textures.keys():
+            if 'Points' in renderMode and 'Depth' in renderMode:
+                viewMode = renderMode.split('Depth')[0]
+                pointsDepth = tensors[renderMode]
 
-        tensors['PointsSurface'] = pointsSurface
-        tensors['PointsSparseSurface'] = pointsSparseSurface
+                depthEpsilon = 1e-2
+                pointsSurface = torch.abs(meshDepth - pointsDepth) < depthEpsilon
+                pointsSurface[tensors[viewMode + 'Background'] > 0.5] = False
+                pointsSurface = pointsSurface.float()
+
+                tensors[viewMode + 'Surface'] = pointsSurface
 
         # Normalize depth after surface mask calculation
         # Be careful: normalized depth can be quite different between points and mesh due to non-surface pixel depth
