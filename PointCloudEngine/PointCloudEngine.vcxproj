@@ -109,8 +109,8 @@
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -144,8 +144,8 @@ copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(Out
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -183,8 +183,8 @@ copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(Out
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -222,8 +222,8 @@ copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(Out
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-copy "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
