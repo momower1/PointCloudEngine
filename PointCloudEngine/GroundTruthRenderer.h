@@ -14,6 +14,8 @@ namespace PointCloudEngine
         void Update();
         void Draw();
         void Release();
+		void UpdateConstantBuffer();
+		void UpdatePreviousMatrices();
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
@@ -31,26 +33,8 @@ namespace PointCloudEngine
 		Vector3 boundingCubePosition;
 		float boundingCubeSize;
 
-        // Same constant buffer as in effect file, keep packing rules in mind
-        struct GroundTruthRendererConstantBuffer
-        {
-            Matrix World;
-            Matrix View;
-            Matrix Projection;
-            Matrix WorldInverseTranspose;
-			Matrix WorldViewProjectionInverse;
-            Vector3 cameraPosition;
-            float fovAngleY;
-            float samplingRate;
-			float blendFactor;
-			int useBlending;
-			int backfaceCulling;
-			int shadingMode;
-			float padding[3];
-        };
-
         std::vector<Vertex> vertices;
-        GroundTruthRendererConstantBuffer constantBufferData;
+        GroundTruthConstantBuffer constantBufferData;
 
         // Vertex buffer
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data

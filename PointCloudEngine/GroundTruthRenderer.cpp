@@ -32,11 +32,11 @@ void GroundTruthRenderer::Initialize()
     hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vertexBuffer);
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(vertexBuffer));
 
-    // Create the constant buffer for WVP
+    // Create the constant buffer (also used by MeshRenderer and PullPush)
     D3D11_BUFFER_DESC constantBufferDesc;
     ZeroMemory(&constantBufferDesc, sizeof(constantBufferDesc));
 	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	constantBufferDesc.ByteWidth = sizeof(GroundTruthRendererConstantBuffer);
+	constantBufferDesc.ByteWidth = sizeof(GroundTruthConstantBuffer);
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	constantBufferDesc.CPUAccessFlags = 0;
 	constantBufferDesc.MiscFlags = 0;
@@ -88,18 +88,6 @@ void GroundTruthRenderer::Draw()
     // Set primitive topology
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-    // Set shader constant buffer variables
-    constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
-	constantBufferData.View = camera->GetViewMatrix().Transpose();
-	constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
-    constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
-	constantBufferData.WorldViewProjectionInverse = (sceneObject->transform->worldMatrix * camera->GetViewMatrix() * camera->GetProjectionMatrix()).Invert().Transpose();
-	constantBufferData.backfaceCulling = settings->backfaceCulling;
-    constantBufferData.cameraPosition = camera->GetPosition();
-	constantBufferData.blendFactor = settings->blendFactor;
-	constantBufferData.useBlending = false;
-	constantBufferData.shadingMode = (int)settings->shadingMode;
-
 	// The amount of points that will be drawn
 	UINT vertexCount = vertices.size();
 
@@ -122,11 +110,8 @@ void GroundTruthRenderer::Draw()
 		vertexCount *= settings->density;
 	}
 
-    // Update effect file buffer, set shader buffer to our created buffer
-    d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
-	d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
-	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
-	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
+	// Assign, update and set shader constant buffer variables
+	UpdateConstantBuffer();
 
 	if (settings->useBlending && (settings->viewMode == ViewMode::Splats || settings->viewMode == ViewMode::SparseSplats) && (settings->shadingMode != ShadingMode::Depth))
 	{
@@ -173,6 +158,38 @@ void GroundTruthRenderer::Release()
 	SAFE_RELEASE(colorTexture);
 	SAFE_RELEASE(depthTexture);
 #endif
+}
+
+void PointCloudEngine::GroundTruthRenderer::UpdateConstantBuffer()
+{
+	constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
+	constantBufferData.View = camera->GetViewMatrix().Transpose();
+	constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
+	constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
+	constantBufferData.WorldViewProjectionInverse = (sceneObject->transform->worldMatrix * camera->GetViewMatrix() * camera->GetProjectionMatrix()).Invert().Transpose();
+	constantBufferData.backfaceCulling = settings->backfaceCulling;
+	constantBufferData.cameraPosition = camera->GetPosition();
+	constantBufferData.blendFactor = settings->blendFactor;
+	constantBufferData.useBlending = false;
+	constantBufferData.shadingMode = (int)settings->shadingMode;
+	constantBufferData.textureLOD = settings->textureLOD;
+	constantBufferData.resolutionX = settings->resolutionX;
+	constantBufferData.resolutionY = settings->resolutionY;
+
+	// Update effect file buffer, set shader buffer to our created buffer
+	d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
+	d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
+	d3d11DevCon->GSSetConstantBuffers(0, 1, &constantBuffer);
+	d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
+}
+
+void PointCloudEngine::GroundTruthRenderer::UpdatePreviousMatrices()
+{
+	// Store the previous matrices for optical flow computation
+	constantBufferData.PreviousWorld = constantBufferData.World;
+	constantBufferData.PreviousView = constantBufferData.View;
+	constantBufferData.PreviousProjection = constantBufferData.Projection;
+	constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
 }
 
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)

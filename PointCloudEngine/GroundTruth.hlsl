@@ -1,29 +1,6 @@
-#define PI 3.141592654f
+#include "GroundTruthConstantBuffer.hlsli"
 
-cbuffer GroundTruthRendererConstantBuffer : register(b0)
-{
-    float4x4 World;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 View;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 Projection;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 WorldInverseTranspose;
-//------------------------------------------------------------------------------ (64 byte boundary)
-	float4x4 WorldViewProjectionInverse;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float3 cameraPosition;
-    float fovAngleY;
-//------------------------------------------------------------------------------ (16 byte boundary)
-    float samplingRate;
-	float blendFactor;
-	bool useBlending;
-    bool backfaceCulling;
-//------------------------------------------------------------------------------ (16 byte boundary)
-    int shadingMode;
-	// 12 bytes auto padding
-//------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 372 bytes with constant buffer packing rules
+#define PI 3.141592654f
 
 struct VS_INPUT
 {

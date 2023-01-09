@@ -1,4 +1,5 @@
 #include "ShadingMode.hlsli"
+#include "GroundTruthConstantBuffer.hlsli"
 #include "LightingConstantBuffer.hlsl"
 
 SamplerState samplerState : register(s0);
@@ -6,33 +7,6 @@ Texture2D<float4> textureAlbedo : register(t0);
 StructuredBuffer<float3> bufferPositions : register(t1);
 StructuredBuffer<float2> bufferTextureCoordinates : register(t2);
 StructuredBuffer<float3> bufferNormals : register(t3);
-
-cbuffer MeshRendererConstantBuffer : register(b0)
-{
-    float4x4 World;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 View;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 Projection;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 WorldInverseTranspose;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 PreviousWorld;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 PreviousView;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 PreviousProjection;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 PreviousWorldInverseTranspose;
-    //------------------------------------------------------------------------------ (64 byte boundary)
-    float3 cameraPosition;
-    int shadingMode;
-    //------------------------------------------------------------------------------ (16 byte boundary)
-    int textureLOD;
-    int width;
-    int height;
-    // 4 bytes auto padding
-};  // Total: 528 bytes with constant buffer packing rules
 
 struct VS_INPUT
 {
@@ -94,10 +68,10 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
     positionNDC.y *= -1;
 
     float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
-    previousPixel *= float2(width, height);
+    previousPixel *= float2(resolutionX, resolutionY);
 
     float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
-    pixel *= float2(width, height);
+    pixel *= float2(resolutionX, resolutionY);
 
     switch (shadingMode)
     {

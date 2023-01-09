@@ -59,15 +59,22 @@ void Scene::Update(Timer &timer)
 	}
 
 	// Toggle between rendering the mesh or the point cloud
+	if (pointCloudRenderer != NULL)
+	{
+		if (!settings->useOctree)
+		{
+			// Always update the constant buffer since it is shared with the Mesh and PullPush
+			GroundTruthRenderer* groundTruthRenderer = (GroundTruthRenderer*)pointCloudRenderer;
+			groundTruthRenderer->UpdatePreviousMatrices();
+			groundTruthRenderer->UpdateConstantBuffer();
+		}
+
+		pointCloudRenderer->GetComponent()->enabled = (settings->viewMode != ViewMode::Mesh);
+	}
+
 	if (meshRenderer != NULL)
 	{
 		meshRenderer->enabled = (settings->viewMode == ViewMode::Mesh);
-		meshRenderer->UpdatePreviousMatrices();
-	}
-
-	if (pointCloudRenderer != NULL)
-	{
-		pointCloudRenderer->GetComponent()->enabled = (settings->viewMode != ViewMode::Mesh);
 	}
 
 	// Camera tracking shot using the waypoints
@@ -565,7 +572,8 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 	}
 
 	// Explicitly update the previous frame matrices for optical flow computation
-	meshRenderer->UpdatePreviousMatrices();
+	GroundTruthRenderer* groundTruthRenderer = (GroundTruthRenderer*)pointCloudRenderer;
+	groundTruthRenderer->UpdatePreviousMatrices();
 
 	// Make sure that all data has been written to the hard drive before compressing it
 	datasetFile.flush();

@@ -132,8 +132,6 @@ void PointCloudEngine::PullPush::Execute(ID3D11Resource* backbufferTexture, ID3D
 	pullPushConstantBufferData.orientedSplat = settings->pullPushOrientedSplat;
 	pullPushConstantBufferData.texelBlending = settings->pullPushBlending;
 	pullPushConstantBufferData.resolutionPullPush = pullPushResolution;
-	pullPushConstantBufferData.resolutionX = settings->resolutionX;
-	pullPushConstantBufferData.resolutionY = settings->resolutionY;
 	pullPushConstantBufferData.blendRange = settings->pullPushBlendRange;
 	pullPushConstantBufferData.splatSize = settings->pullPushSplatSize;
 	pullPushConstantBufferData.nearZ = settings->nearZ;

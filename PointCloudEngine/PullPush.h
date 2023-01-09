@@ -23,14 +23,12 @@ namespace PointCloudEngine
             BOOL texelBlending;
             int resolutionPullPush;
             int resolutionOutput;
-            int resolutionX;
-            int resolutionY;
             float blendRange;
             float splatSize;
             float nearZ;
             float farZ;
             int pullPushLevel;
-            XMINT3 padding;
+            int padding[1];
         };
 
         int pullPushLevels = 0;

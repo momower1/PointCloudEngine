@@ -20,18 +20,15 @@ cbuffer PullPushConstantBuffer : register(b1)
 //------------------------------------------------------------------------------ (16 byte boundary)
 	int resolutionPullPush;
 	int resolutionOutput;
-	int resolutionX;
-	int resolutionY;
-//------------------------------------------------------------------------------ (16 byte boundary)
 	float blendRange;
 	float splatSize;
+//------------------------------------------------------------------------------ (16 byte boundary)
 	float nearZ;
 	float farZ;
-//------------------------------------------------------------------------------ (16 byte boundary)
 	int pullPushLevel;
-	// 12 bytes auto paddding
+	// 4 bytes auto paddding
 //------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 64 bytes with constant buffer packing rules
+};  // Total: 48 bytes with constant buffer packing rules
 
 float2 GetPerpendicularVector(float2 v)
 {

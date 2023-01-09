@@ -208,6 +208,29 @@ namespace PointCloudEngine
 		UINT inputCount;
 	};
 
+	struct GroundTruthConstantBuffer
+	{
+		Matrix World;
+		Matrix View;
+		Matrix Projection;
+		Matrix WorldInverseTranspose;
+		Matrix WorldViewProjectionInverse;
+		Matrix PreviousWorld;
+		Matrix PreviousView;
+		Matrix PreviousProjection;
+		Matrix PreviousWorldInverseTranspose;
+		Vector3 cameraPosition;
+		float fovAngleY;
+		float samplingRate;
+		float blendFactor;
+		int useBlending;			// Bool in the shader
+		int backfaceCulling;		// Bool in the shader
+		int shadingMode;
+		int textureLOD;
+		int resolutionX;
+		int resolutionY;
+	};
+
 	struct LightingConstantBuffer
 	{
 		int useLighting;			// Bool in the shader

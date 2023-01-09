@@ -143,16 +143,6 @@ MeshRenderer::MeshRenderer(OBJContainer objContainer)
     submeshCount = objContainer.meshes.size();
     textureCount = objContainer.meshes.size();
 
-    // Create the constant buffer
-    D3D11_BUFFER_DESC constantBufferDesc;
-    ZeroMemory(&constantBufferDesc, sizeof(constantBufferDesc));
-    constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    constantBufferDesc.ByteWidth = sizeof(MeshRendererConstantBuffer);
-    constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-    hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
-    ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed!");
-
     // Create the texture sampler state
     D3D11_SAMPLER_DESC samplerDesc;
     ZeroMemory(&samplerDesc, sizeof(samplerDesc));
@@ -184,20 +174,7 @@ void MeshRenderer::Draw()
     d3d11DevCon->VSSetShaderResources(2, 1, &bufferTextureCoordinatesSRV);
     d3d11DevCon->VSSetShaderResources(3, 1, &bufferNormalsSRV);
 
-    constantBufferData.World = sceneObject->transform->worldMatrix.Transpose();
-    constantBufferData.WorldInverseTranspose = constantBufferData.World.Invert().Transpose();
-    constantBufferData.View = camera->GetViewMatrix().Transpose();
-    constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
-    constantBufferData.cameraPosition = camera->GetPosition();
-    constantBufferData.shadingMode = (int)settings->shadingMode;
-    constantBufferData.textureLOD = settings->textureLOD;
-    constantBufferData.width = settings->resolutionX;
-    constantBufferData.height = settings->resolutionY;
-
-    d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
-    d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
-    d3d11DevCon->PSSetConstantBuffers(0, 1, &constantBuffer);
-
+    // Important: Assume that the GroundTruthConstantBuffer has been set already for VS and PS
     d3d11DevCon->IASetInputLayout(meshShader->inputLayout);
     d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     d3d11DevCon->VSSetShader(meshShader->vertexShader, NULL, 0);
@@ -232,7 +209,6 @@ void MeshRenderer::Release()
     SAFE_RELEASE(bufferTextureCoordinatesSRV);
     SAFE_RELEASE(bufferNormals);
     SAFE_RELEASE(bufferNormalsSRV);
-    SAFE_RELEASE(constantBuffer);
     SAFE_RELEASE(samplerState);
 
     for (int i = 0; i < textures.size(); i++)
@@ -254,13 +230,4 @@ void MeshRenderer::Release()
     textureSRVs.clear();
     submeshVertices.clear();
     submeshVertexCounts.clear();
-}
-
-void PointCloudEngine::MeshRenderer::UpdatePreviousMatrices()
-{
-    // Store the previous matrices for optical flow computation
-    constantBufferData.PreviousWorld = constantBufferData.World;
-    constantBufferData.PreviousView = constantBufferData.View;
-    constantBufferData.PreviousProjection = constantBufferData.Projection;
-    constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
 }
