@@ -571,8 +571,11 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 	datasetFile.flush();
 	datasetFile.close();
 
-	// Uncomment this line to also compress the file into a ZIP archive
-	return;
+	// Check if the file should also be compressed into a ZIP archive
+	if (!settings->compressDataset)
+	{
+		return;
+	}
 
 	UINT maxProcessCount = 32;
 
@@ -608,6 +611,4 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(CreateProcess) + L" failed!");
 
 	processes.push_back(processInformation);
-
-	std::cout << "Saved dataset entry " << std::to_string(index) << std::endl;
 }

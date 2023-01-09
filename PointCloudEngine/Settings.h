@@ -88,8 +88,8 @@ namespace PointCloudEngine
 		std::wstring lossCalculationSelf = L"SplatsColor";
 		std::wstring lossCalculationTarget = L"SplatsColor";
 
-		// HDF5 dataset generation parameters
-		int downsampleFactor = 2;
+		// Dataset generation parameters
+		bool compressDataset = false;
 		float waypointStepSize = 0.5f;
 		float waypointPreviewStepSize = 0.1f;
 		float waypointMin = 0.0f;
