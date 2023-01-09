@@ -81,12 +81,12 @@ float4 PS(GS_POINT_OUTPUT input) : SV_TARGET
 		}
 		case SHADING_MODE_OPTICAL_FLOW_FORWARD:
 		{
-			float2 flow = CalculateMotionVector(input.positionClipPrevious, input.positionClip, resolutionX, resolutionY);
+			float2 flow = CalculateMotionVector(input.positionClip, input.positionClipPrevious, resolutionX, resolutionY);
 			return float4(flow.x, flow.y, 0, 1);
 		}
 		case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
 		{
-			float2 flow = CalculateMotionVector(input.positionClip, input.positionClipPrevious, resolutionX, resolutionY);
+			float2 flow = CalculateMotionVector(input.positionClipPrevious, input.positionClip, resolutionX, resolutionY);
 			return float4(flow.x, flow.y, 0, 1);
 		}
 	}

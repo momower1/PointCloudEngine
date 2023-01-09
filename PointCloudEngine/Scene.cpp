@@ -461,6 +461,8 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 
 void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wstring& datasetDirectory, std::vector<PROCESS_INFORMATION>& processes)
 {
+	GroundTruthRenderer* groundTruthRenderer = (GroundTruthRenderer*)pointCloudRenderer;
+
 	// Create a custom binary file that stores the raw bytes of all the textures
 	std::wstring datasetFilename = std::to_wstring(index) + L".textures";
 	std::ofstream datasetFile(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
@@ -480,13 +482,16 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 		settings->viewMode = renderMode.viewMode;
 		settings->shadingMode = renderMode.shadingMode;
 
+		// Update and set the shared constant buffer
+		groundTruthRenderer->UpdateConstantBuffer();
+
 		if (renderMode.viewMode == ViewMode::Mesh)
 		{
 			meshRenderer->Draw();
 		}
 		else
 		{
-			pointCloudRenderer->GetComponent()->Draw();
+			groundTruthRenderer->Draw();
 		}
 
 		// In order to save the rendering to a file, first copy the backbuffer/depth to a CPU readback texture
@@ -571,13 +576,12 @@ void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wst
 		}
 	}
 
-	// Explicitly update the previous frame matrices for optical flow computation
-	GroundTruthRenderer* groundTruthRenderer = (GroundTruthRenderer*)pointCloudRenderer;
-	groundTruthRenderer->UpdatePreviousMatrices();
-
 	// Make sure that all data has been written to the hard drive before compressing it
 	datasetFile.flush();
 	datasetFile.close();
+
+	// Explicitly update the previous frame matrices for optical flow computation
+	groundTruthRenderer->UpdatePreviousMatrices();
 
 	// Check if the file should also be compressed into a ZIP archive
 	if (!settings->compressDataset)
