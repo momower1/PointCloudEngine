@@ -46,7 +46,7 @@ VS_OUTPUT VS(VS_INPUT input)
     output.normalScreen = normalize(mul(float4(output.normal, 0), VP).xyz);
     output.normalScreen.z *= -1;
 
-    // Render previous frame triangles instead of current frame if performing forward optical flow
+    // Render previous frame triangles instead of current frame if performing backward optical flow
     if (shadingMode == SHADING_MODE_OPTICAL_FLOW_BACKWARD)
     {
         output.position = output.positionClipPrevious;
