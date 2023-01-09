@@ -277,6 +277,9 @@
     <None Include="ShadingMode.hlsli">
       <Filter>Shader Files</Filter>
     </None>
+    <None Include="OpticalFlow.hlsli">
+      <Filter>Shader Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="PointCloudEngine.manifest" />
