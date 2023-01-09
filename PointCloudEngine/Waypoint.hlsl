@@ -1,10 +1,4 @@
-cbuffer WaypointRendererConstantBuffer : register(b0)
-{
-	float4x4 View;
-	//------------------------------------------------------------------------------ (64 byte boundary)
-	float4x4 Projection;
-	//------------------------------------------------------------------------------ (64 byte boundary)
-};  // Total: 128 bytes with constant buffer packing rules
+#include "GroundTruthConstantBuffer.hlsli"
 
 struct VS_INPUT
 {

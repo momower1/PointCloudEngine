@@ -25,16 +25,6 @@ void PointCloudEngine::WaypointRenderer::Initialize()
 		UpdateVertexBuffer();
 	}
 
-	// Create the constant buffer
-	D3D11_BUFFER_DESC constantBufferDesc;
-	ZeroMemory(&constantBufferDesc, sizeof(constantBufferDesc));
-	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	constantBufferDesc.ByteWidth = sizeof(WaypointRendererConstantBuffer);
-	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-	hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
-	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
-
 	GUI::waypointCount = GetWaypointSize();
 }
 
@@ -58,13 +48,7 @@ void PointCloudEngine::WaypointRenderer::Draw()
 	// Render as a line list
 	d3d11DevCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-	// Set shader constant buffer variables
-	constantBufferData.View = camera->GetViewMatrix().Transpose();
-	constantBufferData.Projection = camera->GetProjectionMatrix().Transpose();
-
-	// Update constant buffer and draw
-	d3d11DevCon->UpdateSubresource(constantBuffer, 0, NULL, &constantBufferData, 0, 0);
-	d3d11DevCon->VSSetConstantBuffers(0, 1, &constantBuffer);
+	// Important: Assume that the GroundTruthConstantBuffer has been set already for VS and PS
 	d3d11DevCon->Draw(waypointVertices.size(), 0);
 }
 
@@ -82,7 +66,6 @@ void PointCloudEngine::WaypointRenderer::Release()
 	file.close();
 
 	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(constantBuffer);
 }
 
 UINT PointCloudEngine::WaypointRenderer::GetWaypointSize()
