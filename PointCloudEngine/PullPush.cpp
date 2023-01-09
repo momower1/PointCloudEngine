@@ -10,7 +10,7 @@ void PointCloudEngine::PullPush::CreatePullPushTextureHierarchy()
 {
 	Release();
 
-	// For simplicity use power of two resolution for the pull push algorithm (not ideal e.g. if intitial resolution is 511x1, then pull push uses 1024x1024)
+	// For simplicity use power of two resolution for the pull push algorithm (not ideal e.g. if intitial resolution is 513x1, then pull push uses 1024x1024)
 	pullPushResolution = pow(2, ceil(log2(max(settings->resolutionX, settings->resolutionY))));
 	pullPushLevels = log2(pullPushResolution) + 1;
 
