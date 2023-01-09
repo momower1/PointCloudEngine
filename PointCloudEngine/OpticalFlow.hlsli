@@ -38,3 +38,24 @@ float4 FlowToColor(in float2 motion)
 
     return float4(color.r, color.g, color.b, 1.0f);
 }
+
+float2 CalculateMotionVector(float4 positionClipFrom, float4 positionClipTo, int resolutionX, int resolutionY)
+{
+    // Perform homogeneous division to get into NDC coordinate space
+    positionClipFrom /= positionClipFrom.w;
+    positionClipTo /= positionClipTo.w;
+
+    // Flip Y-axis
+    positionClipFrom.y *= -1;
+    positionClipTo.y *= -1;
+
+    // Convert to pixel space
+    float2 pixelFrom = (positionClipFrom.xy + 1.0f) / 2.0f;
+    pixelFrom *= float2(resolutionX, resolutionY);
+
+    float2 pixelTo = (positionClipTo.xy + 1.0f) / 2.0f;
+    pixelTo *= float2(resolutionX, resolutionY);
+
+    // Compute motion vector in pixel space
+    return pixelTo - pixelFrom;
+}

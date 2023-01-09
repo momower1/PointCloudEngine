@@ -1,4 +1,5 @@
 #include "ShadingMode.hlsli"
+#include "OpticalFlow.hlsli"
 #include "GroundTruthConstantBuffer.hlsli"
 #include "LightingConstantBuffer.hlsl"
 
@@ -60,19 +61,6 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
     input.normal = normalize(input.normal);
     input.normalScreen = normalize(input.normalScreen);
 
-    // Compute pixel positions for optical flow calculation (motion vectors in pixel space)
-    float4 previousPositionNDC = input.positionClipPrevious / input.positionClipPrevious.w;
-    previousPositionNDC.y *= -1;
-
-    float4 positionNDC = input.positionClip / input.positionClip.w;
-    positionNDC.y *= -1;
-
-    float2 previousPixel = (previousPositionNDC.xy + 1.0f) / 2.0f;
-    previousPixel *= float2(resolutionX, resolutionY);
-
-    float2 pixel = (positionNDC.xy + 1.0f) / 2.0f;
-    pixel *= float2(resolutionX, resolutionY);
-
     switch (shadingMode)
     {
         case SHADING_MODE_COLOR:
@@ -102,12 +90,12 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
         }
         case SHADING_MODE_OPTICAL_FLOW_FORWARD:
         {
-            float2 flow = previousPixel - pixel;
+            float2 flow = CalculateMotionVector(input.positionClipPrevious, input.positionClip, resolutionX, resolutionY);
             return float4(flow.x, flow.y, 0, 1);
         }
         case SHADING_MODE_OPTICAL_FLOW_BACKWARD:
         {
-            float2 flow = pixel - previousPixel;
+            float2 flow = CalculateMotionVector(input.positionClip, input.positionClipPrevious, resolutionX, resolutionY);
             return float4(flow.x, flow.y, 0, 1);
         }
     }
