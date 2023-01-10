@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 2#8
+batchSize = 8
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
@@ -30,7 +30,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
 factorSurface = 1.0
-factorOpticalFlow = 1.0
+factorOpticalFlow = 100.0
 factorTemporal = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
@@ -44,8 +44,8 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     epoch = checkpoint['Epoch']
     batchIndexStart = checkpoint['BatchIndexStart']
     model.load_state_dict(checkpoint['Model'])
-    optimizerGenerator.load_state_dict(checkpoint['Optimizer'])
-    schedulerGenerator.load_state_dict(checkpoint['Scheduler'])
+    optimizer.load_state_dict(checkpoint['Optimizer'])
+    scheduler.load_state_dict(checkpoint['Scheduler'])
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
@@ -114,9 +114,13 @@ while True:
         inputs = []
         outputs = []
         targets = []
+        inputFlowMins = []
+        inputFlowMaxs = []
+        targetFlowMins = []
+        targetFlowMaxs = []
 
         for frameIndex in frameGenerationOrder:
-            inputOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['PointsSparseOpticalFlowForward'][frameIndex])
+            inputFlowMin, inputFlowMax, inputOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['PointsSparseOpticalFlowForward'][frameIndex])
             input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex], inputOpticalFlowForward], dim=1)
 
             # Generate the output
@@ -124,16 +128,24 @@ while True:
 
             # Need to bring optical flow motion vectors from pixel space into [0, 1] range
             # TODO: Mabye use the grid that corresponds to the motion instead?
-            targetOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['MeshOpticalFlowForward'][frameIndex])
+            targetFlowMin, targetFlowMax, targetOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['MeshOpticalFlowForward'][frameIndex])
             target = torch.cat([sequence['PointsSparseSurface'][frameIndex], targetOpticalFlowForward], dim=1)
 
             inputs.append(input)
             outputs.append(output)
             targets.append(target)
+            inputFlowMins.append(inputFlowMin)
+            inputFlowMaxs.append(inputFlowMax)
+            targetFlowMins.append(targetFlowMin)
+            targetFlowMaxs.append(targetFlowMax)
 
         inputs = torch.stack(inputs, dim=0)
         outputs = torch.stack(outputs, dim=0)
         targets = torch.stack(targets, dim=0)
+        inputFlowMins = torch.stack(inputFlowMins, dim=0)
+        inputFlowMaxs = torch.stack(inputFlowMaxs, dim=0)
+        targetFlowMins = torch.stack(targetFlowMins, dim=0)
+        targetFlowMaxs = torch.stack(targetFlowMaxs, dim=0)
 
         # Accumulate loss terms over triplets in the sequence
         lossSurface = []
@@ -215,6 +227,8 @@ while True:
 
             meshColor = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
 
+            inputFlowMin = inputFlowMins[snapshotFrameIndex][snapshotSampleIndex]
+            inputFlowMax = inputFlowMaxs[snapshotFrameIndex][snapshotSampleIndex]
             inputForeground = inputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             inputDepth = inputs[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
             inputNormal = inputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
@@ -222,14 +236,16 @@ while True:
 
             outputSurface = outputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             outputOpticalFlowForward = outputs[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
-            outputMotionVectorForward = ConvertMotionVectorIntoPixelRange(outputOpticalFlowForward.unsqueeze(0))
+            outputMotionVectorForward = ConvertMotionVectorIntoPixelRange(inputFlowMin, inputFlowMax, outputOpticalFlowForward.unsqueeze(0))
             outputMeshWarped = WarpImage(meshColor.unsqueeze(0), outputMotionVectorForward).squeeze(0)
             outputOcclusion = EstimateOcclusion(outputMotionVectorForward).squeeze(0)
             outputMeshWarped *= outputOcclusion
 
+            targetFlowMin = targetFlowMins[snapshotFrameIndex][snapshotSampleIndex]
+            targetFlowMax = targetFlowMaxs[snapshotFrameIndex][snapshotSampleIndex]
             targetSurface = targets[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             targetOpticalFlowForward = targets[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
-            targetMotionVectorForward = ConvertMotionVectorIntoPixelRange(targetOpticalFlowForward.unsqueeze(0))
+            targetMotionVectorForward = ConvertMotionVectorIntoPixelRange(targetFlowMin, targetFlowMax, targetOpticalFlowForward.unsqueeze(0))
             targetMeshWarped = WarpImage(meshColor.unsqueeze(0), targetMotionVectorForward).squeeze(0)
             targetOcclusion = EstimateOcclusion(targetMotionVectorForward).squeeze(0)
             targetMeshWarped *= targetOcclusion
