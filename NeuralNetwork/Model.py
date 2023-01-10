@@ -132,12 +132,13 @@ class Critic(torch.nn.Module):
         return act
 
 class PullPushModel(torch.nn.Module):
-    def __init__(self, inChannels=3, outChannels=3, innerChannels=16):
+    def __init__(self, inChannels=3, outChannels=3, innerChannels=16, recurrent=False):
         super(PullPushModel, self).__init__()
         self.inChannels = inChannels
         self.outChannels = outChannels
+        self.recurrent = recurrent
         self.previous = None
-        self.convStart = torch.nn.Conv2d(2 * inChannels, innerChannels, 3, 1, 1)
+        self.convStart = torch.nn.Conv2d(2 * inChannels if self.recurrent else inChannels, innerChannels, 3, 1, 1)
         self.preluStart = torch.nn.PReLU(1, 0.25)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.sigmoid = torch.nn.Sigmoid()
@@ -151,15 +152,18 @@ class PullPushModel(torch.nn.Module):
     def forward(self, input, motionVector):
         n, c, h, w = input.shape
 
-        # Need to use a zero tensor for the previous output (if there was no frame before this one in a sequence)
-        if self.previous is None:
-            self.previous = torch.zeros_like(input)
+        if self.recurrent:
+            # Need to use a zero tensor for the previous output (if there was no frame before this one in a sequence)
+            if self.previous is None:
+                self.previous = torch.zeros_like(input)
 
-        # Warp the previous output onto the current frame using the motion vector
-        self.previous = WarpImage(self.previous, motionVector)
+            # Warp the previous output onto the current frame using the motion vector
+            self.previous = WarpImage(self.previous, motionVector)
 
-        # Concatenate input and previous output for a recurrent architecture
-        act = torch.cat([input, self.previous], dim=1)
+            # Concatenate input and previous output for a recurrent architecture
+            act = torch.cat([input, self.previous], dim=1)
+        else:
+            act = input
 
         act = self.preluStart(self.convStart(act))
 
@@ -203,8 +207,9 @@ class PullPushModel(torch.nn.Module):
 
         act = self.sigmoid(self.convEnd(act))
 
-        # Store the current output for next iteration
-        self.previous = act
+        if self.recurrent:
+            # Store the current output for next iteration
+            self.previous = act
 
         return act
 

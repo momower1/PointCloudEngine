@@ -11,6 +11,19 @@ else:
 def TensorToImage(tensor):
     return (tensor * 255.0).clamp(0, 255).permute(1, 2, 0).type(torch.uint8).cpu().numpy()
 
+# Assume flow is a [0, 1] range tensor with shape (2, H, W)
+def FlowToImage(flow):
+    c, h, w = flow.shape
+
+    # Perform Min/Max normalization
+    flow = flow - flow.min()
+    flow = flow / flow.max()
+
+    flowImage = torch.zeros((3, h, w), dtype=flow.dtype, device=flow.device)
+    flowImage[0:2, :, :] = flow[0:2, :, :]
+
+    return TensorToImage(flowImage)
+
 # Required for warping images
 pixelGrid = None
 
@@ -100,3 +113,23 @@ def ColorShift(tensor, brightness, contrast, hue, saturation):
     tensor = torchvision.transforms.functional.adjust_saturation(tensor, saturation)
 
     return tensor
+
+def ConvertMotionVectorIntoZeroToOneRange(motionVectorPixel):
+    n, c, h, w = motionVectorPixel.shape
+
+    motionVectorZeroOne = motionVectorPixel.clone()
+    motionVectorZeroOne[:, 0:1, :, :].clamp_(-w, w)
+    motionVectorZeroOne[:, 1:2, :, :].clamp_(-h, h)
+    motionVectorZeroOne[:, 0:1, :, :] = ((motionVectorZeroOne[:, 0:1, :, :] / w) + 1.0) / 2.0
+    motionVectorZeroOne[:, 1:2, :, :] = ((motionVectorZeroOne[:, 1:2, :, :] / h) + 1.0) / 2.0
+
+    return motionVectorZeroOne
+
+def ConvertMotionVectorIntoPixelRange(motionVectorZeroOne):
+    n, c, h, w = motionVectorZeroOne.shape
+
+    motionVectorPixel = (motionVectorZeroOne * 2.0) - 1.0
+    motionVectorPixel[:, 0:1, :, :] *= w
+    motionVectorPixel[:, 1:2, :, :] *= h
+
+    return motionVectorPixel

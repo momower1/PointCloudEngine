@@ -17,50 +17,35 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 2#8
-stepsGenerator = 0
-stepsCritic = 0
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
-adaptiveUpdateCoefficient = 1.0
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Create model, optimizer and scheduler
-generator = PullPushModel(8, 8, 16).to(device)
-optimizerGenerator = torch.optim.Adam(generator.parameters(), lr=learningRate, betas=(0.5, 0.9))
-schedulerGenerator = torch.optim.lr_scheduler.ExponentialLR(optimizerGenerator, gamma=schedulerDecayRate, verbose=False)
+model = PullPushModel(7, 3, 16, False).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.999))
+scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
 
-critic = Critic(48, 1, 48).to(device)
-optimizerCritic = torch.optim.Adam(critic.parameters(), lr=learningRate, betas=(0.5, 0.9))
-schedulerCritic = torch.optim.lr_scheduler.ExponentialLR(optimizerCritic, gamma=schedulerDecayRate, verbose=False)
-
-factorSurface = 200.0
-factorDepth = 1000.0
-factorColor = 3000.0
-factorNormal = 1000.0
-factorTemporal = 1000.0
+factorSurface = 1.0
+factorOpticalFlow = 1.0
+factorTemporal = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Recurrent Perfect Warping 3 Frames Batch 2 1e-3/'
+checkpointDirectory += 'Supervised/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
 if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd):
     print('Loading existing checkpoint from "' + checkpointDirectory + checkpointNameStart + checkpointNameEnd + '"')
     checkpoint = torch.load(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
-
     epoch = checkpoint['Epoch']
-    stepsGenerator = checkpoint['StepsGenerator']
-    stepsCritic = checkpoint['StepsCritic']
     batchIndexStart = checkpoint['BatchIndexStart']
-    generator.load_state_dict(checkpoint['Generator'])
-    optimizerGenerator.load_state_dict(checkpoint['OptimizerGenerator'])
-    schedulerGenerator.load_state_dict(checkpoint['SchedulerGenerator'])
-    critic.load_state_dict(checkpoint['Critic'])
-    optimizerCritic.load_state_dict(checkpoint['OptimizerCritic'])
-    schedulerCritic.load_state_dict(checkpoint['SchedulerCritic'])
+    model.load_state_dict(checkpoint['Model'])
+    optimizerGenerator.load_state_dict(checkpoint['Optimizer'])
+    schedulerGenerator.load_state_dict(checkpoint['Scheduler'])
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
@@ -78,16 +63,9 @@ batchNextSequence = [None] * batchSize
 for threadIndex in range(preloadThreadCount):
     batchNextSequence[threadIndex] = dataset.GetTrainingSequence(randomIndices[batchIndexStart * batchSize + threadIndex])
 
-# Required for adaptive WGAN update strategy
-lossGeneratorWassersteinPrevious = None
-lossCriticWassersteinPrevious = None
-ratioGenerator = 1.0
-ratioCritic = 1.0
-
 # Train for infinite epochs
 while True:
-    print('Learning rate generator: ' + str(schedulerGenerator.get_last_lr()[0]))
-    print('Learning rate critic: ' + str(schedulerCritic.get_last_lr()[0]))
+    print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
 
     # Loop over the dataset batches
     for batchIndex in range(batchIndexStart, batchCount):
@@ -138,21 +116,16 @@ while True:
         targets = []
 
         for frameIndex in frameGenerationOrder:
-            input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseColor'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex]], dim=1)
+            inputOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['PointsSparseOpticalFlowForward'][frameIndex])
+            input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex], inputOpticalFlowForward], dim=1)
 
-            # Generate the output frame, also use the motion vector from the previous frame to the current frame to warp the previous output
-            output = generator(input, sequence['MeshOpticalFlowForward'][frameIndex])
+            # Generate the output
+            output = model(input, None)
 
-            # TODO: Only do this during evaluation since it makes WGAN training unstable
-            # Keep the input surface pixels (should fix issue that already "perfect" input does get blurred a lot)
-            #outputSurface = output[:, 0:1, :, :]
-            #outputDepthColorNormal = output[:, 1:8, :, :]
-            #inputDepthColorNormal = input[:, 1:8, :, :]
-            #outputSurfaceMask = outputSurface.ge(0.5).float()
-            #outputDepthColorNormal = outputSurfaceMask * inputDepthColorNormal + (1.0 - outputSurfaceMask) * outputDepthColorNormal
-            #output = torch.cat([outputSurface, outputDepthColorNormal], dim=1)
-
-            target = torch.cat([sequence['PointsSparseSurface'][frameIndex], sequence['MeshDepth'][frameIndex], sequence['MeshColor'][frameIndex], sequence['MeshNormalScreen'][frameIndex]], dim=1)
+            # Need to bring optical flow motion vectors from pixel space into [0, 1] range
+            # TODO: Mabye use the grid that corresponds to the motion instead?
+            targetOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['MeshOpticalFlowForward'][frameIndex])
+            target = torch.cat([sequence['PointsSparseSurface'][frameIndex], targetOpticalFlowForward], dim=1)
 
             inputs.append(input)
             outputs.append(output)
@@ -162,18 +135,10 @@ while True:
         outputs = torch.stack(outputs, dim=0)
         targets = torch.stack(targets, dim=0)
 
-        # Adaptively either update critic or generator depending on the wasserstein loss ratios
-        updateCritic = ratioCritic >= adaptiveUpdateCoefficient * ratioGenerator
-
         # Accumulate loss terms over triplets in the sequence
-        lossGeneratorWasserstein = []
-        lossGeneratorSurface = []
-        lossGeneratorDepth = []
-        lossGeneratorColor = []
-        lossGeneratorNormal = []
-        lossGeneratorTemporal = []
-        lossCriticWasserstein = []
-        lossCriticGradientPenalty = []
+        lossSurface = []
+        lossOpticalFlow = []
+        lossTemporal = []
 
         # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
@@ -202,100 +167,42 @@ while True:
             sequenceOutput = torch.cat([outputPreviousWarped, output, outputNextWarped], dim=1)
             sequenceTarget = torch.cat([targetPreviousWarped, target, targetNextWarped], dim=1)
 
-            # Add WGAN loss terms
-            sequenceReal = torch.cat([sequenceInput, sequenceTarget], dim=1)
-            sequenceFake = torch.cat([sequenceInput, sequenceOutput], dim=1)
-
-            criticReal = critic(sequenceReal)
-            criticFake = critic(sequenceFake)
-
-            lossGeneratorWassersteinTriplet = -criticFake
-            lossCriticWassersteinTriplet = criticFake - criticReal
-            
-            lossGeneratorWasserstein.append(lossGeneratorWassersteinTriplet)
-            lossCriticWasserstein.append(lossCriticWassersteinTriplet)
-
-            # Only add computationally expensive gradient penalty term for improved wasserstein GAN training if it is necessary
-            if updateCritic:
-                lossCriticGradientPenaltyTriplet = GradientPenalty(critic, sequenceReal, sequenceFake)
-                lossCriticGradientPenalty.append(lossCriticGradientPenaltyTriplet)
-
             # Add supervised generator loss terms
             # TODO: Temporal loss term should consider occlusion/invalid motion ouf warped output (remove these areas before computing the MSE)
-            lossGeneratorSurfaceTriplet = factorSurface * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
-            lossGeneratorDepthTriplet = factorDepth * torch.nn.functional.mse_loss(output[:, 1:2, :, :], target[:, 1:2, :, :], reduction='mean')
-            lossGeneratorColorTriplet = factorColor * torch.nn.functional.mse_loss(output[:, 2:5, :, :], target[:, 2:5, :, :], reduction='mean')
-            lossGeneratorNormalTriplet = factorNormal * torch.nn.functional.mse_loss(output[:, 5:8, :, :], target[:, 5:8, :, :], reduction='mean')
-            lossGeneratorTemporalPrevious = factorTemporal * torch.nn.functional.mse_loss(outputPreviousWarped, output, reduction='mean')
-            lossGeneratorTemporalNext = factorTemporal * torch.nn.functional.mse_loss(outputNextWarped, output, reduction='mean')
-            lossGeneratorTemporalTriplet = lossGeneratorTemporalPrevious + lossGeneratorTemporalNext
+            lossSurfaceTriplet = factorSurface * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
+            lossOpticalFlowTriplet = factorOpticalFlow * torch.nn.functional.mse_loss(output[:, 1:3, :, :], target[:, 1:3, :, :], reduction='mean')
+            lossTemporalPrevious = factorTemporal * torch.nn.functional.mse_loss(outputPreviousWarped, output, reduction='mean')
+            lossTemporalNext = factorTemporal * torch.nn.functional.mse_loss(outputNextWarped, output, reduction='mean')
+            lossTemporalTriplet = lossTemporalPrevious + lossTemporalNext
 
-            lossGeneratorSurface.append(lossGeneratorSurfaceTriplet)
-            lossGeneratorDepth.append(lossGeneratorDepthTriplet)
-            lossGeneratorColor.append(lossGeneratorColorTriplet)
-            lossGeneratorNormal.append(lossGeneratorNormalTriplet)
-            lossGeneratorTemporal.append(lossGeneratorTemporalTriplet)
+            lossSurface.append(lossSurfaceTriplet)
+            lossOpticalFlow.append(lossOpticalFlowTriplet)
+            lossTemporal.append(lossTemporalTriplet)
 
         # Average all loss terms across the sequence and combine into final loss
-        lossGeneratorWasserstein = torch.stack(lossGeneratorWasserstein, dim=0).mean()
-        lossGeneratorSurface = torch.stack(lossGeneratorSurface, dim=0).mean()
-        lossGeneratorDepth = torch.stack(lossGeneratorDepth, dim=0).mean()
-        lossGeneratorColor = torch.stack(lossGeneratorColor, dim=0).mean()
-        lossGeneratorNormal = torch.stack(lossGeneratorNormal, dim=0).mean()
-        lossGeneratorTemporal = torch.stack(lossGeneratorTemporal, dim=0).mean()
-        lossGenerator = torch.stack([lossGeneratorWasserstein, lossGeneratorSurface, lossGeneratorDepth, lossGeneratorColor, lossGeneratorNormal, lossGeneratorTemporal], dim=0).mean()
-        
-        lossCriticWasserstein = torch.stack(lossCriticWasserstein, dim=0).mean()
+        lossSurface = torch.stack(lossSurface, dim=0).mean()
+        lossOpticalFlow = torch.stack(lossOpticalFlow, dim=0).mean()
+        lossTemporal = torch.stack(lossTemporal, dim=0).mean()
+        loss = torch.stack([lossSurface, lossOpticalFlow, lossTemporal], dim=0).mean()
 
-        if updateCritic:
-            lossCriticGradientPenalty = torch.stack(lossCriticGradientPenalty, dim=0).mean()
-            lossCritic = torch.stack([lossCriticWasserstein, lossCriticGradientPenalty], dim=0).mean()
+        # Train the model
+        model.zero_grad()
+        loss.backward(retain_graph=False)
+        optimizer.step()
 
-        # Update model parameters
-        if updateCritic:
-            # Train the critic
-            critic.zero_grad()
-            lossCritic.backward(retain_graph=False)
-            optimizerCritic.step()
-            stepsCritic += 1
+        # Plot generator losses
+        summaryWriter.add_scalar('Loss/Loss', loss, iteration)
+        summaryWriter.add_scalar('Loss/Loss Surface', lossSurface, iteration)
+        summaryWriter.add_scalar('Loss/Loss Optical Flow', lossOpticalFlow, iteration)
+        summaryWriter.add_scalar('Loss/Loss Temporal', lossTemporal, iteration)
 
-            # Plot critic losses
-            summaryWriter.add_scalar('Critic/Loss Critic', lossCritic, iteration)
-            summaryWriter.add_scalar('Critic/Loss Critic Wasserstein', lossCriticWasserstein, iteration)
-            summaryWriter.add_scalar('Critic/Loss Critic Gradient Penalty', lossCriticGradientPenalty, iteration)
-        else:
-            # Train the generator
-            generator.zero_grad()
-            lossGenerator.backward(retain_graph=False)
-            optimizerGenerator.step()
-            stepsGenerator += 1
-
-            # Plot generator losses
-            summaryWriter.add_scalar('Generator/Loss Generator', lossGenerator, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Wasserstein', lossGeneratorWasserstein, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Surface', lossGeneratorSurface, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Depth', lossGeneratorDepth, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Color', lossGeneratorColor, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Normal', lossGeneratorNormal, iteration)
-            summaryWriter.add_scalar('Generator/Loss Generator Temporal', lossGeneratorTemporal, iteration)
-
-        # Need to detach previous output for next generator iteration
-        generator.DetachPrevious()
-
-        # Update wasserstein loss ratios for adaptive WGAN training
-        if lossCriticWassersteinPrevious is not None and lossGeneratorWassersteinPrevious is not None:
-            ratioCritic = torch.abs((lossCriticWasserstein - lossCriticWassersteinPrevious) / (lossCriticWassersteinPrevious + 1e-8))
-            ratioGenerator = torch.abs((lossGeneratorWasserstein - lossGeneratorWassersteinPrevious) / (lossGeneratorWassersteinPrevious + 1e-8))
-
-        lossCriticWassersteinPrevious = lossCriticWasserstein
-        lossGeneratorWassersteinPrevious = lossGeneratorWasserstein
+        # Need to detach previous output for next model iteration
+        model.DetachPrevious()
 
         # Update learning rate using schedulers
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
-            schedulerGenerator.step()
-            schedulerCritic.step()
-            print('Learning rate generator: ' + str(schedulerGenerator.get_last_lr()[0]))
-            print('Learning rate critic: ' + str(schedulerCritic.get_last_lr()[0]))
+            scheduler.step()
+            print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
 
         # Print progress, save checkpoints, create snapshots and plot loss graphs in certain intervals
         if iteration % snapshotSkip == (snapshotSkip - 1):
@@ -304,90 +211,61 @@ while True:
             snapshotFrameIndex = 1 + (snapshotIndex % (dataset.sequenceFrameCount - 2))
 
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
-            progress += '\tStepsCritic: ' + str(stepsCritic) + '\tStepsGenerator: ' + str(stepsGenerator)
             print(progress)
+
+            meshColor = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
 
             inputForeground = inputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             inputDepth = inputs[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
-            inputColor = inputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
-            inputNormal = inputs[snapshotFrameIndex, snapshotSampleIndex, 5:8, :, :]
+            inputNormal = inputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
+            inputOpticalFlowForward = inputs[snapshotFrameIndex, snapshotSampleIndex, 5:7, :, :]
 
             outputSurface = outputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
-            outputDepth = outputs[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
-            outputColor = outputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
-            outputNormal = outputs[snapshotFrameIndex, snapshotSampleIndex, 5:8, :, :]
+            outputOpticalFlowForward = outputs[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
+            outputMotionVectorForward = ConvertMotionVectorIntoPixelRange(outputOpticalFlowForward.unsqueeze(0))
+            outputMeshWarped = WarpImage(meshColor.unsqueeze(0), outputMotionVectorForward).squeeze(0)
+            outputOcclusion = EstimateOcclusion(outputMotionVectorForward).squeeze(0)
+            outputMeshWarped *= outputOcclusion
 
             targetSurface = targets[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
-            targetDepth = targets[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
-            targetColor = targets[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
-            targetNormal = targets[snapshotFrameIndex, snapshotSampleIndex, 5:8, :, :]
+            targetOpticalFlowForward = targets[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
+            targetMotionVectorForward = ConvertMotionVectorIntoPixelRange(targetOpticalFlowForward.unsqueeze(0))
+            targetMeshWarped = WarpImage(meshColor.unsqueeze(0), targetMotionVectorForward).squeeze(0)
+            targetOcclusion = EstimateOcclusion(targetMotionVectorForward).squeeze(0)
+            targetMeshWarped *= targetOcclusion
 
-            splatsDepth = sequence['SplatsSparseDepth'][snapshotFrameIndex][snapshotSampleIndex]
-            splatsColor = sequence['SplatsSparseColor'][snapshotFrameIndex][snapshotSampleIndex]
-            splatsNormal = sequence['SplatsSparseNormalScreen'][snapshotFrameIndex][snapshotSampleIndex]
-
-            pullPushDepth = sequence['PullPushDepth'][snapshotFrameIndex][snapshotSampleIndex]
-            pullPushColor = sequence['PullPushColor'][snapshotFrameIndex][snapshotSampleIndex]
-            pullPushNormal = sequence['PullPushNormalScreen'][snapshotFrameIndex][snapshotSampleIndex]
-
-            fig = plt.figure(figsize=(4 * inputDepth.size(2), 5 * inputDepth.size(1)), dpi=1)
-            fig.add_subplot(5, 4, 1).title#.set_text('Input Foreground')
+            fig = plt.figure(figsize=(4 * inputDepth.size(2), 4 * inputDepth.size(1)), dpi=1)
+            fig.add_subplot(4, 4, 1).title#.set_text('Input Foreground')
             plt.imshow(TensorToImage(inputForeground))
             plt.axis('off')
-            fig.add_subplot(5, 4, 2).title#.set_text('Input Color')
-            plt.imshow(TensorToImage(inputColor))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 3).title#.set_text('Input Depth')
+            fig.add_subplot(4, 4, 2).title#.set_text('Input Depth')
             plt.imshow(TensorToImage(inputDepth))
             plt.axis('off')
-            fig.add_subplot(5, 4, 4).title#.set_text('Input Normal')
+            fig.add_subplot(4, 4, 3).title#.set_text('Input Normal')
             plt.imshow(TensorToImage(inputNormal))
             plt.axis('off')
+            fig.add_subplot(4, 4, 4).title#.set_text('Input Optical Flow')
+            plt.imshow(FlowToImage(inputOpticalFlowForward))
+            plt.axis('off')
 
-            fig.add_subplot(5, 4, 5).title#.set_text('Output Surface')
+            fig.add_subplot(4, 4, 5).title#.set_text('Output Surface')
             plt.imshow(TensorToImage(outputSurface))
             plt.axis('off')
-            fig.add_subplot(5, 4, 6).title#.set_text('Output Color')
-            plt.imshow(TensorToImage(outputColor))
+            fig.add_subplot(4, 4, 8).title#.set_text('Output Optical Flow')
+            plt.imshow(FlowToImage(outputOpticalFlowForward))
             plt.axis('off')
-            fig.add_subplot(5, 4, 7).title#.set_text('Output Depth')
-            plt.imshow(TensorToImage(outputDepth))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 8).title#.set_text('Output Normal')
-            plt.imshow(TensorToImage(outputNormal))
+            fig.add_subplot(4, 4, 6).title#.set_text('Output Mesh Warped')
+            plt.imshow(TensorToImage(outputMeshWarped))
             plt.axis('off')
 
-            fig.add_subplot(5, 4, 9).title#.set_text('Target Surface')
+            fig.add_subplot(4, 4, 9).title#.set_text('Target Surface')
             plt.imshow(TensorToImage(targetSurface))
             plt.axis('off')
-            fig.add_subplot(5, 4, 10).title#.set_text('Target Color')
-            plt.imshow(TensorToImage(targetColor))
+            fig.add_subplot(4, 4, 12).title#.set_text('Target Optical Flow')
+            plt.imshow(FlowToImage(targetOpticalFlowForward))
             plt.axis('off')
-            fig.add_subplot(5, 4, 11).title#.set_text('Target Depth')
-            plt.imshow(TensorToImage(targetDepth))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 12).title#.set_text('Target Normal')
-            plt.imshow(TensorToImage(targetNormal))
-            plt.axis('off')
-
-            fig.add_subplot(5, 4, 14).title#.set_text('Splats Color')
-            plt.imshow(TensorToImage(splatsColor))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 15).title#.set_text('Splats Depth')
-            plt.imshow(TensorToImage(splatsDepth))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 16).title#.set_text('Splats Normal')
-            plt.imshow(TensorToImage(splatsNormal))
-            plt.axis('off')
-
-            fig.add_subplot(5, 4, 18).title#.set_text('Pull Push Color')
-            plt.imshow(TensorToImage(pullPushColor))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 19).title#.set_text('Pull Push Depth')
-            plt.imshow(TensorToImage(pullPushDepth))
-            plt.axis('off')
-            fig.add_subplot(5, 4, 20).title#.set_text('Pull Push Normal')
-            plt.imshow(TensorToImage(pullPushNormal))
+            fig.add_subplot(4, 4, 7).title#.set_text('Target Mesh Warped')
+            plt.imshow(TensorToImage(targetMeshWarped))
             plt.axis('off')
 
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -395,189 +273,13 @@ while True:
 
             summaryWriter.add_figure('Snapshots/Epoch' + str(epoch), plt.gcf(), iteration)
 
-            framePrevious = sequence['MeshColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
-            frameCurrent = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
-            frameNext = sequence['MeshColor'][snapshotFrameIndex + 1][snapshotSampleIndex]
-
-            motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][snapshotFrameIndex][snapshotSampleIndex]
-            motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][snapshotFrameIndex + 1][snapshotSampleIndex]
-            framePreviousWarpedToCurrent = WarpImage(framePrevious.unsqueeze(0), motionVectorPreviousToCurrent.unsqueeze(0)).squeeze(0)
-            frameNextWarpedToCurrent = WarpImage(frameNext.unsqueeze(0), motionVectorNextToCurrent.unsqueeze(0)).squeeze(0)
-            frameOverlay = (framePreviousWarpedToCurrent + frameCurrent + frameNextWarpedToCurrent) / 3.0
-
-            occlusionPrevious = sequence['MeshOpticalFlowBackward'][snapshotFrameIndex][snapshotSampleIndex]
-            occlusionPrevious = EstimateOcclusion(occlusionPrevious.unsqueeze(0)).squeeze(0)
-            framePreviousWarpedToCurrentOccluded = occlusionPrevious * framePreviousWarpedToCurrent
-
-            occlusionNext = sequence['MeshOpticalFlowForward'][snapshotFrameIndex + 1][snapshotSampleIndex]
-            occlusionNext = EstimateOcclusion(occlusionNext.unsqueeze(0)).squeeze(0)
-            frameNextWarpedToCurrentOccluded = occlusionNext * frameNextWarpedToCurrent
-            frameOverlayOccluded = (framePreviousWarpedToCurrentOccluded + frameCurrent + frameNextWarpedToCurrentOccluded) / 3.0
-
-            fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
-            fig.add_subplot(3, 3, 1).title#.set_text('Frame Previous')
-            plt.imshow(TensorToImage(framePrevious))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 2).title#.set_text('Frame Current')
-            plt.imshow(TensorToImage(frameCurrent))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 3).title#.set_text('Frame Next')
-            plt.imshow(TensorToImage(frameNext))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 4).title#.set_text('Frame Previous Warped')
-            plt.imshow(TensorToImage(framePreviousWarpedToCurrent))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 5).title#.set_text('Frame Overlay')
-            plt.imshow(TensorToImage(frameOverlay))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 6).title#.set_text('Frame Next Warped')
-            plt.imshow(TensorToImage(frameNextWarpedToCurrent))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 7).title#.set_text('Frame Previous Warped Occluded')
-            plt.imshow(TensorToImage(framePreviousWarpedToCurrentOccluded))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 8).title#.set_text('Frame Overlay Occluded')
-            plt.imshow(TensorToImage(frameOverlayOccluded))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 9).title#.set_text('Frame Next Warped Occluded')
-            plt.imshow(TensorToImage(frameNextWarpedToCurrentOccluded))
-            plt.axis('off')
-
-            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-            plt.margins(0, 0)
-
-            summaryWriter.add_figure('SnapshotsFlow/Epoch' + str(epoch), plt.gcf(), iteration)
-
-            fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
-            fig.add_subplot(3, 3, 1).title#.set_text('Input Previous Warped')
-            plt.imshow(TensorToImage(inputPreviousWarped[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 2).title#.set_text('Input Current')
-            plt.imshow(TensorToImage(input[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 3).title#.set_text('Input Next Warped')
-            plt.imshow(TensorToImage(inputNextWarped[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 4).title#.set_text('Output Previous Warped')
-            plt.imshow(TensorToImage(outputPreviousWarped[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 5).title#.set_text('Output Current')
-            plt.imshow(TensorToImage(output[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 6).title#.set_text('Output Next Warped')
-            plt.imshow(TensorToImage(outputNextWarped[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 7).title#.set_text('Target Previous Warped')
-            plt.imshow(TensorToImage(targetPreviousWarped[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 8).title#.set_text('Target Current')
-            plt.imshow(TensorToImage(target[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 9).title#.set_text('Target Next Warped')
-            plt.imshow(TensorToImage(targetNextWarped[snapshotSampleIndex, 2:5, :, :]))
-            plt.axis('off')
-
-            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-            plt.margins(0, 0)
-
-            summaryWriter.add_figure('SnapshotsTriplet/Epoch' + str(epoch), plt.gcf(), iteration)
-
-            # SPARSE FLOW
-            framePrevious = sequence['PointsSparseColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
-            frameCurrent = sequence['PointsSparseColor'][snapshotFrameIndex][snapshotSampleIndex]
-            frameNext = sequence['PointsSparseColor'][snapshotFrameIndex + 1][snapshotSampleIndex]
-
-            motionVectorPreviousToCurrent = sequence['PointsSparseOpticalFlowForward'][snapshotFrameIndex][snapshotSampleIndex]
-            motionVectorNextToCurrent = sequence['PointsSparseOpticalFlowBackward'][snapshotFrameIndex + 1][snapshotSampleIndex]
-            framePreviousWarpedToCurrent = WarpImage(framePrevious.unsqueeze(0), motionVectorPreviousToCurrent.unsqueeze(0)).squeeze(0)
-            frameNextWarpedToCurrent = WarpImage(frameNext.unsqueeze(0), motionVectorNextToCurrent.unsqueeze(0)).squeeze(0)
-            frameOverlay = (framePreviousWarpedToCurrent + frameCurrent + frameNextWarpedToCurrent) / 3.0
-
-            occlusionPrevious = sequence['PointsSparseOpticalFlowBackward'][snapshotFrameIndex][snapshotSampleIndex]
-            occlusionPrevious = EstimateOcclusion(occlusionPrevious.unsqueeze(0)).squeeze(0)
-            framePreviousWarpedToCurrentOccluded = occlusionPrevious * framePreviousWarpedToCurrent
-
-            occlusionNext = sequence['PointsSparseOpticalFlowForward'][snapshotFrameIndex + 1][snapshotSampleIndex]
-            occlusionNext = EstimateOcclusion(occlusionNext.unsqueeze(0)).squeeze(0)
-            frameNextWarpedToCurrentOccluded = occlusionNext * frameNextWarpedToCurrent
-            frameOverlayOccluded = (framePreviousWarpedToCurrentOccluded + frameCurrent + frameNextWarpedToCurrentOccluded) / 3.0
-
-            fig = plt.figure(figsize=(3 * frameCurrent.size(2), 3 * frameCurrent.size(1)), dpi=1)
-            fig.add_subplot(3, 3, 1).title#.set_text('Frame Previous')
-            plt.imshow(TensorToImage(framePrevious))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 2).title#.set_text('Frame Current')
-            plt.imshow(TensorToImage(frameCurrent))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 3).title#.set_text('Frame Next')
-            plt.imshow(TensorToImage(frameNext))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 4).title#.set_text('Frame Previous Warped')
-            plt.imshow(TensorToImage(framePreviousWarpedToCurrent))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 5).title#.set_text('Frame Overlay')
-            plt.imshow(TensorToImage(frameOverlay))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 6).title#.set_text('Frame Next Warped')
-            plt.imshow(TensorToImage(frameNextWarpedToCurrent))
-            plt.axis('off')
-
-            fig.add_subplot(3, 3, 7).title#.set_text('Frame Previous Warped Occluded')
-            plt.imshow(TensorToImage(framePreviousWarpedToCurrentOccluded))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 8).title#.set_text('Frame Overlay Occluded')
-            plt.imshow(TensorToImage(frameOverlayOccluded))
-            plt.axis('off')
-            fig.add_subplot(3, 3, 9).title#.set_text('Frame Next Warped Occluded')
-            plt.imshow(TensorToImage(frameNextWarpedToCurrentOccluded))
-            plt.axis('off')
-
-            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-            plt.margins(0, 0)
-
-            summaryWriter.add_figure('SnapshotsSparseFlow/Epoch' + str(epoch), plt.gcf(), iteration)
-
-            # Save an animated gif with input, output and target (quality is worse due to compression)
-            height = inputs.size(3)
-            width = inputs.size(4)
-            videoTensor = torch.zeros((1, dataset.sequenceFrameCount, 3, 3 * height, 3 * width), dtype=torch.float, device=device)
-
-            for frameIndex in range(dataset.sequenceFrameCount):
-                # Color
-                videoTensor[0, frameIndex, :, 0:height, 0:width] = inputs[frameIndex, snapshotSampleIndex, 2:5, :, :]
-                videoTensor[0, frameIndex, :, height:2*height, 0:width] = outputs[frameIndex, snapshotSampleIndex, 2:5, :, :]
-                videoTensor[0, frameIndex, :, 2*height:3*height, 0:width] = targets[frameIndex, snapshotSampleIndex, 2:5, :, :]
-
-                # Depth
-                videoTensor[0, frameIndex, :, 0:height, width:2*width] = inputs[frameIndex, snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
-                videoTensor[0, frameIndex, :, height:2*height, width:2*width] = outputs[frameIndex, snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
-                videoTensor[0, frameIndex, :, 2*height:3*height, width:2*width] = targets[frameIndex, snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
-
-                # Normal
-                videoTensor[0, frameIndex, :, 0:height, 2*width:3*width] = inputs[frameIndex, snapshotSampleIndex, 5:8, :, :]
-                videoTensor[0, frameIndex, :, height:2*height, 2*width:3*width] = outputs[frameIndex, snapshotSampleIndex, 5:8, :, :]
-                videoTensor[0, frameIndex, :, 2*height:3*height, 2*width:3*width] = targets[frameIndex, snapshotSampleIndex, 5:8, :, :]
-
-            videoTensor = torch.clamp(videoTensor, 0, 1)
-            summaryWriter.add_video('Videos/Epoch' + str(epoch), videoTensor, iteration, fps=10)
-
             # Save a checkpoint to file
             checkpoint = {
                 'Epoch' : epoch,
-                'StepsGenerator' : stepsGenerator,
-                'StepsCritic' : stepsCritic,
                 'BatchIndexStart' : batchIndex + 1,
-                'Generator' : generator.state_dict(),
-                'OptimizerGenerator' : optimizerGenerator.state_dict(),
-                'SchedulerGenerator' : schedulerGenerator.state_dict(),
-                'Critic' : critic.state_dict(),
-                'OptimizerCritic' : optimizerCritic.state_dict(),
-                'SchedulerCritic' : schedulerCritic.state_dict()
+                'Model' : model.state_dict(),
+                'Optimizer' : optimizer.state_dict(),
+                'Scheduler' : scheduler.state_dict(),
             }
 
             torch.save(checkpoint, checkpointDirectory + checkpointNameStart + checkpointNameEnd)
