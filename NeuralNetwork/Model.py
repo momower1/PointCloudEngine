@@ -131,6 +131,61 @@ class Critic(torch.nn.Module):
 
         return act
 
+class PullPushLayer(torch.nn.Module):
+    def __init__(self, inoutChannels=16):
+        super(PullPushLayer, self).__init__()
+        self.inoutChannels = inoutChannels
+        self.pullBlock = PullBlock(inoutChannels)
+        self.pushBlock = PushBlock(inoutChannels)
+        self.fuseBlock = FuseBlock(2 * inoutChannels, inoutChannels)
+
+    def forward(self, input):
+        n, c, h, w = input.shape
+
+        paddings = []
+        residuals = [input]
+        resolutionCount = int(math.ceil(math.log2(max(h, w))))
+
+        act = input
+
+        # Pull phase
+        for i in range(resolutionCount):
+            # Pad such that width and height are dividable by 2
+            multiple = 2
+            height = act.size(2)
+            width = act.size(3)
+            heightPadding = (multiple - (height % multiple)) % multiple
+            widthPadding = (multiple - (width % multiple)) % multiple
+            paddings.append([heightPadding, widthPadding])
+
+            if heightPadding > 0 or widthPadding > 0:
+                act = torch.nn.functional.pad(act, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+
+            act = self.pullBlock(act)
+            residuals.append(act)
+
+        residuals.pop()
+
+        # Push phase
+        for i in range(resolutionCount):
+            act = self.pushBlock(act)
+
+            # Slice away the padding
+            height = act.size(2)
+            width = act.size(3)
+            heightPadding, widthPadding = paddings.pop()
+
+            if heightPadding > 0 or widthPadding > 0:
+                act = act[:, :, 0:height-heightPadding, 0:width-widthPadding]
+
+            # Fuse and add residual from pull phase
+            residual = residuals.pop()
+            act = torch.cat([act, residual], dim=1)
+            act = self.fuseBlock(act)
+            act = act + residual
+
+        return act
+
 class PullPushModel(torch.nn.Module):
     def __init__(self, inChannels=3, outChannels=3, innerChannels=16, recurrent=False):
         super(PullPushModel, self).__init__()
@@ -140,11 +195,9 @@ class PullPushModel(torch.nn.Module):
         self.previous = None
         self.convStart = torch.nn.Conv2d(2 * inChannels if self.recurrent else inChannels, innerChannels, 3, 1, 1)
         self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.pullPush = PullPushLayer(innerChannels)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.sigmoid = torch.nn.Sigmoid()
-        self.pullBlock = PullBlock(innerChannels)
-        self.pushBlock = PushBlock(innerChannels)
-        self.fuseBlock = FuseBlock(2 * innerChannels, innerChannels)
 
         InitializeParameters(self)
         ApplyWeightNormalization(self)
@@ -166,45 +219,7 @@ class PullPushModel(torch.nn.Module):
             act = input
 
         act = self.preluStart(self.convStart(act))
-
-        paddings = []
-        residuals = [act]
-        resolutionCount = int(math.ceil(math.log2(max(h, w))))
-
-        for i in range(resolutionCount):
-            # Pad such that width and height are dividable by 2
-            multiple = 2
-            height = act.size(2)
-            width = act.size(3)
-            heightPadding = (multiple - (height % multiple)) % multiple
-            widthPadding = (multiple - (width % multiple)) % multiple
-            paddings.append([heightPadding, widthPadding])
-
-            if heightPadding > 0 or widthPadding > 0:
-                act = torch.nn.functional.pad(act, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
-
-            act = self.pullBlock(act)
-            residuals.append(act)
-
-        residuals.pop()
-
-        for i in range(resolutionCount):
-            act = self.pushBlock(act)
-
-            # Slice away the padding
-            height = act.size(2)
-            width = act.size(3)
-            heightPadding, widthPadding = paddings.pop()
-
-            if heightPadding > 0 or widthPadding > 0:
-                act = act[:, :, 0:height-heightPadding, 0:width-widthPadding]
-
-            # Fuse and add residual from pull phase
-            residual = residuals.pop()
-            act = torch.cat([act, residual], dim=1)
-            act = self.fuseBlock(act)
-            act = act + residual
-
+        act = self.pullPush(act)
         act = self.sigmoid(self.convEnd(act))
 
         if self.recurrent:
