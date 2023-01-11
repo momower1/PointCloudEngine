@@ -322,12 +322,12 @@ class Unet(torch.nn.Module):
 class UnetPullPushEncoderBlock(torch.nn.Module):
     def __init__(self, inChannels=8, outChannels=16):
         super(UnetPullPushEncoderBlock, self).__init__()
+        self.pullPush = PullPushLayer(inChannels)
         self.conv = torch.nn.Conv2d(inChannels, outChannels, 4, 2, 1)
         self.prelu = torch.nn.PReLU(1, 0.25)
-        self.pullPush = PullPushLayer(outChannels)
 
     def forward(self, input):
-        return self.pullPush(self.prelu(self.conv(input)))
+        return self.prelu(self.conv(self.pullPush(input)))
 
 class UnetPullPushDecoderBlock(torch.nn.Module):
     def __init__(self, inChannels=16, outChannels=8):
