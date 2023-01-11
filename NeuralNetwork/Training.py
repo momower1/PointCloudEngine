@@ -253,6 +253,8 @@ while True:
             targetMeshWarped *= targetOcclusion
             targetMeshWarped = (meshColor + targetMeshWarped) / 2.0
 
+            targetMeshWarpedGT = WarpImage(meshColorPrevious.unsqueeze(0), sequence['MeshOpticalFlowForward'][snapshotFrameIndex][snapshotSampleIndex].unsqueeze(0)).squeeze(0)
+
             fig = plt.figure(figsize=(4 * inputDepth.size(2), 4 * inputDepth.size(1)), dpi=1)
             fig.add_subplot(4, 4, 1).title#.set_text('Input Foreground')
             plt.imshow(TensorToImage(inputForeground))
@@ -291,6 +293,10 @@ while True:
             plt.axis('off')
             fig.add_subplot(4, 4, 12).title#.set_text('Target Optical Flow')
             plt.imshow(FlowToImage(targetOpticalFlowForward))
+            plt.axis('off')
+
+            fig.add_subplot(4, 4, 15).title#.set_text('Target Mesh Warped GT')
+            plt.imshow(TensorToImage(targetMeshWarpedGT))
             plt.axis('off')
             
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
