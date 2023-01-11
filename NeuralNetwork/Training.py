@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
+dataset = Dataset(directory='G:/PointCloudEngineDatasetTest/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -17,7 +17,7 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 8
-snapshotSkip = 256
+snapshotSkip = 8#256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
@@ -108,7 +108,7 @@ while True:
                 preloadThreads[threadIndex].start()
 
         # Generate the output frames either in chronological or in reverse order (starting with the last frame, used to improve temporal stability)
-        frameGenerationOrder = range(dataset.sequenceFrameCount) if (iteration % 2 == 0) else range(dataset.sequenceFrameCount -1, -1, -1)
+        frameGenerationOrder = range(dataset.sequenceFrameCount) if (iteration % 2 == 0) else range(dataset.sequenceFrameCount - 1, -1, -1)
 
         # Create the inputs/outputs/targets for each frame in the sequence
         inputs = []
@@ -225,6 +225,7 @@ while True:
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
 
+            meshColorPrevious = sequence['MeshColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
             meshColor = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
 
             inputFlowMin = inputFlowMins[snapshotFrameIndex][snapshotSampleIndex]
@@ -237,18 +238,20 @@ while True:
             outputSurface = outputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             outputOpticalFlowForward = outputs[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
             outputMotionVectorForward = ConvertMotionVectorIntoPixelRange(inputFlowMin, inputFlowMax, outputOpticalFlowForward.unsqueeze(0))
-            outputMeshWarped = WarpImage(meshColor.unsqueeze(0), outputMotionVectorForward).squeeze(0)
+            outputMeshWarped = WarpImage(meshColorPrevious.unsqueeze(0), outputMotionVectorForward).squeeze(0)
             outputOcclusion = EstimateOcclusion(outputMotionVectorForward).squeeze(0)
             outputMeshWarped *= outputOcclusion
+            outputMeshWarped = (meshColor + outputMeshWarped) / 2.0
 
             targetFlowMin = targetFlowMins[snapshotFrameIndex][snapshotSampleIndex]
             targetFlowMax = targetFlowMaxs[snapshotFrameIndex][snapshotSampleIndex]
             targetSurface = targets[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
             targetOpticalFlowForward = targets[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
             targetMotionVectorForward = ConvertMotionVectorIntoPixelRange(targetFlowMin, targetFlowMax, targetOpticalFlowForward.unsqueeze(0))
-            targetMeshWarped = WarpImage(meshColor.unsqueeze(0), targetMotionVectorForward).squeeze(0)
+            targetMeshWarped = WarpImage(meshColorPrevious.unsqueeze(0), targetMotionVectorForward).squeeze(0)
             targetOcclusion = EstimateOcclusion(targetMotionVectorForward).squeeze(0)
             targetMeshWarped *= targetOcclusion
+            targetMeshWarped = (meshColor + targetMeshWarped) / 2.0
 
             fig = plt.figure(figsize=(4 * inputDepth.size(2), 4 * inputDepth.size(1)), dpi=1)
             fig.add_subplot(4, 4, 1).title#.set_text('Input Foreground')
@@ -267,23 +270,29 @@ while True:
             fig.add_subplot(4, 4, 5).title#.set_text('Output Surface')
             plt.imshow(TensorToImage(outputSurface))
             plt.axis('off')
+            fig.add_subplot(4, 4, 6).title#.set_text('Mesh Color Previous')
+            plt.imshow(TensorToImage(meshColorPrevious))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 7).title#.set_text('Output Mesh Warped')
+            plt.imshow(TensorToImage(outputMeshWarped))
+            plt.axis('off')
             fig.add_subplot(4, 4, 8).title#.set_text('Output Optical Flow')
             plt.imshow(FlowToImage(outputOpticalFlowForward))
-            plt.axis('off')
-            fig.add_subplot(4, 4, 6).title#.set_text('Output Mesh Warped')
-            plt.imshow(TensorToImage(outputMeshWarped))
             plt.axis('off')
 
             fig.add_subplot(4, 4, 9).title#.set_text('Target Surface')
             plt.imshow(TensorToImage(targetSurface))
             plt.axis('off')
+            fig.add_subplot(4, 4, 10).title#.set_text('Mesh Color')
+            plt.imshow(TensorToImage(meshColor))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 11).title#.set_text('Target Mesh Warped')
+            plt.imshow(TensorToImage(targetMeshWarped))
+            plt.axis('off')
             fig.add_subplot(4, 4, 12).title#.set_text('Target Optical Flow')
             plt.imshow(FlowToImage(targetOpticalFlowForward))
             plt.axis('off')
-            fig.add_subplot(4, 4, 7).title#.set_text('Target Mesh Warped')
-            plt.imshow(TensorToImage(targetMeshWarped))
-            plt.axis('off')
-
+            
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
             plt.margins(0, 0)
 

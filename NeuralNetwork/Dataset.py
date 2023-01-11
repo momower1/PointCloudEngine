@@ -177,9 +177,12 @@ class Dataset:
 
             # Need to swap forward and backward motion vectors
             if reverseSequence:
-                tmp = tensors['MeshOpticalFlowForward']
-                tensors['MeshOpticalFlowForward'] = tensors['MeshOpticalFlowBackward']
-                tensors['MeshOpticalFlowBackward'] = tmp
+                for renderMode in self.renderModes:
+                    if 'OpticalFlowForward' in renderMode:
+                        viewMode = renderMode.split('OpticalFlowForward')[0]
+                        tmp = tensors[renderMode]
+                        tensors[renderMode] = tensors[viewMode + 'OpticalFlowBackward']
+                        tensors[viewMode + 'OpticalFlowBackward'] = tmp
 
             sequence.append(tensors)
 
