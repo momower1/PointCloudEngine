@@ -318,3 +318,78 @@ class Unet(torch.nn.Module):
         act = self.sigmoid(self.convEnd(act))
 
         return act
+
+class UnetPullPushEncoderBlock(torch.nn.Module):
+    def __init__(self, inChannels=8, outChannels=16):
+        super(UnetPullPushEncoderBlock, self).__init__()
+        self.conv = torch.nn.Conv2d(inChannels, outChannels, 4, 2, 1)
+        self.prelu = torch.nn.PReLU(1, 0.25)
+        self.pullPush = PullPushLayer(outChannels)
+
+    def forward(self, input):
+        return self.pullPush(self.prelu(self.conv(input)))
+
+class UnetPullPushDecoderBlock(torch.nn.Module):
+    def __init__(self, inChannels=16, outChannels=8):
+        super(UnetPullPushDecoderBlock, self).__init__()
+        self.conv = torch.nn.ConvTranspose2d(inChannels, outChannels, 4, 2, 1)
+        self.prelu = torch.nn.PReLU(1, 0.25)
+
+    def forward(self, input):
+        return self.prelu(self.conv(input))
+
+class UnetPullPush(torch.nn.Module):
+    def __init__(self, inChannels=8, outChannels=8, innerChannels=8, layerCount=4):
+        super(UnetPullPush, self).__init__()
+        self.layerCount = layerCount
+        self.encoderBlocks = torch.nn.ModuleList()
+        self.decoderBlocks = torch.nn.ModuleList()
+        self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
+        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
+        self.sigmoid = torch.nn.Sigmoid()
+
+        for layerIndex in range(self.layerCount):
+            self.encoderBlocks.append(UnetPullPushEncoderBlock(pow(2, layerIndex) * innerChannels, pow(2, layerIndex + 1) * innerChannels))
+
+        for layerIndex in range(self.layerCount - 1, -1, -1):
+            self.decoderBlocks.append(UnetPullPushDecoderBlock(pow(2, layerIndex + 1) * innerChannels, pow(2, layerIndex) * innerChannels))
+
+        InitializeParameters(self)
+        ApplyWeightNormalization(self)
+
+    def forward(self, input):
+        n, c, h, w = input.shape
+
+        # Calculate padding
+        multiple = pow(2, self.layerCount)
+        widthPadding = (multiple - (w % multiple)) % multiple
+        heightPadding = (multiple - (h % multiple)) % multiple
+
+        # Pad so that the strided convolution operations are valid
+        input = torch.nn.functional.pad(input, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+
+        # Perform start convolution
+        act = self.preluStart(self.convStart(input))
+
+        # Store encoder embeddings for residual connection during decoder phase
+        residuals = [act]
+
+        # Encoder layers
+        for layerIndex in range(self.layerCount):
+            act = self.encoderBlocks[layerIndex](act)
+            residuals.append(act)
+
+        residuals.pop()
+
+        # Decoder layers
+        for layerIndex in range(self.layerCount):
+            act = self.decoderBlocks[layerIndex](act)
+
+            # Residual connection
+            act = act + residuals.pop()
+
+        # Perform end convolution
+        act = self.sigmoid(self.convEnd(act))
+
+        return act
