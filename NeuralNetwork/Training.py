@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDatasetTest/', sequenceFrameCount=3)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -17,7 +17,7 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 8
-snapshotSkip = 8#256
+snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
