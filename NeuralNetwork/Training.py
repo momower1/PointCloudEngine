@@ -191,7 +191,7 @@ while True:
             inputFlowMinSFM, inputFlowMaxSFM, inputFlowSFM = ConvertMotionVectorIntoZeroToOneRange(pointsSparseSurfaceOpticalFlowForwardPredicted)
             inputSFM = torch.cat([pointsSparseSurfacePredicted, pointsSparseSurfaceDepthPredicted, pointsSparseSurfaceNormalPredicted, inputFlowSFM], dim=1)
             outputSFM = SFM(inputSFM)
-            outputMotionVectorSFM = ConvertMotionVectorIntoPixelRange(inputFlowMinSFM, inputFlowMaxSFM, outputSFM)
+            outputMotionVectorSFM = ConvertMotionVectorIntoPixelRange(inputFlowMinSFM, inputFlowMaxSFM, outputSFM.detach())
             targetFlowMinSFM, targetFlowMaxSFM, targetFlowSFM = ConvertMotionVectorIntoZeroToOneRange(meshOpticalFlowForward)
             targetSFM = targetFlowSFM
             inputsSFM.append(inputSFM)
@@ -208,10 +208,10 @@ while True:
             if previousOutputSRM is None:
                 previousOutputSRM = torch.zeros_like(inputSRM)
 
-            previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM.detach())
+            previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM)
             inputSRM = torch.cat([inputSRM, previousOutputWarpedSRM], dim=1)
             outputSRM = SRM(inputSRM)
-            #previousOutputSRM = outputSRM
+            previousOutputSRM = outputSRM
             targetSRM = torch.cat([meshForeground, meshDepth, meshColor, meshNormal], dim=1)
             inputsSRM.append(inputSRM)
             outputsSRM.append(outputSRM)
@@ -323,6 +323,9 @@ while True:
         lossSRM.backward(retain_graph=False)
         optimizerSRM.step()
 
+        # Need to detach previous output for next iteration (since using recurrent architecture)
+        previousOutputSRM = previousOutputSRM.detach()
+
         # Plot losses
         summaryWriter.add_scalar('Surface Classification Model/Loss SCM', lossSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
@@ -336,9 +339,6 @@ while True:
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
-
-        # Need to detach previous output for next iteration (since using recurrent architecture)
-        previousOutputSRM.detach()
 
         # Update learning rate using schedulers
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
