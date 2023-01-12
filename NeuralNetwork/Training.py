@@ -17,7 +17,7 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 8
-snapshotSkip = 8#256
+snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
