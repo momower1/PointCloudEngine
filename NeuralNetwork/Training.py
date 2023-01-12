@@ -17,7 +17,7 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 8
-snapshotSkip = 256
+snapshotSkip = 8#256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
@@ -39,10 +39,11 @@ factorLossOpticalFlowSFM = 1.0
 factorLossTemporalSFM = 0.0
 
 # Surface Reconstruction Model
-SRM = PullPushModel(16, 7, 16).to(device)
+SRM = PullPushModel(16, 8, 16).to(device)
 optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
 previousOutputSRM = None
+factorLossSurfaceSRM = 1.0
 factorLossDepthSRM = 1.0
 factorLossColorSRM = 1.0
 factorLossNormalSRM = 1.0
@@ -69,7 +70,7 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     schedulerSRM.load_state_dict(checkpoint['SchedulerSRM'])
 
 def PrintLearningRates():
-    print('Learning rates: ')
+    print('Learning rates: ', end='')
     print('SCM ' + str(schedulerSCM.get_last_lr()[0]), end='')
     print(', SFM ' + str(schedulerSFM.get_last_lr()[0]), end='')
     print(', SRM ' + str(schedulerSRM.get_last_lr()[0]))
@@ -158,6 +159,7 @@ while True:
 
         # Create input, output and target tensors for each frame in the sequence
         for frameIndex in frameGenerationOrder:
+            meshForeground = sequence['MeshForeground'][frameIndex]
             meshDepth = sequence['MeshDepth'][frameIndex]
             meshColor = sequence['MeshColor'][frameIndex]
             meshNormal = sequence['MeshNormalScreen'][frameIndex]
@@ -206,10 +208,11 @@ while True:
             if previousOutputSRM is None:
                 previousOutputSRM = torch.zeros_like(inputSRM)
 
-            previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM)
+            previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM.detach())
             inputSRM = torch.cat([inputSRM, previousOutputWarpedSRM], dim=1)
             outputSRM = SRM(inputSRM)
-            targetSRM = torch.cat([meshDepth, meshColor, meshNormal], dim=1)
+            #previousOutputSRM = outputSRM
+            targetSRM = torch.cat([meshForeground, meshDepth, meshColor, meshNormal], dim=1)
             inputsSRM.append(inputSRM)
             outputsSRM.append(outputSRM)
             targetsSRM.append(targetSRM)
@@ -225,6 +228,7 @@ while True:
         lossTemporalSFM = []
 
         # Surface Reconstruction Model Loss Terms
+        lossSurfaceSRM = []
         lossDepthSRM = []
         lossColorSRM = []
         lossNormalSRM = []
@@ -251,6 +255,8 @@ while True:
             lossSurfaceSCM.append(lossSurfaceTripletSCM)
             lossTemporalSCM.append(lossTemporalTripletSCM)
 
+            # TODO: Re-normalize depth for the sparse surface!
+
             # Surface Flow Model
             outputPreviousSFM = outputsSFM[tripletFrameIndex - 1]
             outputPreviousWarpedSFM = WarpImage(outputPreviousSFM, motionVectorPreviousToCurrent)
@@ -273,10 +279,12 @@ while True:
             outputNextWarpedSRM = WarpImage(outputNextSRM, motionVectorNextToCurrent)
             targetSRM = targetsSRM[tripletFrameIndex]
 
-            lossDepthTripletSRM = factorLossDepthSRM * torch.nn.functional.mse_loss(outputSRM[:, 0:1, :, :], targetSRM[:, 0:1, :, :], reduction='mean')
-            lossColorTripletSRM = factorLossColorSRM * torch.nn.functional.mse_loss(outputSRM[:, 1:4, :, :], targetSRM[:, 1:4, :, :], reduction='mean')
-            lossNormalTripletSRM = factorLossNormalSRM * torch.nn.functional.mse_loss(outputSRM[:, 4:7, :, :], targetSRM[:, 4:7, :, :], reduction='mean')
+            lossSurfaceTripletSRM = factorLossSurfaceSRM * torch.nn.functional.binary_cross_entropy(outputSRM[:, 0:1, :, :], targetSRM[:, 0:1, :, :], reduction='mean')
+            lossDepthTripletSRM = factorLossDepthSRM * torch.nn.functional.mse_loss(outputSRM[:, 1:2, :, :], targetSRM[:, 1:2, :, :], reduction='mean')
+            lossColorTripletSRM = factorLossColorSRM * torch.nn.functional.mse_loss(outputSRM[:, 2:5, :, :], targetSRM[:, 2:5, :, :], reduction='mean')
+            lossNormalTripletSRM = factorLossNormalSRM * torch.nn.functional.mse_loss(outputSRM[:, 5:8, :, :], targetSRM[:, 5:8, :, :], reduction='mean')
             lossTemporalTripletSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputPreviousWarpedSRM, outputNextWarpedSRM, reduction='mean')
+            lossSurfaceSRM.append(lossSurfaceTripletSRM)
             lossDepthSRM.append(lossDepthTripletSRM)
             lossColorSRM.append(lossColorTripletSRM)
             lossNormalSRM.append(lossNormalTripletSRM)
@@ -287,6 +295,7 @@ while True:
         lossTemporalSCM = torch.stack(lossTemporalSCM, dim=0).mean()
         lossOpticalFlowSFM = torch.stack(lossOpticalFlowSFM, dim=0).mean()
         lossTemporalSFM = torch.stack(lossTemporalSFM, dim=0).mean()
+        lossSurfaceSRM = torch.stack(lossSurfaceSRM, dim=0).mean()
         lossDepthSRM = torch.stack(lossDepthSRM, dim=0).mean()
         lossColorSRM = torch.stack(lossColorSRM, dim=0).mean()
         lossNormalSRM = torch.stack(lossNormalSRM, dim=0).mean()
@@ -295,7 +304,7 @@ while True:
         # Combine partial losses into a single final loss term
         lossSCM = torch.stack([lossSurfaceSCM, lossTemporalSCM], dim=0).mean()
         lossSFM = torch.stack([lossOpticalFlowSFM, lossTemporalSFM], dim=0).mean()
-        lossSRM = torch.stack([lossDepthSRM, lossColorSRM, lossNormalSRM, lossTemporalSRM], dim=0).mean()
+        lossSRM = torch.stack([lossSurfaceSRM, lossDepthSRM, lossColorSRM, lossNormalSRM, lossTemporalSRM], dim=0).mean()
 
         # TODO: Pretrain SCM, then pretrain SFM and lastly train SRM
 
@@ -322,6 +331,7 @@ while True:
         summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
         summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss SRM', lossSRM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Surface SRM', lossSurfaceSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
@@ -346,94 +356,155 @@ while True:
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
 
-            break
+            # Surface Classification Model
+            inputPointsSparseForegroundSCM = inputsSCM[snapshotFrameIndex][snapshotSampleIndex, 0:1, :, :]
+            inputPointsSparseDepthSCM = inputsSCM[snapshotFrameIndex][snapshotSampleIndex, 1:2, :, :]
+            inputPointsSparseNormalSCM = inputsSCM[snapshotFrameIndex][snapshotSampleIndex, 2:5, :, :]
+            outputPointsSparseSurface = outputsSCM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
+            outputPointsSparseSurfaceMask = outputPointsSparseSurface.ge(0.5).float()
+            targetPointsSparseSurface = targetsSCM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
 
-            meshColorPrevious = sequence['MeshColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
-            meshColor = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
-
-            inputFlowMin = inputFlowMins[snapshotFrameIndex][snapshotSampleIndex]
-            inputFlowMax = inputFlowMaxs[snapshotFrameIndex][snapshotSampleIndex]
-            inputForeground = inputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
-            inputDepth = inputs[snapshotFrameIndex, snapshotSampleIndex, 1:2, :, :]
-            inputNormal = inputs[snapshotFrameIndex, snapshotSampleIndex, 2:5, :, :]
-            inputOpticalFlowForward = inputs[snapshotFrameIndex, snapshotSampleIndex, 5:7, :, :]
-
-            outputSurface = outputs[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
-            outputOpticalFlowForward = outputs[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
-            outputMotionVectorForward = ConvertMotionVectorIntoPixelRange(inputFlowMin, inputFlowMax, outputOpticalFlowForward.unsqueeze(0))
-            outputMeshWarped = WarpImage(meshColorPrevious.unsqueeze(0), outputMotionVectorForward).squeeze(0)
-            outputOcclusion = EstimateOcclusion(outputMotionVectorForward).squeeze(0)
-            outputMeshWarped *= outputOcclusion
-            outputMeshWarped = (meshColor + outputMeshWarped) / 2.0
-
-            targetFlowMin = targetFlowMins[snapshotFrameIndex][snapshotSampleIndex]
-            targetFlowMax = targetFlowMaxs[snapshotFrameIndex][snapshotSampleIndex]
-            targetSurface = targets[snapshotFrameIndex, snapshotSampleIndex, 0:1, :, :]
-            targetOpticalFlowForward = targets[snapshotFrameIndex, snapshotSampleIndex, 1:3, :, :]
-            targetMotionVectorForward = ConvertMotionVectorIntoPixelRange(targetFlowMin, targetFlowMax, targetOpticalFlowForward.unsqueeze(0))
-            targetMeshWarped = WarpImage(meshColorPrevious.unsqueeze(0), targetMotionVectorForward).squeeze(0)
-            targetOcclusion = EstimateOcclusion(targetMotionVectorForward).squeeze(0)
-            targetMeshWarped *= targetOcclusion
-            targetMeshWarped = (meshColor + targetMeshWarped) / 2.0
-
-            targetMeshWarpedGT = WarpImage(meshColorPrevious.unsqueeze(0), sequence['MeshOpticalFlowForward'][snapshotFrameIndex][snapshotSampleIndex].unsqueeze(0)).squeeze(0)
-
-            fig = plt.figure(figsize=(4 * inputDepth.size(2), 4 * inputDepth.size(1)), dpi=1)
-            fig.add_subplot(4, 4, 1).title#.set_text('Input Foreground')
-            plt.imshow(TensorToImage(inputForeground))
+            fig = plt.figure(figsize=(3 * dataset.width, 2 * dataset.height), dpi=1)
+            fig.add_subplot(2, 3, 1).title#.set_text('Input Points Sparse Foreground')
+            plt.imshow(TensorToImage(inputPointsSparseForegroundSCM))
             plt.axis('off')
-            fig.add_subplot(4, 4, 2).title#.set_text('Input Depth')
-            plt.imshow(TensorToImage(inputDepth))
+            fig.add_subplot(2, 3, 2).title#.set_text('Input Points Sparse Depth')
+            plt.imshow(TensorToImage(inputPointsSparseDepthSCM))
             plt.axis('off')
-            fig.add_subplot(4, 4, 3).title#.set_text('Input Normal')
-            plt.imshow(TensorToImage(inputNormal))
+            fig.add_subplot(2, 3, 3).title#.set_text('Input Points Sparse Normal')
+            plt.imshow(TensorToImage(inputPointsSparseNormalSCM))
             plt.axis('off')
-            fig.add_subplot(4, 4, 4).title#.set_text('Input Optical Flow')
-            plt.imshow(FlowToImage(inputOpticalFlowForward))
+            fig.add_subplot(2, 3, 4).title#.set_text('Output Points Sparse Surface')
+            plt.imshow(TensorToImage(outputPointsSparseSurface))
             plt.axis('off')
-
-            fig.add_subplot(4, 4, 5).title#.set_text('Output Surface')
-            plt.imshow(TensorToImage(outputSurface))
+            fig.add_subplot(2, 3, 5).title#.set_text('Output Points Sparse Surface Mask')
+            plt.imshow(TensorToImage(outputPointsSparseSurfaceMask))
             plt.axis('off')
-            fig.add_subplot(4, 4, 6).title#.set_text('Mesh Color Previous')
-            plt.imshow(TensorToImage(meshColorPrevious))
-            plt.axis('off')
-            fig.add_subplot(4, 4, 7).title#.set_text('Output Mesh Warped')
-            plt.imshow(TensorToImage(outputMeshWarped))
-            plt.axis('off')
-            fig.add_subplot(4, 4, 8).title#.set_text('Output Optical Flow')
-            plt.imshow(FlowToImage(outputOpticalFlowForward))
-            plt.axis('off')
-
-            fig.add_subplot(4, 4, 9).title#.set_text('Target Surface')
-            plt.imshow(TensorToImage(targetSurface))
-            plt.axis('off')
-            fig.add_subplot(4, 4, 10).title#.set_text('Mesh Color')
-            plt.imshow(TensorToImage(meshColor))
-            plt.axis('off')
-            fig.add_subplot(4, 4, 11).title#.set_text('Target Mesh Warped')
-            plt.imshow(TensorToImage(targetMeshWarped))
-            plt.axis('off')
-            fig.add_subplot(4, 4, 12).title#.set_text('Target Optical Flow')
-            plt.imshow(FlowToImage(targetOpticalFlowForward))
-            plt.axis('off')
-
-            fig.add_subplot(4, 4, 15).title#.set_text('Target Mesh Warped GT')
-            plt.imshow(TensorToImage(targetMeshWarpedGT))
+            fig.add_subplot(2, 3, 6).title#.set_text('Target Points Sparse Surface')
+            plt.imshow(TensorToImage(targetPointsSparseSurface))
             plt.axis('off')
             
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
             plt.margins(0, 0)
+            summaryWriter.add_figure('Surface Classification Model/Epoch' + str(epoch), plt.gcf(), iteration)
 
-            summaryWriter.add_figure('Snapshots/Epoch' + str(epoch), plt.gcf(), iteration)
+            # Surface Flow Model
+            inputPointsSparseSurfacePredicted = inputsSFM[snapshotFrameIndex][snapshotSampleIndex, 0:1, :, :]
+            inputPointsSparseSurfaceDepthPredicted = inputsSFM[snapshotFrameIndex][snapshotSampleIndex, 1:2, :, :]
+            inputPointsSparseSurfaceNormalPredicted = inputsSFM[snapshotFrameIndex][snapshotSampleIndex, 2:5, :, :]
+            inputPointsSparseSurfaceOpticalFlowForward = inputsSFM[snapshotFrameIndex][snapshotSampleIndex, 5:7, :, :]
+            outputSurfaceOpticalFlowForward = outputsSFM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
+            targetMeshOpticalFlowForward = targetsSFM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
+
+            fig = plt.figure(figsize=(3 * dataset.width, 2 * dataset.height), dpi=1)
+            fig.add_subplot(2, 3, 1).title#.set_text('Input Points Sparse Surface Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfacePredicted))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 2).title#.set_text('Input Points Sparse Surface Depth Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfaceDepthPredicted))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 3).title#.set_text('Input Points Sparse Surface Normal Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfaceNormalPredicted))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 4).title#.set_text('Input Points Sparse Surface Optical Flow Forward')
+            plt.imshow(FlowToImage(inputPointsSparseSurfaceOpticalFlowForward))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 5).title#.set_text('Output Surface Optical Flow Forward')
+            plt.imshow(FlowToImage(outputSurfaceOpticalFlowForward))
+            plt.axis('off')
+            fig.add_subplot(2, 3, 6).title#.set_text('Target Mesh Optical Flow Forward')
+            plt.imshow(FlowToImage(targetMeshOpticalFlowForward))
+            plt.axis('off')
+            
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+            summaryWriter.add_figure('Surface Flow Model/Epoch' + str(epoch), plt.gcf(), iteration)
+
+            # Surface Reconstruction Model
+            inputPointsSparseSurfacePredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 0:1, :, :]
+            inputPointsSparseSurfaceDepthPredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 1:2, :, :]
+            inputPointsSparseSurfaceColorPredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 2:5, :, :]
+            inputPointsSparseSurfaceNormalPredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 5:8, :, :]
+            inputPreviousWarpedSurfacePredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 8:9, :, :]
+            inputPreviousWarpedSurfaceDepthPredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 9:10, :, :]
+            inputPreviousWarpedSurfaceColorPredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 10:13, :, :]
+            inputPreviousWarpedSurfaceNormalPredicted = inputsSRM[snapshotFrameIndex][snapshotSampleIndex, 13:16, :, :]
+            outputSurfaceForeground = outputsSRM[snapshotFrameIndex][snapshotSampleIndex, 0:1, :, :]
+            outputSurfaceDepth = outputsSRM[snapshotFrameIndex][snapshotSampleIndex, 1:2, :, :]
+            outputSurfaceColor = outputsSRM[snapshotFrameIndex][snapshotSampleIndex, 2:5, :, :]
+            outputSurfaceNormal = outputsSRM[snapshotFrameIndex][snapshotSampleIndex, 5:8, :, :]
+            targetMeshForeground = targetsSRM[snapshotFrameIndex][snapshotSampleIndex, 0:1, :, :]
+            targetMeshDepth = targetsSRM[snapshotFrameIndex][snapshotSampleIndex, 1:2, :, :]
+            targetMeshColor = targetsSRM[snapshotFrameIndex][snapshotSampleIndex, 2:5, :, :]
+            targetMeshNormal = targetsSRM[snapshotFrameIndex][snapshotSampleIndex, 5:8, :, :]
+
+            fig = plt.figure(figsize=(4 * dataset.width, 4 * dataset.height), dpi=1)
+            fig.add_subplot(4, 4, 1).title#.set_text('Input Points Sparse Surface Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfacePredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 2).title#.set_text('Input Points Sparse Surface Depth Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfaceDepthPredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 3).title#.set_text('Input Points Sparse Surface Color Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfaceColorPredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 4).title#.set_text('Input Points Sparse Surface Normal Predicted')
+            plt.imshow(TensorToImage(inputPointsSparseSurfaceNormalPredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 5).title#.set_text('Input Previous Warped Points Sparse Surface Predicted')
+            plt.imshow(TensorToImage(inputPreviousWarpedSurfacePredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 6).title#.set_text('inputPreviousWarpedPointsSparseSurfaceDepthPredicted')
+            plt.imshow(TensorToImage(inputPreviousWarpedSurfaceDepthPredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 7).title#.set_text('Input Previous Warped Surface Color Predicted')
+            plt.imshow(TensorToImage(inputPreviousWarpedSurfaceColorPredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 8).title#.set_text('Input Previous Warped Surface Normal Predicted')
+            plt.imshow(TensorToImage(inputPreviousWarpedSurfaceNormalPredicted))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 9).title#.set_text('Output Surface Foreground')
+            plt.imshow(TensorToImage(outputSurfaceForeground))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 10).title#.set_text('Output Surface Depth')
+            plt.imshow(TensorToImage(outputSurfaceDepth))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 11).title#.set_text('Output Surface Color')
+            plt.imshow(TensorToImage(outputSurfaceColor))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 12).title#.set_text('Output Surface Normal')
+            plt.imshow(TensorToImage(outputSurfaceNormal))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 13).title#.set_text('Target Mesh Foreground')
+            plt.imshow(TensorToImage(targetMeshForeground))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 14).title#.set_text('Target Mesh Depth')
+            plt.imshow(TensorToImage(targetMeshDepth))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 15).title#.set_text('Target Mesh Color')
+            plt.imshow(TensorToImage(targetMeshColor))
+            plt.axis('off')
+            fig.add_subplot(4, 4, 16).title#.set_text('Target Mesh Normal')
+            plt.imshow(TensorToImage(targetMeshNormal))
+            plt.axis('off')
+            
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+            summaryWriter.add_figure('Surface Reconstruction Model/Epoch' + str(epoch), plt.gcf(), iteration)
 
             # Save a checkpoint to file
             checkpoint = {
                 'Epoch' : epoch,
                 'BatchIndexStart' : batchIndex + 1,
-                'Model' : model.state_dict(),
-                'Optimizer' : optimizer.state_dict(),
-                'Scheduler' : scheduler.state_dict(),
+                'SCM' : SCM.state_dict(),
+                'SFM' : SFM.state_dict(),
+                'SRM' : SRM.state_dict(),
+                'OptimizerSCM' : optimizerSCM.state_dict(),
+                'OptimizerSFM' : optimizerSFM.state_dict(),
+                'OptimizerSRM' : optimizerSRM.state_dict(),
+                'SchedulerSCM' : schedulerSCM.state_dict(),
+                'SchedulerSFM' : schedulerSFM.state_dict(),
+                'SchedulerSRM' : schedulerSRM.state_dict(),
             }
 
             torch.save(checkpoint, checkpointDirectory + checkpointNameStart + checkpointNameEnd)

@@ -90,13 +90,17 @@ class Dataset:
         self.trainingSequenceCount = max(0, len(self.trainingFrames) - (self.sequenceFrameCount - 1))
         self.testSequenceCount = max(0, len(self.testFrames) - (self.sequenceFrameCount - 1))
         self.renderModes = self.GetFrame(frameIndices, 0).keys()
+        self.height = list(self.GetFrame(frameIndices, 0).values())[0].size(1)
+        self.width = list(self.GetFrame(frameIndices, 0).values())[0].size(2)
 
         print('Initialized dataset from "' + directory + '"')
         print('\t- ' + str(frameCount) + ' total frames')
         print('\t- ' + str(self.sequenceFrameCount) + ' frames per sequence')
         print('\t- ' + str(self.trainingSequenceCount) + ' training sequences')
         print('\t- ' + str(self.testSequenceCount) + ' test sequences')
-        print('\t- ' + str(len(self.renderModes)) + ' render modes ')
+        print('\t- ' + str(len(self.renderModes)) + ' render modes')
+        print('\t- ' + str(self.height) + ' height')
+        print('\t- ' + str(self.width) + ' width')
 
     def GetFrame(self, frames, index):
         if self.zipCompressed:
