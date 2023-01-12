@@ -202,7 +202,7 @@ class PullPushModel(torch.nn.Module):
         InitializeParameters(self)
         ApplyWeightNormalization(self)
 
-    def forward(self, input, motionVector):
+    def forward(self, input, motionVector=None):
         n, c, h, w = input.shape
 
         if self.recurrent:

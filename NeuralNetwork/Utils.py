@@ -121,4 +121,5 @@ def ConvertMotionVectorIntoZeroToOneRange(motionVectorPixel):
     return motionVectorMin, motionVectorMax, motionVectorZeroOne
 
 def ConvertMotionVectorIntoPixelRange(motionVectorMin, motionVectorMax, motionVectorZeroOne):
-    return motionVectorMin + (motionVectorZeroOne * motionVectorMax)
+    n, c, h, w = motionVectorZeroOne.shape
+    return motionVectorMin.view(n, 1, 1, 1) + (motionVectorMax.view(n, 1, 1, 1) * motionVectorZeroOne)

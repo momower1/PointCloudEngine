@@ -24,14 +24,29 @@ schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
 batchCount = dataset.trainingSequenceCount // batchSize
 
-# Create model, optimizer and scheduler
-model = PullPushModel(7, 3, 16, False).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, betas=(0.9, 0.999))
-scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=schedulerDecayRate, verbose=False)
+# Surface Classification Model
+SCM = PullPushModel(5, 1, 16).to(device)
+optimizerSCM = torch.optim.Adam(SCM.parameters(), lr=learningRate, betas=(0.9, 0.999))
+schedulerSCM = torch.optim.lr_scheduler.ExponentialLR(optimizerSCM, gamma=schedulerDecayRate, verbose=False)
+factorLossSurfaceSCM = 1.0
+factorLossTemporalSCM = 0.0
 
-factorSurface = 1.0
-factorOpticalFlow = 100.0
-factorTemporal = 1.0
+# Surface Flow Model
+SFM = PullPushModel(7, 2, 16).to(device)
+optimizerSFM = torch.optim.Adam(SFM.parameters(), lr=learningRate, betas=(0.9, 0.999))
+schedulerSFM = torch.optim.lr_scheduler.ExponentialLR(optimizerSFM, gamma=schedulerDecayRate, verbose=False)
+factorLossOpticalFlowSFM = 1.0
+factorLossTemporalSFM = 0.0
+
+# Surface Reconstruction Model
+SRM = PullPushModel(16, 7, 16).to(device)
+optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.9, 0.999))
+schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
+previousOutputSRM = None
+factorLossDepthSRM = 1.0
+factorLossColorSRM = 1.0
+factorLossNormalSRM = 1.0
+factorLossTemporalSRM = 0.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
 checkpointDirectory += 'Supervised/'
@@ -43,9 +58,21 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     checkpoint = torch.load(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     epoch = checkpoint['Epoch']
     batchIndexStart = checkpoint['BatchIndexStart']
-    model.load_state_dict(checkpoint['Model'])
-    optimizer.load_state_dict(checkpoint['Optimizer'])
-    scheduler.load_state_dict(checkpoint['Scheduler'])
+    SCM.load_state_dict(checkpoint['SCM'])
+    SFM.load_state_dict(checkpoint['SFM'])
+    SRM.load_state_dict(checkpoint['SRM'])
+    optimizerSCM.load_state_dict(checkpoint['OptimizerSCM'])
+    optimizerSFM.load_state_dict(checkpoint['OptimizerSFM'])
+    optimizerSRM.load_state_dict(checkpoint['OptimizerSRM'])
+    schedulerSCM.load_state_dict(checkpoint['SchedulerSCM'])
+    schedulerSFM.load_state_dict(checkpoint['SchedulerSFM'])
+    schedulerSRM.load_state_dict(checkpoint['SchedulerSRM'])
+
+def PrintLearningRates():
+    print('Learning rates: ')
+    print('SCM ' + str(schedulerSCM.get_last_lr()[0]), end='')
+    print(', SFM ' + str(schedulerSFM.get_last_lr()[0]), end='')
+    print(', SRM ' + str(schedulerSRM.get_last_lr()[0]))
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
@@ -65,7 +92,7 @@ for threadIndex in range(preloadThreadCount):
 
 # Train for infinite epochs
 while True:
-    print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
+    PrintLearningRates()
 
     # Loop over the dataset batches
     for batchIndex in range(batchIndexStart, batchCount):
@@ -110,111 +137,205 @@ while True:
         # Generate the output frames either in chronological or in reverse order (starting with the last frame, used to improve temporal stability)
         frameGenerationOrder = range(dataset.sequenceFrameCount) if (iteration % 2 == 0) else range(dataset.sequenceFrameCount - 1, -1, -1)
 
-        # Create the inputs/outputs/targets for each frame in the sequence
-        inputs = []
-        outputs = []
-        targets = []
-        inputFlowMins = []
-        inputFlowMaxs = []
-        targetFlowMins = []
-        targetFlowMaxs = []
+        # Surface Classification Model
+        inputsSCM = []
+        outputsSCM = []
+        targetsSCM = []
 
+        # Surface Flow Model
+        inputsSFM = []
+        outputsSFM = []
+        targetsSFM = []
+        inputFlowMinsSFM = []
+        inputFlowMaxsSFM = []
+        targetFlowMinsSFM = []
+        targetFlowMaxsSFM = []
+
+        # Surface Reconstruction Model
+        inputsSRM = []
+        outputsSRM = []
+        targetsSRM = []
+
+        # Create input, output and target tensors for each frame in the sequence
         for frameIndex in frameGenerationOrder:
-            inputFlowMin, inputFlowMax, inputOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['PointsSparseOpticalFlowForward'][frameIndex])
-            input = torch.cat([sequence['PointsSparseForeground'][frameIndex], sequence['PointsSparseDepth'][frameIndex], sequence['PointsSparseNormalScreen'][frameIndex], inputOpticalFlowForward], dim=1)
+            meshDepth = sequence['MeshDepth'][frameIndex]
+            meshColor = sequence['MeshColor'][frameIndex]
+            meshNormal = sequence['MeshNormalScreen'][frameIndex]
+            meshOpticalFlowForward = sequence['MeshOpticalFlowForward'][frameIndex]
 
-            # Generate the output
-            output = model(input, None)
+            pointsSparseSurface = sequence['PointsSparseSurface'][frameIndex]
+            pointsSparseForeground = sequence['PointsSparseForeground'][frameIndex]
+            pointsSparseDepth = sequence['PointsSparseDepth'][frameIndex]
+            pointsSparseColor = sequence['PointsSparseColor'][frameIndex]
+            pointsSparseNormal = sequence['PointsSparseNormalScreen'][frameIndex]
+            pointsSparseOpticalFlowForward = sequence['PointsSparseOpticalFlowForward'][frameIndex]
 
-            # Need to bring optical flow motion vectors from pixel space into [0, 1] range
-            # TODO: Mabye use the grid that corresponds to the motion instead?
-            targetFlowMin, targetFlowMax, targetOpticalFlowForward = ConvertMotionVectorIntoZeroToOneRange(sequence['MeshOpticalFlowForward'][frameIndex])
-            target = torch.cat([sequence['PointsSparseSurface'][frameIndex], targetOpticalFlowForward], dim=1)
+            # Surface Classification Model
+            inputSCM = torch.cat([pointsSparseForeground, pointsSparseDepth, pointsSparseNormal], dim=1)
+            outputSCM = SCM(inputSCM)
+            targetSCM = pointsSparseSurface
+            inputsSCM.append(inputSCM)
+            outputsSCM.append(outputSCM)
+            targetsSCM.append(targetSCM)
 
-            inputs.append(input)
-            outputs.append(output)
-            targets.append(target)
-            inputFlowMins.append(inputFlowMin)
-            inputFlowMaxs.append(inputFlowMax)
-            targetFlowMins.append(targetFlowMin)
-            targetFlowMaxs.append(targetFlowMax)
+            # Only keep pixels if they are part of the predicted surface
+            pointsSparseSurfacePredicted = outputSCM.ge(0.5).float()
+            pointsSparseSurfaceDepthPredicted = pointsSparseSurfacePredicted * pointsSparseDepth
+            pointsSparseSurfaceColorPredicted = pointsSparseSurfacePredicted * pointsSparseColor
+            pointsSparseSurfaceNormalPredicted = pointsSparseSurfacePredicted * pointsSparseNormal
+            pointsSparseSurfaceOpticalFlowForwardPredicted = pointsSparseSurfacePredicted * pointsSparseOpticalFlowForward
 
-        inputs = torch.stack(inputs, dim=0)
-        outputs = torch.stack(outputs, dim=0)
-        targets = torch.stack(targets, dim=0)
-        inputFlowMins = torch.stack(inputFlowMins, dim=0)
-        inputFlowMaxs = torch.stack(inputFlowMaxs, dim=0)
-        targetFlowMins = torch.stack(targetFlowMins, dim=0)
-        targetFlowMaxs = torch.stack(targetFlowMaxs, dim=0)
+            # Surface Flow Model
+            inputFlowMinSFM, inputFlowMaxSFM, inputFlowSFM = ConvertMotionVectorIntoZeroToOneRange(pointsSparseSurfaceOpticalFlowForwardPredicted)
+            inputSFM = torch.cat([pointsSparseSurfacePredicted, pointsSparseSurfaceDepthPredicted, pointsSparseSurfaceNormalPredicted, inputFlowSFM], dim=1)
+            outputSFM = SFM(inputSFM)
+            outputMotionVectorSFM = ConvertMotionVectorIntoPixelRange(inputFlowMinSFM, inputFlowMaxSFM, outputSFM)
+            targetFlowMinSFM, targetFlowMaxSFM, targetFlowSFM = ConvertMotionVectorIntoZeroToOneRange(meshOpticalFlowForward)
+            targetSFM = targetFlowSFM
+            inputsSFM.append(inputSFM)
+            outputsSFM.append(outputSFM)
+            targetsSFM.append(targetSFM)
+            inputFlowMinsSFM.append(inputFlowMinSFM)
+            inputFlowMaxsSFM.append(inputFlowMaxSFM)
+            targetFlowMinsSFM.append(targetFlowMinSFM)
+            targetFlowMaxsSFM.append(targetFlowMaxSFM)
+
+            # Surface Reconstruction Model
+            inputSRM = torch.cat([pointsSparseSurfacePredicted, pointsSparseSurfaceDepthPredicted, pointsSparseSurfaceColorPredicted, pointsSparseSurfaceNormalPredicted], dim=1)
+
+            if previousOutputSRM is None:
+                previousOutputSRM = torch.zeros_like(inputSRM)
+
+            previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM)
+            inputSRM = torch.cat([inputSRM, previousOutputWarpedSRM], dim=1)
+            outputSRM = SRM(inputSRM)
+            targetSRM = torch.cat([meshDepth, meshColor, meshNormal], dim=1)
+            inputsSRM.append(inputSRM)
+            outputsSRM.append(outputSRM)
+            targetsSRM.append(targetSRM)
+
+        # TODO?: Stack into tensors of shape [dataset.sequenceFrameCount, N, C, H, W]
+
+        # Surface Classification Model Loss Terms
+        lossSurfaceSCM = []
+        lossTemporalSCM = []
+
+        # Surface Flow Model Loss Terms
+        lossOpticalFlowSFM = []
+        lossTemporalSFM = []
+
+        # Surface Reconstruction Model Loss Terms
+        lossDepthSRM = []
+        lossColorSRM = []
+        lossNormalSRM = []
+        lossTemporalSRM = []
 
         # Accumulate loss terms over triplets in the sequence
-        lossSurface = []
-        lossOpticalFlow = []
-        lossTemporal = []
-
         # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
             motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][tripletFrameIndex]
             motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][tripletFrameIndex + 1]
 
-            inputPrevious = inputs[tripletFrameIndex - 1]
-            inputPreviousWarped = WarpImage(inputPrevious, motionVectorPreviousToCurrent)
-            input = inputs[tripletFrameIndex]
-            inputNext = inputs[tripletFrameIndex + 1]
-            inputNextWarped = WarpImage(inputNext, motionVectorNextToCurrent)
+            # TODO: Temporal loss term should probably include occlusion and also current output
 
-            outputPrevious = outputs[tripletFrameIndex - 1]
-            outputPreviousWarped = WarpImage(outputPrevious, motionVectorPreviousToCurrent)
-            output = outputs[tripletFrameIndex]
-            outputNext = outputs[tripletFrameIndex + 1]
-            outputNextWarped = WarpImage(outputNext, motionVectorNextToCurrent)
+            # Surface Classification Model
+            outputPreviousSCM = outputsSCM[tripletFrameIndex - 1]
+            outputPreviousWarpedSCM = WarpImage(outputPreviousSCM, motionVectorPreviousToCurrent)
+            outputSCM = outputsSCM[tripletFrameIndex]
+            outputNextSCM = outputsSCM[tripletFrameIndex + 1]
+            outputNextWarpedSCM = WarpImage(outputNextSCM, motionVectorNextToCurrent)
+            targetSCM = targetsSCM[tripletFrameIndex]
 
-            targetPrevious = targets[tripletFrameIndex - 1]
-            targetPreviousWarped = WarpImage(targetPrevious, motionVectorPreviousToCurrent)
-            target = targets[tripletFrameIndex]
-            targetNext = targets[tripletFrameIndex + 1]
-            targetNextWarped = WarpImage(targetNext, motionVectorNextToCurrent)
+            lossSurfaceTripletSCM = factorLossSurfaceSCM * torch.nn.functional.binary_cross_entropy(outputSCM, targetSCM, reduction='mean')
+            lossTemporalTripletSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputPreviousWarpedSCM, outputNextWarpedSCM, reduction='mean')
+            lossSurfaceSCM.append(lossSurfaceTripletSCM)
+            lossTemporalSCM.append(lossTemporalTripletSCM)
 
-            sequenceInput = torch.cat([inputPreviousWarped, input, inputNextWarped], dim=1)
-            sequenceOutput = torch.cat([outputPreviousWarped, output, outputNextWarped], dim=1)
-            sequenceTarget = torch.cat([targetPreviousWarped, target, targetNextWarped], dim=1)
+            # Surface Flow Model
+            outputPreviousSFM = outputsSFM[tripletFrameIndex - 1]
+            outputPreviousWarpedSFM = WarpImage(outputPreviousSFM, motionVectorPreviousToCurrent)
+            outputSFM = outputsSFM[tripletFrameIndex]
+            outputNextSFM = outputsSFM[tripletFrameIndex + 1]
+            outputNextWarpedSFM = WarpImage(outputNextSFM, motionVectorNextToCurrent)
+            targetSFM = targetsSFM[tripletFrameIndex]
 
-            # Add supervised generator loss terms
-            # TODO: Temporal loss term should consider occlusion/invalid motion ouf warped output (remove these areas before computing the MSE)
-            lossSurfaceTriplet = factorSurface * torch.nn.functional.binary_cross_entropy(output[:, 0:1, :, :], target[:, 0:1, :, :], reduction='mean')
-            lossOpticalFlowTriplet = factorOpticalFlow * torch.nn.functional.mse_loss(output[:, 1:3, :, :], target[:, 1:3, :, :], reduction='mean')
-            lossTemporalPrevious = factorTemporal * torch.nn.functional.mse_loss(outputPreviousWarped, output, reduction='mean')
-            lossTemporalNext = factorTemporal * torch.nn.functional.mse_loss(outputNextWarped, output, reduction='mean')
-            lossTemporalTriplet = lossTemporalPrevious + lossTemporalNext
+            lossOpticalFlowTripletSFM = factorLossOpticalFlowSFM * torch.nn.functional.mse_loss(outputSFM, targetSFM, reduction='mean')
+            lossTemporalTripletSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(outputPreviousWarpedSFM, outputNextWarpedSFM, reduction='mean')
+            lossOpticalFlowSFM.append(lossOpticalFlowTripletSFM)
+            lossTemporalSFM.append(lossTemporalTripletSFM)
 
-            lossSurface.append(lossSurfaceTriplet)
-            lossOpticalFlow.append(lossOpticalFlowTriplet)
-            lossTemporal.append(lossTemporalTriplet)
+            # Surface Reconstruction Model
+            # TODO: WGAN
+            outputPreviousSRM = outputsSRM[tripletFrameIndex - 1]
+            outputPreviousWarpedSRM = WarpImage(outputPreviousSRM, motionVectorPreviousToCurrent)
+            outputSRM = outputsSRM[tripletFrameIndex]
+            outputNextSRM = outputsSRM[tripletFrameIndex + 1]
+            outputNextWarpedSRM = WarpImage(outputNextSRM, motionVectorNextToCurrent)
+            targetSRM = targetsSRM[tripletFrameIndex]
 
-        # Average all loss terms across the sequence and combine into final loss
-        lossSurface = torch.stack(lossSurface, dim=0).mean()
-        lossOpticalFlow = torch.stack(lossOpticalFlow, dim=0).mean()
-        lossTemporal = torch.stack(lossTemporal, dim=0).mean()
-        loss = torch.stack([lossSurface, lossOpticalFlow, lossTemporal], dim=0).mean()
+            lossDepthTripletSRM = factorLossDepthSRM * torch.nn.functional.mse_loss(outputSRM[:, 0:1, :, :], targetSRM[:, 0:1, :, :], reduction='mean')
+            lossColorTripletSRM = factorLossColorSRM * torch.nn.functional.mse_loss(outputSRM[:, 1:4, :, :], targetSRM[:, 1:4, :, :], reduction='mean')
+            lossNormalTripletSRM = factorLossNormalSRM * torch.nn.functional.mse_loss(outputSRM[:, 4:7, :, :], targetSRM[:, 4:7, :, :], reduction='mean')
+            lossTemporalTripletSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputPreviousWarpedSRM, outputNextWarpedSRM, reduction='mean')
+            lossDepthSRM.append(lossDepthTripletSRM)
+            lossColorSRM.append(lossColorTripletSRM)
+            lossNormalSRM.append(lossNormalTripletSRM)
+            lossTemporalSRM.append(lossTemporalTripletSRM)
 
-        # Train the model
-        model.zero_grad()
-        loss.backward(retain_graph=False)
-        optimizer.step()
+        # Average all loss terms across the sequence
+        lossSurfaceSCM = torch.stack(lossSurfaceSCM, dim=0).mean()
+        lossTemporalSCM = torch.stack(lossTemporalSCM, dim=0).mean()
+        lossOpticalFlowSFM = torch.stack(lossOpticalFlowSFM, dim=0).mean()
+        lossTemporalSFM = torch.stack(lossTemporalSFM, dim=0).mean()
+        lossDepthSRM = torch.stack(lossDepthSRM, dim=0).mean()
+        lossColorSRM = torch.stack(lossColorSRM, dim=0).mean()
+        lossNormalSRM = torch.stack(lossNormalSRM, dim=0).mean()
+        lossTemporalSRM = torch.stack(lossTemporalSRM, dim=0).mean()
 
-        # Plot generator losses
-        summaryWriter.add_scalar('Loss/Loss', loss, iteration)
-        summaryWriter.add_scalar('Loss/Loss Surface', lossSurface, iteration)
-        summaryWriter.add_scalar('Loss/Loss Optical Flow', lossOpticalFlow, iteration)
-        summaryWriter.add_scalar('Loss/Loss Temporal', lossTemporal, iteration)
+        # Combine partial losses into a single final loss term
+        lossSCM = torch.stack([lossSurfaceSCM, lossTemporalSCM], dim=0).mean()
+        lossSFM = torch.stack([lossOpticalFlowSFM, lossTemporalSFM], dim=0).mean()
+        lossSRM = torch.stack([lossDepthSRM, lossColorSRM, lossNormalSRM, lossTemporalSRM], dim=0).mean()
 
-        # Need to detach previous output for next model iteration
-        model.DetachPrevious()
+        # TODO: Pretrain SCM, then pretrain SFM and lastly train SRM
+
+        # Train Surface Classification Model
+        SCM.zero_grad()
+        lossSCM.backward(retain_graph=True)
+        optimizerSCM.step()
+
+        # Train Surface Flow Model
+        SFM.zero_grad()
+        lossSFM.backward(retain_graph=True)
+        optimizerSFM.step()
+
+        # Train Surface Reconstruction Model
+        SRM.zero_grad()
+        lossSRM.backward(retain_graph=False)
+        optimizerSRM.step()
+
+        # Plot losses
+        summaryWriter.add_scalar('Surface Classification Model/Loss SCM', lossSCM, iteration)
+        summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
+        summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
+        summaryWriter.add_scalar('Surface Flow Model/Loss SFM', lossSFM, iteration)
+        summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
+        summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/Loss SRM', lossSRM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
+
+        # Need to detach previous output for next iteration (since using recurrent architecture)
+        previousOutputSRM.detach()
 
         # Update learning rate using schedulers
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
-            scheduler.step()
-            print('Learning rate: ' + str(scheduler.get_last_lr()[0]))
+            schedulerSCM.step()
+            schedulerSFM.step()
+            schedulerSRM.step()
+            PrintLearningRates()
 
         # Print progress, save checkpoints, create snapshots and plot loss graphs in certain intervals
         if iteration % snapshotSkip == (snapshotSkip - 1):
@@ -224,6 +345,8 @@ while True:
 
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
             print(progress)
+
+            break
 
             meshColorPrevious = sequence['MeshColor'][snapshotFrameIndex - 1][snapshotSampleIndex]
             meshColor = sequence['MeshColor'][snapshotFrameIndex][snapshotSampleIndex]
