@@ -327,13 +327,13 @@ while True:
         previousOutputSRM = previousOutputSRM.detach()
 
         # Plot losses
-        summaryWriter.add_scalar('Surface Classification Model/Loss SCM', lossSCM, iteration)
+        summaryWriter.add_scalar('Surface Classification Model/_Loss SCM', lossSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
-        summaryWriter.add_scalar('Surface Flow Model/Loss SFM', lossSFM, iteration)
+        summaryWriter.add_scalar('Surface Flow Model/_Loss SFM', lossSFM, iteration)
         summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
         summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/Loss SRM', lossSRM, iteration)
+        summaryWriter.add_scalar('Surface Reconstruction Model/_Loss SRM', lossSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Surface SRM', lossSurfaceSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
         summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
