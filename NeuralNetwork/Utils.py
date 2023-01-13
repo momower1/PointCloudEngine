@@ -58,6 +58,21 @@ def WarpImage(imageTensor, motionVectorTensor, distance=1.0):
 
     return imageWarpedTensor
 
+def GetValidMotionMask(motionVectorTensor, distance=1.0):
+    n, c, h, w = motionVectorTensor.shape
+    image = torch.ones((n, 1, h, w), dtype=torch.float, device=device)
+    mask = WarpImage(image, motionVectorTensor, distance)
+    return mask
+
+def EndPointError(motionVectorTarget, motionVectorOutput):
+    n, c, h, w = motionVectorTarget.shape
+    pixels = pixel_grid(w, h).repeat(n, 1, 1, 1)
+    pixelsWarpedTarget = pixels + motionVectorTarget
+    pixelsWarpedOutput = pixels + motionVectorOutput
+    pixelsWarpedDifference = pixelsWarpedOutput - pixelsWarpedTarget
+
+    return torch.linalg.vector_norm(pixelsWarpedDifference, ord=2, dim=1).mean()
+
 def EstimateOcclusion(motionVectorTensor, distance=1.0, artifactFilterSize=1):
     n, c, h, w = motionVectorTensor.shape
     
@@ -75,9 +90,10 @@ def EstimateOcclusion(motionVectorTensor, distance=1.0, artifactFilterSize=1):
         occlusion[sampleIndex, :, pixelsWarped[sampleIndex, 1, :, :], pixelsWarped[sampleIndex, 0, :, :]] = 1.0
 
     # Resolve artifacts due to sampling
-    k = (2 * artifactFilterSize) - 1
-    occlusion = torch.nn.functional.max_pool2d(occlusion, k, 1, k // 2)
-    occlusion = -torch.nn.functional.max_pool2d(-occlusion, k, 1, k // 2)
+    if artifactFilterSize > 0:
+        k = (2 * artifactFilterSize) - 1
+        occlusion = torch.nn.functional.max_pool2d(occlusion, k, 1, k // 2)
+        occlusion = -torch.nn.functional.max_pool2d(-occlusion, k, 1, k // 2)
 
     return occlusion
 

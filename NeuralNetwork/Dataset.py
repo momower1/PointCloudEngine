@@ -87,8 +87,8 @@ class Dataset:
 
         self.trainingFrames = frameIndices[int(testSetPercentage * frameCount):frameCount]
         self.testFrames = frameIndices[0:int(testSetPercentage * frameCount)]
-        self.trainingSequenceCount = max(0, len(self.trainingFrames) - (self.sequenceFrameCount - 1))
-        self.testSequenceCount = max(0, len(self.testFrames) - (self.sequenceFrameCount - 1))
+        self.trainingSequenceCount = max(0, len(self.trainingFrames) - (self.sequenceFrameCount - 1) - 1)
+        self.testSequenceCount = max(0, len(self.testFrames) - (self.sequenceFrameCount - 1) - 1)
         self.renderModes = self.GetFrame(frameIndices, 0).keys()
         self.height = list(self.GetFrame(frameIndices, 0).values())[0].size(1)
         self.width = list(self.GetFrame(frameIndices, 0).values())[0].size(2)
@@ -168,27 +168,35 @@ class Dataset:
 
     def GetSequence(self, frames, sequenceIndex):
         sequence = []
-        reverseSequence = self.dataAugmentation and random.randint(0, 1) == 0
 
-        # Possibly reverse the order of frames in the sequence (then also need to swap forward and backward motion vectors)
-        if reverseSequence:
-            frameOrder = range(sequenceIndex + self.sequenceFrameCount - 1, sequenceIndex - 1, -1)
-        else:
-            frameOrder = range(sequenceIndex, sequenceIndex + self.sequenceFrameCount, 1)
-
-        for frameIndex in frameOrder:
+        # Get all the frames
+        for frameIndex in range(sequenceIndex, sequenceIndex + self.sequenceFrameCount, 1):
             tensors = self.GetFrame(frames, frameIndex)
+            sequence.append(tensors)
 
-            # Need to swap forward and backward motion vectors
-            if reverseSequence:
+        # Possibly reverse the order of frames in the sequence
+        # Then motion vectors need to be swapped with the one from the next frame (and also swap forward and backward motion)
+        reverseSequence = True#self.dataAugmentation and random.randint(0, 1) == 0
+
+        if reverseSequence:
+            # Add another frame to the end that is required to swap the optical flow
+            sequence.append(self.GetFrame(frames, sequenceIndex + self.sequenceFrameCount))
+
+            # Swap motion vectors with the one from the next frame with swapped direction
+            for frameIndex in range(self.sequenceFrameCount):
+                tensors = sequence[frameIndex]
+                tensorsNext = sequence[frameIndex + 1]
+
                 for renderMode in self.renderModes:
                     if 'OpticalFlowForward' in renderMode:
                         viewMode = renderMode.split('OpticalFlowForward')[0]
-                        tmp = tensors[renderMode]
-                        tensors[renderMode] = tensors[viewMode + 'OpticalFlowBackward']
-                        tensors[viewMode + 'OpticalFlowBackward'] = tmp
+                        tensors[viewMode + 'OpticalFlowForward'] = tensorsNext[viewMode + 'OpticalFlowBackward']
+                        tensors[viewMode + 'OpticalFlowBackward'] = tensorsNext[viewMode + 'OpticalFlowForward']
+                        sequence[frameIndex] = tensors
 
-            sequence.append(tensors)
+            # Remove previously added frame and actually reverse the frame order
+            sequence.pop()
+            sequence.reverse()
 
         if self.dataAugmentation:
             # Augment data by color shifting the frames according to a normal distribution with low variance
