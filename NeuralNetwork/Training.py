@@ -9,15 +9,15 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=8)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 8
-snapshotSkip = 8#256
+batchSize = 4
+snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
@@ -50,7 +50,7 @@ factorLossNormalSRM = 1.0
 factorLossTemporalSRM = 0.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Supervised Renormalize Depth/'
+checkpointDirectory += 'Supervised/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
