@@ -125,17 +125,17 @@ def ColorShift(tensor, brightness, contrast, hue, saturation):
 
     return tensor
 
-def ConvertMotionVectorIntoZeroToOneRange(motionVectorPixel):
-    n, c, h, w = motionVectorPixel.shape
+def ConvertTensorIntoZeroToOneRange(tensorFull):
+    n, c, h, w = tensorFull.shape
 
-    # Perform batchwise min/max normalization
-    motionVectorMin, motionVectorMinIndices = torch.min(motionVectorPixel.view(n, -1), dim=1)
-    motionVectorZeroOne = motionVectorPixel - motionVectorMin.view(n, 1, 1, 1)
-    motionVectorMax, motionVectorMaxIndices = torch.max(motionVectorZeroOne.view(n, -1), dim=1)
-    motionVectorZeroOne /= motionVectorMax.view(n, 1, 1, 1) + 1e-12
+    # Perform Min-Max normalization batchwise
+    tensorMin, tensorMinIndices = torch.min(tensorFull.view(n, -1), dim=1)
+    tensorZeroOne = tensorFull - tensorMin.view(n, 1, 1, 1)
+    tensorMax, tensorMaxIndices = torch.max(tensorZeroOne.view(n, -1), dim=1)
+    tensorZeroOne /= tensorMax.view(n, 1, 1, 1) + 1e-12
 
-    return motionVectorMin, motionVectorMax, motionVectorZeroOne
+    return tensorMin, tensorMax, tensorZeroOne
 
-def ConvertMotionVectorIntoPixelRange(motionVectorMin, motionVectorMax, motionVectorZeroOne):
-    n, c, h, w = motionVectorZeroOne.shape
-    return motionVectorMin.view(n, 1, 1, 1) + (motionVectorMax.view(n, 1, 1, 1) * motionVectorZeroOne)
+def RevertTensorIntoFullRange(tensorMin, tensorMax, tensorZeroOne):
+    n, c, h, w = tensorZeroOne.shape
+    return tensorMin.view(n, 1, 1, 1) + (tensorMax.view(n, 1, 1, 1) * tensorZeroOne)

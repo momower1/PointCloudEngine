@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDatasetTest/', sequenceFrameCount=3, dataAugmentation=True)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -50,7 +50,7 @@ factorLossNormalSRM = 1.0
 factorLossTemporalSRM = 0.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Supervised Test/'
+checkpointDirectory += 'Supervised Renormalize Depth/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -185,12 +185,17 @@ while True:
             pointsSparseSurfaceNormalPredicted = pointsSparseSurfacePredicted * pointsSparseNormal
             pointsSparseSurfaceOpticalFlowForwardPredicted = pointsSparseSurfacePredicted * pointsSparseOpticalFlowForward
 
+            # Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
+            tmpMin, tmpMax, pointsSparseSurfaceDepthPredicted = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceDepthPredicted)
+
+            # TODO: Also inpaint backward optical flow
+
             # Surface Flow Model
-            inputFlowMinSFM, inputFlowMaxSFM, inputFlowSFM = ConvertMotionVectorIntoZeroToOneRange(pointsSparseSurfaceOpticalFlowForwardPredicted)
+            inputFlowMinSFM, inputFlowMaxSFM, inputFlowSFM = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceOpticalFlowForwardPredicted)
             inputSFM = torch.cat([pointsSparseSurfacePredicted, pointsSparseSurfaceDepthPredicted, pointsSparseSurfaceNormalPredicted, inputFlowSFM], dim=1)
             outputSFM = SFM(inputSFM)
-            outputMotionVectorSFM = ConvertMotionVectorIntoPixelRange(inputFlowMinSFM, inputFlowMaxSFM, outputSFM.detach())
-            targetFlowMinSFM, targetFlowMaxSFM, targetFlowSFM = ConvertMotionVectorIntoZeroToOneRange(meshOpticalFlowForward)
+            outputMotionVectorSFM = RevertTensorIntoFullRange(inputFlowMinSFM, inputFlowMaxSFM, outputSFM.detach())
+            targetFlowMinSFM, targetFlowMaxSFM, targetFlowSFM = ConvertTensorIntoZeroToOneRange(meshOpticalFlowForward)
             targetSFM = targetFlowSFM
             inputsSFM.append(inputSFM)
             outputsSFM.append(outputSFM)
@@ -257,8 +262,6 @@ while True:
             lossTemporalTripletSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputPreviousWarpedSCM, outputNextWarpedSCM, reduction='mean')
             lossSurfaceSCM.append(lossSurfaceTripletSCM)
             lossTemporalSCM.append(lossTemporalTripletSCM)
-
-            # TODO: Re-normalize depth for the sparse surface!
 
             # Surface Flow Model
             outputPreviousSFM = outputsSFM[tripletFrameIndex - 1]
