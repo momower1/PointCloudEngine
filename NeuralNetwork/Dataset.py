@@ -176,7 +176,7 @@ class Dataset:
 
         # Possibly reverse the order of frames in the sequence
         # Then motion vectors need to be swapped with the one from the next frame (and also swap forward and backward motion)
-        reverseSequence = True#self.dataAugmentation and random.randint(0, 1) == 0
+        reverseSequence = self.dataAugmentation and random.randint(0, 1) == 0
 
         if reverseSequence:
             # Add another frame to the end that is required to swap the optical flow
