@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
+dataset = Dataset(directory='G:/PointCloudEngineDatasetTest/', sequenceFrameCount=3, dataAugmentation=True)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -17,7 +17,7 @@ checkpointNameEnd = '.pt'
 
 epoch = 0
 batchSize = 8
-snapshotSkip = 256
+snapshotSkip = 8#256
 batchIndexStart = 0
 learningRate = 1e-3
 schedulerDecayRate = 0.95
@@ -50,7 +50,7 @@ factorLossNormalSRM = 1.0
 factorLossTemporalSRM = 0.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Supervised/'
+checkpointDirectory += 'Supervised Test/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -135,9 +135,6 @@ while True:
                 preloadThreads[threadIndex] = threading.Thread(target=preload_thread_load_next, args=(batchNextSequence, threadIndex, sequenceIndex))
                 preloadThreads[threadIndex].start()
 
-        # Generate the output frames either in chronological or in reverse order (starting with the last frame, used to improve temporal stability)
-        frameGenerationOrder = range(dataset.sequenceFrameCount) if (iteration % 2 == 0) else range(dataset.sequenceFrameCount - 1, -1, -1)
-
         # Surface Classification Model
         inputsSCM = []
         outputsSCM = []
@@ -158,12 +155,13 @@ while True:
         targetsSRM = []
 
         # Create input, output and target tensors for each frame in the sequence
-        for frameIndex in frameGenerationOrder:
+        for frameIndex in range(dataset.sequenceFrameCount):
             meshForeground = sequence['MeshForeground'][frameIndex]
             meshDepth = sequence['MeshDepth'][frameIndex]
             meshColor = sequence['MeshColor'][frameIndex]
             meshNormal = sequence['MeshNormalScreen'][frameIndex]
             meshOpticalFlowForward = sequence['MeshOpticalFlowForward'][frameIndex]
+            meshOpticalFlowBackward = sequence['MeshOpticalFlowBackward'][frameIndex]
 
             pointsSparseSurface = sequence['PointsSparseSurface'][frameIndex]
             pointsSparseForeground = sequence['PointsSparseForeground'][frameIndex]
@@ -208,7 +206,12 @@ while True:
             if previousOutputSRM is None:
                 previousOutputSRM = torch.zeros_like(inputSRM)
 
+            # TODO: Only keep warped pixels if they are not occluded by both forward and backward motion
+            # But this requires the network to also inpaint the sparse backward motion (which is not considered right now)
+            #previousOutputSRM *= EstimateOcclusion(outputMotionVectorBackwardSFM, distance=1, artifactFilterSize=0)
             previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM)
+            previousOutputWarpedSRM *= EstimateOcclusion(outputMotionVectorSFM, distance=1, artifactFilterSize=0)
+
             inputSRM = torch.cat([inputSRM, previousOutputWarpedSRM], dim=1)
             outputSRM = SRM(inputSRM)
             previousOutputSRM = outputSRM
@@ -271,7 +274,10 @@ while True:
             lossTemporalSFM.append(lossTemporalTripletSFM)
 
             # Surface Reconstruction Model
+            
             # TODO: WGAN
+
+            # TODO: WGAN Recurrent Temporal Stability: Randomly reverse triplet frames for critic input (only swap previous and next, like "reverseFrameGenerationOrder")
             outputPreviousSRM = outputsSRM[tripletFrameIndex - 1]
             outputPreviousWarpedSRM = WarpImage(outputPreviousSRM, motionVectorPreviousToCurrent)
             outputSRM = outputsSRM[tripletFrameIndex]
