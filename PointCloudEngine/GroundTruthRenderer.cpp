@@ -294,27 +294,68 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 	torch::Tensor depthTensor = DXCUDATORCH::GetDepthTensor().permute({ 0, 3, 1, 2 });
 	torch::Tensor colorTensor = DXCUDATORCH::GetBackbufferTensor().permute({ 0, 3, 1, 2 });
+	colorTensor = colorTensor.index({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice() });
 
 	settings->shadingMode = ShadingMode::NormalScreen;
 	Redraw(false);
 
 	torch::Tensor normalTensor = DXCUDATORCH::GetBackbufferTensor().permute({ 0, 3, 1, 2 });
+	normalTensor = normalTensor.index({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice() });
+
+	settings->shadingMode = ShadingMode::OpticalFlowForward;
+	Redraw(false);
+
+	torch::Tensor opticalFlowForwardTensor = DXCUDATORCH::GetBackbufferTensor().permute({ 0, 3, 1, 2 });
+
+	// Prepare tensors for model evaluation
+	torch::Tensor foregroundMask = depthTensor < 1.0f;
+	torch::Tensor backgroundMask = depthTensor >= 1.0f;
+	torch::Tensor depthNormalizedTensor = NormalizeDepthTensor(depthTensor, foregroundMask, backgroundMask).to(torch::kFloat16);
+	foregroundMask = foregroundMask.to(torch::kFloat16);
+	backgroundMask = backgroundMask.to(torch::kFloat16);
+
+	torch::Tensor inputSCM = torch::cat({ foregroundMask, depthNormalizedTensor, normalTensor }, 1);
+
+	std::vector<torch::jit::IValue> scriptedInputSCM = { inputSCM };
+
+	torch::Tensor outputSCM;
+
+	try
+	{
+		outputSCM = SCM.forward(scriptedInputSCM).toTensor();
+	}
+	catch (const std::exception& e)
+	{
+		std::string msg = e.what();
+		ERROR_MESSAGE(std::wstring(msg.begin(), msg.end()));
+	}
+
+	// Apply surface mask
+	torch::Tensor sparseSurfaceMask = (outputSCM > 0.5f).to(torch::kFloat16);
+	torch::Tensor sparseSurfaceDepth = sparseSurfaceMask * depthNormalizedTensor;	// TODO: Renormalize surface depth
+	torch::Tensor sparseSurfaceColor = sparseSurfaceMask * colorTensor;
+	torch::Tensor sparseSurfaceNormal = sparseSurfaceMask * normalTensor;
+	torch::Tensor sparseSurfaceFlow = sparseSurfaceMask * opticalFlowForwardTensor;
+
+	// Normalize flow into [0, 1] range
+
+
+	//inputSCM = torch.cat([pointsSparseForeground, pointsSparseDepth, pointsSparseNormal], dim = 1)
 
 	long long h = settings->resolutionY;
 	long long w = settings->resolutionX;
 
 	// Perform operations
-	torch::Tensor backgroundMask = depthTensor.ge(1.0f).to(torch::kFloat16);
-	torch::Tensor foregroundMask = 1.0f - backgroundMask;
-
-	torch::Tensor depthSlice = (depthTensor * foregroundMask).index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3) });
-	torch::Tensor colorSlice = colorTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)) });
-	torch::Tensor normalSlice = normalTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w) });
+	//torch::Tensor depthSlice = (outputSCM).index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3) });
+	//torch::Tensor colorSlice = colorTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)) });
+	//torch::Tensor normalSlice = normalTensor.index({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w) });
 
 	torch::Tensor tensor = torch::zeros({ 1, 4, h, w }, c10::TensorOptions().device(torch::kCUDA).dtype(torch::kFloat16));
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3) }, depthSlice.repeat({ 1, 4, 1, 1 }));
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)) }, colorSlice);
-	tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w) }, normalSlice);
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(0, w / 3) }, depthSlice.repeat({ 1, 4, 1, 1 }));
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(w / 3, 2 * (w / 3)) }, colorSlice);
+	//tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(), at::indexing::Slice(2 * (w / 3), w) }, normalSlice);
+
+	tensor = outputSCM.repeat({ 1, 4, 1, 1 });
 
 	tensor = tensor.permute({ 0, 2, 3, 1 }).contiguous();
 
@@ -322,6 +363,49 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 	settings->viewMode = ViewMode::NeuralNetwork;
 	settings->shadingMode = startShadingMode;
+}
+
+torch::Tensor PointCloudEngine::GroundTruthRenderer::NormalizeDepthTensor(torch::Tensor& depthTensor, torch::Tensor& foregroundMask, torch::Tensor& backgroundMask)
+{
+#ifdef min
+	#undef min
+#endif
+
+#ifdef max
+	#undef max
+#endif
+
+	torch::Tensor depthNormalizedTensor = depthTensor.clone();
+
+	// Replace background depth values with 0 for better visualization
+	depthNormalizedTensor.index_put_({ backgroundMask }, 0.0f);
+
+	// Compute minimum and maximum masked depth values
+	torch::Tensor depthMin = depthTensor.index({ foregroundMask }).min();
+	torch::Tensor depthMax = depthTensor.index({ foregroundMask }).max();
+
+	// Normalize masked values to range [0, 1]
+	depthNormalizedTensor.index_put_({ foregroundMask }, (depthNormalizedTensor.index({ foregroundMask }) - depthMin) / (depthMax - depthMin));
+
+#ifndef min
+	#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef max
+	#define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+
+	return depthNormalizedTensor;
+}
+
+std::vector<torch::Tensor> PointCloudEngine::GroundTruthRenderer::ConvertTensorIntoZeroToOneRange(torch::Tensor& tensorFull)
+{
+	return std::vector<torch::Tensor>();
+}
+
+torch::Tensor PointCloudEngine::GroundTruthRenderer::RevertTensorIntoFullRange(torch::Tensor& tensorMin, torch::Tensor& tensorMax, torch::Tensor& tensorZeroOne)
+{
+	return torch::Tensor();
 }
 
 bool PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model)
@@ -348,6 +432,9 @@ bool PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkModel(std::wstring&
 #if _DEBUG
 	model.dump(true, true, true);
 #endif
+
+	// Model needs to use half precision
+	model.to(torch::kFloat16);
 
 	return true;
 }

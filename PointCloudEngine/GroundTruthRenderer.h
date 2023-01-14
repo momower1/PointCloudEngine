@@ -60,6 +60,9 @@ namespace PointCloudEngine
 
 		void Redraw(bool present);
 		void DrawNeuralNetwork();
+		torch::Tensor NormalizeDepthTensor(torch::Tensor& depthTensor, torch::Tensor& foregroundMask, torch::Tensor& backgroundMask);
+		std::vector<torch::Tensor> ConvertTensorIntoZeroToOneRange(torch::Tensor& tensorFull);
+		torch::Tensor RevertTensorIntoFullRange(torch::Tensor& tensorMin, torch::Tensor& tensorMax, torch::Tensor& tensorZeroOne);
 		bool LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
