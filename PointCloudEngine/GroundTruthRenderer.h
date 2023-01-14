@@ -61,9 +61,10 @@ namespace PointCloudEngine
 		void Redraw(bool present);
 		void DrawNeuralNetwork();
 		torch::Tensor NormalizeDepthTensor(torch::Tensor& depthTensor, torch::Tensor& foregroundMask, torch::Tensor& backgroundMask);
-		std::vector<torch::Tensor> ConvertTensorIntoZeroToOneRange(torch::Tensor& tensorFull);
+		std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> ConvertTensorIntoZeroToOneRange(torch::Tensor& tensorFull);
 		torch::Tensor RevertTensorIntoFullRange(torch::Tensor& tensorMin, torch::Tensor& tensorMax, torch::Tensor& tensorZeroOne);
 		bool LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model);
+		torch::Tensor EvaluateNeuralNetworkModel(torch::jit::script::Module& model, torch::Tensor inputTensor);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		// Maps from the name of the render mode to the view mode (x) and the shading mode (y)
