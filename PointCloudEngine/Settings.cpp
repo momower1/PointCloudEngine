@@ -202,6 +202,7 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(meshFile) << L"=" << meshFile << std::endl;
 	settingsStream << NAMEOF(loadMeshFile) << L"=" << loadMeshFile << std::endl;
 	settingsStream << NAMEOF(textureLOD) << L"=" << textureLOD << std::endl;
+	settingsStream << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
 	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;

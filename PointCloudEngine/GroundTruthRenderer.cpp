@@ -256,6 +256,30 @@ void PointCloudEngine::GroundTruthRenderer::Redraw(bool present)
 
 void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 {
+	if (!validSCM || !validSFM || !validSRM)
+	{
+		std::wstring warningMessage = L"All neural networks models need to be loaded from scripted Pytorch model files before evaluation is possible!";
+		warningMessage += L"\n\nMissing files for:\n";
+
+		if (!validSCM)
+		{
+			warningMessage += L"- Surface Classification Model\n";
+		}
+
+		if (!validSFM)
+		{
+			warningMessage += L"- Surface Flow Model\n";
+		}
+
+		if (!validSRM)
+		{
+			warningMessage += L"- Surface Reconstruction Model\n";
+		}
+
+		WARNING_MESSAGE(warningMessage);
+		return;
+	}
+
 	// TODO
 	// - Draw point depth, color, normal screen, optical flow
 	// - Convert to pytorch tensors
