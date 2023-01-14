@@ -84,15 +84,10 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 		TryParse(NAMEOF(textureLOD), &textureLOD);
 
 		// Parse neural network parameters
-		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
-		TryParse(NAMEOF(neuralNetworkDescriptionFile), &neuralNetworkDescriptionFile);
 		TryParse(NAMEOF(useCUDA), &useCUDA);
-		TryParse(NAMEOF(neuralNetworkLossArea), &neuralNetworkLossArea);
-		TryParse(NAMEOF(neuralNetworkOutputRed), &neuralNetworkOutputRed);
-		TryParse(NAMEOF(neuralNetworkOutputGreen), &neuralNetworkOutputGreen);
-		TryParse(NAMEOF(neuralNetworkOutputBlue), &neuralNetworkOutputBlue);
-		TryParse(NAMEOF(lossCalculationSelf), &lossCalculationSelf);
-		TryParse(NAMEOF(lossCalculationTarget), &lossCalculationTarget);
+		TryParse(NAMEOF(filenameSCM), &filenameSCM);
+		TryParse(NAMEOF(filenameSFM), &filenameSFM);
+		TryParse(NAMEOF(filenameSRM), &filenameSRM);
 
 		// Parse HDF5 dataset generation parameters
 		TryParse(NAMEOF(compressDataset), &compressDataset);
@@ -209,15 +204,10 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(textureLOD) << L"=" << textureLOD << std::endl;
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
-	settingsStream << NAMEOF(neuralNetworkModelFile) << L"=" << neuralNetworkModelFile << std::endl;
-	settingsStream << NAMEOF(neuralNetworkDescriptionFile) << L"=" << neuralNetworkDescriptionFile << std::endl;
 	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
-	settingsStream << NAMEOF(neuralNetworkLossArea) << L"=" << neuralNetworkLossArea << std::endl;
-	settingsStream << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;
-	settingsStream << NAMEOF(neuralNetworkOutputGreen) << L"=" << neuralNetworkOutputGreen << std::endl;
-	settingsStream << NAMEOF(neuralNetworkOutputBlue) << L"=" << neuralNetworkOutputBlue << std::endl;
-	settingsStream << NAMEOF(lossCalculationSelf) << L"=" << lossCalculationSelf << std::endl;
-	settingsStream << NAMEOF(lossCalculationTarget) << L"=" << lossCalculationTarget << std::endl;
+	settingsStream << NAMEOF(filenameSCM) << L"=" << filenameSCM << std::endl;
+	settingsStream << NAMEOF(filenameSFM) << L"=" << filenameSFM << std::endl;
+	settingsStream << NAMEOF(filenameSRM) << L"=" << filenameSRM << std::endl;
 	settingsStream << std::endl;
 
 	settingsStream << L"# Dataset Generation Parameters" << std::endl;

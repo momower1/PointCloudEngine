@@ -21,6 +21,9 @@ namespace PointCloudEngine
         void PreviewWaypoints();
         void GenerateWaypointDataset();
         void GenerateSphereDataset();
+        void LoadSurfaceClassificationModel();
+        void LoadSurfaceFlowModel();
+        void LoadSurfaceReconstructionModel();
 
     private:
 		SceneObject *startupText = NULL;

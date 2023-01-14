@@ -33,7 +33,7 @@ void Scene::Initialize()
 	// Load the last mesh file as well
 	if (settings->meshFile.length() > 0)
 	{
-		settings->loadMeshFile = true;
+		//settings->loadMeshFile = true;
 	}
 }
 
@@ -457,6 +457,21 @@ void PointCloudEngine::Scene::GenerateSphereDataset()
 		CloseHandle(it->hProcess);
 		CloseHandle(it->hThread);
 	}
+}
+
+void PointCloudEngine::Scene::LoadSurfaceClassificationModel()
+{
+	((GroundTruthRenderer*)pointCloudRenderer)->LoadSurfaceClassificationModel();
+}
+
+void PointCloudEngine::Scene::LoadSurfaceFlowModel()
+{
+	((GroundTruthRenderer*)pointCloudRenderer)->LoadSurfaceFlowModel();
+}
+
+void PointCloudEngine::Scene::LoadSurfaceReconstructionModel()
+{
+	((GroundTruthRenderer*)pointCloudRenderer)->LoadSurfaceReconstructionModel();
 }
 
 void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wstring& datasetDirectory, std::vector<PROCESS_INFORMATION>& processes)

@@ -252,7 +252,9 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	meshElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 10, 1, 0, L"Texture LOD", &settings->textureLOD, 1, GS(148), GS(40)));
 	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(370), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
 
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(100), GS(20), L"TODO"));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(190), GS(325), GS(25), L"Load Surface Classification Model", OnLoadSurfaceClassificationModel));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(220), GS(325), GS(25), L"Load Surface Flow Model", OnLoadSurfaceFlowModel));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(250), GS(325), GS(25), L"Load Surface Reconstruction Model", OnLoadSurfaceReconstructionModel));
 }
 
 void PointCloudEngine::GUI::CreateAdvancedElements()
@@ -486,4 +488,28 @@ void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
 {
 	scene->GenerateSphereDataset();
+}
+
+void PointCloudEngine::GUI::OnLoadSurfaceClassificationModel()
+{
+	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSCM))
+	{
+		scene->LoadSurfaceClassificationModel();
+	}
+}
+
+void PointCloudEngine::GUI::OnLoadSurfaceFlowModel()
+{
+	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSFM))
+	{
+		scene->LoadSurfaceFlowModel();
+	}
+}
+
+void PointCloudEngine::GUI::OnLoadSurfaceReconstructionModel()
+{
+	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSRM))
+	{
+		scene->LoadSurfaceReconstructionModel();
+	}
 }

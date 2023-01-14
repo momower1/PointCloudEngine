@@ -43,6 +43,22 @@ void GroundTruthRenderer::Initialize()
 
     hr = d3d11Device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer);
 	ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateBuffer) + L" failed for the " + NAMEOF(constantBuffer));
+
+	// Load neural network models
+	if (settings->filenameSCM.length() > 0)
+	{
+		LoadSurfaceClassificationModel();
+	}
+
+	if (settings->filenameSFM.length() > 0)
+	{
+		LoadSurfaceFlowModel();
+	}
+
+	if (settings->filenameSRM.length() > 0)
+	{
+		LoadSurfaceReconstructionModel();
+	}
 }
 
 void GroundTruthRenderer::Update()
@@ -192,6 +208,21 @@ void PointCloudEngine::GroundTruthRenderer::UpdatePreviousMatrices()
 	constantBufferData.PreviousWorldInverseTranspose = constantBufferData.WorldInverseTranspose;
 }
 
+void PointCloudEngine::GroundTruthRenderer::LoadSurfaceClassificationModel()
+{
+	validSCM = LoadNeuralNetworkModel(settings->filenameSCM, SCM);
+}
+
+void PointCloudEngine::GroundTruthRenderer::LoadSurfaceFlowModel()
+{
+	validSFM = LoadNeuralNetworkModel(settings->filenameSFM, SFM);
+}
+
+void PointCloudEngine::GroundTruthRenderer::LoadSurfaceReconstructionModel()
+{
+	validSRM = LoadNeuralNetworkModel(settings->filenameSRM, SRM);
+}
+
 void PointCloudEngine::GroundTruthRenderer::GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize)
 {
 	outPosition = boundingCubePosition;
@@ -267,6 +298,34 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 
 	settings->viewMode = ViewMode::NeuralNetwork;
 	settings->shadingMode = startShadingMode;
+}
+
+bool PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model)
+{
+	try
+	{
+		// Load the neural network from file
+		if (settings->useCUDA && torch::cuda::is_available())
+		{
+			model = torch::jit::load(std::string(filename.begin(), filename.end()), torch::Device(at::kCUDA));
+		}
+		else
+		{
+			model = torch::jit::load(std::string(filename.begin(), filename.end()), torch::Device(at::kCPU));
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		WARNING_MESSAGE(L"Could not load Pytorch Jit Neural Network from file " + filename + L"!\nMake sure that the engine is running in Release mode.");
+		return false;
+	}
+
+#if _DEBUG
+	model.dump(true, true, true);
+#endif
+
+	return true;
 }
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION

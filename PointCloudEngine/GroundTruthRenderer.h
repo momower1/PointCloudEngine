@@ -16,6 +16,9 @@ namespace PointCloudEngine
         void Release();
 		void UpdateConstantBuffer();
 		void UpdatePreviousMatrices();
+		void LoadSurfaceClassificationModel();
+		void LoadSurfaceFlowModel();
+		void LoadSurfaceReconstructionModel();
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
@@ -43,8 +46,21 @@ namespace PointCloudEngine
 		// Pull push algorithm
 		PullPush* pullPush = NULL;
 
+		// Neural network
+		bool validSCM = false;
+		bool validSFM = false;
+		bool validSRM = false;
+		torch::jit::script::Module SCM;
+		torch::jit::script::Module SFM;
+		torch::jit::script::Module SRM;
+
+		// Required to avoid memory overload with the forward function
+		// Since we don't use model.backward() it should be fine
+		torch::NoGradGuard noGradGuard;
+
 		void Redraw(bool present);
 		void DrawNeuralNetwork();
+		bool LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model);
 
 #ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		// Maps from the name of the render mode to the view mode (x) and the shading mode (y)

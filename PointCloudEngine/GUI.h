@@ -73,6 +73,9 @@ namespace PointCloudEngine
 		static void OnWaypointPreview();
 		static void OnGenerateWaypointDataset();
 		static void OnGenerateSphereDataset();
+		static void OnLoadSurfaceClassificationModel();
+		static void OnLoadSurfaceFlowModel();
+		static void OnLoadSurfaceReconstructionModel();
 	};
 }
 #endif

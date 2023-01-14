@@ -78,15 +78,10 @@ namespace PointCloudEngine
 		int textureLOD = 0;
 
 		// Neural Network parameters
-		std::wstring neuralNetworkModelFile = L"";
-		std::wstring neuralNetworkDescriptionFile = L"";
 		bool useCUDA = true;
-		float neuralNetworkLossArea = 0.5f;
-		int neuralNetworkOutputRed = 0;
-		int neuralNetworkOutputGreen = 1;
-		int neuralNetworkOutputBlue = 2;
-		std::wstring lossCalculationSelf = L"SplatsColor";
-		std::wstring lossCalculationTarget = L"SplatsColor";
+		std::wstring filenameSCM = L"";
+		std::wstring filenameSFM = L"";
+		std::wstring filenameSRM = L"";
 
 		// Dataset generation parameters
 		bool compressDataset = false;
