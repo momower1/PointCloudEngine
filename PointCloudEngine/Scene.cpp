@@ -33,7 +33,7 @@ void Scene::Initialize()
 	// Load the last mesh file as well
 	if (settings->meshFile.length() > 0)
 	{
-		//settings->loadMeshFile = true;
+		settings->loadMeshFile = true;
 	}
 }
 
