@@ -2,8 +2,13 @@ from Utils import *
 
 def ApplyWeightNormalization(model):
     for module in model.modules():
-        if type(module) is torch.nn.Conv2d or type(module) is torch.nn.PReLU:
+        if type(module) is torch.nn.Conv2d or type(module) is torch.nn.ConvTranspose2d or type(module) is torch.nn.PReLU:
             module = torch.nn.utils.weight_norm(module)
+
+def UndoWeightNormalization(model):
+    for module in model.modules():
+        if type(module) is torch.nn.Conv2d or type(module) is torch.nn.ConvTranspose2d or type(module) is torch.nn.PReLU:
+            torch.nn.utils.remove_weight_norm(module)
 
 def InitializeParameters(model):
     for module in model.modules():
@@ -142,9 +147,10 @@ class PullPushLayer(torch.nn.Module):
     def forward(self, input):
         n, c, h, w = input.shape
 
-        paddings = []
+        paddingsHeight = []
+        paddingsWidth = []
         residuals = [input]
-        resolutionCount = int(math.ceil(math.log2(max(h, w))))
+        resolutionCount = int(torch.ceil(torch.log2(torch.maximum(torch.tensor(h), torch.tensor(w)))).item())
 
         act = input
 
@@ -152,14 +158,15 @@ class PullPushLayer(torch.nn.Module):
         for i in range(resolutionCount):
             # Pad such that width and height are dividable by 2
             multiple = 2
-            height = act.size(2)
-            width = act.size(3)
+            height = torch.tensor(act.size(2))
+            width = torch.tensor(act.size(3))
             heightPadding = (multiple - (height % multiple)) % multiple
             widthPadding = (multiple - (width % multiple)) % multiple
-            paddings.append([heightPadding, widthPadding])
+            paddingsHeight.append(heightPadding)
+            paddingsWidth.append(widthPadding)
 
             if heightPadding > 0 or widthPadding > 0:
-                act = torch.nn.functional.pad(act, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+                act = torch.nn.functional.pad(act, pad=(0, int(widthPadding.item()), 0, int(heightPadding.item())), mode='constant', value=0.0)
 
             act = self.pullBlock(act)
             residuals.append(act)
@@ -173,7 +180,8 @@ class PullPushLayer(torch.nn.Module):
             # Slice away the padding
             height = act.size(2)
             width = act.size(3)
-            heightPadding, widthPadding = paddings.pop()
+            heightPadding = paddingsHeight.pop()
+            widthPadding = paddingsWidth.pop()
 
             if heightPadding > 0 or widthPadding > 0:
                 act = act[:, :, 0:height-heightPadding, 0:width-widthPadding]
@@ -187,13 +195,11 @@ class PullPushLayer(torch.nn.Module):
         return act
 
 class PullPushModel(torch.nn.Module):
-    def __init__(self, inChannels=3, outChannels=3, innerChannels=16, recurrent=False):
+    def __init__(self, inChannels=3, outChannels=3, innerChannels=16):
         super(PullPushModel, self).__init__()
         self.inChannels = inChannels
         self.outChannels = outChannels
-        self.recurrent = recurrent
-        self.previous = None
-        self.convStart = torch.nn.Conv2d(2 * inChannels if self.recurrent else inChannels, innerChannels, 3, 1, 1)
+        self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
         self.preluStart = torch.nn.PReLU(1, 0.25)
         self.pullPush = PullPushLayer(innerChannels)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
@@ -202,35 +208,14 @@ class PullPushModel(torch.nn.Module):
         InitializeParameters(self)
         ApplyWeightNormalization(self)
 
-    def forward(self, input, motionVector=None):
+    def forward(self, input):
         n, c, h, w = input.shape
 
-        if self.recurrent:
-            # Need to use a zero tensor for the previous output (if there was no frame before this one in a sequence)
-            if self.previous is None:
-                self.previous = torch.zeros_like(input)
-
-            # Warp the previous output onto the current frame using the motion vector
-            self.previous = WarpImage(self.previous, motionVector)
-
-            # Concatenate input and previous output for a recurrent architecture
-            act = torch.cat([input, self.previous], dim=1)
-        else:
-            act = input
-
-        act = self.preluStart(self.convStart(act))
+        act = self.preluStart(self.convStart(input))
         act = self.pullPush(act)
         act = self.sigmoid(self.convEnd(act))
 
-        if self.recurrent:
-            # Store the current output for next iteration
-            self.previous = act
-
         return act
-
-    def DetachPrevious(self):
-        if self.previous is not None:
-            self.previous = self.previous.detach()
 
 class CriticDeep(torch.nn.Module):
     def __init__(self, frameSize=128, inChannels=48):
