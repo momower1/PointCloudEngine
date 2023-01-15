@@ -472,9 +472,9 @@ torch::Tensor PointCloudEngine::GroundTruthRenderer::WarpImage(torch::Tensor& im
 	torch::Tensor warpGrid = pixelGrid + motionVectorTensor;
 
 	// Normalize into(-1, 1) range for grid_sample
-	// TODO: Maybe index does not work here (read only)?
-	warpGrid.index({ at::indexing::Slice(), at::indexing::Slice(0), at::indexing::Slice(), at::indexing::Slice() }) /= settings->resolutionX;
-	warpGrid.index({ at::indexing::Slice(), at::indexing::Slice(1), at::indexing::Slice(), at::indexing::Slice() }) /= settings->resolutionY;
+	torch::Tensor widthTensor = torch::full({ warpGrid.size(0), 1, 1, 1 }, settings->resolutionX, c10::TensorOptions().dtype(torch::kFloat16).device(torch::kCUDA));
+	torch::Tensor heightTensor = torch::full({ warpGrid.size(0), 1, 1, 1 }, settings->resolutionY, c10::TensorOptions().dtype(torch::kFloat16).device(torch::kCUDA));
+	warpGrid /= torch::cat({ widthTensor, heightTensor }, 1);
 	warpGrid = (warpGrid * 2.0f) - 1.0f;
 	warpGrid = warpGrid.permute({ 0, 2, 3, 1 });
 
