@@ -369,41 +369,46 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// Evaluate SRM
 		inputSRM = torch::cat({ inputSRM, previousOutputSRM }, 1);
 		torch::Tensor outputSRM = EvaluateNeuralNetworkModel(SRM, inputSRM);
+
+		// Update previous output for next iteration
+		previousOutputSRM = outputSRM;
+
+		// Slice tensors for presentation
 		torch::Tensor outputDepthSRM = outputSRM.index({ at::indexing::Slice(), at::indexing::Slice(1, 2), at::indexing::Slice(), at::indexing::Slice() });
 		torch::Tensor outputColorSRM = outputSRM.index({ at::indexing::Slice(), at::indexing::Slice(2, 5), at::indexing::Slice(), at::indexing::Slice() });
 		torch::Tensor outputNormalSRM = outputSRM.index({ at::indexing::Slice(), at::indexing::Slice(5, 8), at::indexing::Slice(), at::indexing::Slice() });
 
 		long long h = settings->resolutionY;
 		long long w = settings->resolutionX;
-		torch::Tensor tensor = torch::zeros({ 1, 4, h, w }, c10::TensorOptions().device(torch::kCUDA).dtype(torch::kFloat16));
+		torch::Tensor presentTensor = torch::zeros({ 1, 4, h, w }, c10::TensorOptions().device(torch::kCUDA).dtype(torch::kFloat16));
 
 		switch (startShadingMode)
 		{
 			case ShadingMode::Depth:
 			{
-				tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice(0) }, outputDepthSRM.repeat({ 1, 3, 1, 1 }));
+				presentTensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice(0) }, outputDepthSRM.repeat({ 1, 3, 1, 1 }));
 				break;
 			}
 			case ShadingMode::Color:
 			{
-				tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice(0) }, outputColorSRM);
+				presentTensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice(0) }, outputColorSRM);
 				break;
 			}
 			case ShadingMode::NormalScreen:
 			{
-				tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice(0) }, outputNormalSRM);
+				presentTensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 3), at::indexing::Slice(), at::indexing::Slice(0) }, outputNormalSRM);
 				break;
 			}
 			case ShadingMode::OpticalFlowForward:
 			{
-				tensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 2), at::indexing::Slice(), at::indexing::Slice(0) }, outputSFM);
+				presentTensor.index_put_({ at::indexing::Slice(), at::indexing::Slice(0, 2), at::indexing::Slice(), at::indexing::Slice(0) }, outputSFM);
 				break;
 			}
 		}
 
-		tensor = tensor.permute({ 0, 2, 3, 1 }).contiguous();
+		presentTensor = presentTensor.permute({ 0, 2, 3, 1 }).contiguous();
 
-		DXCUDATORCH::SetBackbufferFromTensor(tensor);
+		DXCUDATORCH::SetBackbufferFromTensor(presentTensor);
 
 		settings->viewMode = ViewMode::NeuralNetwork;
 		settings->shadingMode = startShadingMode;
