@@ -358,6 +358,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// Surface Reconstruction Model
 		torch::Tensor inputSRM = torch::cat({ sparseSurfaceMask, sparseSurfaceDepth, sparseSurfaceColor, sparseSurfaceNormal }, 1);
 
+		// Possibly need recreate the previous output tensor when resolution changed
 		if ((previousOutputSRM.size(2) != settings->resolutionY) || (previousOutputSRM.size(3) != settings->resolutionX))
 		{
 			previousOutputSRM = torch::zeros_like(inputSRM);

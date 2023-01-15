@@ -225,8 +225,6 @@ while True:
             outputsSRM.append(outputSRM)
             targetsSRM.append(targetSRM)
 
-        # TODO?: Stack into tensors of shape [dataset.sequenceFrameCount, N, C, H, W]
-
         # Surface Classification Model Loss Terms
         lossSurfaceSCM = []
         lossTemporalSCM = []
