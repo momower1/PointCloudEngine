@@ -246,7 +246,7 @@ while True:
             motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][tripletFrameIndex]
             motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][tripletFrameIndex + 1]
 
-            # TODO: Temporal loss term should probably include occlusion and also current output
+            # TODO: Temporal loss term should probably include occlusion
 
             # Surface Classification Model
             outputPreviousSCM = outputsSCM[tripletFrameIndex - 1]
@@ -257,7 +257,9 @@ while True:
             targetSCM = targetsSCM[tripletFrameIndex]
 
             lossSurfaceTripletSCM = factorLossSurfaceSCM * torch.nn.functional.binary_cross_entropy(outputSCM, targetSCM, reduction='mean')
-            lossTemporalTripletSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputPreviousWarpedSCM, outputNextWarpedSCM, reduction='mean')
+            lossTemporalTripletPreviousSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputPreviousWarpedSCM, outputSCM, reduction='mean')
+            lossTemporalTripletNextSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputNextWarpedSCM, outputSCM, reduction='mean')
+            lossTemporalTripletSCM = lossTemporalTripletPreviousSCM + lossTemporalTripletNextSCM
             lossSurfaceSCM.append(lossSurfaceTripletSCM)
             lossTemporalSCM.append(lossTemporalTripletSCM)
 
@@ -270,7 +272,9 @@ while True:
             targetSFM = targetsSFM[tripletFrameIndex]
 
             lossOpticalFlowTripletSFM = factorLossOpticalFlowSFM * torch.nn.functional.mse_loss(outputSFM, targetSFM, reduction='mean')
-            lossTemporalTripletSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(outputPreviousWarpedSFM, outputNextWarpedSFM, reduction='mean')
+            lossTemporalTripletPreviousSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(outputPreviousWarpedSFM, outputSFM, reduction='mean')
+            lossTemporalTripletNextSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(outputNextWarpedSFM, outputSFM, reduction='mean')
+            lossTemporalTripletSFM = lossTemporalTripletPreviousSFM + lossTemporalTripletNextSFM
             lossOpticalFlowSFM.append(lossOpticalFlowTripletSFM)
             lossTemporalSFM.append(lossTemporalTripletSFM)
 
@@ -290,7 +294,9 @@ while True:
             lossDepthTripletSRM = factorLossDepthSRM * torch.nn.functional.mse_loss(outputSRM[:, 1:2, :, :], targetSRM[:, 1:2, :, :], reduction='mean')
             lossColorTripletSRM = factorLossColorSRM * torch.nn.functional.mse_loss(outputSRM[:, 2:5, :, :], targetSRM[:, 2:5, :, :], reduction='mean')
             lossNormalTripletSRM = factorLossNormalSRM * torch.nn.functional.mse_loss(outputSRM[:, 5:8, :, :], targetSRM[:, 5:8, :, :], reduction='mean')
-            lossTemporalTripletSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputPreviousWarpedSRM, outputNextWarpedSRM, reduction='mean')
+            lossTemporalTripletPreviousSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputPreviousWarpedSRM, outputSRM, reduction='mean')
+            lossTemporalTripletNextSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputNextWarpedSRM, outputSRM, reduction='mean')
+            lossTemporalTripletSRM = lossTemporalTripletPreviousSRM + lossTemporalTripletNextSRM
             lossSurfaceSRM.append(lossSurfaceTripletSRM)
             lossDepthSRM.append(lossDepthTripletSRM)
             lossColorSRM.append(lossColorTripletSRM)
