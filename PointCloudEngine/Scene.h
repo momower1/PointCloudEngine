@@ -69,9 +69,9 @@ namespace PointCloudEngine
             { L"PointsSparseOpticalFlowForward", ViewMode::SparsePoints, ShadingMode::OpticalFlowForward },
             { L"PointsSparseOpticalFlowBackward", ViewMode::SparsePoints, ShadingMode::OpticalFlowBackward },
 
-            { L"SplatsSparseColor", ViewMode::SparseSplats, ShadingMode::Color },
-            { L"SplatsSparseDepth", ViewMode::SparseSplats, ShadingMode::Depth },
-            { L"SplatsSparseNormalScreen", ViewMode::SparseSplats, ShadingMode::NormalScreen },
+            //{ L"SplatsSparseColor", ViewMode::SparseSplats, ShadingMode::Color },
+            //{ L"SplatsSparseDepth", ViewMode::SparseSplats, ShadingMode::Depth },
+            //{ L"SplatsSparseNormalScreen", ViewMode::SparseSplats, ShadingMode::NormalScreen },
 
             { L"MeshColor", ViewMode::Mesh, ShadingMode::Color },
             { L"MeshDepth", ViewMode::Mesh, ShadingMode::Depth },
@@ -79,9 +79,9 @@ namespace PointCloudEngine
             { L"MeshOpticalFlowForward", ViewMode::Mesh, ShadingMode::OpticalFlowForward },
             { L"MeshOpticalFlowBackward", ViewMode::Mesh, ShadingMode::OpticalFlowBackward },
 
-            { L"PullPushColor", ViewMode::PullPush, ShadingMode::Color },
-            { L"PullPushDepth", ViewMode::PullPush, ShadingMode::Depth },
-            { L"PullPushNormalScreen", ViewMode::PullPush, ShadingMode::NormalScreen },
+            //{ L"PullPushColor", ViewMode::PullPush, ShadingMode::Color },
+            //{ L"PullPushDepth", ViewMode::PullPush, ShadingMode::Depth },
+            //{ L"PullPushNormalScreen", ViewMode::PullPush, ShadingMode::NormalScreen },
         };
 
         void DrawAndSaveDatasetEntry(UINT index, const std::wstring &datasetDirectory, std::vector<PROCESS_INFORMATION> &processes);
