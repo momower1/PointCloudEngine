@@ -68,6 +68,9 @@ void GroundTruthRenderer::Initialize()
 	{
 		LoadSurfaceReconstructionModel();
 	}
+
+	// Initialize previous output tensor for SRM
+	previousOutputSRM = torch::zeros({ 1, 8, settings->resolutionY, settings->resolutionX }, c10::TensorOptions().dtype(torch::kFloat16).device(torch::kCUDA));
 }
 
 void GroundTruthRenderer::Update()
@@ -326,28 +329,44 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		foregroundMask = foregroundMask.to(torch::kFloat16);
 		backgroundMask = backgroundMask.to(torch::kFloat16);
 
+		// Surface Classification Model
 		torch::Tensor inputSCM = torch::cat({ foregroundMask, depthNormalizedTensor, normalTensor }, 1);
 		torch::Tensor outputSCM = EvaluateNeuralNetworkModel(SCM, inputSCM);
 
 		// Apply surface mask
 		torch::Tensor sparseSurfaceMask = (outputSCM > 0.5f).to(torch::kFloat16);
-		torch::Tensor sparseSurfaceDepth = sparseSurfaceMask * depthNormalizedTensor;	// TODO: Renormalize surface depth
+		torch::Tensor sparseSurfaceDepth = sparseSurfaceMask * depthNormalizedTensor;
 		torch::Tensor sparseSurfaceColor = sparseSurfaceMask * colorTensor;
 		torch::Tensor sparseSurfaceNormal = sparseSurfaceMask * normalTensor;
 		torch::Tensor sparseSurfaceFlow = sparseSurfaceMask * opticalFlowForwardTensor;
+
+		// Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
+		torch::Tensor tmpMin, tmpMax;
+		std::tie(tmpMin, tmpMax, sparseSurfaceDepth) = ConvertTensorIntoZeroToOneRange(sparseSurfaceDepth);
 
 		// Normalize flow into [0, 1] range
 		torch::Tensor sparseSurfaceFlowMin, sparseSurfaceFlowMax, sparseSurfaceFlowNormalized;
 		std::tie(sparseSurfaceFlowMin, sparseSurfaceFlowMax, sparseSurfaceFlowNormalized) = ConvertTensorIntoZeroToOneRange(sparseSurfaceFlow);
 
+		// Surface Flow Model
 		torch::Tensor inputSFM = torch::cat({ sparseSurfaceMask, sparseSurfaceDepth, sparseSurfaceNormal, sparseSurfaceFlowNormalized }, 1);
 		torch::Tensor outputSFM = EvaluateNeuralNetworkModel(SFM, inputSFM);
 
-		// TODO: Revert dense flow normalization
-		// TODO: Warp previous output
+		// Revert dense flow normalization
+		torch::Tensor surfaceFlowSFM = RevertTensorIntoFullRange(sparseSurfaceFlowMin, sparseSurfaceFlowMax, outputSFM);
 
+		// Surface Reconstruction Model
 		torch::Tensor inputSRM = torch::cat({ sparseSurfaceMask, sparseSurfaceDepth, sparseSurfaceColor, sparseSurfaceNormal }, 1);
-		torch::Tensor previousOutputSRM = torch::zeros_like(inputSRM);
+
+		if ((previousOutputSRM.size(2) != settings->resolutionY) || (previousOutputSRM.size(3) != settings->resolutionX))
+		{
+			previousOutputSRM = torch::zeros_like(inputSRM);
+		}
+
+		// Warp previous output tensor onto current frame
+		previousOutputSRM = WarpImage(previousOutputSRM, surfaceFlowSFM);
+
+		// Evaluate SRM
 		inputSRM = torch::cat({ inputSRM, previousOutputSRM }, 1);
 		torch::Tensor outputSRM = EvaluateNeuralNetworkModel(SRM, inputSRM);
 		torch::Tensor outputDepthSRM = outputSRM.index({ at::indexing::Slice(), at::indexing::Slice(1, 2), at::indexing::Slice(), at::indexing::Slice() });
@@ -430,6 +449,30 @@ torch::Tensor PointCloudEngine::GroundTruthRenderer::RevertTensorIntoFullRange(t
 {
 	int64_t n = tensorZeroOne.size(0);
 	return tensorMin.view({ n, 1, 1, 1 }) + (tensorMax.view({ n, 1, 1, 1 }) * tensorZeroOne);
+}
+
+torch::Tensor PointCloudEngine::GroundTruthRenderer::WarpImage(torch::Tensor& imageTensor, torch::Tensor& motionVectorTensor)
+{
+	// Create a pixel grid tensor that contains pixel coorinates
+	torch::Tensor pixelPositionsVertical = torch::arange(0, settings->resolutionY, c10::TensorOptions().dtype(torch::kFloat16).device(torch::kCUDA));
+	torch::Tensor pixelPositionsHorizontal = torch::arange(0, settings->resolutionX, c10::TensorOptions().dtype(torch::kFloat16).device(torch::kCUDA));
+	pixelPositionsHorizontal = pixelPositionsHorizontal.unsqueeze(0).repeat({ settings->resolutionY, 1 });
+	pixelPositionsVertical = pixelPositionsVertical.unsqueeze(0).reshape({ -1, 1 }).repeat({ 1, settings->resolutionX });
+
+	torch::Tensor pixelGrid = torch::stack({ pixelPositionsHorizontal, pixelPositionsVertical }, 0).unsqueeze(0);
+	pixelGrid += 0.5f;
+
+	// Apply the motion vector
+	torch::Tensor warpGrid = pixelGrid + motionVectorTensor;
+
+	// Normalize into(-1, 1) range for grid_sample
+	// TODO: Maybe index does not work here (read only)?
+	warpGrid.index({ at::indexing::Slice(), at::indexing::Slice(0), at::indexing::Slice(), at::indexing::Slice() }) /= settings->resolutionX;
+	warpGrid.index({ at::indexing::Slice(), at::indexing::Slice(1), at::indexing::Slice(), at::indexing::Slice() }) /= settings->resolutionY;
+	warpGrid = (warpGrid * 2.0f) - 1.0f;
+	warpGrid = warpGrid.permute({ 0, 2, 3, 1 });
+
+	return torch::nn::functional::grid_sample(imageTensor, warpGrid, torch::nn::functional::GridSampleFuncOptions().mode(torch::kBilinear).padding_mode(torch::kZeros));
 }
 
 bool PointCloudEngine::GroundTruthRenderer::LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model)
