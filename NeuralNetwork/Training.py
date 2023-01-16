@@ -51,7 +51,7 @@ factorLossNormalSRM = 0.0
 factorLossTemporalSRM = 0.0
 
 if trainingAdversarialSRM:
-    criticSRM = Critic(72, 1, 72).to(device)
+    criticSRM = Critic(48, 1, 48).to(device)
     optimizerCriticSRM = torch.optim.Adam(criticSRM.parameters(), lr=learningRate, betas=(0.5, 0.9))
     schedulerCriticSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerCriticSRM, gamma=schedulerDecayRate, verbose=False)
 
@@ -63,7 +63,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Only/'
+checkpointDirectory += 'WGAN Only with Reverse Fix/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -330,11 +330,11 @@ while True:
             lossTemporalSRM.append(lossTemporalTripletSRM)
 
             if trainingAdversarialSRM:
-                # TODO: WGAN Recurrent Temporal Stability: Randomly reverse triplet frames for critic input (only swap previous and next, like "reverseFrameGenerationOrder")
-                inputPreviousSRM = inputsSRM[tripletFrameIndex - 1]
+                # Do not consider the previous frame output here
+                inputPreviousSRM = inputsSRM[tripletFrameIndex - 1][:, 0:8, :, :]
                 inputPreviousWarpedSRM = WarpImage(inputPreviousSRM, motionVectorPreviousToCurrent)
-                inputSRM = inputsSRM[tripletFrameIndex]
-                inputNextSRM = inputsSRM[tripletFrameIndex + 1]
+                inputSRM = inputsSRM[tripletFrameIndex][:, 0:8, :, :]
+                inputNextSRM = inputsSRM[tripletFrameIndex + 1][:, 0:8, :, :]
                 inputNextWarpedSRM = WarpImage(inputNextSRM, motionVectorNextToCurrent)
 
                 targetPreviousSRM = targetsSRM[tripletFrameIndex - 1]
@@ -342,9 +342,17 @@ while True:
                 targetNextSRM = targetsSRM[tripletFrameIndex + 1]
                 targetNextWarpedSRM = WarpImage(targetNextSRM, motionVectorNextToCurrent)
 
-                sequenceInputSRM = torch.cat([inputPreviousWarpedSRM, inputSRM, inputNextWarpedSRM], dim=1)
-                sequenceOutputSRM = torch.cat([outputPreviousWarpedSRM, outputSRM, outputNextWarpedSRM], dim=1)
-                sequenceTargetSRM = torch.cat([targetPreviousWarpedSRM, targetSRM, targetNextWarpedSRM], dim=1)
+                # Randomly reverse triplet frame order to improve recurrent WGAN temporal stability
+                reverseSequence = random.randint(0, 1) == 1
+
+                sequenceInputSRM = [inputPreviousWarpedSRM, inputSRM, inputNextWarpedSRM]
+                sequenceOutputSRM = [outputPreviousWarpedSRM, outputSRM, outputNextWarpedSRM]
+                sequenceTargetSRM = [targetPreviousWarpedSRM, targetSRM, targetNextWarpedSRM]
+
+                if reverseSequence:
+                    sequenceInputSRM.reverse()
+                    sequenceOutputSRM.reverse()
+                    sequenceTargetSRM.reverse()
 
                 sequenceRealSRM = torch.cat([sequenceInputSRM, sequenceTargetSRM], dim=1)
                 sequenceFakeSRM = torch.cat([sequenceInputSRM, sequenceOutputSRM], dim=1)
