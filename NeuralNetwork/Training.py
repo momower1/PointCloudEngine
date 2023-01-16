@@ -9,14 +9,14 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=8)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 4
+batchSize = 2
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
@@ -39,18 +39,31 @@ factorLossOpticalFlowSFM = 1.0
 factorLossTemporalSFM = 0.0
 
 # Surface Reconstruction Model
+trainingAdversarialSRM = True
 SRM = PullPushModel(16, 8, 16).to(device)
-optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.9, 0.999))
+optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.5, 0.9) if trainingAdversarialSRM else (0.9, 0.999))
 schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
 previousOutputSRM = None
-factorLossSurfaceSRM = 1.0
-factorLossDepthSRM = 1.0
-factorLossColorSRM = 1.0
-factorLossNormalSRM = 1.0
-factorLossTemporalSRM = 100.0
+factorLossSurfaceSRM = 0.0
+factorLossDepthSRM = 0.0
+factorLossColorSRM = 0.0
+factorLossNormalSRM = 0.0
+factorLossTemporalSRM = 0.0
+
+if trainingAdversarialSRM:
+    criticSRM = Critic(72, 1, 72).to(device)
+    optimizerCriticSRM = torch.optim.Adam(criticSRM.parameters(), lr=learningRate, betas=(0.5, 0.9))
+    schedulerCriticSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerCriticSRM, gamma=schedulerDecayRate, verbose=False)
+
+    # Required for adaptive WGAN update strategy
+    adaptiveUpdateCoefficientSRM = 1.0
+    lossCriticWassersteinPreviousSRM = None
+    lossWassersteinPreviousSRM = None
+    ratioCriticSRM = 1.0
+    ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Supervised Temporal SRM 100/'
+checkpointDirectory += 'WGAN Only/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -69,11 +82,19 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     schedulerSFM.load_state_dict(checkpoint['SchedulerSFM'])
     schedulerSRM.load_state_dict(checkpoint['SchedulerSRM'])
 
+    if trainingAdversarialSRM:
+        criticSRM.load_state_dict(checkpoint['CriticSRM'])
+        optimizerCriticSRM.load_state_dict(checkpoint['OptimizerCriticSRM'])
+        schedulerCriticSRM.load_state_dict(checkpoint['SchedulerCriticSRM'])
+
 def PrintLearningRates():
     print('Learning rates: ', end='')
     print('SCM ' + str(schedulerSCM.get_last_lr()[0]), end='')
     print(', SFM ' + str(schedulerSFM.get_last_lr()[0]), end='')
-    print(', SRM ' + str(schedulerSRM.get_last_lr()[0]))
+    print(', SRM ' + str(schedulerSRM.get_last_lr()[0]), end='' if trainingAdversarialSRM else '\n')
+
+    if trainingAdversarialSRM:
+        print(', CriticSRM ' + str(schedulerCriticSRM.get_last_lr()[0]), end='\n')
 
 # Make order of training sequences random but predictable
 numpy.random.seed(0)
@@ -240,6 +261,14 @@ while True:
         lossNormalSRM = []
         lossTemporalSRM = []
 
+        if trainingAdversarialSRM:
+            lossWassersteinSRM = []
+            lossCriticWassersteinSRM = []
+            lossCriticGradientPenaltySRM = []
+
+            # Adaptively either update critic or generator depending on the wasserstein loss ratios
+            updateCriticSRM = ratioCriticSRM >= adaptiveUpdateCoefficientSRM * ratioSRM
+
         # Accumulate loss terms over triplets in the sequence
         # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
@@ -304,6 +333,39 @@ while True:
             lossNormalSRM.append(lossNormalTripletSRM)
             lossTemporalSRM.append(lossTemporalTripletSRM)
 
+            if trainingAdversarialSRM:
+                inputPreviousSRM = inputsSRM[tripletFrameIndex - 1]
+                inputPreviousWarpedSRM = WarpImage(inputPreviousSRM, motionVectorPreviousToCurrent)
+                inputSRM = inputsSRM[tripletFrameIndex]
+                inputNextSRM = inputsSRM[tripletFrameIndex + 1]
+                inputNextWarpedSRM = WarpImage(inputNextSRM, motionVectorNextToCurrent)
+
+                targetPreviousSRM = targetsSRM[tripletFrameIndex - 1]
+                targetPreviousWarpedSRM = WarpImage(targetPreviousSRM, motionVectorPreviousToCurrent)
+                targetNextSRM = targetsSRM[tripletFrameIndex + 1]
+                targetNextWarpedSRM = WarpImage(targetNextSRM, motionVectorNextToCurrent)
+
+                sequenceInputSRM = torch.cat([inputPreviousWarpedSRM, inputSRM, inputNextWarpedSRM], dim=1)
+                sequenceOutputSRM = torch.cat([outputPreviousWarpedSRM, outputSRM, outputNextWarpedSRM], dim=1)
+                sequenceTargetSRM = torch.cat([targetPreviousWarpedSRM, targetSRM, targetNextWarpedSRM], dim=1)
+
+                sequenceRealSRM = torch.cat([sequenceInputSRM, sequenceTargetSRM], dim=1)
+                sequenceFakeSRM = torch.cat([sequenceInputSRM, sequenceOutputSRM], dim=1)
+
+                criticRealSRM = criticSRM(sequenceRealSRM)
+                criticFakeSRM = criticSRM(sequenceFakeSRM)
+
+                lossWassersteinTripletSRM = -criticFakeSRM
+                lossCriticWassersteinTripletSRM = criticFakeSRM - criticRealSRM
+
+                lossWassersteinSRM.append(lossWassersteinTripletSRM)
+                lossCriticWassersteinSRM.append(lossCriticWassersteinTripletSRM)
+
+                # Only add computationally expensive gradient penalty term for improved wasserstein GAN training if it is necessary
+                if updateCriticSRM:
+                    lossCriticGradientPenaltyTripletSRM = GradientPenalty(criticSRM, sequenceRealSRM, sequenceFakeSRM)
+                    lossCriticGradientPenaltySRM.append(lossCriticGradientPenaltyTripletSRM)
+
         # Average all loss terms across the sequence
         lossSurfaceSCM = torch.stack(lossSurfaceSCM, dim=0).mean()
         lossTemporalSCM = torch.stack(lossTemporalSCM, dim=0).mean()
@@ -315,10 +377,23 @@ while True:
         lossNormalSRM = torch.stack(lossNormalSRM, dim=0).mean()
         lossTemporalSRM = torch.stack(lossTemporalSRM, dim=0).mean()
 
+        if trainingAdversarialSRM:
+            lossWassersteinSRM = torch.stack(lossWassersteinSRM, dim=0).mean()
+            lossCriticWassersteinSRM = torch.stack(lossCriticWassersteinSRM, dim=0).mean()
+
+            if updateCriticSRM:
+                lossCriticGradientPenaltySRM = torch.stack(lossCriticGradientPenaltySRM, dim=0).mean()
+
         # Combine partial losses into a single final loss term
-        lossSCM = torch.stack([lossSurfaceSCM, lossTemporalSCM], dim=0).mean()
-        lossSFM = torch.stack([lossOpticalFlowSFM, lossTemporalSFM], dim=0).mean()
-        lossSRM = torch.stack([lossSurfaceSRM, lossDepthSRM, lossColorSRM, lossNormalSRM, lossTemporalSRM], dim=0).mean()
+        lossSCM = lossSurfaceSCM + lossTemporalSCM
+        lossSFM = lossOpticalFlowSFM + lossTemporalSFM
+        lossSRM = lossSurfaceSRM + lossDepthSRM + lossColorSRM + lossNormalSRM + lossTemporalSRM
+
+        if trainingAdversarialSRM:
+            lossSRM += lossWassersteinSRM
+
+            if updateCriticSRM:
+                lossCriticSRM = lossCriticWassersteinSRM + lossCriticGradientPenaltySRM
 
         # TODO: Pretrain SCM, then pretrain SFM and lastly train SRM
 
@@ -327,38 +402,69 @@ while True:
         lossSCM.backward(retain_graph=True)
         optimizerSCM.step()
 
+        summaryWriter.add_scalar('Surface Classification Model/_Loss SCM', lossSCM, iteration)
+        summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
+        summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
+
         # Train Surface Flow Model
         SFM.zero_grad()
         lossSFM.backward(retain_graph=True)
         optimizerSFM.step()
 
+        summaryWriter.add_scalar('Surface Flow Model/_Loss SFM', lossSFM, iteration)
+        summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
+        summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
+
         # Train Surface Reconstruction Model
-        SRM.zero_grad()
-        lossSRM.backward(retain_graph=False)
-        optimizerSRM.step()
+        updateSRM = True
+
+        if trainingAdversarialSRM:
+            if updateCriticSRM:
+                updateSRM = False
+                criticSRM.zero_grad()
+                lossCriticSRM.backward(retain_graph=False)
+                optimizerCriticSRM.step()
+
+                summaryWriter.add_scalar('Critic Surface Reconstruction Model/_Loss Critic SRM', lossCriticSRM, iteration)
+                summaryWriter.add_scalar('Critic Surface Reconstruction Model/Loss Critic Wasserstein SRM', lossCriticWassersteinSRM, iteration)
+                summaryWriter.add_scalar('Critic Surface Reconstruction Model/Loss Critic Gradient Penalty SRM', lossCriticGradientPenaltySRM, iteration)
+
+        if updateSRM:
+            SRM.zero_grad()
+            lossSRM.backward(retain_graph=False)
+            optimizerSRM.step()
+
+            summaryWriter.add_scalar('Surface Reconstruction Model/_Loss SRM', lossSRM, iteration)
+            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Surface SRM', lossSurfaceSRM, iteration)
+            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
+            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
+            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
+            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
+
+            if trainingAdversarialSRM:
+                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Wasserstein SRM', lossWassersteinSRM, iteration)
 
         # Need to detach previous output for next iteration (since using recurrent architecture)
         previousOutputSRM = previousOutputSRM.detach()
 
-        # Plot losses
-        summaryWriter.add_scalar('Surface Classification Model/_Loss SCM', lossSCM, iteration)
-        summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
-        summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
-        summaryWriter.add_scalar('Surface Flow Model/_Loss SFM', lossSFM, iteration)
-        summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
-        summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/_Loss SRM', lossSRM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Surface SRM', lossSurfaceSRM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
-        summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
+        # Update wasserstein loss ratios for adaptive WGAN training
+        if trainingAdversarialSRM:
+            if lossCriticWassersteinPreviousSRM is not None and lossWassersteinPreviousSRM is not None:
+                ratioCriticSRM = torch.abs((lossCriticWassersteinSRM - lossCriticWassersteinPreviousSRM) / (lossCriticWassersteinPreviousSRM + 1e-8))
+                ratioSRM = torch.abs((lossWassersteinSRM - lossWassersteinPreviousSRM) / (lossWassersteinPreviousSRM + 1e-8))
+
+            lossCriticWassersteinPreviousSRM = lossCriticWassersteinSRM
+            lossWassersteinPreviousSRM = lossWassersteinSRM
 
         # Update learning rate using schedulers
         if iteration % schedulerDecaySkip == (schedulerDecaySkip - 1):
             schedulerSCM.step()
             schedulerSFM.step()
             schedulerSRM.step()
+            
+            if trainingAdversarialSRM:
+                schedulerCriticSRM.step()
+
             PrintLearningRates()
 
         # Print progress, save checkpoints, create snapshots and plot loss graphs in certain intervals
@@ -520,6 +626,11 @@ while True:
                 'SchedulerSFM' : schedulerSFM.state_dict(),
                 'SchedulerSRM' : schedulerSRM.state_dict(),
             }
+
+            if trainingAdversarialSRM:
+                checkpoint['CriticSRM'] = criticSRM.state_dict()
+                checkpoint['OptimizerCriticSRM'] = optimizerCriticSRM.state_dict()
+                checkpoint['SchedulerCriticSRM'] = schedulerCriticSRM.state_dict()
 
             torch.save(checkpoint, checkpointDirectory + checkpointNameStart + checkpointNameEnd)
             torch.save(checkpoint, checkpointDirectory + checkpointNameStart + str(epoch) + checkpointNameEnd)
