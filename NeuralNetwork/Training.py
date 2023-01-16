@@ -59,6 +59,8 @@ if trainingAdversarialSRM:
     adaptiveUpdateCoefficientSRM = 1.0
     lossCriticWassersteinPreviousSRM = None
     lossWassersteinPreviousSRM = None
+    stepsCriticSRM = 0
+    stepsSRM = 0
     ratioCriticSRM = 1.0
     ratioSRM = 1.0
 
@@ -86,6 +88,8 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
         criticSRM.load_state_dict(checkpoint['CriticSRM'])
         optimizerCriticSRM.load_state_dict(checkpoint['OptimizerCriticSRM'])
         schedulerCriticSRM.load_state_dict(checkpoint['SchedulerCriticSRM'])
+        stepsCriticSRM = checkpoint['StepsCriticSRM']
+        stepsSRM = checkpoint['StepsSRM']
 
 def PrintLearningRates():
     print('Learning rates: ', end='')
@@ -433,6 +437,7 @@ while True:
                 criticSRM.zero_grad()
                 lossCriticSRM.backward(retain_graph=False)
                 optimizerCriticSRM.step()
+                stepsCriticSRM += 1
 
                 summaryWriter.add_scalar('Critic Surface Reconstruction Model/_Loss Critic SRM', lossCriticSRM, iteration)
                 summaryWriter.add_scalar('Critic Surface Reconstruction Model/Loss Critic Wasserstein SRM', lossCriticWassersteinSRM, iteration)
@@ -451,6 +456,7 @@ while True:
             summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
 
             if trainingAdversarialSRM:
+                stepsSRM += 1
                 summaryWriter.add_scalar('Surface Reconstruction Model/Loss Wasserstein SRM', lossWassersteinSRM, iteration)
 
         # Need to detach previous output for next iteration (since using recurrent architecture)
@@ -483,6 +489,10 @@ while True:
             snapshotFrameIndex = 1 + (snapshotIndex % (dataset.sequenceFrameCount - 2))
 
             progress = 'Epoch:\t' + str(epoch) + '\t' + str(int(100 * (batchIndex / batchCount))) + '%'
+
+            if trainingAdversarialSRM:
+                progress += '\tStepsCriticSRM: ' + str(stepsCriticSRM) + '\tStepsSRM: ' + str(stepsSRM)
+
             print(progress)
 
             # Surface Classification Model
@@ -795,6 +805,8 @@ while True:
                 checkpoint['CriticSRM'] = criticSRM.state_dict()
                 checkpoint['OptimizerCriticSRM'] = optimizerCriticSRM.state_dict()
                 checkpoint['SchedulerCriticSRM'] = schedulerCriticSRM.state_dict()
+                checkpoint['StepsCriticSRM'] = stepsCriticSRM
+                checkpoint['StepsSRM'] = stepsSRM
 
             torch.save(checkpoint, checkpointDirectory + checkpointNameStart + checkpointNameEnd)
             torch.save(checkpoint, checkpointDirectory + checkpointNameStart + str(epoch) + checkpointNameEnd)
