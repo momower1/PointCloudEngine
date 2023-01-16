@@ -306,10 +306,6 @@ while True:
             lossTemporalSFM.append(lossTemporalTripletSFM)
 
             # Surface Reconstruction Model
-            
-            # TODO: WGAN
-
-            # TODO: WGAN Recurrent Temporal Stability: Randomly reverse triplet frames for critic input (only swap previous and next, like "reverseFrameGenerationOrder")
             outputPreviousSRM = outputsSRM[tripletFrameIndex - 1]
             outputPreviousWarpedSRM = WarpImage(outputPreviousSRM, motionVectorPreviousToCurrent)
             outputSRM = outputsSRM[tripletFrameIndex]
@@ -334,6 +330,7 @@ while True:
             lossTemporalSRM.append(lossTemporalTripletSRM)
 
             if trainingAdversarialSRM:
+                # TODO: WGAN Recurrent Temporal Stability: Randomly reverse triplet frames for critic input (only swap previous and next, like "reverseFrameGenerationOrder")
                 inputPreviousSRM = inputsSRM[tripletFrameIndex - 1]
                 inputPreviousWarpedSRM = WarpImage(inputPreviousSRM, motionVectorPreviousToCurrent)
                 inputSRM = inputsSRM[tripletFrameIndex]
@@ -611,6 +608,50 @@ while True:
             plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
             plt.margins(0, 0)
             summaryWriter.add_figure('Surface Reconstruction Model/Epoch' + str(epoch), plt.gcf(), iteration)
+
+            if trainingAdversarialSRM:
+                sequenceInputPreviousWarpedSRM = sequenceInputSRM[snapshotSampleIndex, 0:8, :, :]
+                sequenceInputCurrentSRM = sequenceInputSRM[snapshotSampleIndex, 8:16, :, :]
+                sequenceInputNextWarpedSRM = sequenceInputSRM[snapshotSampleIndex, 16:24, :, :]
+                sequenceOutputPreviousWarpedSRM = sequenceOutputSRM[snapshotSampleIndex, 0:8, :, :]
+                sequenceOutputCurrentSRM = sequenceOutputSRM[snapshotSampleIndex, 8:16, :, :]
+                sequenceOutputNextWarpedSRM = sequenceOutputSRM[snapshotSampleIndex, 16:24, :, :]
+                sequenceTargetPreviousWarpedSRM = sequenceTargetSRM[snapshotSampleIndex, 0:8, :, :]
+                sequenceTargetCurrentSRM = sequenceTargetSRM[snapshotSampleIndex, 8:16, :, :]
+                sequenceTargetNextWarpedSRM = sequenceTargetSRM[snapshotSampleIndex, 16:24, :, :]
+
+                fig = plt.figure(figsize=(6 * dataset.width, 6 * dataset.height), dpi=1)
+                fig.add_subplot(6, 6, 1).title#.set_text('Sequence Input Surface Previous Warped')
+                plt.imshow(TensorToImage(sequenceInputPreviousWarpedSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 2).title#.set_text('Sequence Input Current Surface')
+                plt.imshow(TensorToImage(sequenceInputCurrentSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 3).title#.set_text('Sequence Input Surface Next Warped')
+                plt.imshow(TensorToImage(sequenceInputNextWarpedSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 7).title#.set_text('Sequence Output Surface Previous Warped')
+                plt.imshow(TensorToImage(sequenceOutputPreviousWarpedSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 8).title#.set_text('Sequence Output Current Surface')
+                plt.imshow(TensorToImage(sequenceOutputCurrentSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 9).title#.set_text('Sequence Output Surface Next Warped')
+                plt.imshow(TensorToImage(sequenceOutputNextWarpedSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 13).title#.set_text('Sequence Target Surface Previous Warped')
+                plt.imshow(TensorToImage(sequenceTargetPreviousWarpedSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 14).title#.set_text('Sequence Target Current Surface')
+                plt.imshow(TensorToImage(sequenceTargetCurrentSRM[0:1, :, :]))
+                plt.axis('off')
+                fig.add_subplot(6, 6, 15).title#.set_text('Sequence Target Surface Next Warped')
+                plt.imshow(TensorToImage(sequenceTargetNextWarpedSRM[0:1, :, :]))
+                plt.axis('off')
+
+                plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+                plt.margins(0, 0)
+                summaryWriter.add_figure('Surface Reconstruction Model WGAN Sequence/Epoch' + str(epoch), plt.gcf(), iteration)
 
             # Save a checkpoint to file
             checkpoint = {
