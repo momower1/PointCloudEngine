@@ -749,6 +749,33 @@ while True:
                 plt.margins(0, 0)
                 summaryWriter.add_figure('Surface Reconstruction Model WGAN Sequence/Epoch' + str(epoch), plt.gcf(), iteration)
 
+            # Save an animated gif with input, output and target (quality is worse due to compression)
+            videoTensor = torch.zeros((1, dataset.sequenceFrameCount, 3, 3 * dataset.height, 4 * dataset.width), dtype=torch.float, device=device)
+
+            for frameIndex in range(dataset.sequenceFrameCount):
+                # Surface
+                videoTensor[0, frameIndex, :, 0:dataset.height, 0:dataset.width] = inputsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, dataset.height:2*dataset.height, 0:dataset.width] = outputsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 2*dataset.height:3*dataset.height, 0:dataset.width] = targetsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
+                
+                # Depth
+                videoTensor[0, frameIndex, :, 0:dataset.height, dataset.width:2*dataset.width] = inputsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, dataset.height:2*dataset.height, dataset.width:2*dataset.width] = outputsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 2*dataset.height:3*dataset.height, dataset.width:2*dataset.width] = targetsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+
+                # Color
+                videoTensor[0, frameIndex, :, 0:dataset.height, 2*dataset.width:3*dataset.width] = inputsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, dataset.height:2*dataset.height, 2*dataset.width:3*dataset.width] = outputsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, 2*dataset.height:3*dataset.height, 2*dataset.width:3*dataset.width] = targetsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
+
+                # Normal
+                videoTensor[0, frameIndex, :, 0:dataset.height, 3*dataset.width:4*dataset.width] = inputsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, dataset.height:2*dataset.height, 3*dataset.width:4*dataset.width] = outputsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, 2*dataset.height:3*dataset.height, 3*dataset.width:4*dataset.width] = targetsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
+
+            videoTensor = torch.clamp(videoTensor, 0, 1)
+            summaryWriter.add_video('Videos/Epoch' + str(epoch), videoTensor, iteration, fps=10)
+
             # Save a checkpoint to file
             checkpoint = {
                 'Epoch' : epoch,
