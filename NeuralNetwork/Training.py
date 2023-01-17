@@ -164,6 +164,7 @@ while True:
         inputsSCM = []
         outputsSCM = []
         targetsSCM = []
+        accuracySCM = []
 
         # Surface Flow Model
         inputsSFM = []
@@ -210,6 +211,11 @@ while True:
             pointsSparseSurfaceNormalPredicted = pointsSparseSurfacePredicted * pointsSparseNormal
             pointsSparseSurfaceOpticalFlowForwardPredicted = pointsSparseSurfacePredicted * pointsSparseOpticalFlowForward
 
+            # Calculate SCM accuracy for plotting
+            accuracyMaskSCM = pointsSparseForeground.ge(0.5)
+            accuracyFrameSCM = torch.eq(outputSCM[accuracyMaskSCM].ge(0.5), targetSCM[accuracyMaskSCM].ge(0.5)).float().sum() / accuracyMaskSCM.numel()
+            accuracySCM.append(accuracyFrameSCM)
+
             # Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
             tmpMin, tmpMax, pointsSparseSurfaceDepthPredicted = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceDepthPredicted)
 
@@ -249,6 +255,9 @@ while True:
             inputsSRM.append(inputSRM)
             outputsSRM.append(outputSRM)
             targetsSRM.append(targetSRM)
+
+        # Average SCM accuracy
+        accuracySCM = torch.stack(accuracySCM, dim=0).mean()
 
         # Surface Classification Model Loss Terms
         lossSurfaceSCM = []
@@ -418,6 +427,7 @@ while True:
         summaryWriter.add_scalar('Surface Classification Model/_Loss SCM', lossSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
+        summaryWriter.add_scalar('Surface Classification Model/Accuracy SCM', accuracySCM, iteration)
 
         # Train Surface Flow Model
         SFM.zero_grad()
