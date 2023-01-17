@@ -9,14 +9,14 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=3)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=8)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 2
+batchSize = 4
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
@@ -65,7 +65,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Only with Reverse Fix/'
+checkpointDirectory += 'WGAN Only 8 Frames Batch 4/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -273,6 +273,9 @@ while True:
             # Adaptively either update critic or generator depending on the wasserstein loss ratios
             updateCriticSRM = ratioCriticSRM >= adaptiveUpdateCoefficientSRM * ratioSRM
 
+            # Randomly reverse triplet frame order to improve recurrent WGAN temporal stability
+            reverseCriticSequence = random.randint(0, 1) == 1
+
         # Accumulate loss terms over triplets in the sequence
         # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
@@ -334,7 +337,7 @@ while True:
             lossTemporalSRM.append(lossTemporalTripletSRM)
 
             if trainingAdversarialSRM:
-                # Do not consider the previous frame output here
+                # Do not consider the previous frame output from SRM here (slice it away)
                 inputPreviousSRM = inputsSRM[tripletFrameIndex - 1][:, 0:8, :, :]
                 inputPreviousWarpedSRM = WarpImage(inputPreviousSRM, motionVectorPreviousToCurrent)
                 inputSRM = inputsSRM[tripletFrameIndex][:, 0:8, :, :]
@@ -346,14 +349,11 @@ while True:
                 targetNextSRM = targetsSRM[tripletFrameIndex + 1]
                 targetNextWarpedSRM = WarpImage(targetNextSRM, motionVectorNextToCurrent)
 
-                # Randomly reverse triplet frame order to improve recurrent WGAN temporal stability
-                reverseSequence = random.randint(0, 1) == 1
-
                 sequenceInputSRM = [inputPreviousWarpedSRM, inputSRM, inputNextWarpedSRM]
                 sequenceOutputSRM = [outputPreviousWarpedSRM, outputSRM, outputNextWarpedSRM]
                 sequenceTargetSRM = [targetPreviousWarpedSRM, targetSRM, targetNextWarpedSRM]
 
-                if reverseSequence:
+                if reverseCriticSequence:
                     sequenceInputSRM.reverse()
                     sequenceOutputSRM.reverse()
                     sequenceTargetSRM.reverse()
