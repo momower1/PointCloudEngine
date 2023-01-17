@@ -9,14 +9,14 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=8)
+dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=4)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 2
+batchSize = 4
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 5e-4
@@ -65,7 +65,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN 8 Frames Batch 2/'
+checkpointDirectory += 'WGAN 4 Frames Batch 4/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
