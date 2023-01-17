@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 4
+batchSize = 2
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-3
@@ -65,7 +65,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN Only 8 Frames Batch 4/'
+checkpointDirectory += 'WGAN 8 Frames Batch 2/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -450,9 +450,9 @@ while True:
                 optimizerCriticSRM.step()
                 stepsCriticSRM += 1
 
-                summaryWriter.add_scalar('Critic Surface Reconstruction Model/_Loss Critic SRM', lossCriticSRM, iteration)
-                summaryWriter.add_scalar('Critic Surface Reconstruction Model/Loss Critic Wasserstein SRM', lossCriticWassersteinSRM, iteration)
-                summaryWriter.add_scalar('Critic Surface Reconstruction Model/Loss Critic Gradient Penalty SRM', lossCriticGradientPenaltySRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Critic/_Loss Critic SRM', lossCriticSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Critic/Loss Critic Wasserstein SRM', lossCriticWassersteinSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Critic/Loss Critic Gradient Penalty SRM', lossCriticGradientPenaltySRM, iteration)
 
         if updateSRM:
             SRM.zero_grad()
@@ -768,7 +768,7 @@ while True:
 
                 plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
                 plt.margins(0, 0)
-                summaryWriter.add_figure('Surface Reconstruction Model WGAN Sequence/Epoch' + str(epoch), plt.gcf(), iteration)
+                summaryWriter.add_figure('Surface Reconstruction Critic/Epoch' + str(epoch), plt.gcf(), iteration)
 
             # Save an animated gif with input, output and target (quality is worse due to compression)
             videoTensor = torch.zeros((1, dataset.sequenceFrameCount, 3, 3 * dataset.height, 4 * dataset.width), dtype=torch.float, device=device)
