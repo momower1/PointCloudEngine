@@ -214,7 +214,7 @@ while True:
             # Calculate SCM batchwise accuracy for plotting
             for sampleIndex in range(batchSize):
                 accuracySampleMaskSCM = pointsSparseForeground[sampleIndex, :, :, :].ge(0.5)
-                accuracySampleSCM = torch.eq(outputSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5), targetSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5)).float().sum() / accuracySampleMaskSCM.numel()
+                accuracySampleSCM = torch.eq(outputSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5), targetSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5)).float().sum() / accuracySampleMaskSCM.float().sum()
                 accuracySCM.append(accuracySampleSCM)
 
             # Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
