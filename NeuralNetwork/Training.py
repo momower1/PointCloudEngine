@@ -211,10 +211,11 @@ while True:
             pointsSparseSurfaceNormalPredicted = pointsSparseSurfacePredicted * pointsSparseNormal
             pointsSparseSurfaceOpticalFlowForwardPredicted = pointsSparseSurfacePredicted * pointsSparseOpticalFlowForward
 
-            # Calculate SCM accuracy for plotting
-            accuracyMaskSCM = pointsSparseForeground.ge(0.5)
-            accuracyFrameSCM = torch.eq(outputSCM[accuracyMaskSCM].ge(0.5), targetSCM[accuracyMaskSCM].ge(0.5)).float().sum() / accuracyMaskSCM.numel()
-            accuracySCM.append(accuracyFrameSCM)
+            # Calculate SCM batchwise accuracy for plotting
+            for sampleIndex in range(batchSize):
+                accuracySampleMaskSCM = pointsSparseForeground[sampleIndex, :, :, :].ge(0.5)
+                accuracySampleSCM = torch.eq(outputSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5), targetSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5)).float().sum() / accuracySampleMaskSCM.numel()
+                accuracySCM.append(accuracySampleSCM)
 
             # Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
             tmpMin, tmpMax, pointsSparseSurfaceDepthPredicted = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceDepthPredicted)
