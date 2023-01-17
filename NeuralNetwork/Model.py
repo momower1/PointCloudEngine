@@ -26,11 +26,11 @@ class Model(torch.nn.Module):
         innerChannels = max(inChannels, outChannels)
 
         self.moduleList.append(torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(innerChannels, 0.25))
 
         for innerLayerIndex in range(innerLayers):
             self.moduleList.append(torch.nn.Conv2d(innerChannels, innerChannels, 3, 1, 1))
-            self.moduleList.append(torch.nn.PReLU(1, 0.25))
+            self.moduleList.append(torch.nn.PReLU(innerChannels, 0.25))
 
         self.moduleList.append(torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1))
         self.moduleList.append(torch.nn.Sigmoid())
@@ -51,9 +51,9 @@ class PullBlock(torch.nn.Module):
         super(PullBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
         self.moduleList.append(torch.nn.MaxPool2d(2))
 
     def forward(self, input):
@@ -69,9 +69,9 @@ class PushBlock(torch.nn.Module):
         super(PushBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
         self.moduleList.append(torch.nn.ConvTranspose2d(inoutChannels, inoutChannels, 4, 2, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
 
     def forward(self, input):
         act = input
@@ -86,9 +86,9 @@ class FuseBlock(torch.nn.Module):
         super(FuseBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inChannels, inChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(inChannels, 0.25))
         self.moduleList.append(torch.nn.Conv2d(inChannels, outChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(1, 0.25))
+        self.moduleList.append(torch.nn.PReLU(outChannels, 0.25))
 
     def forward(self, input):
         act = input
@@ -104,7 +104,7 @@ class Critic(torch.nn.Module):
         self.inChannels = inChannels
         self.outChannels = outChannels
         self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
-        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.preluStart = torch.nn.PReLU(innerChannels, 0.25)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.pullBlock = PullBlock(innerChannels)
 
@@ -200,7 +200,7 @@ class PullPushModel(torch.nn.Module):
         self.inChannels = inChannels
         self.outChannels = outChannels
         self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
-        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.preluStart = torch.nn.PReLU(innerChannels, 0.25)
         self.pullPush = PullPushLayer(innerChannels)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.sigmoid = torch.nn.Sigmoid()
@@ -226,7 +226,7 @@ class CriticDeep(torch.nn.Module):
         # Create a critic with variable layer count depending on the input frame size (must be a power of 2)
         for layerIndex in range(self.layerCount):
             self.moduleList.append(torch.nn.Conv2d(pow(2, layerIndex) * inChannels, pow(2, layerIndex + 1) * inChannels, 4, 2, 1))
-            self.moduleList.append(torch.nn.PReLU(1, 0.25))
+            self.moduleList.append(torch.nn.PReLU(pow(2, layerIndex + 1) * inChannels, 0.25))
 
         self.moduleList.append(torch.nn.Conv2d(pow(2, self.layerCount) * inChannels, 1, int(frameSize / pow(2, self.layerCount)), 1))
 
@@ -253,17 +253,17 @@ class Unet(torch.nn.Module):
         self.decoderConvs = torch.nn.ModuleList()
         self.decoderPrelus = torch.nn.ModuleList()
         self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
-        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.preluStart = torch.nn.PReLU(innerChannels, 0.25)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.sigmoid = torch.nn.Sigmoid()
 
         for layerIndex in range(self.layerCount):
             self.encoderConvs.append(torch.nn.Conv2d(pow(2, layerIndex) * innerChannels, pow(2, layerIndex + 1) * innerChannels, 4, 2, 1))
-            self.encoderPrelus.append(torch.nn.PReLU(1, 0.25))
+            self.encoderPrelus.append(torch.nn.PReLU(pow(2, layerIndex + 1) * innerChannels, 0.25))
 
         for layerIndex in range(self.layerCount - 1, -1, -1):
             self.decoderConvs.append(torch.nn.ConvTranspose2d(pow(2, layerIndex + 1) * innerChannels, pow(2, layerIndex) * innerChannels, 4, 2, 1))
-            self.decoderPrelus.append(torch.nn.PReLU(1, 0.25))
+            self.decoderPrelus.append(torch.nn.PReLU(pow(2, layerIndex) * innerChannels, 0.25))
 
         InitializeParameters(self)
         ApplyWeightNormalization(self)
@@ -309,7 +309,7 @@ class UnetPullPushEncoderBlock(torch.nn.Module):
         super(UnetPullPushEncoderBlock, self).__init__()
         self.pullPush = PullPushLayer(inChannels)
         self.conv = torch.nn.Conv2d(inChannels, outChannels, 4, 2, 1)
-        self.prelu = torch.nn.PReLU(1, 0.25)
+        self.prelu = torch.nn.PReLU(outChannels, 0.25)
 
     def forward(self, input):
         return self.prelu(self.conv(self.pullPush(input)))
@@ -318,7 +318,7 @@ class UnetPullPushDecoderBlock(torch.nn.Module):
     def __init__(self, inChannels=16, outChannels=8):
         super(UnetPullPushDecoderBlock, self).__init__()
         self.conv = torch.nn.ConvTranspose2d(inChannels, outChannels, 4, 2, 1)
-        self.prelu = torch.nn.PReLU(1, 0.25)
+        self.prelu = torch.nn.PReLU(outChannels, 0.25)
 
     def forward(self, input):
         return self.prelu(self.conv(input))
@@ -330,7 +330,7 @@ class UnetPullPush(torch.nn.Module):
         self.encoderBlocks = torch.nn.ModuleList()
         self.decoderBlocks = torch.nn.ModuleList()
         self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
-        self.preluStart = torch.nn.PReLU(1, 0.25)
+        self.preluStart = torch.nn.PReLU(innerChannels, 0.25)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
         self.sigmoid = torch.nn.Sigmoid()
 
