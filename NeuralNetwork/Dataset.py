@@ -234,7 +234,7 @@ class Dataset:
             # Add a tiny bit of noise
             for frameIndex in range(self.sequenceFrameCount):
                 for renderMode in self.renderModes:
-                    sequence[frameIndex][renderMode] += torch.normal(mean=0.0, std=1.0 / 256.0, size=sequence[frameIndex][renderMode].shape, device=device)
+                    sequence[frameIndex][renderMode] = (sequence[frameIndex][renderMode] + torch.normal(mean=0.0, std=1.0 / 256.0, size=sequence[frameIndex][renderMode].shape, device=device)).clamp(0, 1)
 
         return sequence
 
