@@ -216,8 +216,12 @@ while True:
             # Calculate SCM batchwise accuracy for plotting
             for sampleIndex in range(batchSize):
                 accuracySampleMaskSCM = pointsSparseForeground[sampleIndex, :, :, :].ge(0.5)
-                accuracySampleSCM = torch.eq(outputSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5), targetSCM[sampleIndex, :, :, :][accuracySampleMaskSCM].ge(0.5)).float().sum() / accuracySampleMaskSCM.float().sum()
-                accuracySCM.append(accuracySampleSCM)
+                accuracyOutputMaskedSCM = outputSCM[sampleIndex, :, :, :][accuracySampleMaskSCM]
+                accuracyTargetMaskedSCM = targetSCM[sampleIndex, :, :, :][accuracySampleMaskSCM]
+
+                if accuracyOutputMaskedSCM.numel() > 0 and accuracyTargetMaskedSCM.numel() > 0:
+                    accuracySampleSCM = torch.eq(accuracyOutputMaskedSCM.ge(0.5), accuracyTargetMaskedSCM.ge(0.5)).float().sum() / accuracySampleMaskSCM.float().sum()
+                    accuracySCM.append(accuracySampleSCM)
 
             # Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
             tmpMin, tmpMax, pointsSparseSurfaceDepthPredicted = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceDepthPredicted)
@@ -242,7 +246,7 @@ while True:
             # Surface Reconstruction Model
             inputSRM = torch.cat([pointsSparseSurfacePredicted, pointsSparseSurfaceDepthPredicted, pointsSparseSurfaceColorPredicted, pointsSparseSurfaceNormalPredicted], dim=1)
 
-            if previousOutputSRM is None:
+            if previousOutputSRM is None or previousOutputSRM.shape != inputSRM.shape:
                 previousOutputSRM = torch.zeros_like(inputSRM)
 
             # TODO: Only keep warped pixels if they are not occluded by both forward and backward motion
@@ -260,7 +264,9 @@ while True:
             targetsSRM.append(targetSRM)
 
         # Average SCM accuracy
-        accuracySCM = torch.stack(accuracySCM, dim=0).mean()
+        if len(accuracySCM) > 0:
+            accuracySCM = torch.stack(accuracySCM, dim=0).mean()
+            summaryWriter.add_scalar('Surface Classification Model/Accuracy SCM', accuracySCM, iteration)
 
         # Surface Classification Model Loss Terms
         lossSurfaceSCM = []
@@ -333,14 +339,14 @@ while True:
             targetSRM = targetsSRM[tripletFrameIndex]
 
             # TODO: Temporal loss term should probably include occlusion (use forward and backward occlusion from the ground truth motion)
-            temporalMaskSRM = targetSRM[:, 0:1, :, :].ge(0.5).repeat(1, 8, 1, 1)
+            temporalMaskSRM = targetSRM[:, 0:1, :, :].ge(0.5).float().repeat(1, 8, 1, 1)
 
             lossSurfaceTripletSRM = factorLossSurfaceSRM * torch.nn.functional.binary_cross_entropy(outputSRM[:, 0:1, :, :], targetSRM[:, 0:1, :, :], reduction='mean')
             lossDepthTripletSRM = factorLossDepthSRM * torch.nn.functional.mse_loss(outputSRM[:, 1:2, :, :], targetSRM[:, 1:2, :, :], reduction='mean')
             lossColorTripletSRM = factorLossColorSRM * torch.nn.functional.mse_loss(outputSRM[:, 2:5, :, :], targetSRM[:, 2:5, :, :], reduction='mean')
             lossNormalTripletSRM = factorLossNormalSRM * torch.nn.functional.mse_loss(outputSRM[:, 5:8, :, :], targetSRM[:, 5:8, :, :], reduction='mean')
-            lossTemporalTripletPreviousSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputPreviousWarpedSRM[temporalMaskSRM], outputSRM[temporalMaskSRM], reduction='mean')
-            lossTemporalTripletNextSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(outputNextWarpedSRM[temporalMaskSRM], outputSRM[temporalMaskSRM], reduction='mean')
+            lossTemporalTripletPreviousSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(temporalMaskSRM * outputPreviousWarpedSRM, temporalMaskSRM * outputSRM, reduction='mean')
+            lossTemporalTripletNextSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(temporalMaskSRM * outputNextWarpedSRM, temporalMaskSRM * outputSRM, reduction='mean')
             lossTemporalTripletSRM = lossTemporalTripletPreviousSRM + lossTemporalTripletNextSRM
             lossSurfaceSRM.append(lossSurfaceTripletSRM)
             lossDepthSRM.append(lossDepthTripletSRM)
@@ -430,7 +436,6 @@ while True:
         summaryWriter.add_scalar('Surface Classification Model/_Loss SCM', lossSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Surface SCM', lossSurfaceSCM, iteration)
         summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
-        summaryWriter.add_scalar('Surface Classification Model/Accuracy SCM', accuracySCM, iteration)
 
         # Train Surface Flow Model
         SFM.zero_grad()
