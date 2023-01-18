@@ -150,6 +150,8 @@ while True:
             sequence[renderMode] = torch.stack(sequence[renderMode], dim=0)
 
         # Reset for next iteration
+        frameWidth = dataset.cropWidth
+        frameHeight = dataset.cropHeight
         dataset.CreateNextRandomCropRect()
         batchNextSequence = [None] * batchSize
 
@@ -521,7 +523,7 @@ while True:
             outputPointsSparseSurfaceMask = outputPointsSparseSurface.ge(0.5).float()
             targetPointsSparseSurface = targetsSCM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
 
-            fig = plt.figure(figsize=(3 * dataset.cropWidth, 2 * dataset.cropHeight), dpi=1)
+            fig = plt.figure(figsize=(3 * frameWidth, 2 * frameHeight), dpi=1)
             fig.add_subplot(2, 3, 1).title#.set_text('Input Points Sparse Foreground')
             plt.imshow(TensorToImage(inputPointsSparseForegroundSCM))
             plt.axis('off')
@@ -553,7 +555,7 @@ while True:
             outputSurfaceOpticalFlowForward = outputsSFM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
             targetMeshOpticalFlowForward = targetsSFM[snapshotFrameIndex][snapshotSampleIndex, :, :, :]
 
-            fig = plt.figure(figsize=(3 * dataset.cropWidth, 2 * dataset.cropHeight), dpi=1)
+            fig = plt.figure(figsize=(3 * frameWidth, 2 * frameHeight), dpi=1)
             fig.add_subplot(2, 3, 1).title#.set_text('Input Points Sparse Surface Predicted')
             plt.imshow(TensorToImage(inputPointsSparseSurfacePredicted))
             plt.axis('off')
@@ -595,7 +597,7 @@ while True:
             targetMeshColor = targetsSRM[snapshotFrameIndex][snapshotSampleIndex, 2:5, :, :]
             targetMeshNormal = targetsSRM[snapshotFrameIndex][snapshotSampleIndex, 5:8, :, :]
 
-            fig = plt.figure(figsize=(4 * dataset.cropWidth, 4 * dataset.cropHeight), dpi=1)
+            fig = plt.figure(figsize=(4 * frameWidth, 4 * frameHeight), dpi=1)
             fig.add_subplot(4, 4, 1).title#.set_text('Input Points Sparse Surface Predicted')
             plt.imshow(TensorToImage(inputPointsSparseSurfacePredicted))
             plt.axis('off')
@@ -660,7 +662,7 @@ while True:
                 sequenceTargetCurrentSRM = sequenceTargetSRM[snapshotSampleIndex, 8:16, :, :]
                 sequenceTargetNextWarpedSRM = sequenceTargetSRM[snapshotSampleIndex, 16:24, :, :]
 
-                fig = plt.figure(figsize=(6 * dataset.cropWidth, 6 * dataset.cropHeight), dpi=1)
+                fig = plt.figure(figsize=(6 * frameWidth, 6 * frameHeight), dpi=1)
                 fig.add_subplot(6, 6, 1).title#.set_text('Sequence Input Surface Previous Warped')
                 plt.imshow(TensorToImage(sequenceInputPreviousWarpedSRM[0:1, :, :]))
                 plt.axis('off')
@@ -778,28 +780,28 @@ while True:
                 summaryWriter.add_figure('Surface Reconstruction Critic/Epoch' + str(epoch), plt.gcf(), iteration)
 
             # Save an animated gif with input, output and target (quality is worse due to compression)
-            videoTensor = torch.zeros((1, dataset.sequenceFrameCount, 3, 3 * dataset.cropHeight, 4 * dataset.cropWidth), dtype=torch.float, device=device)
+            videoTensor = torch.zeros((1, dataset.sequenceFrameCount, 3, 3 * frameHeight, 4 * frameWidth), dtype=torch.float, device=device)
 
             for frameIndex in range(dataset.sequenceFrameCount):
                 # Surface
-                videoTensor[0, frameIndex, :, 0:dataset.cropHeight, 0:dataset.cropWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
-                videoTensor[0, frameIndex, :, dataset.cropHeight:2*dataset.cropHeight, 0:dataset.cropWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
-                videoTensor[0, frameIndex, :, 2*dataset.cropHeight:3*dataset.cropHeight, 0:dataset.cropWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 0:frameHeight, 0:frameWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, frameHeight:2*frameHeight, 0:frameWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 2*frameHeight:3*frameHeight, 0:frameWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 0:1, :, :].repeat(3, 1, 1)
                 
                 # Depth
-                videoTensor[0, frameIndex, :, 0:dataset.cropHeight, dataset.cropWidth:2*dataset.cropWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
-                videoTensor[0, frameIndex, :, dataset.cropHeight:2*dataset.cropHeight, dataset.cropWidth:2*dataset.cropWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
-                videoTensor[0, frameIndex, :, 2*dataset.cropHeight:3*dataset.cropHeight, dataset.cropWidth:2*dataset.cropWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 0:frameHeight, frameWidth:2*frameWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, frameHeight:2*frameHeight, frameWidth:2*frameWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
+                videoTensor[0, frameIndex, :, 2*frameHeight:3*frameHeight, frameWidth:2*frameWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 1:2, :, :].repeat(3, 1, 1)
 
                 # Color
-                videoTensor[0, frameIndex, :, 0:dataset.cropHeight, 2*dataset.cropWidth:3*dataset.cropWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
-                videoTensor[0, frameIndex, :, dataset.cropHeight:2*dataset.cropHeight, 2*dataset.cropWidth:3*dataset.cropWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
-                videoTensor[0, frameIndex, :, 2*dataset.cropHeight:3*dataset.cropHeight, 2*dataset.cropWidth:3*dataset.cropWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, 0:frameHeight, 2*frameWidth:3*frameWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, frameHeight:2*frameHeight, 2*frameWidth:3*frameWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
+                videoTensor[0, frameIndex, :, 2*frameHeight:3*frameHeight, 2*frameWidth:3*frameWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 2:5, :, :]
 
                 # Normal
-                videoTensor[0, frameIndex, :, 0:dataset.cropHeight, 3*dataset.cropWidth:4*dataset.cropWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
-                videoTensor[0, frameIndex, :, dataset.cropHeight:2*dataset.cropHeight, 3*dataset.cropWidth:4*dataset.cropWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
-                videoTensor[0, frameIndex, :, 2*dataset.cropHeight:3*dataset.cropHeight, 3*dataset.cropWidth:4*dataset.cropWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, 0:frameHeight, 3*frameWidth:4*frameWidth] = inputsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, frameHeight:2*frameHeight, 3*frameWidth:4*frameWidth] = outputsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
+                videoTensor[0, frameIndex, :, 2*frameHeight:3*frameHeight, 3*frameWidth:4*frameWidth] = targetsSRM[frameIndex][snapshotSampleIndex, 5:8, :, :]
 
             videoTensor = torch.clamp(videoTensor, 0, 1)
             summaryWriter.add_video('Videos/Epoch' + str(epoch), videoTensor, iteration, fps=10)
