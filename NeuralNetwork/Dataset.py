@@ -289,14 +289,14 @@ class Dataset:
             texture = numpy.frombuffer(buffer=texturesBytes, dtype=dataTypeMap[elementSizeInBytes], count=textureElementCount, offset=bytesRead)
             bytesRead += textureElementCount * elementSizeInBytes
             texture = numpy.reshape(texture, (height, width, channels))
-            texture = texture.astype('float32')
-            texture = torch.from_numpy(texture)
 
             # Possibly crop the texture to a smaller size
             if self.cropRect is not None:
                 cropStartX, cropEndX, cropStartY, cropEndY = self.cropRect
                 texture = texture[cropStartY:cropEndY, cropStartX:cropEndX, :]
 
+            texture = texture.astype('float32')
+            texture = torch.from_numpy(texture)
             texture = texture.to(device)
             texture = torch.permute(texture, dims=(2, 0, 1))
 
