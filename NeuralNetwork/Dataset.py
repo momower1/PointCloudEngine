@@ -13,22 +13,20 @@ def GetForegroundBackgroundMasks(depthTexture):
 
 def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     depthNormalized = torch.clone(depthTexture)
+    depthBackground = depthNormalized[maskBackground]
+    depthForeground = depthNormalized[maskForeground]
 
-    # Replace background depth values with 0 for better visualization
-    depthNormalized[maskBackground] = 0.0
+    # Only perform normalization if mask is non-empty to avoid NaN error
+    if depthBackground.numel() > 0 and depthForeground.numel() > 0:
+        # Replace background depth values with 0 for better visualization
+        depthNormalized[maskBackground] = 0.0
 
-    # Compute minimum and maximum masked depth values
-    depthForeground = depthTexture[maskForeground]
-
-    if depthForeground.numel() > 0:
+        # Compute minimum and maximum masked depth values
         depthMin = depthForeground.min()
         depthMax = depthForeground.max()
-    else:
-        depthMin = 0.0
-        depthMax = 1.0
 
-    # Normalize values to [0, 1]
-    depthNormalized[maskForeground] = (depthNormalized[maskForeground] - depthMin) / (depthMax - depthMin)
+        # Normalize values to [0, 1]
+        depthNormalized[maskForeground] = (depthNormalized[maskForeground] - depthMin) / ((depthMax - depthMin) + 1e-12)
 
     return depthNormalized
 

@@ -11,6 +11,10 @@ else:
 def TensorToImage(tensor):
     return (tensor * 255.0).clamp(0, 255).permute(1, 2, 0).type(torch.uint8).cpu().numpy()
 
+def PrintIfTensorHasNaN(tensor, message):
+    if torch.isnan(tensor).float().sum() > 0:
+        print(message + ' is NaN!')
+
 # Assume flow is a [0, 1] range tensor with shape (2, H, W)
 def FlowToImage(flow):
     c, h, w = flow.shape
