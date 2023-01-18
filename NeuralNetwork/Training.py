@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset(directory='G:/PointCloudEngineDataset/', sequenceFrameCount=4)
+dataset = Dataset('G:/PointCloudEngineDataset1024/', 4, True, True, True, 128)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -65,7 +65,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN 4 Frames Batch 4/'
+checkpointDirectory += 'Cropping WGAN 4 Frames Batch 4/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -73,7 +73,7 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     print('Loading existing checkpoint from "' + checkpointDirectory + checkpointNameStart + checkpointNameEnd + '"')
     checkpoint = torch.load(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     epoch = checkpoint['Epoch']
-    batchIndexStart = checkpoint['BatchIndexStart']
+    #batchIndexStart = checkpoint['BatchIndexStart']
     SCM.load_state_dict(checkpoint['SCM'])
     SFM.load_state_dict(checkpoint['SFM'])
     SRM.load_state_dict(checkpoint['SRM'])
@@ -109,6 +109,7 @@ for i in range(epoch + 1):
     numpy.random.shuffle(randomIndices)
 
 # Use threads to concurrently preload the next items in the dataset (slightly reduces sequence loading bottleneck)
+dataset.CreateNextRandomCropRect()
 preloadThreadCount = batchSize
 preloadThreads = [None] * preloadThreadCount
 batchNextSequence = [None] * batchSize
@@ -149,6 +150,7 @@ while True:
             sequence[renderMode] = torch.stack(sequence[renderMode], dim=0)
 
         # Reset for next iteration
+        dataset.CreateNextRandomCropRect()
         batchNextSequence = [None] * batchSize
 
         def preload_thread_load_next(batchNextSequence, threadIndex, sequenceIndex):

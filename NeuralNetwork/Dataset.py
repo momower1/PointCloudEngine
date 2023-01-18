@@ -5,39 +5,6 @@ import random
 from zipfile import ZipFile
 from Utils import *
 
-def LoadTexturesFromBytes(texturesBytes):
-    dataTypeMap = { 2 : 'float16', 4 : 'float32' }
-
-    totalBytesToRead = len(texturesBytes)
-    bytesRead = 0
-    textures = {}
-
-    while bytesRead < totalBytesToRead:
-        renderModeNameSize = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
-        bytesRead += 4
-        renderMode = texturesBytes[bytesRead:bytesRead+renderModeNameSize].decode('utf-16')
-        bytesRead += renderModeNameSize
-        width = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
-        bytesRead += 4
-        height = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
-        bytesRead += 4
-        channels = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
-        bytesRead += 4
-        elementSizeInBytes = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
-        bytesRead += 4
-        textureElementCount = width * height * channels
-        texture = numpy.frombuffer(buffer=texturesBytes, dtype=dataTypeMap[elementSizeInBytes], count=textureElementCount, offset=bytesRead)
-        bytesRead += textureElementCount * elementSizeInBytes
-        texture = numpy.reshape(texture, (height, width, channels))
-        texture = texture.astype('float32')
-        texture = torch.from_numpy(texture)
-        texture = texture.to(device)
-        texture = torch.permute(texture, dims=(2, 0, 1))
-
-        textures[renderMode] = texture
-
-    return textures
-
 def GetForegroundBackgroundMasks(depthTexture):
     maskForeground = depthTexture < 1.0
     maskBackground = depthTexture >= 1.0
@@ -51,8 +18,14 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     depthNormalized[maskBackground] = 0.0
 
     # Compute minimum and maximum masked depth values
-    depthMin = depthTexture[maskForeground].min()
-    depthMax = depthTexture[maskForeground].max()
+    depthForeground = depthTexture[maskForeground]
+
+    if depthForeground.numel() > 0:
+        depthMin = depthForeground.min()
+        depthMax = depthForeground.max()
+    else:
+        depthMin = 0.0
+        depthMax = 1.0
 
     # Normalize values to [0, 1]
     depthNormalized[maskForeground] = (depthNormalized[maskForeground] - depthMin) / (depthMax - depthMin)
@@ -60,11 +33,13 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     return depthNormalized
 
 class Dataset:
-    def __init__(self, directory, sequenceFrameCount=3, dataAugmentation=True, zipCompressed=False, testSetPercentage=0.0):
+    def __init__(self, directory, sequenceFrameCount=3, randomlyCropFrames=True, dataAugmentation=True, zipCompressed=False, maxSquareCropSize=128, testSetPercentage=0.0):
         self.directory = directory
         self.sequenceFrameCount = sequenceFrameCount
+        self.randomlyCropFrames = randomlyCropFrames
         self.dataAugmentation = dataAugmentation
         self.zipCompressed = zipCompressed
+        self.maxSquareCropSize = maxSquareCropSize
         self.testSetPercentage = testSetPercentage
         
         if self.sequenceFrameCount < 3:
@@ -85,6 +60,7 @@ class Dataset:
         frameIndices.sort()
         frameCount = len(frameIndices)
 
+        self.cropRect = None
         self.trainingFrames = frameIndices[int(testSetPercentage * frameCount):frameCount]
         self.testFrames = frameIndices[0:int(testSetPercentage * frameCount)]
         self.trainingSequenceCount = max(0, len(self.trainingFrames) - (self.sequenceFrameCount - 1) - 1)
@@ -92,6 +68,8 @@ class Dataset:
         self.renderModes = self.GetFrame(frameIndices, 0).keys()
         self.height = list(self.GetFrame(frameIndices, 0).values())[0].size(1)
         self.width = list(self.GetFrame(frameIndices, 0).values())[0].size(2)
+        self.cropWidth = self.width
+        self.cropHeight = self.height
 
         print('Initialized dataset from "' + directory + '"')
         print('\t- ' + str(frameCount) + ' total frames')
@@ -99,6 +77,7 @@ class Dataset:
         print('\t- ' + str(self.trainingSequenceCount) + ' training sequences')
         print('\t- ' + str(self.testSequenceCount) + ' test sequences')
         print('\t- ' + str(len(self.renderModes)) + ' render modes')
+        print('\t- ' + 'Random cropping ' + (('enabled with max square crop size ' + str(self.maxSquareCropSize)) if self.randomlyCropFrames else 'disabled'))
         print('\t- ' + str(self.height) + ' height')
         print('\t- ' + str(self.width) + ' width')
 
@@ -109,7 +88,7 @@ class Dataset:
         else:
             texturesBytes = open(self.directory + str(frames[index]) + '.textures', 'rb').read()
 
-        textures = LoadTexturesFromBytes(texturesBytes)
+        textures = self.LoadTexturesFromBytes(texturesBytes)
 
         tensors = {}
 
@@ -258,6 +237,72 @@ class Dataset:
                     sequence[frameIndex][renderMode] += torch.normal(mean=0.0, std=1.0 / 256.0, size=sequence[frameIndex][renderMode].shape, device=device)
 
         return sequence
+
+    # Assigns crop rect as a variable such that each sample in a batch is cropped in the same way (until this function is called again)
+    def CreateNextRandomCropRect(self):
+        if self.randomlyCropFrames:
+            cropPixelCount = self.maxSquareCropSize * self.maxSquareCropSize
+
+            # Either use width or height as baseline for the random crop
+            if random.randint(0, 1) == 1:
+                cropWidth = random.randint(1, self.width)
+                cropHeight = min(self.height, cropPixelCount // cropWidth)
+                cropWidth = cropPixelCount // cropHeight
+            else:
+                cropHeight = random.randint(1, self.height)
+                cropWidth = min(self.width, cropPixelCount // cropHeight)
+                cropHeight = cropPixelCount // cropWidth
+
+            # Choose a random position for the crop
+            cropStartX = random.randint(0, self.width - cropWidth)
+            cropStartY = random.randint(0, self.height - cropHeight)
+            cropEndX = cropStartX + cropWidth
+            cropEndY = cropStartY + cropHeight
+
+            print('cropWidth: ' + str(cropWidth) + '\tcropHeight: ' + str(cropHeight))
+
+            self.cropRect = [cropStartX, cropEndX, cropStartY, cropEndY]
+            self.cropWidth = cropWidth
+            self.cropHeight = cropHeight
+
+    def LoadTexturesFromBytes(self, texturesBytes):
+        dataTypeMap = { 2 : 'float16', 4 : 'float32' }
+
+        totalBytesToRead = len(texturesBytes)
+        bytesRead = 0
+        textures = {}
+
+        while bytesRead < totalBytesToRead:
+            renderModeNameSize = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+            bytesRead += 4
+            renderMode = texturesBytes[bytesRead:bytesRead+renderModeNameSize].decode('utf-16')
+            bytesRead += renderModeNameSize
+            width = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+            bytesRead += 4
+            height = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+            bytesRead += 4
+            channels = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+            bytesRead += 4
+            elementSizeInBytes = numpy.frombuffer(buffer=texturesBytes, dtype='int32', count=1, offset=bytesRead).item()
+            bytesRead += 4
+            textureElementCount = width * height * channels
+            texture = numpy.frombuffer(buffer=texturesBytes, dtype=dataTypeMap[elementSizeInBytes], count=textureElementCount, offset=bytesRead)
+            bytesRead += textureElementCount * elementSizeInBytes
+            texture = numpy.reshape(texture, (height, width, channels))
+            texture = texture.astype('float32')
+            texture = torch.from_numpy(texture)
+
+            # Possibly crop the texture to a smaller size
+            if self.cropRect is not None:
+                cropStartX, cropEndX, cropStartY, cropEndY = self.cropRect
+                texture = texture[cropStartY:cropEndY, cropStartX:cropEndX, :]
+
+            texture = texture.to(device)
+            texture = torch.permute(texture, dims=(2, 0, 1))
+
+            textures[renderMode] = texture
+
+        return textures
 
     def GetTrainingSequenceCount(self):
         return self.trainingSequenceCount
