@@ -259,8 +259,6 @@ class Dataset:
             cropEndX = cropStartX + cropWidth
             cropEndY = cropStartY + cropHeight
 
-            print('cropWidth: ' + str(cropWidth) + '\tcropHeight: ' + str(cropHeight))
-
             self.cropRect = [cropStartX, cropEndX, cropStartY, cropEndY]
             self.cropWidth = cropWidth
             self.cropHeight = cropHeight

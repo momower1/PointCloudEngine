@@ -73,7 +73,7 @@ if os.path.exists(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     print('Loading existing checkpoint from "' + checkpointDirectory + checkpointNameStart + checkpointNameEnd + '"')
     checkpoint = torch.load(checkpointDirectory + checkpointNameStart + checkpointNameEnd)
     epoch = checkpoint['Epoch']
-    #batchIndexStart = checkpoint['BatchIndexStart']
+    batchIndexStart = checkpoint['BatchIndexStart']
     SCM.load_state_dict(checkpoint['SCM'])
     SFM.load_state_dict(checkpoint['SFM'])
     SRM.load_state_dict(checkpoint['SRM'])
