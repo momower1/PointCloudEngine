@@ -65,7 +65,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Cropping WGAN 4 Frames Batch 4/'
+checkpointDirectory += 'WGAN 4 Frames Batch 4 Cropping Dataset 1024/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
