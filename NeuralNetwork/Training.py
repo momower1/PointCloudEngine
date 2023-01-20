@@ -22,6 +22,7 @@ batchIndexStart = 0
 learningRate = 5e-4
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
+occlusionArtifactFilterSize = 0
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Surface Classification Model
@@ -253,9 +254,9 @@ while True:
 
             # TODO: Only keep warped pixels if they are not occluded by both forward and backward motion
             # But this requires the network to also inpaint the sparse backward motion (which is not considered right now)
-            #previousOutputSRM *= EstimateOcclusion(outputMotionVectorBackwardSFM, distance=1, artifactFilterSize=0)
+            #previousOutputSRM *= EstimateOcclusion(outputMotionVectorBackwardSFM, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
             previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM)
-            previousOutputWarpedSRM *= EstimateOcclusion(outputMotionVectorSFM, distance=1, artifactFilterSize=0)
+            previousOutputWarpedSRM *= EstimateOcclusion(outputMotionVectorSFM, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
 
             inputSRM = torch.cat([inputSRM, previousOutputWarpedSRM], dim=1)
             outputSRM = SRM(inputSRM)
@@ -300,7 +301,9 @@ while True:
         # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
             motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][tripletFrameIndex]
+            motionVectorCurrentToPrevious = sequence['MeshOpticalFlowBackward'][tripletFrameIndex]
             motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][tripletFrameIndex + 1]
+            motionVectorCurrentToNext = sequence['MeshOpticalFlowForward'][tripletFrameIndex + 1]
 
             # Surface Classification Model
             outputPreviousSCM = outputsSCM[tripletFrameIndex - 1]
@@ -334,10 +337,14 @@ while True:
 
             # Surface Reconstruction Model
             outputPreviousSRM = outputsSRM[tripletFrameIndex - 1]
-            outputPreviousWarpedSRM = WarpImage(outputPreviousSRM, motionVectorPreviousToCurrent)
+            outputPreviousWarpedSRM = outputPreviousSRM * EstimateOcclusion(motionVectorCurrentToPrevious, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+            outputPreviousWarpedSRM = WarpImage(outputPreviousWarpedSRM, motionVectorPreviousToCurrent)
+            outputPreviousWarpedSRM *= EstimateOcclusion(motionVectorPreviousToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
             outputSRM = outputsSRM[tripletFrameIndex]
             outputNextSRM = outputsSRM[tripletFrameIndex + 1]
-            outputNextWarpedSRM = WarpImage(outputNextSRM, motionVectorNextToCurrent)
+            outputNextWarpedSRM = outputNextSRM * EstimateOcclusion(motionVectorCurrentToNext, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+            outputNextWarpedSRM = WarpImage(outputNextWarpedSRM, motionVectorNextToCurrent)
+            outputNextWarpedSRM *= EstimateOcclusion(motionVectorNextToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
             targetSRM = targetsSRM[tripletFrameIndex]
 
             # TODO: Temporal loss term should probably include occlusion (use forward and backward occlusion from the ground truth motion)
@@ -359,15 +366,23 @@ while True:
             if trainingAdversarialSRM:
                 # Do not consider the previous frame output from SRM here (slice it away)
                 inputPreviousSRM = inputsSRM[tripletFrameIndex - 1][:, 0:8, :, :]
-                inputPreviousWarpedSRM = WarpImage(inputPreviousSRM, motionVectorPreviousToCurrent)
+                inputPreviousWarpedSRM = inputPreviousSRM * EstimateOcclusion(motionVectorCurrentToPrevious, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                inputPreviousWarpedSRM = WarpImage(inputPreviousWarpedSRM, motionVectorPreviousToCurrent)
+                inputPreviousWarpedSRM *= EstimateOcclusion(motionVectorPreviousToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
                 inputSRM = inputsSRM[tripletFrameIndex][:, 0:8, :, :]
                 inputNextSRM = inputsSRM[tripletFrameIndex + 1][:, 0:8, :, :]
-                inputNextWarpedSRM = WarpImage(inputNextSRM, motionVectorNextToCurrent)
+                inputNextWarpedSRM = inputNextSRM * EstimateOcclusion(motionVectorCurrentToNext, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                inputNextWarpedSRM = WarpImage(inputNextWarpedSRM, motionVectorNextToCurrent)
+                inputNextWarpedSRM *= EstimateOcclusion(motionVectorNextToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
 
                 targetPreviousSRM = targetsSRM[tripletFrameIndex - 1]
-                targetPreviousWarpedSRM = WarpImage(targetPreviousSRM, motionVectorPreviousToCurrent)
+                targetPreviousWarpedSRM = targetPreviousSRM * EstimateOcclusion(motionVectorCurrentToPrevious, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                targetPreviousWarpedSRM = WarpImage(targetPreviousWarpedSRM, motionVectorPreviousToCurrent)
+                targetPreviousWarpedSRM *= EstimateOcclusion(motionVectorPreviousToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
                 targetNextSRM = targetsSRM[tripletFrameIndex + 1]
-                targetNextWarpedSRM = WarpImage(targetNextSRM, motionVectorNextToCurrent)
+                targetNextWarpedSRM = targetNextSRM * EstimateOcclusion(motionVectorCurrentToNext, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                targetNextWarpedSRM = WarpImage(targetNextWarpedSRM, motionVectorNextToCurrent)
+                targetNextWarpedSRM *= EstimateOcclusion(motionVectorNextToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
 
                 sequenceInputSRM = [inputPreviousWarpedSRM, inputSRM, inputNextWarpedSRM]
                 sequenceOutputSRM = [outputPreviousWarpedSRM, outputSRM, outputNextWarpedSRM]
