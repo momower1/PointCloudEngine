@@ -229,7 +229,7 @@ while True:
             # Renormalize depth for the sparse surface (since non-surface pixel depth values are now gone)
             tmpMin, tmpMax, pointsSparseSurfaceDepthPredicted = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceDepthPredicted)
 
-            # TODO: Also inpaint backward optical flow
+            # TODO: Also inpaint backward optical flow?
 
             # Surface Flow Model
             inputFlowMinSFM, inputFlowMaxSFM, inputFlowSFM = ConvertTensorIntoZeroToOneRange(pointsSparseSurfaceOpticalFlowForwardPredicted)
@@ -311,14 +311,28 @@ while True:
             occlusionNextToCurrent = EstimateOcclusion(motionVectorNextToCurrent, 1, occlusionArtifactFilterSize)
             occlusionCurrentToNext = EstimateOcclusion(motionVectorCurrentToNext, 1, occlusionArtifactFilterSize)
 
-            # TODO: Use sparse point flow (and corresponding sparse occlusion) for SCM warping
+            # Use sparse point flow (and corresponding sparse occlusion) for sparse point warping
+            sparseMotionVectorPreviousToCurrent = sequence['PointsSparseOpticalFlowForward'][tripletFrameIndex]
+            sparseMotionVectorCurrentToPrevious = sequence['PointsSparseOpticalFlowBackward'][tripletFrameIndex]
+            sparseMotionVectorNextToCurrent = sequence['PointsSparseOpticalFlowBackward'][tripletFrameIndex + 1]
+            sparseMotionVectorCurrentToNext = sequence['PointsSparseOpticalFlowForward'][tripletFrameIndex + 1]
+
+            # Calculate occlusion masks for the motion vectors
+            sparseOcclusionPreviousToCurrent = EstimateOcclusion(sparseMotionVectorPreviousToCurrent, 1, occlusionArtifactFilterSize)
+            sparseOcclusionCurrentToPrevious = EstimateOcclusion(sparseMotionVectorCurrentToPrevious, 1, occlusionArtifactFilterSize)
+            sparseOcclusionNextToCurrent = EstimateOcclusion(sparseMotionVectorNextToCurrent, 1, occlusionArtifactFilterSize)
+            sparseOcclusionCurrentToNext = EstimateOcclusion(sparseMotionVectorCurrentToNext, 1, occlusionArtifactFilterSize)
 
             # Surface Classification Model
             outputPreviousSCM = outputsSCM[tripletFrameIndex - 1]
-            outputPreviousWarpedSCM = WarpImage(outputPreviousSCM, motionVectorPreviousToCurrent)
+            outputPreviousWarpedSCM = outputPreviousSCM * sparseOcclusionCurrentToPrevious
+            outputPreviousWarpedSCM = WarpImage(outputPreviousWarpedSCM, sparseMotionVectorPreviousToCurrent)
+            outputPreviousWarpedSCM *= sparseOcclusionPreviousToCurrent
             outputSCM = outputsSCM[tripletFrameIndex]
             outputNextSCM = outputsSCM[tripletFrameIndex + 1]
-            outputNextWarpedSCM = WarpImage(outputNextSCM, motionVectorNextToCurrent)
+            outputNextWarpedSCM = outputNextSCM * sparseOcclusionCurrentToNext
+            outputNextWarpedSCM = WarpImage(outputNextWarpedSCM, sparseMotionVectorNextToCurrent)
+            outputNextWarpedSCM *= sparseOcclusionNextToCurrent
             targetSCM = targetsSCM[tripletFrameIndex]
 
             lossSurfaceTripletSCM = factorLossSurfaceSCM * torch.nn.functional.binary_cross_entropy(outputSCM, targetSCM, reduction='mean')
@@ -330,10 +344,14 @@ while True:
 
             # Surface Flow Model
             outputPreviousSFM = outputsSFM[tripletFrameIndex - 1]
-            outputPreviousWarpedSFM = WarpImage(outputPreviousSFM, motionVectorPreviousToCurrent)
+            outputPreviousWarpedSFM = outputPreviousSFM * occlusionCurrentToPrevious
+            outputPreviousWarpedSFM = WarpImage(outputPreviousWarpedSFM, motionVectorPreviousToCurrent)
+            outputPreviousWarpedSFM *= occlusionPreviousToCurrent
             outputSFM = outputsSFM[tripletFrameIndex]
             outputNextSFM = outputsSFM[tripletFrameIndex + 1]
-            outputNextWarpedSFM = WarpImage(outputNextSFM, motionVectorNextToCurrent)
+            outputNextWarpedSFM = outputNextSFM * occlusionCurrentToNext
+            outputNextWarpedSFM = WarpImage(outputNextWarpedSFM, motionVectorNextToCurrent)
+            outputNextWarpedSFM *= occlusionNextToCurrent
             targetSFM = targetsSFM[tripletFrameIndex]
 
             lossOpticalFlowTripletSFM = factorLossOpticalFlowSFM * torch.nn.functional.mse_loss(outputSFM, targetSFM, reduction='mean')
@@ -372,18 +390,16 @@ while True:
             lossTemporalSRM.append(lossTemporalTripletSRM)
 
             if trainingAdversarialSRM:
-                # TODO: Use sparse point flow (and occlusion) for input warping!
-
                 # Do not consider the previous frame output from SRM here (slice it away)
                 inputPreviousSRM = inputsSRM[tripletFrameIndex - 1][:, 0:8, :, :]
-                inputPreviousWarpedSRM = inputPreviousSRM * occlusionCurrentToPrevious
-                inputPreviousWarpedSRM = WarpImage(inputPreviousWarpedSRM, motionVectorPreviousToCurrent)
-                inputPreviousWarpedSRM *= occlusionPreviousToCurrent
+                inputPreviousWarpedSRM = inputPreviousSRM * sparseOcclusionCurrentToPrevious
+                inputPreviousWarpedSRM = WarpImage(inputPreviousWarpedSRM, sparseMotionVectorPreviousToCurrent)
+                inputPreviousWarpedSRM *= sparseOcclusionPreviousToCurrent
                 inputSRM = inputsSRM[tripletFrameIndex][:, 0:8, :, :]
                 inputNextSRM = inputsSRM[tripletFrameIndex + 1][:, 0:8, :, :]
-                inputNextWarpedSRM = inputNextSRM * occlusionCurrentToNext
-                inputNextWarpedSRM = WarpImage(inputNextWarpedSRM, motionVectorNextToCurrent)
-                inputNextWarpedSRM *= occlusionNextToCurrent
+                inputNextWarpedSRM = inputNextSRM * sparseOcclusionCurrentToNext
+                inputNextWarpedSRM = WarpImage(inputNextWarpedSRM, sparseMotionVectorNextToCurrent)
+                inputNextWarpedSRM *= sparseOcclusionNextToCurrent
 
                 targetPreviousSRM = targetsSRM[tripletFrameIndex - 1]
                 targetPreviousWarpedSRM = targetPreviousSRM * occlusionCurrentToPrevious
