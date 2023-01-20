@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset('G:/PointCloudEngineDataset1024/', 4, True, True, True, 128)
+dataset = Dataset('G:/PointCloudEngineDataset128/', 4, False, True, False, 128)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -66,7 +66,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'WGAN 4 Frames Batch 4 Cropping Dataset 1024/'
+checkpointDirectory += 'Z Fixed WGAN 4 Frames Batch 4 Dataset 128/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -305,6 +305,14 @@ while True:
             motionVectorNextToCurrent = sequence['MeshOpticalFlowBackward'][tripletFrameIndex + 1]
             motionVectorCurrentToNext = sequence['MeshOpticalFlowForward'][tripletFrameIndex + 1]
 
+            # Calculate occlusion masks for the motion vectors
+            occlusionPreviousToCurrent = EstimateOcclusion(motionVectorPreviousToCurrent, 1, occlusionArtifactFilterSize)
+            occlusionCurrentToPrevious = EstimateOcclusion(motionVectorCurrentToPrevious, 1, occlusionArtifactFilterSize)
+            occlusionNextToCurrent = EstimateOcclusion(motionVectorNextToCurrent, 1, occlusionArtifactFilterSize)
+            occlusionCurrentToNext = EstimateOcclusion(motionVectorCurrentToNext, 1, occlusionArtifactFilterSize)
+
+            # TODO: Use sparse point flow (and corresponding sparse occlusion) for SCM warping
+
             # Surface Classification Model
             outputPreviousSCM = outputsSCM[tripletFrameIndex - 1]
             outputPreviousWarpedSCM = WarpImage(outputPreviousSCM, motionVectorPreviousToCurrent)
@@ -337,14 +345,14 @@ while True:
 
             # Surface Reconstruction Model
             outputPreviousSRM = outputsSRM[tripletFrameIndex - 1]
-            outputPreviousWarpedSRM = outputPreviousSRM * EstimateOcclusion(motionVectorCurrentToPrevious, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+            outputPreviousWarpedSRM = outputPreviousSRM * occlusionCurrentToPrevious
             outputPreviousWarpedSRM = WarpImage(outputPreviousWarpedSRM, motionVectorPreviousToCurrent)
-            outputPreviousWarpedSRM *= EstimateOcclusion(motionVectorPreviousToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+            outputPreviousWarpedSRM *= occlusionPreviousToCurrent
             outputSRM = outputsSRM[tripletFrameIndex]
             outputNextSRM = outputsSRM[tripletFrameIndex + 1]
-            outputNextWarpedSRM = outputNextSRM * EstimateOcclusion(motionVectorCurrentToNext, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+            outputNextWarpedSRM = outputNextSRM * occlusionCurrentToNext
             outputNextWarpedSRM = WarpImage(outputNextWarpedSRM, motionVectorNextToCurrent)
-            outputNextWarpedSRM *= EstimateOcclusion(motionVectorNextToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+            outputNextWarpedSRM *= occlusionNextToCurrent
             targetSRM = targetsSRM[tripletFrameIndex]
 
             # TODO: Temporal loss term should probably include occlusion (use forward and backward occlusion from the ground truth motion)
@@ -366,23 +374,23 @@ while True:
             if trainingAdversarialSRM:
                 # Do not consider the previous frame output from SRM here (slice it away)
                 inputPreviousSRM = inputsSRM[tripletFrameIndex - 1][:, 0:8, :, :]
-                inputPreviousWarpedSRM = inputPreviousSRM * EstimateOcclusion(motionVectorCurrentToPrevious, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                inputPreviousWarpedSRM = inputPreviousSRM * occlusionCurrentToPrevious
                 inputPreviousWarpedSRM = WarpImage(inputPreviousWarpedSRM, motionVectorPreviousToCurrent)
-                inputPreviousWarpedSRM *= EstimateOcclusion(motionVectorPreviousToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                inputPreviousWarpedSRM *= occlusionPreviousToCurrent
                 inputSRM = inputsSRM[tripletFrameIndex][:, 0:8, :, :]
                 inputNextSRM = inputsSRM[tripletFrameIndex + 1][:, 0:8, :, :]
-                inputNextWarpedSRM = inputNextSRM * EstimateOcclusion(motionVectorCurrentToNext, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                inputNextWarpedSRM = inputNextSRM * occlusionCurrentToNext
                 inputNextWarpedSRM = WarpImage(inputNextWarpedSRM, motionVectorNextToCurrent)
-                inputNextWarpedSRM *= EstimateOcclusion(motionVectorNextToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                inputNextWarpedSRM *= occlusionNextToCurrent
 
                 targetPreviousSRM = targetsSRM[tripletFrameIndex - 1]
-                targetPreviousWarpedSRM = targetPreviousSRM * EstimateOcclusion(motionVectorCurrentToPrevious, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                targetPreviousWarpedSRM = targetPreviousSRM * occlusionCurrentToPrevious
                 targetPreviousWarpedSRM = WarpImage(targetPreviousWarpedSRM, motionVectorPreviousToCurrent)
-                targetPreviousWarpedSRM *= EstimateOcclusion(motionVectorPreviousToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                targetPreviousWarpedSRM *= occlusionPreviousToCurrent
                 targetNextSRM = targetsSRM[tripletFrameIndex + 1]
-                targetNextWarpedSRM = targetNextSRM * EstimateOcclusion(motionVectorCurrentToNext, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                targetNextWarpedSRM = targetNextSRM * occlusionCurrentToNext
                 targetNextWarpedSRM = WarpImage(targetNextWarpedSRM, motionVectorNextToCurrent)
-                targetNextWarpedSRM *= EstimateOcclusion(motionVectorNextToCurrent, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
+                targetNextWarpedSRM *= occlusionNextToCurrent
 
                 sequenceInputSRM = [inputPreviousWarpedSRM, inputSRM, inputNextWarpedSRM]
                 sequenceOutputSRM = [outputPreviousWarpedSRM, outputSRM, outputNextWarpedSRM]
