@@ -41,7 +41,7 @@ def PixelGrid(width, height):
 
     return pixelGrid
 
-def WarpImage(imageTensor, motionVectorTensor, distance=1.0):
+def WarpImage(imageTensor, motionVectorTensor, distance=1.0, interpolationMode='nearest'):
     global pixelGrid
 
     # Create a warp grid with the optical flow
@@ -58,7 +58,7 @@ def WarpImage(imageTensor, motionVectorTensor, distance=1.0):
     warpGrid = (warpGrid * 2.0) - 1.0
     warpGrid = warpGrid.permute(0, 2, 3, 1)
 
-    imageWarpedTensor = torch.nn.functional.grid_sample(imageTensor, warpGrid, mode='bilinear', padding_mode='zeros')
+    imageWarpedTensor = torch.nn.functional.grid_sample(imageTensor, warpGrid, mode=interpolationMode, padding_mode='zeros')
 
     return imageWarpedTensor
 
