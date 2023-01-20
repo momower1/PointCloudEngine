@@ -229,11 +229,6 @@ class Dataset:
                             viewMode = renderMode.split('NormalScreen')[0]
                             sequence[frameIndex][renderMode] *= sequence[frameIndex][viewMode + 'Foreground']
 
-            # Add a tiny bit of noise
-            for frameIndex in range(self.sequenceFrameCount):
-                for renderMode in self.renderModes:
-                    sequence[frameIndex][renderMode] = (sequence[frameIndex][renderMode] + torch.normal(mean=0.0, std=1.0 / 256.0, size=sequence[frameIndex][renderMode].shape, device=device)).clamp(0, 1)
-
         return sequence
 
     # Assigns crop rect as a variable such that each sample in a batch is cropped in the same way (until this function is called again)
