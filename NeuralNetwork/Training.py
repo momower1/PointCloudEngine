@@ -372,6 +372,8 @@ while True:
             lossTemporalSRM.append(lossTemporalTripletSRM)
 
             if trainingAdversarialSRM:
+                # TODO: Use sparse point flow (and occlusion) for input warping!
+
                 # Do not consider the previous frame output from SRM here (slice it away)
                 inputPreviousSRM = inputsSRM[tripletFrameIndex - 1][:, 0:8, :, :]
                 inputPreviousWarpedSRM = inputPreviousSRM * occlusionCurrentToPrevious
