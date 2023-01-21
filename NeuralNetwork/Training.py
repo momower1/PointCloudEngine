@@ -52,7 +52,7 @@ factorLossNormalSRM = 0.0
 factorLossTemporalSRM = 0.0
 
 if trainingAdversarialSRM:
-    criticSRM = Critic(48, 1, 48).to(device)
+    criticSRM = Critic(48, 1, 64).to(device)
     optimizerCriticSRM = torch.optim.Adam(criticSRM.parameters(), lr=learningRate, betas=(0.5, 0.9))
     schedulerCriticSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerCriticSRM, gamma=schedulerDecayRate, verbose=False)
 
@@ -66,7 +66,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Z Fixed WGAN 4 Frames Batch 4 Dataset 128/'
+checkpointDirectory += 'Z WGAN 4 Frames Batch 4 Dataset 128 Critic 64 Inner/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
