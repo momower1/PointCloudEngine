@@ -126,7 +126,7 @@ class Dataset:
                 pointsDepth = tensors[renderMode]
 
                 depthEpsilon = 1e-2
-                pointsSurface = torch.abs(meshDepth - pointsDepth) < depthEpsilon
+                pointsSurface = pointsDepth <= (meshDepth + depthEpsilon)
                 pointsSurface[tensors[viewMode + 'Background'] > 0.5] = False
                 pointsSurface = pointsSurface.float()
 

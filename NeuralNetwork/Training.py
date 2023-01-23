@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset('G:/PointCloudEngineDataset128/', 4, False, True, False, 128)
+dataset = Dataset('G:/PointCloudEngineDataset128/', 3, False, True, False, 128)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -30,14 +30,14 @@ SCM = PullPushModel(5, 1, 16).to(device)
 optimizerSCM = torch.optim.Adam(SCM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSCM = torch.optim.lr_scheduler.ExponentialLR(optimizerSCM, gamma=schedulerDecayRate, verbose=False)
 factorLossSurfaceSCM = 1.0
-factorLossTemporalSCM = 0.0
+factorLossTemporalSCM = 1.0
 
 # Surface Flow Model
 SFM = PullPushModel(7, 2, 16).to(device)
 optimizerSFM = torch.optim.Adam(SFM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSFM = torch.optim.lr_scheduler.ExponentialLR(optimizerSFM, gamma=schedulerDecayRate, verbose=False)
 factorLossOpticalFlowSFM = 1.0
-factorLossTemporalSFM = 0.0
+factorLossTemporalSFM = 1.0
 
 # Surface Reconstruction Model
 trainingAdversarialSRM = True
@@ -45,14 +45,14 @@ SRM = PullPushModel(16, 8, 16).to(device)
 optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.5, 0.9) if trainingAdversarialSRM else (0.9, 0.999))
 schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
 previousOutputSRM = None
-factorLossSurfaceSRM = 0.0
-factorLossDepthSRM = 0.0
-factorLossColorSRM = 0.0
-factorLossNormalSRM = 0.0
-factorLossTemporalSRM = 0.0
+factorLossSurfaceSRM = 1.0
+factorLossDepthSRM = 1.0
+factorLossColorSRM = 1.0
+factorLossNormalSRM = 1.0
+factorLossTemporalSRM = 1.0
 
 if trainingAdversarialSRM:
-    criticSRM = Critic(48, 1, 64).to(device)
+    criticSRM = Critic(48, 1, 48).to(device)
     optimizerCriticSRM = torch.optim.Adam(criticSRM.parameters(), lr=learningRate, betas=(0.5, 0.9))
     schedulerCriticSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerCriticSRM, gamma=schedulerDecayRate, verbose=False)
 
@@ -66,7 +66,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Z WGAN 4 Frames Batch 4 Dataset 128 Critic 64 Inner/'
+checkpointDirectory += 'Temporal Mask Fix/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -311,17 +311,25 @@ while True:
             occlusionNextToCurrent = EstimateOcclusion(motionVectorNextToCurrent, 1, occlusionArtifactFilterSize)
             occlusionCurrentToNext = EstimateOcclusion(motionVectorCurrentToNext, 1, occlusionArtifactFilterSize)
 
-            # Use sparse point flow (and corresponding sparse occlusion) for sparse point warping
-            sparseMotionVectorPreviousToCurrent = sequence['PointsSparseOpticalFlowForward'][tripletFrameIndex]
-            sparseMotionVectorCurrentToPrevious = sequence['PointsSparseOpticalFlowBackward'][tripletFrameIndex]
-            sparseMotionVectorNextToCurrent = sequence['PointsSparseOpticalFlowBackward'][tripletFrameIndex + 1]
-            sparseMotionVectorCurrentToNext = sequence['PointsSparseOpticalFlowForward'][tripletFrameIndex + 1]
+            # Temporal mask for temporal loss term includes forward and backward occlusion
+            temporalMask = WarpImage(occlusionCurrentToPrevious, motionVectorPreviousToCurrent) * occlusionPreviousToCurrent
+            temporalMask *= WarpImage(occlusionCurrentToNext, motionVectorNextToCurrent) * occlusionNextToCurrent
 
-            # Calculate occlusion masks for the motion vectors
+            # Use sparse point flow (for the surface points) for sparse point warping
+            sparseMotionVectorPreviousToCurrent = sequence['PointsSparseOpticalFlowForward'][tripletFrameIndex] * sequence['PointsSparseSurface'][tripletFrameIndex]
+            sparseMotionVectorCurrentToPrevious = sequence['PointsSparseOpticalFlowBackward'][tripletFrameIndex] * sequence['PointsSparseSurface'][tripletFrameIndex - 1]
+            sparseMotionVectorNextToCurrent = sequence['PointsSparseOpticalFlowBackward'][tripletFrameIndex + 1] * sequence['PointsSparseSurface'][tripletFrameIndex]
+            sparseMotionVectorCurrentToNext = sequence['PointsSparseOpticalFlowForward'][tripletFrameIndex + 1] * sequence['PointsSparseSurface'][tripletFrameIndex + 1]
+
+            # Calculate occlusion masks for the sparse surface motion vectors
             sparseOcclusionPreviousToCurrent = EstimateOcclusion(sparseMotionVectorPreviousToCurrent, 1, occlusionArtifactFilterSize)
             sparseOcclusionCurrentToPrevious = EstimateOcclusion(sparseMotionVectorCurrentToPrevious, 1, occlusionArtifactFilterSize)
             sparseOcclusionNextToCurrent = EstimateOcclusion(sparseMotionVectorNextToCurrent, 1, occlusionArtifactFilterSize)
             sparseOcclusionCurrentToNext = EstimateOcclusion(sparseMotionVectorCurrentToNext, 1, occlusionArtifactFilterSize)
+
+            # Sparse temporal mask
+            sparseTemporalMask = WarpImage(sparseOcclusionCurrentToPrevious, sparseMotionVectorPreviousToCurrent) * sparseOcclusionPreviousToCurrent
+            sparseTemporalMask *= WarpImage(sparseOcclusionCurrentToNext, sparseMotionVectorNextToCurrent) * sparseOcclusionNextToCurrent
 
             # Surface Classification Model
             outputPreviousSCM = outputsSCM[tripletFrameIndex - 1]
@@ -336,8 +344,8 @@ while True:
             targetSCM = targetsSCM[tripletFrameIndex]
 
             lossSurfaceTripletSCM = factorLossSurfaceSCM * torch.nn.functional.binary_cross_entropy(outputSCM, targetSCM, reduction='mean')
-            lossTemporalTripletPreviousSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputPreviousWarpedSCM, outputSCM, reduction='mean')
-            lossTemporalTripletNextSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(outputNextWarpedSCM, outputSCM, reduction='mean')
+            lossTemporalTripletPreviousSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(sparseTemporalMask * outputPreviousWarpedSCM, sparseTemporalMask * outputSCM, reduction='mean')
+            lossTemporalTripletNextSCM = factorLossTemporalSCM * torch.nn.functional.mse_loss(sparseTemporalMask * outputNextWarpedSCM, sparseTemporalMask * outputSCM, reduction='mean')
             lossTemporalTripletSCM = lossTemporalTripletPreviousSCM + lossTemporalTripletNextSCM
             lossSurfaceSCM.append(lossSurfaceTripletSCM)
             lossTemporalSCM.append(lossTemporalTripletSCM)
@@ -355,8 +363,8 @@ while True:
             targetSFM = targetsSFM[tripletFrameIndex]
 
             lossOpticalFlowTripletSFM = factorLossOpticalFlowSFM * torch.nn.functional.mse_loss(outputSFM, targetSFM, reduction='mean')
-            lossTemporalTripletPreviousSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(outputPreviousWarpedSFM, outputSFM, reduction='mean')
-            lossTemporalTripletNextSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(outputNextWarpedSFM, outputSFM, reduction='mean')
+            lossTemporalTripletPreviousSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(temporalMask * outputPreviousWarpedSFM, temporalMask * outputSFM, reduction='mean')
+            lossTemporalTripletNextSFM = factorLossTemporalSFM * torch.nn.functional.mse_loss(temporalMask * outputNextWarpedSFM, temporalMask * outputSFM, reduction='mean')
             lossTemporalTripletSFM = lossTemporalTripletPreviousSFM + lossTemporalTripletNextSFM
             lossOpticalFlowSFM.append(lossOpticalFlowTripletSFM)
             lossTemporalSFM.append(lossTemporalTripletSFM)
@@ -373,15 +381,12 @@ while True:
             outputNextWarpedSRM *= occlusionNextToCurrent
             targetSRM = targetsSRM[tripletFrameIndex]
 
-            # TODO: Temporal loss term should probably include occlusion (use forward and backward occlusion from the ground truth motion)
-            temporalMaskSRM = targetSRM[:, 0:1, :, :].ge(0.5).float().repeat(1, 8, 1, 1)
-
             lossSurfaceTripletSRM = factorLossSurfaceSRM * torch.nn.functional.binary_cross_entropy(outputSRM[:, 0:1, :, :], targetSRM[:, 0:1, :, :], reduction='mean')
             lossDepthTripletSRM = factorLossDepthSRM * torch.nn.functional.mse_loss(outputSRM[:, 1:2, :, :], targetSRM[:, 1:2, :, :], reduction='mean')
             lossColorTripletSRM = factorLossColorSRM * torch.nn.functional.mse_loss(outputSRM[:, 2:5, :, :], targetSRM[:, 2:5, :, :], reduction='mean')
             lossNormalTripletSRM = factorLossNormalSRM * torch.nn.functional.mse_loss(outputSRM[:, 5:8, :, :], targetSRM[:, 5:8, :, :], reduction='mean')
-            lossTemporalTripletPreviousSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(temporalMaskSRM * outputPreviousWarpedSRM, temporalMaskSRM * outputSRM, reduction='mean')
-            lossTemporalTripletNextSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(temporalMaskSRM * outputNextWarpedSRM, temporalMaskSRM * outputSRM, reduction='mean')
+            lossTemporalTripletPreviousSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(temporalMask * outputPreviousWarpedSRM, temporalMask * outputSRM, reduction='mean')
+            lossTemporalTripletNextSRM = factorLossTemporalSRM * torch.nn.functional.mse_loss(temporalMask * outputNextWarpedSRM, temporalMask * outputSRM, reduction='mean')
             lossTemporalTripletSRM = lossTemporalTripletPreviousSRM + lossTemporalTripletNextSRM
             lossSurfaceSRM.append(lossSurfaceTripletSRM)
             lossDepthSRM.append(lossDepthTripletSRM)
@@ -555,6 +560,19 @@ while True:
                 progress += '\tStepsCriticSRM: ' + str(stepsCriticSRM) + '\tStepsSRM: ' + str(stepsSRM)
 
             print(progress)
+
+            # Temporal Masks
+            fig = plt.figure(figsize=(2 * frameWidth, 1 * frameHeight), dpi=1)
+            fig.add_subplot(1, 2, 1).title#.set_text('Temporal Mask')
+            plt.imshow(TensorToImage(temporalMask[snapshotSampleIndex]))
+            plt.axis('off')
+            fig.add_subplot(1, 2, 2).title#.set_text('Sparse Temporal Mask')
+            plt.imshow(TensorToImage(sparseTemporalMask[snapshotSampleIndex]))
+            plt.axis('off')
+            
+            plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            plt.margins(0, 0)
+            summaryWriter.add_figure('Temporal Mask/Epoch' + str(epoch), plt.gcf(), iteration)
 
             # Surface Classification Model
             inputPointsSparseForegroundSCM = inputsSCM[snapshotFrameIndex][snapshotSampleIndex, 0:1, :, :]
