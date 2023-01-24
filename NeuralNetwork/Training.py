@@ -19,35 +19,35 @@ epoch = 0
 batchSize = 4
 snapshotSkip = 256
 batchIndexStart = 0
-learningRate = 5e-4
+learningRate = 1e-4
 schedulerDecayRate = 0.95
 schedulerDecaySkip = 100000
 occlusionArtifactFilterSize = 0
 batchCount = dataset.trainingSequenceCount // batchSize
 
 # Surface Classification Model
-SCM = PullPushModel(5, 1, 16).to(device)
+SCM = UnetPullPush(5, 1, 16).to(device)
 optimizerSCM = torch.optim.Adam(SCM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSCM = torch.optim.lr_scheduler.ExponentialLR(optimizerSCM, gamma=schedulerDecayRate, verbose=False)
 factorLossSurfaceSCM = 1.0
 factorLossTemporalSCM = 1.0
 
 # Surface Flow Model
-SFM = PullPushModel(7, 2, 16).to(device)
+SFM = UnetPullPush(7, 2, 16).to(device)
 optimizerSFM = torch.optim.Adam(SFM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSFM = torch.optim.lr_scheduler.ExponentialLR(optimizerSFM, gamma=schedulerDecayRate, verbose=False)
 factorLossOpticalFlowSFM = 1.0
 factorLossTemporalSFM = 1.0
 
 # Surface Reconstruction Model
-trainingAdversarialSRM = True
-SRM = PullPushModel(16, 8, 16).to(device)
+trainingAdversarialSRM = False#True
+SRM = UnetPullPush(16, 8, 16).to(device)
 optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.5, 0.9) if trainingAdversarialSRM else (0.9, 0.999))
 schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
 previousOutputSRM = None
 factorLossSurfaceSRM = 1.0
-factorLossDepthSRM = 1.0
-factorLossColorSRM = 1.0
+factorLossDepthSRM = 3.0
+factorLossColorSRM = 10.0
 factorLossNormalSRM = 1.0
 factorLossTemporalSRM = 1.0
 
@@ -66,7 +66,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Temporal Mask Fix/'
+checkpointDirectory += 'Supervised SRM 1 3 10 1 1 UnetPullPush single PullPushLayer 1e-4/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
