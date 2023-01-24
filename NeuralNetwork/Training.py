@@ -49,7 +49,7 @@ factorLossSurfaceSRM = 1.0
 factorLossDepthSRM = 3.0
 factorLossColorSRM = 10.0
 factorLossNormalSRM = 1.0
-factorLossTemporalSRM = 1.0
+factorLossTemporalSRM = 10.0
 
 if trainingAdversarialSRM:
     criticSRM = Critic(48, 1, 48).to(device)
@@ -66,7 +66,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'Supervised SRM 1 3 10 1 1 UnetPullPush single PullPushLayer 1e-4/'
+checkpointDirectory += 'UnetPullPush 1e-4 Supervised SRM 1 3 10 1 10/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there

@@ -325,20 +325,23 @@ class UnetPullPushDecoderBlock(torch.nn.Module):
 class UnetPullPush(torch.nn.Module):
     def __init__(self, inChannels=8, outChannels=8, innerChannels=8, layerCount=4):
         super(UnetPullPush, self).__init__()
+        self.inChannels = inChannels
+        self.outChannels = outChannels
+        self.innerChannels = innerChannels
         self.layerCount = layerCount
         self.encoderBlocks = torch.nn.ModuleList()
         self.decoderBlocks = torch.nn.ModuleList()
-        self.pullPush = PullPushLayer(pow(2, layerCount) * innerChannels)
-        self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
-        self.preluStart = torch.nn.PReLU(innerChannels, 0.25)
-        self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
+        self.pullPush = PullPushLayer(pow(2, self.layerCount) * self.innerChannels)
+        self.convStart = torch.nn.Conv2d(self.inChannels, self.innerChannels, 3, 1, 1)
+        self.preluStart = torch.nn.PReLU(self.innerChannels, 0.25)
+        self.convEnd = torch.nn.Conv2d(self.innerChannels, self.outChannels, 3, 1, 1)
         self.sigmoid = torch.nn.Sigmoid()
 
         for layerIndex in range(self.layerCount):
-            self.encoderBlocks.append(UnetPullPushEncoderBlock(pow(2, layerIndex) * innerChannels, pow(2, layerIndex + 1) * innerChannels))
+            self.encoderBlocks.append(UnetPullPushEncoderBlock(pow(2, layerIndex) * self.innerChannels, pow(2, layerIndex + 1) * self.innerChannels))
 
         for layerIndex in range(self.layerCount - 1, -1, -1):
-            self.decoderBlocks.append(UnetPullPushDecoderBlock(pow(2, layerIndex + 1) * innerChannels, pow(2, layerIndex) * innerChannels))
+            self.decoderBlocks.append(UnetPullPushDecoderBlock(pow(2, layerIndex + 1) * self.innerChannels, pow(2, layerIndex) * self.innerChannels))
 
         InitializeParameters(self)
         ApplyWeightNormalization(self)
@@ -348,14 +351,14 @@ class UnetPullPush(torch.nn.Module):
 
         # Calculate padding
         multiple = pow(2, self.layerCount)
-        widthPadding = (multiple - (w % multiple)) % multiple
-        heightPadding = (multiple - (h % multiple)) % multiple
+        widthPadding = int((multiple - (w % multiple)) % multiple)
+        heightPadding = int((multiple - (h % multiple)) % multiple)
 
         # Pad so that the strided convolution operations are valid
-        act = torch.nn.functional.pad(input, pad=(0, int(widthPadding), 0, int(heightPadding)), mode='constant', value=0.0)
+        input = torch.nn.functional.pad(input, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0.0)
 
         # Perform start convolution
-        act = self.preluStart(self.convStart(act))
+        act = self.preluStart(self.convStart(input))
 
         # Store encoder embeddings for residual connection during decoder phase
         residuals = [act]
@@ -372,9 +375,15 @@ class UnetPullPush(torch.nn.Module):
 
         # Decoder layers
         for decoderBlock in self.decoderBlocks:
-            act = decoderBlock(act) + residuals.pop()
+            act = decoderBlock(act)
+
+            # Residual connection
+            act = act + residuals.pop()
 
         # Perform end convolution
         act = self.sigmoid(self.convEnd(act))
+
+        # Slice away padding
+        act = act[:, :, 0:h, 0:w]
 
         return act

@@ -1,13 +1,13 @@
 from Model import *
 
-checkpointFilename = 'G:/PointCloudEngineCheckpoints/Supervised/Checkpoint.pt'
+checkpointFilename = 'G:/PointCloudEngineCheckpoints/UnetPullPush 1e-4 Supervised SRM 1 3 10 1 10/Checkpoint.pt'
 scriptedFilenameSCM = 'Models/SCM.pt'
 scriptedFilenameSFM = 'Models/SFM.pt'
 scriptedFilenameSRM = 'Models/SRM.pt'
 
-SCM = PullPushModel(5, 1, 16).to(device)
-SFM = PullPushModel(7, 2, 16).to(device)
-SRM = PullPushModel(16, 8, 16).to(device)
+SCM = UnetPullPush(5, 1, 16).to(device)
+SFM = UnetPullPush(7, 2, 16).to(device)
+SRM = UnetPullPush(16, 8, 16).to(device)
 
 # Load model parameters from checkpoint
 checkpoint = torch.load(checkpointFilename)
