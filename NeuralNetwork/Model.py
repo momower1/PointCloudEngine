@@ -307,12 +307,11 @@ class Unet(torch.nn.Module):
 class UnetPullPushEncoderBlock(torch.nn.Module):
     def __init__(self, inChannels=8, outChannels=16):
         super(UnetPullPushEncoderBlock, self).__init__()
-        self.pullPush = PullPushLayer(inChannels)
         self.conv = torch.nn.Conv2d(inChannels, outChannels, 4, 2, 1)
         self.prelu = torch.nn.PReLU(outChannels, 0.25)
 
     def forward(self, input):
-        return self.prelu(self.conv(self.pullPush(input)))
+        return self.prelu(self.conv(input))
 
 class UnetPullPushDecoderBlock(torch.nn.Module):
     def __init__(self, inChannels=16, outChannels=8):
@@ -329,6 +328,7 @@ class UnetPullPush(torch.nn.Module):
         self.layerCount = layerCount
         self.encoderBlocks = torch.nn.ModuleList()
         self.decoderBlocks = torch.nn.ModuleList()
+        self.pullPush = PullPushLayer(pow(2, layerCount) * innerChannels)
         self.convStart = torch.nn.Conv2d(inChannels, innerChannels, 3, 1, 1)
         self.preluStart = torch.nn.PReLU(innerChannels, 0.25)
         self.convEnd = torch.nn.Conv2d(innerChannels, outChannels, 3, 1, 1)
@@ -352,27 +352,27 @@ class UnetPullPush(torch.nn.Module):
         heightPadding = (multiple - (h % multiple)) % multiple
 
         # Pad so that the strided convolution operations are valid
-        input = torch.nn.functional.pad(input, pad=(0, widthPadding, 0, heightPadding), mode='constant', value=0)
+        act = torch.nn.functional.pad(input, pad=(0, int(widthPadding), 0, int(heightPadding)), mode='constant', value=0.0)
 
         # Perform start convolution
-        act = self.preluStart(self.convStart(input))
+        act = self.preluStart(self.convStart(act))
 
         # Store encoder embeddings for residual connection during decoder phase
         residuals = [act]
 
         # Encoder layers
-        for layerIndex in range(self.layerCount):
-            act = self.encoderBlocks[layerIndex](act)
+        for encoderBlock in self.encoderBlocks:
+            act = encoderBlock(act)
             residuals.append(act)
 
         residuals.pop()
 
-        # Decoder layers
-        for layerIndex in range(self.layerCount):
-            act = self.decoderBlocks[layerIndex](act)
+        # Perform pull push for inner most embeddings
+        act = self.pullPush(act)
 
-            # Residual connection
-            act = act + residuals.pop()
+        # Decoder layers
+        for decoderBlock in self.decoderBlocks:
+            act = decoderBlock(act) + residuals.pop()
 
         # Perform end convolution
         act = self.sigmoid(self.convEnd(act))
