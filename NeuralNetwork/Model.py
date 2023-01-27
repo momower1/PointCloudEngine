@@ -51,9 +51,9 @@ class PullBlock(torch.nn.Module):
         super(PullBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
+        self.moduleList.append(torch.nn.Tanh(inoutChannels, 0.25))
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
+        self.moduleList.append(torch.nn.Tanh(inoutChannels, 0.25))
         self.moduleList.append(torch.nn.MaxPool2d(2))
 
     def forward(self, input):
@@ -69,9 +69,9 @@ class PushBlock(torch.nn.Module):
         super(PushBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inoutChannels, inoutChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
+        self.moduleList.append(torch.nn.Tanh(inoutChannels, 0.25))
         self.moduleList.append(torch.nn.ConvTranspose2d(inoutChannels, inoutChannels, 4, 2, 1))
-        self.moduleList.append(torch.nn.PReLU(inoutChannels, 0.25))
+        self.moduleList.append(torch.nn.Tanh(inoutChannels, 0.25))
 
     def forward(self, input):
         act = input
@@ -86,9 +86,9 @@ class FuseBlock(torch.nn.Module):
         super(FuseBlock, self).__init__()
         self.moduleList = torch.nn.ModuleList()
         self.moduleList.append(torch.nn.Conv2d(inChannels, inChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(inChannels, 0.25))
+        self.moduleList.append(torch.nn.Tanh(inChannels, 0.25))
         self.moduleList.append(torch.nn.Conv2d(inChannels, outChannels, 3, 1, 1))
-        self.moduleList.append(torch.nn.PReLU(outChannels, 0.25))
+        self.moduleList.append(torch.nn.Tanh(outChannels, 0.25))
 
     def forward(self, input):
         act = input
