@@ -218,10 +218,10 @@ class PullPushModel(torch.nn.Module):
         return act
 
 class CriticDeep(torch.nn.Module):
-    def __init__(self, frameSize=128, inChannels=48):
+    def __init__(self, inChannels=48, frameSize=128, layerCount=None):
         super(CriticDeep, self).__init__()
         self.moduleList = torch.nn.ModuleList()
-        self.layerCount = int(math.log2(frameSize)) - 2
+        self.layerCount = layerCount if (layerCount is not None) else int(math.log2(frameSize)) - 2
 
         # Create a critic with variable layer count depending on the input frame size (must be a power of 2)
         for layerIndex in range(self.layerCount):

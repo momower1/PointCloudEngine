@@ -54,7 +54,7 @@ factorLossNormalSRM = 0.0
 factorLossTemporalSRM = 0.0
 
 if trainingAdversarialSRM:
-    criticSRM = Critic(48, 1, 48).to(device)
+    criticSRM = CriticDeep(48, 256, 5).to(device)
     optimizerCriticSRM = torch.optim.Adam(criticSRM.parameters(), lr=learningRate, betas=(0.5, 0.9))
     schedulerCriticSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerCriticSRM, gamma=schedulerDecayRate, verbose=False)
 
@@ -68,7 +68,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'UnetPullPush Neuschwanstein256 WGAN Only with SCM and SFM Pretraining/'
+checkpointDirectory += 'UnetPullPush CriticDeep Neuschwanstein256 WGAN Only with SCM and SFM Pretraining/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
