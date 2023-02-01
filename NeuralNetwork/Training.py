@@ -9,7 +9,7 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset('G:/PointCloudEngineDataset128/', 3, False, True, False, 128)
+dataset = Dataset('G:/PointCloudEngineDatasets/Neuschwanstein256/', 3, False, True, False, 256)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
@@ -29,27 +29,29 @@ batchCount = dataset.trainingSequenceCount // batchSize
 SCM = UnetPullPush(5, 1, 16).to(device)
 optimizerSCM = torch.optim.Adam(SCM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSCM = torch.optim.lr_scheduler.ExponentialLR(optimizerSCM, gamma=schedulerDecayRate, verbose=False)
+pretrainIterationsSCM = 1000
 factorLossSurfaceSCM = 1.0
-factorLossTemporalSCM = 1.0
+factorLossTemporalSCM = 0.0
 
 # Surface Flow Model
 SFM = UnetPullPush(7, 2, 16).to(device)
 optimizerSFM = torch.optim.Adam(SFM.parameters(), lr=learningRate, betas=(0.9, 0.999))
 schedulerSFM = torch.optim.lr_scheduler.ExponentialLR(optimizerSFM, gamma=schedulerDecayRate, verbose=False)
+pretrainIterationsSFM = 1000
 factorLossOpticalFlowSFM = 1.0
-factorLossTemporalSFM = 1.0
+factorLossTemporalSFM = 0.0
 
 # Surface Reconstruction Model
-trainingAdversarialSRM = False#True
+trainingAdversarialSRM = True
 SRM = UnetPullPush(16, 8, 16).to(device)
 optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.5, 0.9) if trainingAdversarialSRM else (0.9, 0.999))
 schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
 previousOutputSRM = None
-factorLossSurfaceSRM = 1.0
-factorLossDepthSRM = 3.0
-factorLossColorSRM = 10.0
-factorLossNormalSRM = 1.0
-factorLossTemporalSRM = 10.0
+factorLossSurfaceSRM = 0.0
+factorLossDepthSRM = 0.0
+factorLossColorSRM = 0.0
+factorLossNormalSRM = 0.0
+factorLossTemporalSRM = 0.0
 
 if trainingAdversarialSRM:
     criticSRM = Critic(48, 1, 48).to(device)
@@ -66,7 +68,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'UnetPullPush Tanh L1 1e-4 Supervised SRM 1 3 10 1 10/'
+checkpointDirectory += 'UnetPullPush Neuschwanstein256 WGAN Only with SCM and SFM Pretraining/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -474,7 +476,9 @@ while True:
             if updateCriticSRM:
                 lossCriticSRM = lossCriticWassersteinSRM + lossCriticGradientPenaltySRM
 
-        # TODO: Pretrain SCM, then pretrain SFM and lastly train SRM
+        # Pretrain SCM, then pretrain SFM and lastly train SRM
+        trainSFM = iteration > pretrainIterationsSCM
+        trainSRM = iteration > (pretrainIterationsSCM + pretrainIterationsSFM)
 
         # Train Surface Classification Model
         SCM.zero_grad()
@@ -486,44 +490,46 @@ while True:
         summaryWriter.add_scalar('Surface Classification Model/Loss Temporal SCM', lossTemporalSCM, iteration)
 
         # Train Surface Flow Model
-        SFM.zero_grad()
-        lossSFM.backward(retain_graph=True)
-        optimizerSFM.step()
+        if trainSFM:
+            SFM.zero_grad()
+            lossSFM.backward(retain_graph=True)
+            optimizerSFM.step()
 
-        summaryWriter.add_scalar('Surface Flow Model/_Loss SFM', lossSFM, iteration)
-        summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
-        summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
+            summaryWriter.add_scalar('Surface Flow Model/_Loss SFM', lossSFM, iteration)
+            summaryWriter.add_scalar('Surface Flow Model/Loss Optical Flow SFM', lossOpticalFlowSFM, iteration)
+            summaryWriter.add_scalar('Surface Flow Model/Loss Temporal SFM', lossTemporalSFM, iteration)
 
         # Train Surface Reconstruction Model
-        updateSRM = True
-
-        if trainingAdversarialSRM:
-            if updateCriticSRM:
-                updateSRM = False
-                criticSRM.zero_grad()
-                lossCriticSRM.backward(retain_graph=False)
-                optimizerCriticSRM.step()
-                stepsCriticSRM += 1
-
-                summaryWriter.add_scalar('Surface Reconstruction Critic/_Loss Critic SRM', lossCriticSRM, iteration)
-                summaryWriter.add_scalar('Surface Reconstruction Critic/Loss Critic Wasserstein SRM', lossCriticWassersteinSRM, iteration)
-                summaryWriter.add_scalar('Surface Reconstruction Critic/Loss Critic Gradient Penalty SRM', lossCriticGradientPenaltySRM, iteration)
-
-        if updateSRM:
-            SRM.zero_grad()
-            lossSRM.backward(retain_graph=False)
-            optimizerSRM.step()
-
-            summaryWriter.add_scalar('Surface Reconstruction Model/_Loss SRM', lossSRM, iteration)
-            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Surface SRM', lossSurfaceSRM, iteration)
-            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
-            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
-            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
-            summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
+        if trainSRM:
+            updateSRM = True
 
             if trainingAdversarialSRM:
-                stepsSRM += 1
-                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Wasserstein SRM', lossWassersteinSRM, iteration)
+                if updateCriticSRM:
+                    updateSRM = False
+                    criticSRM.zero_grad()
+                    lossCriticSRM.backward(retain_graph=False)
+                    optimizerCriticSRM.step()
+                    stepsCriticSRM += 1
+
+                    summaryWriter.add_scalar('Surface Reconstruction Critic/_Loss Critic SRM', lossCriticSRM, iteration)
+                    summaryWriter.add_scalar('Surface Reconstruction Critic/Loss Critic Wasserstein SRM', lossCriticWassersteinSRM, iteration)
+                    summaryWriter.add_scalar('Surface Reconstruction Critic/Loss Critic Gradient Penalty SRM', lossCriticGradientPenaltySRM, iteration)
+
+            if updateSRM:
+                SRM.zero_grad()
+                lossSRM.backward(retain_graph=False)
+                optimizerSRM.step()
+
+                summaryWriter.add_scalar('Surface Reconstruction Model/_Loss SRM', lossSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Surface SRM', lossSurfaceSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Depth SRM', lossDepthSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Color SRM', lossColorSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Normal SRM', lossNormalSRM, iteration)
+                summaryWriter.add_scalar('Surface Reconstruction Model/Loss Temporal SRM', lossTemporalSRM, iteration)
+
+                if trainingAdversarialSRM:
+                    stepsSRM += 1
+                    summaryWriter.add_scalar('Surface Reconstruction Model/Loss Wasserstein SRM', lossWassersteinSRM, iteration)
 
         # Need to detach previous output for next iteration (since using recurrent architecture)
         previousOutputSRM = previousOutputSRM.detach()
