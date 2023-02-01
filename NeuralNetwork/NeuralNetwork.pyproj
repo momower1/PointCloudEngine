@@ -35,9 +35,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Dataset.py" />
-    <Compile Include="TrainingWGAN.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Utils.py">
       <SubType>Code</SubType>
     </Compile>
