@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 4
+batchSize = 2
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-4
