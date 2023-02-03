@@ -31,13 +31,14 @@ def NormalizeDepthTexture(depthTexture, maskForeground, maskBackground):
     return depthNormalized
 
 class Dataset:
-    def __init__(self, directory, sequenceFrameCount=3, randomlyCropFrames=True, dataAugmentation=True, zipCompressed=False, maxSquareCropSize=128, testSetPercentage=0.0):
+    def __init__(self, directory, sequenceFrameCount=3, randomlyCropFrames=True, dataAugmentation=True, zipCompressed=False, maxSquareCropSize=128, depthEpsilon=1e-3, testSetPercentage=0.0):
         self.directory = directory
         self.sequenceFrameCount = sequenceFrameCount
         self.randomlyCropFrames = randomlyCropFrames
         self.dataAugmentation = dataAugmentation
         self.zipCompressed = zipCompressed
         self.maxSquareCropSize = maxSquareCropSize
+        self.depthEpsilon = 1e-3
         self.testSetPercentage = testSetPercentage
         
         if self.sequenceFrameCount < 3:
@@ -124,9 +125,7 @@ class Dataset:
             if 'Points' in renderMode and 'Depth' in renderMode:
                 viewMode = renderMode.split('Depth')[0]
                 pointsDepth = tensors[renderMode]
-
-                depthEpsilon = 1e-2
-                pointsSurface = pointsDepth <= (meshDepth + depthEpsilon)
+                pointsSurface = pointsDepth <= (meshDepth + self.depthEpsilon)
                 pointsSurface[tensors[viewMode + 'Background'] > 0.5] = False
                 pointsSurface = pointsSurface.float()
 
