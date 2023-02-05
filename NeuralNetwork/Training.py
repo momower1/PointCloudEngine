@@ -16,7 +16,7 @@ checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 2
+batchSize = 12
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-4
@@ -68,7 +68,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'UnetPullPush CriticDeep Neuschwanstein256 WGAN Only with SCM and SFM Pretraining/'
+checkpointDirectory += 'UnetPullPush CriticDeep Neuschwanstein256 WGAN Only with SCM and SFM Pretraining Batch 12/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
@@ -482,7 +482,7 @@ while True:
 
         # Train Surface Classification Model
         SCM.zero_grad()
-        lossSCM.backward(retain_graph=True)
+        lossSCM.backward(retain_graph=trainSFM or trainSRM)
         optimizerSCM.step()
 
         summaryWriter.add_scalar('Surface Classification Model/_Loss SCM', lossSCM, iteration)
@@ -492,7 +492,7 @@ while True:
         # Train Surface Flow Model
         if trainSFM:
             SFM.zero_grad()
-            lossSFM.backward(retain_graph=True)
+            lossSFM.backward(retain_graph=trainSRM)
             optimizerSFM.step()
 
             summaryWriter.add_scalar('Surface Flow Model/_Loss SFM', lossSFM, iteration)
