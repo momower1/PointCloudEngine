@@ -47,10 +47,10 @@ SRM = UnetPullPush(16, 8, 16).to(device)
 optimizerSRM = torch.optim.Adam(SRM.parameters(), lr=learningRate, betas=(0.5, 0.9) if trainingAdversarialSRM else (0.9, 0.999))
 schedulerSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerSRM, gamma=schedulerDecayRate, verbose=False)
 previousOutputSRM = None
-factorLossSurfaceSRM = 0.0
-factorLossDepthSRM = 0.0
-factorLossColorSRM = 0.0
-factorLossNormalSRM = 0.0
+factorLossSurfaceSRM = 100.0
+factorLossDepthSRM = 500.0
+factorLossColorSRM = 1000.0
+factorLossNormalSRM = 500.0
 factorLossTemporalSRM = 0.0
 
 if trainingAdversarialSRM:
@@ -68,7 +68,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'UnetPullPush CriticDeep Neuschwanstein256 WGAN Only with SCM and SFM Pretraining Batch 12/'
+checkpointDirectory += 'UnetPullPush CriticDeep Neuschwanstein256 Batch 12 SRM 100 500 1000 500 0/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
