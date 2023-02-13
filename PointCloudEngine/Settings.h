@@ -80,7 +80,7 @@ namespace PointCloudEngine
 		// Neural Network parameters
 		bool useCUDA = true;
 		float thresholdSCM = 0.5f;
-		float thresholdSurfaceKeeping = 0.0f;
+		float thresholdSurfaceKeeping = 1.0f;
 		std::wstring filenameSCM = L"";
 		std::wstring filenameSFM = L"";
 		std::wstring filenameSRM = L"";

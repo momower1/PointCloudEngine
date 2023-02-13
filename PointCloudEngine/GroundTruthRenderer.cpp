@@ -374,6 +374,11 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		// Update previous output for next iteration
 		previousOutputSRM = outputSRM;
 
+		// Perform sparse input surface keeping
+		torch::Tensor surfaceKeepingMask = (outputSCM >= settings->thresholdSurfaceKeeping).to(torch::kFloat16);
+		torch::Tensor surfaceKeepingInput = inputSRM.index({ at::indexing::Slice(), at::indexing::Slice(0, 8), at::indexing::Slice(), at::indexing::Slice() });
+		outputSRM = surfaceKeepingMask * surfaceKeepingInput + (1.0f - surfaceKeepingMask) * outputSRM;
+
 		// Slice tensors for presentation
 		torch::Tensor outputDepthSRM = outputSRM.index({ at::indexing::Slice(), at::indexing::Slice(1, 2), at::indexing::Slice(), at::indexing::Slice() });
 		torch::Tensor outputColorSRM = outputSRM.index({ at::indexing::Slice(), at::indexing::Slice(2, 5), at::indexing::Slice(), at::indexing::Slice() });
