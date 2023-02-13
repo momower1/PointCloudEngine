@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d7b48ec1-ae48-491f-b89a-ae2a5196425f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Export.py</StartupFile>
+    <StartupFile>Datasample.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,6 +23,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Benchmark.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Datasample.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Export.py">
