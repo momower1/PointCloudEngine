@@ -85,6 +85,8 @@ PointCloudEngine::Settings::Settings(std::wstring filename)
 
 		// Parse neural network parameters
 		TryParse(NAMEOF(useCUDA), &useCUDA);
+		TryParse(NAMEOF(thresholdSCM), &thresholdSCM);
+		TryParse(NAMEOF(thresholdSurfaceKeeping), &thresholdSurfaceKeeping);
 		TryParse(NAMEOF(filenameSCM), &filenameSCM);
 		TryParse(NAMEOF(filenameSFM), &filenameSFM);
 		TryParse(NAMEOF(filenameSRM), &filenameSRM);
@@ -206,6 +208,8 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 
 	settingsStream << L"# Neural Network Parameters" << std::endl;
 	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
+	settingsStream << NAMEOF(thresholdSCM) << L"=" << thresholdSCM << std::endl;
+	settingsStream << NAMEOF(thresholdSurfaceKeeping) << L"=" << thresholdSurfaceKeeping << std::endl;
 	settingsStream << NAMEOF(filenameSCM) << L"=" << filenameSCM << std::endl;
 	settingsStream << NAMEOF(filenameSFM) << L"=" << filenameSFM << std::endl;
 	settingsStream << NAMEOF(filenameSRM) << L"=" << filenameSRM << std::endl;

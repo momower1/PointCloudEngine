@@ -252,15 +252,17 @@ void PointCloudEngine::GUI::CreateRendererElements()
 	meshElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 10, 1, 0, L"Texture LOD", &settings->textureLOD, 1, GS(148), GS(40)));
 	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(370), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
 
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(200), GS(150), GS(20), L"Filename SCM "));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(200), GS(200), GS(20), settings->filenameSCM));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(230), GS(325), GS(25), L"Load Surface Classification Model", OnLoadSurfaceClassificationModel));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(270), GS(150), GS(20), L"Filename SFM "));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(270), GS(200), GS(20), settings->filenameSFM));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(300), GS(325), GS(25), L"Load Surface Flow Model", OnLoadSurfaceFlowModel));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(340), GS(150), GS(20), L"Filename SRM "));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(340), GS(200), GS(20), settings->filenameSRM));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(370), GS(325), GS(25), L"Load Surface Reconstruction Model", OnLoadSurfaceReconstructionModel));
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(200), GS(130), GS(20), 0, 100, 100, 0, L"Threshold SCM", &settings->thresholdSCM, 1, GS(148), GS(40)));
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(230), GS(130), GS(20), 0, 100, 100, 0, L"Surface Keeping", &settings->thresholdSurfaceKeeping, 1, GS(148), GS(40)));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(260), GS(150), GS(20), L"Filename SCM "));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(260), GS(200), GS(20), settings->filenameSCM));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(290), GS(325), GS(25), L"Load Surface Classification Model", OnLoadSurfaceClassificationModel));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(330), GS(150), GS(20), L"Filename SFM "));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(330), GS(200), GS(20), settings->filenameSFM));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(360), GS(325), GS(25), L"Load Surface Flow Model", OnLoadSurfaceFlowModel));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(400), GS(150), GS(20), L"Filename SRM "));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(400), GS(200), GS(20), settings->filenameSRM));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(430), GS(325), GS(25), L"Load Surface Reconstruction Model", OnLoadSurfaceReconstructionModel));
 }
 
 void PointCloudEngine::GUI::CreateAdvancedElements()
@@ -501,7 +503,7 @@ void PointCloudEngine::GUI::OnLoadSurfaceClassificationModel()
 	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSCM))
 	{
 		scene->LoadSurfaceClassificationModel();
-		((GUIText*)neuralNetworkElements[1])->SetText(Utils::SplitString(settings->filenameSCM, L"\\").back());
+		((GUIText*)neuralNetworkElements[3])->SetText(Utils::SplitString(settings->filenameSCM, L"\\").back());
 	}
 }
 
@@ -510,7 +512,7 @@ void PointCloudEngine::GUI::OnLoadSurfaceFlowModel()
 	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSFM))
 	{
 		scene->LoadSurfaceFlowModel();
-		((GUIText*)neuralNetworkElements[4])->SetText(Utils::SplitString(settings->filenameSFM, L"\\").back());
+		((GUIText*)neuralNetworkElements[6])->SetText(Utils::SplitString(settings->filenameSFM, L"\\").back());
 	}
 }
 
@@ -519,6 +521,6 @@ void PointCloudEngine::GUI::OnLoadSurfaceReconstructionModel()
 	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSRM))
 	{
 		scene->LoadSurfaceReconstructionModel();
-		((GUIText*)neuralNetworkElements[7])->SetText(Utils::SplitString(settings->filenameSRM, L"\\").back());
+		((GUIText*)neuralNetworkElements[9])->SetText(Utils::SplitString(settings->filenameSRM, L"\\").back());
 	}
 }
