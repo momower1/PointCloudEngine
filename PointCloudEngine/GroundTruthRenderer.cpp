@@ -334,7 +334,7 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 		torch::Tensor outputSCM = EvaluateNeuralNetworkModel(SCM, inputSCM);
 
 		// Apply surface mask
-		torch::Tensor sparseSurfaceMask = (outputSCM > 0.5f).to(torch::kFloat16);
+		torch::Tensor sparseSurfaceMask = (outputSCM >= settings->thresholdSCM).to(torch::kFloat16);
 		torch::Tensor sparseSurfaceDepth = sparseSurfaceMask * depthNormalizedTensor;
 		torch::Tensor sparseSurfaceColor = sparseSurfaceMask * colorTensor;
 		torch::Tensor sparseSurfaceNormal = sparseSurfaceMask * normalTensor;
