@@ -48,7 +48,7 @@ bool IsInsideQuad(float2 position, float2 quadTopLeft, float2 quadBottomRight, f
 float3 GetRayPlaneIntersectionPoint(float3 rayOrigin, float3 rayDirection, float3 planeOrigin, float3 planeNormal)
 {
 	// Assume that ray and plane are not parallel
-	float distanceAlongRay = dot(planeNormal, planeOrigin - rayOrigin) / dot(rayDirection, planeNormal);
+	float distanceAlongRay = dot(planeNormal, planeOrigin - rayOrigin) / (dot(rayDirection, planeNormal) + 1e-12);
 
 	return rayOrigin + distanceAlongRay * rayDirection;
 }
