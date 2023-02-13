@@ -424,16 +424,22 @@ void PointCloudEngine::GroundTruthRenderer::DrawNeuralNetwork()
 torch::Tensor PointCloudEngine::GroundTruthRenderer::NormalizeDepthTensor(torch::Tensor& depthTensor, torch::Tensor& foregroundMask, torch::Tensor& backgroundMask)
 {
 	torch::Tensor depthNormalizedTensor = depthTensor.clone();
+	torch::Tensor depthBackground = depthNormalizedTensor.index({ backgroundMask });
+	torch::Tensor depthForeground = depthNormalizedTensor.index({ foregroundMask });
 
-	// Replace background depth values with 0 for better visualization
-	depthNormalizedTensor.index_put_({ backgroundMask }, 0.0f);
+	// Only perform normalization if mask is non-empty to avoid NaN error
+	if ((depthBackground.numel() > 0) && (depthForeground.numel() > 0))
+	{
+		// Replace background depth values with 0 for better visualization
+		depthNormalizedTensor.index_put_({ backgroundMask }, 0.0f);
 
-	// Compute minimum and maximum masked depth values
-	torch::Tensor depthMin = depthTensor.index({ foregroundMask }).min();
-	torch::Tensor depthMax = depthTensor.index({ foregroundMask }).max();
+		// Compute minimum and maximum masked depth values
+		torch::Tensor depthMin = depthForeground.min();
+		torch::Tensor depthMax = depthForeground.max();
 
-	// Normalize masked values to range [0, 1]
-	depthNormalizedTensor.index_put_({ foregroundMask }, (depthNormalizedTensor.index({ foregroundMask }) - depthMin) / (depthMax - depthMin));
+		// Normalize masked values to range [0, 1]
+		depthNormalizedTensor.index_put_({ foregroundMask }, (depthNormalizedTensor.index({ foregroundMask }) - depthMin) / ((depthMax - depthMin) + 1e-12));
+	}
 
 	return depthNormalizedTensor;
 }
