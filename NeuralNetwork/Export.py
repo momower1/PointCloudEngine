@@ -1,6 +1,6 @@
 from Model import *
 
-checkpointFilename = 'G:/PointCloudEngineCheckpoints/UnetPullPush 1e-4 Supervised SRM 1 3 10 1 10/Checkpoint.pt'
+checkpointFilename = 'G:/PointCloudEngineCheckpoints/DragonSparse128 8 Frames Batch 6 SRM 100 500 1000 500 0/Checkpoint.pt'
 scriptedFilenameSCM = 'Models/SCM.pt'
 scriptedFilenameSFM = 'Models/SFM.pt'
 scriptedFilenameSRM = 'Models/SRM.pt'

@@ -9,14 +9,14 @@ from Model import *
 # Use different matplotlib backend to avoid weird error
 matplotlib.use('Agg')
 
-dataset = Dataset('G:/PointCloudEngineDatasets/Neuschwanstein256/', 3, False, True, False, 256)
+dataset = Dataset('G:/PointCloudEngineDatasets/DragonSparse128/', 8, False, True, False, 256)
 
 checkpointDirectory = 'G:/PointCloudEngineCheckpoints/'
 checkpointNameStart = 'Checkpoint'
 checkpointNameEnd = '.pt'
 
 epoch = 0
-batchSize = 12
+batchSize = 6
 snapshotSkip = 256
 batchIndexStart = 0
 learningRate = 1e-4
@@ -54,7 +54,7 @@ factorLossNormalSRM = 500.0
 factorLossTemporalSRM = 0.0
 
 if trainingAdversarialSRM:
-    criticSRM = CriticDeep(48, 256, 5).to(device)
+    criticSRM = CriticDeep(48, 128, 5).to(device)
     optimizerCriticSRM = torch.optim.Adam(criticSRM.parameters(), lr=learningRate, betas=(0.5, 0.9))
     schedulerCriticSRM = torch.optim.lr_scheduler.ExponentialLR(optimizerCriticSRM, gamma=schedulerDecayRate, verbose=False)
 
@@ -68,7 +68,7 @@ if trainingAdversarialSRM:
     ratioSRM = 1.0
 
 # Use this directory for the visualization of loss graphs in the Tensorboard at http://localhost:6006/
-checkpointDirectory += 'UnetPullPush CriticDeep Neuschwanstein256 Batch 12 SRM 100 500 1000 500 0/'
+checkpointDirectory += 'DragonSparse128 8 Frames Batch 6 SRM 100 500 1000 500 0/'
 summaryWriter = SummaryWriter(log_dir=checkpointDirectory)
 
 # Try to load the last checkpoint and continue training from there
