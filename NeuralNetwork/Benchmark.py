@@ -1,7 +1,7 @@
 import time
 from Model import *
 
-model = PullPushModel(8, 7, 16).to(device).eval()
+model = UnetPullPush(16, 8, 16).to(device).eval()
 print(model.parameters)
 totalParameters = sum(p.numel() for p in model.parameters())
 print('Sum parameters: ' + str(totalParameters))
