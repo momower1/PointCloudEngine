@@ -2,7 +2,7 @@ from moviepy.editor import VideoClip, VideoFileClip
 from Model import *
 from Dataset import *
 
-videoFilename = 'D:/Downloads/PointCloudEngineVideo.mp4'
+videoFilename = 'D:/Downloads/PointCloudEngineVideo'
 checkpointFilename = 'D:/Google Drive/Informatik/Masterarbeit/Models/Walkman256/Checkpoint.pt'
 dataset = Dataset('G:/PointCloudEngineDatasets/VideoWalkman256/', 3, False, False, False)
 
@@ -89,4 +89,5 @@ def CreateVideoFrame(t):
 
 # Create a video
 video = VideoClip(CreateVideoFrame, duration=duration)
-video.write_videofile(videoFilename, fps=fps)
+video.write_videofile(videoFilename + '.avi', fps=fps, codec='png')
+video.write_videofile(videoFilename + '.mp4', fps=fps)
