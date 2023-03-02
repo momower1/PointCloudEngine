@@ -3,47 +3,87 @@ from Model import *
 from Dataset import *
 
 videoFilename = 'D:/Downloads/PointCloudEngineVideo.mp4'
-checkpointFilename = 'G:/PointCloudEngineCheckpoints/Sparse Occlusion And Inpainting/Checkpoint.pt'
-dataset = Dataset('G:/PointCloudEngineDatasetLarge/', 0)
+checkpointFilename = 'D:/Google Drive/Informatik/Masterarbeit/Models/Walkman256/Checkpoint.pt'
+dataset = Dataset('G:/PointCloudEngineDatasets/VideoWalkman256/', 3, False, False, False)
 
-fps = 30
+fps = 30.0
+h = dataset.height
+w = dataset.width
 duration = dataset.trainingSequenceCount / fps
 
 # Load model
 checkpoint = torch.load(checkpointFilename)
-modelOcclusion = PullPushModel(5, 1, 16).to(device)
-model = PullPushModel(8, 7, 16).to(device)
-modelOcclusion.load_state_dict(checkpoint['ModelOcclusion'])
-model.load_state_dict(checkpoint['Model'])
-modelOcclusion = modelOcclusion.eval()
-model = model.eval()
+VCN = UnetPullPush(5, 1, 16).to(device)
+FIN = UnetPullPush(7, 2, 16).to(device)
+SRN = UnetPullPush(16, 8, 16).to(device)
+VCN.load_state_dict(checkpoint['SCM'])
+FIN.load_state_dict(checkpoint['SFM'])
+SRN.load_state_dict(checkpoint['SRM'])
+VCN = VCN.eval()
+FIN = FIN.eval()
+SRN = SRN.eval()
+
+previousOutputSRN = None
 
 def CreateVideoFrame(t):
-    sequenceIndex = int(t * fps)
-    tensors = dataset.GetTrainingSequence(sequenceIndex)
-    
-    # Evaluate the models
-    inputOcclusion = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseNormalScreen']], dim=0).unsqueeze(0)
-    outputOcclusion = modelOcclusion(inputOcclusion)
+    global previousOutputSRN
 
-    input = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseColor'], tensors['PointsSparseNormalScreen']], dim=0).unsqueeze(0)
-    inputSurface = torch.clone(input)
+    frameIndex = int(t * fps)
+    tensors = dataset.GetFrame(dataset.trainingFrames, frameIndex)
 
-    outputOcclusionMask = (outputOcclusion.detach() > 0.5).repeat(1, model.inChannels, 1, 1)
-    inputSurface[outputOcclusionMask] = 0.0
-    output = model(inputSurface)
+    for tensorName in tensors:
+        tensors[tensorName] = tensors[tensorName].unsqueeze(0)
 
-    h = input.size(2)
-    w = input.size(3)
-    frame = torch.zeros((3, 2 * h, 3 * w), dtype=torch.float, device=device)
+    with torch.no_grad():
+        # Evaluate the visibility classifiaction network
+        inputVCN = torch.cat([tensors['PointsSparseForeground'], tensors['PointsSparseDepth'], tensors['PointsSparseNormalScreen']], dim=1)
+        outputVCN = VCN(inputVCN)
 
-    frame[:, 0:h, 0:w] = input[0, 2:5, :, :]
-    frame[:, 0:h, w:2*w] = input[0, 1:2, :, :].repeat(3, 1, 1)
-    frame[:, 0:h, 2*w:3*w] = input[0, 5:8, :, :]
+        # Evaluate the flow inpainting network
+        pointsVisibleMask = outputVCN.ge(0.5).float()
+        pointsVisibleDepth = pointsVisibleMask * tensors['PointsSparseDepth']
+        pointsVisibleNormal = pointsVisibleMask * tensors['PointsSparseNormalScreen']
+        pointsVisibleFlowForward = pointsVisibleMask * tensors['PointsSparseOpticalFlowForward']
+        depthMin, depthMax, pointsVisibleDepth = ConvertTensorIntoZeroToOneRange(pointsVisibleDepth)
+        flowMin, flowMax, pointsVisibleFlowForward = ConvertTensorIntoZeroToOneRange(pointsVisibleFlowForward)
+        inputFIN = torch.cat([pointsVisibleMask, pointsVisibleDepth, pointsVisibleNormal, pointsVisibleFlowForward], dim=1)
+        outputFIN = FIN(inputFIN)
+        flowForward = RevertTensorIntoFullRange(flowMin, flowMax, outputFIN)
 
-    frame[:, h:2*h, 0:w] = output[0, 1:4, :, :]
-    frame[:, h:2*h, w:2*w] = output[0, 0:1, :, :].repeat(3, 1, 1)
-    frame[:, h:2*h, 2*w:3*w] = output[0, 4:7, :, :]
+        # Evaluate the surface reconstruction network
+        pointsVisibleColor = pointsVisibleMask * tensors['PointsSparseColor']
+        inputSRN = torch.cat([pointsVisibleMask, pointsVisibleDepth, pointsVisibleColor, pointsVisibleNormal], dim=1)
+
+        if previousOutputSRN is None:
+            previousOutputSRN = torch.zeros_like(inputSRN)
+
+        previousOutputSRN = WarpImage(previousOutputSRN, flowForward)
+        previousOutputSRN *= EstimateOcclusion(flowForward)
+        inputSRN = torch.cat([inputSRN, previousOutputSRN], dim=1)
+        outputSRN = SRN(inputSRN)
+
+        # Create video frame
+        frame = torch.zeros((1, 3, 3 * h, 5 * w), dtype=torch.float, device=device)
+
+        frame[:, :, 0:h, 0:w] = tensors['PointsSparseDepth'].repeat(1, 3, 1, 1)
+        frame[:, :, 0:h, w:2*w] = outputSRN[:, 1:2, :, :].repeat(1, 3, 1, 1)
+        frame[:, :, 0:h, 2*w:3*w] = tensors['SplatsSparseDepth'].repeat(1, 3, 1, 1)
+        frame[:, :, 0:h, 3*w:4*w] = tensors['PullPushDepth'].repeat(1, 3, 1, 1)
+        frame[:, :, 0:h, 4*w:5*w] = tensors['MeshDepth'].repeat(1, 3, 1, 1)
+
+        frame[:, :, h:2*h, 0:w] = tensors['PointsSparseColor']
+        frame[:, :, h:2*h, w:2*w] = outputSRN[:, 2:5, :, :]
+        frame[:, :, h:2*h, 2*w:3*w] = tensors['SplatsSparseColor']
+        frame[:, :, h:2*h, 3*w:4*w] = tensors['PullPushColor']
+        frame[:, :, h:2*h, 4*w:5*w] = tensors['MeshColor']
+
+        frame[:, :, 2*h:3*h, 0:w] = tensors['PointsSparseNormalScreen']
+        frame[:, :, 2*h:3*h, w:2*w] = outputSRN[:, 5:8, :, :]
+        frame[:, :, 2*h:3*h, 2*w:3*w] = tensors['SplatsSparseNormalScreen']
+        frame[:, :, 2*h:3*h, 3*w:4*w] = tensors['PullPushNormalScreen']
+        frame[:, :, 2*h:3*h, 4*w:5*w] = tensors['MeshNormalScreen']
+
+        frame = frame.squeeze(0)
 
     return TensorToImage(frame)
 

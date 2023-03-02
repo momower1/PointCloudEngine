@@ -133,9 +133,9 @@ def ConvertTensorIntoZeroToOneRange(tensorFull):
     n, c, h, w = tensorFull.shape
 
     # Perform Min-Max normalization batchwise
-    tensorMin, tensorMinIndices = torch.min(tensorFull.view(n, -1), dim=1)
+    tensorMin, tensorMinIndices = torch.min(tensorFull.reshape(n, -1), dim=1)
     tensorZeroOne = tensorFull - tensorMin.view(n, 1, 1, 1)
-    tensorMax, tensorMaxIndices = torch.max(tensorZeroOne.view(n, -1), dim=1)
+    tensorMax, tensorMaxIndices = torch.max(tensorZeroOne.reshape(n, -1), dim=1)
     tensorZeroOne /= tensorMax.view(n, 1, 1, 1) + 1e-12
 
     return tensorMin, tensorMax, tensorZeroOne
