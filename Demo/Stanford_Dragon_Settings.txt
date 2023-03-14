@@ -1,0 +1,96 @@
+# Parameters only apply when restarting the engine.
+# This file is overwritten when PointCloudEngine exits.
+# Make sure to close the engine before editing this file.
+
+# Engine Window Parameters
+guiScaleFactor=1
+engineWidth=1514
+engineHeight=880
+enginePositionX=905
+enginePositionY=520
+showUserInterface=1
+
+# Rendering Parameters
+viewMode=9
+shadingMode=0
+backgroundColor=(0.000000,0.000000,0.000000,0.000000)
+fovAngleY=1.25664
+nearZ=0.1
+farZ=1000
+resolutionX=1118
+resolutionY=821
+windowed=1
+
+# Pointcloud File Parameters
+# Delete old .octree files when changing the maxOctreeDepth
+pointcloudFile=E:\GitHub\PointCloudEngine\Demo\Stanford_Dragon.pointcloud
+samplingRate=1
+scale=0.1
+
+# Lighting Parameters
+useLighting=1
+useHeadlight=1
+lightDirection=(0.000000,-0.500000,1.000000)
+lightIntensity=1
+ambient=0.4
+diffuse=1.2
+specular=0.85
+specularExponent=10
+
+# Blending Parameters
+useBlending=1
+blendFactor=10
+
+# Ground Truth Parameters
+backfaceCulling=1
+density=0.01
+sparseSamplingRate=13
+
+# Pull Push Parameters
+pullPushLinearFilter=1
+pullPushSkipPushPhase=0
+pullPushOrientedSplat=1
+pullPushBlending=1
+pullPushDebugLevel=0
+pullPushSplatSize=1.5
+pullPushBlendRange=1
+
+# Mesh Parameters
+meshFile=E:\GitHub\PointCloudEngine\Demo\Stanford_Dragon.obj
+loadMeshFile=0
+textureLOD=0
+
+# Neural Network Parameters
+useCUDA=1
+thresholdSCM=0.5
+thresholdSurfaceKeeping=1
+filenameSCM=E:\GitHub\PointCloudEngine\Demo\Stanford_Dragon_SCM.pt
+filenameSFM=E:\GitHub\PointCloudEngine\Demo\Stanford_Dragon_SFM.pt
+filenameSRM=E:\GitHub\PointCloudEngine\Demo\Stanford_Dragon_SRM.pt
+
+# Dataset Generation Parameters
+compressDataset=0
+waypointStepSize=0.01
+waypointPreviewStepSize=0.01
+waypointMin=0
+waypointMax=1
+sphereStepSize=0.5
+sphereMinTheta=0
+sphereMaxTheta=3.14159
+sphereMinPhi=0
+sphereMaxPhi=6.28319
+
+# Octree Parameters, increase appendBufferCount when you see flickering
+useOctree=0
+useCulling=1
+useGPUTraversal=1
+maxOctreeDepth=16
+overlapFactor=2
+splatResolution=0.01
+appendBufferCount=6000000
+octreeLevel=-1
+
+# Input Parameters
+mouseSensitivity=0.005
+scrollSensitivity=0.5
+
