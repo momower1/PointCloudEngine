@@ -1,3 +1,5 @@
+![Comparison](Demo/Comparison.png?raw=true)
+
 ## Overview
 - Two seperate point cloud renderers with support for splatting and phong lighting
 - Ground Truth Renderer renders a point cloud with splatting, pull push algorithm or neural rendering pipeline and can compare results against a mesh
