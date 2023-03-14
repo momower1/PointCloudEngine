@@ -254,7 +254,7 @@ while True:
             if previousOutputSRM is None or previousOutputSRM.shape != inputSRM.shape:
                 previousOutputSRM = torch.zeros_like(inputSRM)
 
-            # TODO: Only keep warped pixels if they are not occluded by both forward and backward motion
+            # TODO: Only keep warped pixels if they are not occluded by both forward and backward motion?
             # But this requires the network to also inpaint the sparse backward motion (which is not considered right now)
             #previousOutputSRM *= EstimateOcclusion(outputMotionVectorBackwardSFM, distance=1, artifactFilterSize=occlusionArtifactFilterSize)
             previousOutputWarpedSRM = WarpImage(previousOutputSRM, outputMotionVectorSFM)
@@ -300,7 +300,6 @@ while True:
             reverseCriticSequence = random.randint(0, 1) == 1
 
         # Accumulate loss terms over triplets in the sequence
-        # TODO: Add temporal information using warped frames (e.g. inputPreviousWarpedForward, inputNextWarpedBackward)
         for tripletFrameIndex in range(1, dataset.sequenceFrameCount - 1):
             motionVectorPreviousToCurrent = sequence['MeshOpticalFlowForward'][tripletFrameIndex]
             motionVectorCurrentToPrevious = sequence['MeshOpticalFlowBackward'][tripletFrameIndex]

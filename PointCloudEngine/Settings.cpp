@@ -286,3 +286,8 @@ Vector4 PointCloudEngine::Settings::ToVector4(std::wstring s)
 
 	return Vector4(std::stof(x), std::stof(y), std::stof(z), std::stof(w));
 }
+
+std::wstring PointCloudEngine::Settings::GetFilename()
+{
+	return this->filename;
+}

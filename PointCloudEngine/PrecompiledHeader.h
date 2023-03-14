@@ -1,6 +1,3 @@
-// FOR NOW IGNORE THE OLD PYTORCH AND HDF5 IMPLEMENTATION
-#define IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-
 // Pytorch
 #include <torch/script.h>
 #include <torch/torch.h>

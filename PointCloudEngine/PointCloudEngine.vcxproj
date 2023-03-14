@@ -296,7 +296,6 @@ copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DirectXCudaPytorchInteroperability.cpp" />
     <ClCompile Include="GUI.cpp" />
-    <ClCompile Include="HDF5File.cpp" />
     <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="OBJFile.cpp" />
     <ClCompile Include="PrecompiledHeader.cpp">
@@ -334,7 +333,6 @@ copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$
     <ClInclude Include="GUISlider.h" />
     <ClInclude Include="GUIText.h" />
     <ClInclude Include="GUIValue.h" />
-    <ClInclude Include="HDF5File.h" />
     <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="OBJFile.h" />
     <ClInclude Include="PrecompiledHeader.h" />

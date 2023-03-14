@@ -450,15 +450,6 @@ void PointCloudEngine::GUI::OnApplyResolution()
 {	
 	ChangeRenderingResolution(resolutionX, resolutionY);
 
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-	// Make sure the neural network renderer reallocates resources as well
-	if (groundTruthRenderer != NULL)
-	{
-		groundTruthRenderer->ApplyNeuralNetworkResolution();
-	}
-#endif
-
-
 	// Octree maximal splat resolution should increase/decrease when changing the resolution
 	((GUISlider<float>*)octreeElements[0])->scale = max(settings->resolutionX, settings->resolutionY) * 4;
 }

@@ -77,9 +77,6 @@
     <ClInclude Include="GroundTruthRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HDF5File.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PrecompiledHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -170,9 +167,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GroundTruthRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HDF5File.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PrecompiledHeader.cpp">

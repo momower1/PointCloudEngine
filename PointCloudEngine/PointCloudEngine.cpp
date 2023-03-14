@@ -729,7 +729,7 @@ LRESULT CALLBACK WindowProcEngine(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				}
 				case ID_EDIT_OPEN_SETTINGS:
 				{
-					INFO_MESSAGE(L"TODO");
+					ShellExecute(0, L"open", settings->GetFilename().c_str(), 0, 0, SW_SHOW);
 					break;
 				}
 				case ID_EDIT_OPEN_DIRECTORY:

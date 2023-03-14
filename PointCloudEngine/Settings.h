@@ -111,6 +111,8 @@ namespace PointCloudEngine
         float mouseSensitivity = 0.005f;
         float scrollSensitivity = 0.5f;
 
+		std::wstring GetFilename();
+
 	private:
 		std::wstring filename;
 		std::map<std::wstring, std::wstring> settingsMap;

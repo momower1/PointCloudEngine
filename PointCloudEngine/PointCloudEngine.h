@@ -7,15 +7,6 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 // Forward declarations
-#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
-class HDF5File;
-
-namespace H5
-{
-	class Group;
-}
-#endif
-
 namespace PointCloudEngine
 {
 	class Scene;
@@ -86,7 +77,6 @@ using namespace PointCloudEngine;
 #include "PullPush.h"
 #include "GUI.h"
 #include "Scene.h"
-#include "HDF5File.h"
 
 // Global variables, accessable in other files
 extern std::wstring executablePath;
