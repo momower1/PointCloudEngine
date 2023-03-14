@@ -1,6 +1,8 @@
 #ifndef HDF5FILE_H
 #define HDF5FILE_H
 
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
+
 #define H5_BUILT_AS_DYNAMIC_LIB
 
 #pragma once
@@ -34,5 +36,5 @@ private:
 	void AddStringAttribute(H5::H5Object* object, std::string name, std::string value);
 	void SetImageAttributes(H5::DataSet& dataSet);
 };
-
+#endif
 #endif

@@ -1,30 +1,6 @@
-#define PI 3.141592654f
+#include "GroundTruthConstantBuffer.hlsli"
 
-cbuffer GroundTruthRendererConstantBuffer : register(b0)
-{
-    float4x4 World;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 View;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 Projection;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float4x4 WorldInverseTranspose;
-//------------------------------------------------------------------------------ (64 byte boundary)
-	float4x4 WorldViewProjectionInverse;
-//------------------------------------------------------------------------------ (64 byte boundary)
-    float3 cameraPosition;
-    float fovAngleY;
-//------------------------------------------------------------------------------ (16 byte boundary)
-    float samplingRate;
-	float blendFactor;
-	bool useBlending;
-	bool drawNormals;
-//------------------------------------------------------------------------------ (16 byte boundary)
-	bool normalsInScreenSpace;
-	bool backfaceCulling;
-	// 8 bytes auto padding
-//------------------------------------------------------------------------------ (16 byte boundary)
-};  // Total: 368 bytes with constant buffer packing rules
+#define PI 3.141592654f
 
 struct VS_INPUT
 {
@@ -36,6 +12,7 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
     float3 position : POSITION;
+    float3 positionPrevious : POSITION1;
     float3 normal : NORMAL;
     float3 color : COLOR;
 };
@@ -43,8 +20,9 @@ struct VS_OUTPUT
 VS_OUTPUT VS(VS_INPUT input)
 {
 	VS_OUTPUT output;
-	output.position = mul(float4(input.position, 1), World);
-	output.normal = normalize(mul(input.normal, WorldInverseTranspose));
+	output.position = mul(float4(input.position, 1), World).xyz;
+    output.positionPrevious = mul(float4(input.position, 1), PreviousWorld).xyz;
+	output.normal = normalize(mul(float4(input.normal, 0), WorldInverseTranspose)).xyz;
 	output.color = input.color / 255.0f;
 
 	return output;

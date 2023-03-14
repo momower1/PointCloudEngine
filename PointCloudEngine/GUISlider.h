@@ -10,8 +10,6 @@ namespace PointCloudEngine
 	template <typename T> class GUISlider : public IGUIElement
 	{
 	public:
-		XMUINT2 size;
-		HWND hwndSlider = NULL;
 		HWND hwndSliderName = NULL;
 		HWND hwndSliderValue = NULL;
 		std::function<void()> OnChange = NULL;
@@ -21,40 +19,39 @@ namespace PointCloudEngine
 		float offset = 0;
 		UINT precision = 6;
 
-		GUISlider(HWND hwndParent, XMUINT2 pos, XMUINT2 size, XMUINT2 range, float scale, float offset, std::wstring name, T* value, UINT precision = 1, UINT nameWidth = 148, UINT valueWidth = 40, std::function<void()> OnChange = NULL)
+		GUISlider(HWND hwndParent, int positionX, int positionY, int width, int height, int rangeMin, int rangeMax, float scale, float offset, std::wstring name, T* value, UINT precision = 1, UINT nameWidth = 148, UINT valueWidth = 40, std::function<void()> OnChange = NULL)
 		{
 			// The internal slider position is value * scale + offset
-			this->size = size;
 			this->name = name;
 			this->value = value;
 			this->scale = scale;
 			this->offset = offset;
 			this->precision = precision;
 			this->OnChange = OnChange;
-			hwndSlider = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | WS_CHILD | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
+			hwndElement = CreateWindowEx(NULL, TRACKBAR_CLASS, L"", TBS_NOTICKS | WS_CHILD | WS_VISIBLE, positionX, positionY, width, height, hwndParent, NULL, NULL, NULL);
 			
 			// Left and right buddy showing text with name and value of the slider
-			hwndSliderName = CreateWindowEx(0, L"STATIC", name.c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, nameWidth, size.y, hwndParent, NULL, NULL, NULL);
-			hwndSliderValue = CreateWindowEx(0, L"STATIC", ToPrecisionWstring(*value, precision).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, valueWidth, size.y, hwndParent, NULL, NULL, NULL);
-			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
-			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
-			SetCustomWindowFontStyle(hwndSliderName);
-			SetCustomWindowFontStyle(hwndSliderValue);
+			hwndSliderName = CreateWindowEx(0, WC_STATIC, name.c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, nameWidth, height, hwndParent, NULL, NULL, NULL);
+			hwndSliderValue = CreateWindowEx(0, WC_STATIC, ToPrecisionWstring(*value, precision).c_str(), SS_LEFT | WS_CHILD | WS_VISIBLE, 0, 0, valueWidth, height, hwndParent, NULL, NULL, NULL);
+			SendMessage(hwndElement, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
+			SendMessage(hwndElement, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
+			IGUIElement::SetCustomWindowFontStyle(hwndSliderName);
+			IGUIElement::SetCustomWindowFontStyle(hwndSliderValue);
 
 			// Set range of the slider
 			UINT sliderPosition = (*value * scale) + offset;
-			SendMessage(hwndSlider, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(range.x, range.y));
-			SendMessage(hwndSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)sliderPosition);
+			SendMessage(hwndElement, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(rangeMin, rangeMax));
+			SendMessage(hwndElement, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)sliderPosition);
 		}
 
 		void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if (msg == WM_HSCROLL)
 			{
-				if ((HWND)lParam == hwndSlider)
+				if ((HWND)lParam == hwndElement)
 				{
 					// Overwrite the value and display it next to the slider
-					*value = (SendMessage(hwndSlider, TBM_GETPOS, 0, 0) - offset) / scale;
+					*value = (SendMessage(hwndElement, TBM_GETPOS, 0, 0) - offset) / scale;
 					SetWindowText(hwndSliderValue, ToPrecisionWstring(*value, precision).c_str());
 
 					// Invoke function on change
@@ -66,22 +63,22 @@ namespace PointCloudEngine
 			}
 		}
 
-		void SetPosition(XMUINT2 position)
+		void SetPosition(int positionX, int positionY)
 		{
-			MoveWindow(hwndSlider, position.x, position.y, size.x, size.y, true);
-			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
-			SendMessage(hwndSlider, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
+			IGUIElement::SetPosition(positionX, positionY);
+			SendMessage(hwndElement, TBM_SETBUDDY, (WPARAM)TRUE, (LPARAM)hwndSliderName);
+			SendMessage(hwndElement, TBM_SETBUDDY, (WPARAM)FALSE, (LPARAM)hwndSliderValue);
 		}
 
 		void SetRange(UINT min, UINT max)
 		{
-			SendMessage(hwndSlider, TBM_SETRANGEMIN, (WPARAM)TRUE, (LPARAM)min);
-			SendMessage(hwndSlider, TBM_SETRANGEMAX, (WPARAM)TRUE, (LPARAM)max);
+			SendMessage(hwndElement, TBM_SETRANGEMIN, (WPARAM)TRUE, (LPARAM)min);
+			SendMessage(hwndElement, TBM_SETRANGEMAX, (WPARAM)TRUE, (LPARAM)max);
 		}
 
 		void Show(int SW_COMMAND)
 		{
-			ShowWindow(hwndSlider, SW_COMMAND);
+			IGUIElement::Show(SW_COMMAND);
 			ShowWindow(hwndSliderName, SW_COMMAND);
 			ShowWindow(hwndSliderValue, SW_COMMAND);
 		}

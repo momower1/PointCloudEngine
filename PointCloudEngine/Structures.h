@@ -98,6 +98,14 @@ namespace PointCloudEngine
         byte color[3];
     };
 
+	struct MeshVertex
+	{
+		// Instead of storing the actual vertex data, gather it from buffers in the vertex shader
+		UINT positionIndex;
+		UINT textureCoordinateIndex;
+		UINT normalIndex;
+	};
+
 	struct OctreeNodeProperties
 	{
 		// Mask where the lowest 8 bit store one bit for each of the children: 1 when it exists, 0 when it doesn't
@@ -198,6 +206,29 @@ namespace PointCloudEngine
 		// Compute shader data
 		int useCulling;				// Bool in the shader
 		UINT inputCount;
+	};
+
+	struct GroundTruthConstantBuffer
+	{
+		Matrix World;
+		Matrix View;
+		Matrix Projection;
+		Matrix WorldInverseTranspose;
+		Matrix WorldViewProjectionInverse;
+		Matrix PreviousWorld;
+		Matrix PreviousView;
+		Matrix PreviousProjection;
+		Matrix PreviousWorldInverseTranspose;
+		Vector3 cameraPosition;
+		float fovAngleY;
+		float samplingRate;
+		float blendFactor;
+		int useBlending;			// Bool in the shader
+		int backfaceCulling;		// Bool in the shader
+		int shadingMode;
+		int textureLOD;
+		int resolutionX;
+		int resolutionY;
 	};
 
 	struct LightingConstantBuffer

@@ -1,3 +1,6 @@
+// FOR NOW IGNORE THE OLD PYTORCH AND HDF5 IMPLEMENTATION
+#define IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
+
 // Pytorch
 #include <torch/script.h>
 #include <torch/torch.h>
@@ -22,6 +25,9 @@
 #include <wincodec.h>
 #include <CommCtrl.h>
 #include <shellapi.h>
+#include <gdiplus.h>
+#include <Shlwapi.h>
+#include <ShlObj.h>
 
 // Resources like menus and icons
 #include "resource.h"
@@ -44,3 +50,7 @@
 #include "SpriteFont.h"
 #include "VertexTypes.h"
 #include "WICTextureLoader.h"
+
+// Cuda Toolkit
+#include "cuda.h"
+#include "cudaD3D11.h"

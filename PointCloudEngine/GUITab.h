@@ -10,18 +10,15 @@ namespace PointCloudEngine
 	class GUITab : public IGUIElement
 	{
 	public:
-		XMUINT2 size;
-		HWND hwndTab = NULL;
 		std::function<void(int)> OnSelect = NULL;
 
-		GUITab(HWND hwndParent, XMUINT2 pos, XMUINT2 size, std::initializer_list<std::wstring> entries, std::function<void(int)> OnSelect)
+		GUITab(HWND hwndParent, int positionX, int positionY, int width, int height, std::initializer_list<std::wstring> entries, std::function<void(int)> OnSelect)
 		{
 			// Create the tab menu
 			int counter = 0;
-			this->size = size;
 			this->OnSelect = OnSelect;
-			hwndTab = CreateWindowEx(NULL, WC_TABCONTROLW, L"", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, pos.x, pos.y, size.x, size.y, hwndParent, NULL, NULL, NULL);
-			SetCustomWindowFontStyle(hwndTab);
+			hwndElement = CreateWindowEx(NULL, WC_TABCONTROLW, L"", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, positionX, positionY, width, height, hwndParent, NULL, NULL, NULL);
+			IGUIElement::SetCustomWindowFontStyle(hwndElement);
 
 			TCITEM tcitem;
 			tcitem.mask = TCIF_TEXT;
@@ -30,7 +27,7 @@ namespace PointCloudEngine
 			for (auto it = entries.begin(); it != entries.end(); it++)
 			{
 				tcitem.pszText = (wchar_t*)it->c_str();
-				TabCtrl_InsertItem(hwndTab, counter++, &tcitem);
+				TabCtrl_InsertItem(hwndElement, counter++, &tcitem);
 			}
 		}
 
@@ -40,22 +37,12 @@ namespace PointCloudEngine
 			{
 				LPNMHDR info = (LPNMHDR)lParam;
 
-				if ((info->hwndFrom == hwndTab) && (info->code == TCN_SELCHANGE))
+				if ((info->hwndFrom == hwndElement) && (info->code == TCN_SELCHANGE))
 				{
 					// Invoke the passed function
-					OnSelect(TabCtrl_GetCurSel(hwndTab));
+					OnSelect(TabCtrl_GetCurSel(hwndElement));
 				}
 			}
-		}
-
-		void SetPosition(XMUINT2 position)
-		{
-			MoveWindow(hwndTab, position.x, position.y, size.x, size.y, true);
-		}
-
-		void Show(int SW_COMMAND)
-		{
-			ShowWindow(hwndTab, SW_COMMAND);
 		}
 	};
 }

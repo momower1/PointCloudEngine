@@ -1,4 +1,5 @@
 #include "GroundTruth.hlsl"
+#include "ShadingMode.hlsli"
 #include "SplatBlending.hlsl"
 
 [maxvertexcount(6)]
@@ -32,13 +33,27 @@ void GS(point VS_OUTPUT input[1], inout TriangleStream<GS_SPLAT_OUTPUT> output)
 
 float4 PS(GS_SPLAT_OUTPUT input) : SV_TARGET
 {
-	if (drawNormals)
+	switch (shadingMode)
 	{
-		// Output and possibly blend the world normal vectors in RGB without lighting
-		input.color = 0.5f * ((normalsInScreenSpace ? input.normalScreen : input.normal) + 1);
-
-		return SplatBlendingPS(false, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
+		case SHADING_MODE_COLOR:
+		{
+			return SplatBlendingPS(useLighting, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
+		}
+		case SHADING_MODE_DEPTH:
+		{
+			return float4(input.position.z, input.position.z, input.position.z, 1);
+		}
+		case SHADING_MODE_NORMAL:
+		{
+			input.color = 0.5f * (input.normal + 1);
+			return SplatBlendingPS(false, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
+		}
+		case SHADING_MODE_NORMAL_SCREEN:
+		{
+			input.color = 0.5f * (input.normalScreen + 1);
+			return SplatBlendingPS(false, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
+		}
 	}
 
-	return SplatBlendingPS(useLighting, useBlending, cameraPosition, blendFactor, WorldViewProjectionInverse, input);
+	return float4(1, 0, 0, 1);
 }

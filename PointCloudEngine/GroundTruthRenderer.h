@@ -14,45 +14,61 @@ namespace PointCloudEngine
         void Update();
         void Draw();
         void Release();
+		void UpdateConstantBuffer();
+		void UpdatePreviousMatrices();
+		void LoadSurfaceClassificationModel();
+		void LoadSurfaceFlowModel();
+		void LoadSurfaceReconstructionModel();
 
         void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize);
 		void RemoveComponentFromSceneObject();
+		Component* GetComponent();
+
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		void GenerateSphereDataset();
 		void GenerateWaypointDataset();
 		void LoadNeuralNetworkPytorchModel();
 		void LoadNeuralNetworkDescriptionFile();
 		void ApplyNeuralNetworkResolution();
+#endif
 
     private:
 		Vector3 boundingCubePosition;
 		float boundingCubeSize;
 
-        // Same constant buffer as in effect file, keep packing rules in mind
-        struct GroundTruthRendererConstantBuffer
-        {
-            Matrix World;
-            Matrix View;
-            Matrix Projection;
-            Matrix WorldInverseTranspose;
-			Matrix WorldViewProjectionInverse;
-            Vector3 cameraPosition;
-            float fovAngleY;
-            float samplingRate;
-			float blendFactor;
-			int useBlending;
-			int drawNormals;
-			int normalsInScreenSpace;
-			int backfaceCulling;
-			float padding[2];
-        };
-
         std::vector<Vertex> vertices;
-        GroundTruthRendererConstantBuffer constantBufferData;
+        GroundTruthConstantBuffer constantBufferData;
 
         // Vertex buffer
         ID3D11Buffer* vertexBuffer;		        // Holds vertex data
         ID3D11Buffer* constantBuffer;
 
+		// Pull push algorithm
+		PullPush* pullPush = NULL;
+
+		// Neural network
+		bool validSCM = false;
+		bool validSFM = false;
+		bool validSRM = false;
+		torch::jit::script::Module SCM;
+		torch::jit::script::Module SFM;
+		torch::jit::script::Module SRM;
+		torch::Tensor previousOutputSRM;
+
+		// Required to avoid memory overload with the forward function
+		// Since we don't use model.backward() it should be fine
+		torch::NoGradGuard noGradGuard;
+
+		void Redraw(bool present);
+		void DrawNeuralNetwork();
+		torch::Tensor NormalizeDepthTensor(torch::Tensor& depthTensor, torch::Tensor& foregroundMask, torch::Tensor& backgroundMask);
+		std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> ConvertTensorIntoZeroToOneRange(torch::Tensor& tensorFull);
+		torch::Tensor RevertTensorIntoFullRange(torch::Tensor& tensorMin, torch::Tensor& tensorMax, torch::Tensor& tensorZeroOne);
+		torch::Tensor WarpImage(torch::Tensor& imageTensor, torch::Tensor& motionVectorTensor);
+		bool LoadNeuralNetworkModel(std::wstring& filename, torch::jit::script::Module& model);
+		torch::Tensor EvaluateNeuralNetworkModel(torch::jit::script::Module& model, torch::Tensor inputTensor);
+
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 		// Maps from the name of the render mode to the view mode (x) and the shading mode (y)
 		std::map<std::wstring, XMUINT2> renderModes =
 		{
@@ -105,17 +121,16 @@ namespace PointCloudEngine
 		// Since we don't use model.backward() it should be fine
 		torch::NoGradGuard noGradGuard;
 
-		void DrawNeuralNetwork();
 		void CalculateLosses();
 		void RenderToTensor(std::wstring renderMode, torch::Tensor& tensor);
 		void CopyBackbufferTextureToTensor(torch::Tensor &tensor);
 		void CopyDepthTextureToTensor(torch::Tensor &tensor);
 		void OutputTensorSize(torch::Tensor &tensor);
-		void Redraw(bool present);
 		void HDF5DrawDatasets(HDF5File& hdf5file, const UINT groupIndex);
 		void HDF5DrawRenderModes(HDF5File& hdf5file, H5::Group group, std::wstring comment, bool sparseUpsample = false);
 		HDF5File CreateDatasetHDF5File();
 		std::vector<std::wstring> SplitString(std::wstring s, wchar_t delimiter);
+#endif
     };
 }
 #endif

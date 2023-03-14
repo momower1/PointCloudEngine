@@ -1,55 +1,23 @@
 #include "PrecompiledHeader.h"
 #include "GUI.h"
 
-#define CAMERARECORDINGS_FILENAME L"/CameraRecordings.vector"
-
 UINT GUI::fps = 0;
 UINT GUI::vertexCount = 0;
-UINT GUI::cameraRecording = 0;
-int GUI::lossFunctionSelection = 0;
-float GUI::l1Loss = 0;
-float GUI::mseLoss = 0;
-float GUI::smoothL1Loss = 0;
+UINT GUI::triangleCount = 0;
+UINT GUI::uvCount = 0;
+UINT GUI::normalCount = 0;
+UINT GUI::submeshCount = 0;
+UINT GUI::textureCount = 0;
+UINT GUI::waypointCount = 0;
 
 HFONT IGUIElement::hFont = NULL;
 
-std::vector<Vector3> GUI::cameraRecordingPositions =
-{
-	Vector3(0, 0, -10),
-	Vector3(0, 0, 10),
-	Vector3(-10, 0, 0),
-	Vector3(10, 0, 0),
-	Vector3(0, 10, 0),
-	Vector3(0, -10, 0)
-};
-
-std::vector<Matrix> GUI::cameraRecordingRotations =
-{
-	Matrix::CreateFromYawPitchRoll(0, 0, 0),
-	Matrix::CreateFromYawPitchRoll(XM_PI, 0, 0),
-	Matrix::CreateFromYawPitchRoll(XM_PI / 2, 0, 0),
-	Matrix::CreateFromYawPitchRoll(-XM_PI / 2, 0, 0),
-	Matrix::CreateFromYawPitchRoll(0, XM_PI / 2, 0),
-	Matrix::CreateFromYawPitchRoll(0, -XM_PI / 2, 0)
-};
-
-bool GUI::waypointPreview = false;
-float GUI::waypointPreviewLocation = 0;
-WaypointRenderer* GUI::waypointRenderer = NULL;
-GroundTruthRenderer* GUI::groundTruthRenderer = NULL;
-
 bool GUI::initialized = false;
-bool GUI::sameOutputChannel = false;
 int GUI::viewModeSelection = 0;
-int GUI::lossSelfSelection = 0;
-int GUI::lossTargetSelection = 0;
-int GUI::resolutionScaleX = 0;
-int GUI::resolutionScaleY = 0;
-Vector3 GUI::waypointStartPosition;
-Matrix GUI::waypointStartRotation;
-Vector2 GUI::guiSize = Vector2(380, 540);
+int GUI::shadingModeSelection = 0;
+int GUI::resolutionX = 0;
+int GUI::resolutionY = 0;
 
-HWND GUI::hwndGUI = NULL;
 GUITab* GUI::tabGroundTruth = NULL;
 GUITab* GUI::tabOctree = NULL;
 
@@ -59,36 +27,32 @@ std::vector<IGUIElement*> GUI::splatElements;
 std::vector<IGUIElement*> GUI::octreeElements;
 std::vector<IGUIElement*> GUI::sparseElements;
 std::vector<IGUIElement*> GUI::pointElements;
+std::vector<IGUIElement*> GUI::pullPushElements;
+std::vector<IGUIElement*> GUI::meshElements;
 std::vector<IGUIElement*> GUI::neuralNetworkElements;
 
 // Advanced
 std::vector<IGUIElement*> GUI::advancedElements;
 
 // HDF5
-std::vector<IGUIElement*> GUI::hdf5Elements;
+std::vector<IGUIElement*> GUI::datasetElements;
 
 void PointCloudEngine::GUI::Initialize()
 {
 	if (!initialized)
 	{
-		LoadCameraRecording();
-
 		// Place the gui window for changing settings next to the main window
 		RECT rect;
-		GetWindowRect(hwnd, &rect);
+		GetWindowRect(hwndScene, &rect);
 
-		// Initialize common controls library to use buttons and so on
-		InitCommonControls();
-		IGUIElement::InitializeFontHandle();
-
-		// This is the gui window
-		hwndGUI = CreateWindowEx(NULL, L"PointCloudEngine", L"Settings", WS_SYSMENU | WS_CAPTION | WS_VISIBLE, rect.right, rect.top, guiSize.x, guiSize.y, hwnd, NULL, NULL, NULL);
+		IGUIElement::InitializeFontHandle(GS(20));
 
 		// Tab inside the gui window for choosing different groups of settings
-		tabGroundTruth = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced", L"HDF5 Dataset" }, OnSelectTab);
-		tabOctree = new GUITab(hwndGUI, XMUINT2(0, 0), XMUINT2(guiSize.x, guiSize.y), { L"Renderer", L"Advanced" }, OnSelectTab);
+		tabGroundTruth = new GUITab(hwndGUI, 0, 0, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), { L"Renderer", L"Advanced", L"Dataset" }, OnSelectTab);
+		tabOctree = new GUITab(hwndGUI, 0, 0, GS(settings->userInterfaceWidth), GS(settings->userInterfaceHeight), { L"Renderer", L"Advanced" }, OnSelectTab);
 
 		viewModeSelection = (int)settings->viewMode;
+		shadingModeSelection = (int)settings->shadingMode;
 
 		// Load view mode
 		if (settings->useOctree)
@@ -101,35 +65,35 @@ void PointCloudEngine::GUI::Initialize()
 		}
 
 		// Create and show content for each tab
-		CreateContentRenderer();
-		CreateContentAdvanced();
-		CreateContentHDF5();
+		CreateRendererElements();
+		CreateAdvancedElements();
+		CreateDatasetElements();
 
 		initialized = true;
 	}
 
 	OnSelectTab(0);
-	OnSelectViewMode();
+	UpdateWindow(hwndGUI);
 }
 
 void PointCloudEngine::GUI::Release()
 {
-	SaveCameraRecording();
-
 	initialized = false;
 
 	// SafeDelete all GUI elements, HWNDs are released automatically
 	IGUIElement::DeleteFontHandle();
-	SafeDelete(tabGroundTruth);
-	SafeDelete(tabOctree);
+	SAFE_DELETE(tabGroundTruth);
+	SAFE_DELETE(tabOctree);
 	DeleteElements(rendererElements);
 	DeleteElements(splatElements);
 	DeleteElements(octreeElements);
 	DeleteElements(sparseElements);
 	DeleteElements(pointElements);
+	DeleteElements(pullPushElements);
+	DeleteElements(meshElements);
 	DeleteElements(neuralNetworkElements);
 	DeleteElements(advancedElements);
-	DeleteElements(hdf5Elements);
+	DeleteElements(datasetElements);
 }
 
 void PointCloudEngine::GUI::Update()
@@ -144,9 +108,11 @@ void PointCloudEngine::GUI::Update()
 	UpdateElements(octreeElements);
 	UpdateElements(sparseElements);
 	UpdateElements(pointElements);
+	UpdateElements(pullPushElements);
+	UpdateElements(meshElements);
 	UpdateElements(neuralNetworkElements);
 	UpdateElements(advancedElements);
-	UpdateElements(hdf5Elements);
+	UpdateElements(datasetElements);
 }
 
 void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -165,16 +131,18 @@ void PointCloudEngine::GUI::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam
 		HandleMessageElements(octreeElements, msg, wParam, lParam);
 		HandleMessageElements(sparseElements, msg, wParam, lParam);
 		HandleMessageElements(pointElements, msg, wParam, lParam);
+		HandleMessageElements(pullPushElements, msg, wParam, lParam);
+		HandleMessageElements(meshElements, msg, wParam, lParam);
 		HandleMessageElements(neuralNetworkElements, msg, wParam, lParam);
 		HandleMessageElements(advancedElements, msg, wParam, lParam);
-		HandleMessageElements(hdf5Elements, msg, wParam, lParam);
+		HandleMessageElements(datasetElements, msg, wParam, lParam);
 	}
 }
 
 void PointCloudEngine::GUI::SetVisible(bool visible)
 {
-	ShowWindow(hwndGUI, visible ? SW_SHOW : SW_HIDE);
-	
+	ShowWindow(hwndGUI, SW_HIDE);
+
 	if (settings->useOctree)
 	{
 		((GUIDropdown*)rendererElements[2])->SetSelection(min((int)settings->viewMode, 2));
@@ -183,34 +151,13 @@ void PointCloudEngine::GUI::SetVisible(bool visible)
 	}
 	else
 	{
-		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 4)));
+		((GUIDropdown*)rendererElements[1])->SetSelection(max(0, min((int)settings->viewMode - 3, 6)));
+		((GUIDropdown*)rendererElements[4])->SetSelection((int)settings->shadingMode);
 		tabGroundTruth->Show(SW_SHOW);
 		tabOctree->Show(SW_HIDE);
 	}
-}
 
-void PointCloudEngine::GUI::SetNeuralNetworkOutputChannels(std::vector<std::wstring> outputChannels)
-{
-	((GUIDropdown*)neuralNetworkElements[11])->SetEntries(outputChannels);
-	((GUIDropdown*)neuralNetworkElements[13])->SetEntries(outputChannels);
-	((GUIDropdown*)neuralNetworkElements[15])->SetEntries(outputChannels);
-}
-
-void PointCloudEngine::GUI::SetNeuralNetworkLossSelfChannels(std::map<std::wstring, XMUINT2> renderModes)
-{
-	std::vector<std::wstring> selfChannels;
-
-	for (auto it = renderModes.begin(); it != renderModes.end(); it++)
-	{
-		selfChannels.push_back(it->first);
-	}
-
-	((GUIDropdown*)neuralNetworkElements[5])->SetEntries(selfChannels);
-}
-
-void PointCloudEngine::GUI::SetNeuralNetworkLossTargetChannels(std::vector<std::wstring> lossTargetChannels)
-{
-	((GUIDropdown*)neuralNetworkElements[7])->SetEntries(lossTargetChannels);
+	ShowWindow(hwndGUI, visible ? SW_SHOW : SW_HIDE);
 }
 
 void PointCloudEngine::GUI::ShowElements(std::vector<IGUIElement*> elements, int SW_COMMAND)
@@ -225,7 +172,7 @@ void PointCloudEngine::GUI::DeleteElements(std::vector<IGUIElement*> elements)
 {
 	for (auto it = elements.begin(); it != elements.end(); it++)
 	{
-		SafeDelete(*it);
+		SAFE_DELETE(*it);
 	}
 
 	elements.clear();
@@ -247,147 +194,130 @@ void PointCloudEngine::GUI::HandleMessageElements(std::vector<IGUIElement*> elem
 	}
 }
 
-void PointCloudEngine::GUI::CreateContentRenderer()
+void PointCloudEngine::GUI::CreateRendererElements()
 {
-	rendererElements.push_back(new GUIText(hwndGUI, { 10, 40 }, { 100, 20 }, L"View Mode "));
-	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Neural Network" }, OnSelectViewMode, &viewModeSelection));
-	rendererElements.push_back(new GUIDropdown(hwndGUI, { 160, 35 }, { 180, 200 }, { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
-	rendererElements.push_back(new GUIText(hwndGUI, { 10, 70 }, { 150, 20 }, L"Vertex Count "));
-	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 70 }, { 200, 20 }, &GUI::vertexCount));
-	rendererElements.push_back(new GUIText(hwndGUI, { 10, 100 }, { 150, 20 }, L"Frames per second "));
-	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, { 160, 100 }, { 50, 20 }, &GUI::fps));
-	rendererElements.push_back(new GUIText(hwndGUI, { 10, 130 }, { 150, 20 }, L"Lighting "));
-	rendererElements.push_back(new GUICheckbox(hwndGUI, { 160, 130 }, { 20, 20 }, L"", NULL, &settings->useLighting));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(40), GS(100), GS(20), L"View Mode "));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Sparse Splats", L"Points", L"Sparse Points", L"Pull Push", L"Mesh", L"Neural Network"}, OnSelectViewMode, &viewModeSelection));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(35), GS(180), GS(200), { L"Splats", L"Octree Nodes", L"Normal Clusters" }, OnSelectViewMode, &viewModeSelection));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(70), GS(100), GS(20), L"Shading Mode "));
+	rendererElements.push_back(new GUIDropdown(hwndGUI, GS(160), GS(65), GS(180), GS(200), { L"Color", L"Depth", L"Normal", L"NormalScreen", L"OpticalFlowForward", L"OpticalFlowBackward" }, OnSelectShadingMode, &shadingModeSelection));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(100), GS(150), GS(20), L"Vertex Count "));
+	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(100), GS(200), GS(20), &GUI::vertexCount));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(130), GS(150), GS(20), L"Frames per second "));
+	rendererElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(130), GS(50), GS(20), &GUI::fps));
+	rendererElements.push_back(new GUIText(hwndGUI, GS(10), GS(160), GS(150), GS(20), L"Lighting "));
+	rendererElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(160), GS(20), GS(20), L"", NULL, &settings->useLighting));
 
-	splatElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Blending "));
-	splatElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->useBlending));
-	splatElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 100 }, 10, 0, L"Blend Factor", &settings->blendFactor));
-	splatElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 1000 }, 1000, 0, L"Sampling Rate", &settings->samplingRate, 3));
+	splatElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Blending "));
+	splatElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(190), GS(20), GS(20), L"", NULL, &settings->useBlending));
+	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(220), GS(130), GS(20), 0, 100, 10, 0, L"Blend Factor", &settings->blendFactor, 1, GS(148), GS(40)));
+	splatElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 1000, 0, L"Sampling Rate", &settings->samplingRate, 3, GS(148), GS(40)));
 
-	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 4, 100 }, max(settings->resolutionX, settings->resolutionY) * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, 148, 50));
-	octreeElements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 130, 20 }, { 0, 500 }, 100, -100, L"Overlap Factor", &settings->overlapFactor, 2));
-	octreeElements.push_back(new GUISlider<int>(hwndGUI, { 160, 310 }, { 130, 20 }, { 0, 1 + (UINT)settings->maxOctreeDepth }, 1, 1, L"Octree Level", &settings->octreeLevel));
-	octreeElements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 150, 20 }, L"Culling "));
-	octreeElements.push_back(new GUICheckbox(hwndGUI, { 160, 340 }, { 20, 20 }, L"", NULL, &settings->useCulling));
-	octreeElements.push_back(new GUIText(hwndGUI, { 10, 370 }, { 150, 20 }, L"GPU Traversal "));
-	octreeElements.push_back(new GUICheckbox(hwndGUI, { 160, 370 }, { 20, 20 }, L"", NULL, &settings->useGPUTraversal));
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 4, 100, max(settings->resolutionX, settings->resolutionY) * 4, 0, L"Splat Resolution", &settings->splatResolution, 4, GS(148), GS(50)));
+	octreeElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(310), GS(130), GS(20), 0, 500, 100, -100, L"Overlap Factor", &settings->overlapFactor, 2, GS(148), GS(40)));
+	octreeElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 1 + (UINT)settings->maxOctreeDepth, 1, 1, L"Octree Level", &settings->octreeLevel, 1, GS(148), GS(40)));
+	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(370), GS(150), GS(20), L"Culling "));
+	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(370), GS(20), GS(20), L"", NULL, &settings->useCulling));
+	octreeElements.push_back(new GUIText(hwndGUI, GS(10), GS(400), GS(150), GS(20), L"GPU Traversal "));
+	octreeElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(400), GS(20), GS(20), L"", NULL, &settings->useGPUTraversal));
 
-	sparseElements.push_back(new GUISlider<float>(hwndGUI, { 160, 220 }, { 130, 20 }, { 0, 1000 }, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate, 2));
-	sparseElements.push_back(new GUISlider<float>(hwndGUI, { 160, 250 }, { 130, 20 }, { 0, 1000 }, 1000, 0, L"Density", &settings->density, 3));
+	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(250), GS(130), GS(20), 0, 1000, 100, 0, L"Sparse Sampling Rate", &settings->sparseSamplingRate, 2, GS(148), GS(40)));
+	sparseElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(130), GS(20), 0, 1000, 1000, 0, L"Density", &settings->density, 3, GS(148), GS(40)));
 
-	pointElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Backface Culling "));
-	pointElements.push_back(new GUICheckbox(hwndGUI, { 160, 160 }, { 20, 20 }, L"", NULL, &settings->backfaceCulling));
+	pointElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Backface Culling "));
+	pointElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(190), GS(20), GS(20), L"", NULL, &settings->backfaceCulling));
 
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 160 }, { 150, 20 }, L"Loss Function"));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 160 }, { 90, 200 }, { L"None", L"L1", L"MSE", L"Smooth L1" }, OnSelectNeuralNetworkLossFunction, &lossFunctionSelection));
-	neuralNetworkElements.push_back(new GUIValue<float>(hwndGUI, { 260, 160 }, { 150, 20 }, NULL));
-	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 130, 20 }, { 0, 10 }, 10, 0, L"Loss Area", &settings->neuralNetworkLossArea));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 220 }, { 100, 20 }, L"Loss Self "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 220 }, { 180, 200 }, {}, OnSelectNeuralNetworkLossSelf, &lossSelfSelection));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 250 }, { 100, 20 }, L"Loss Target "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 250 }, { 180, 200 }, {}, OnSelectNeuralNetworkLossTarget, &lossTargetSelection));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 280 }, { 150, 20 }, L"Output Same"));
-	neuralNetworkElements.push_back(new GUICheckbox(hwndGUI, { 160, 280 }, { 20, 20 }, L"", NULL, &sameOutputChannel));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 310 }, { 100, 20 }, L"Output Red "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 310 }, { 180, 200 }, {}, OnSelectNeuralNetworkOutputRed, &settings->neuralNetworkOutputRed));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 340 }, { 100, 20 }, L"Output Green "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 340 }, { 180, 200 }, {}, OnSelectNeuralNetworkOutputGreen, &settings->neuralNetworkOutputGreen));
-	neuralNetworkElements.push_back(new GUIText(hwndGUI, { 10, 370 }, { 100, 20 }, L"Output Blue "));
-	neuralNetworkElements.push_back(new GUIDropdown(hwndGUI, { 160, 370 }, { 180, 200 }, {}, OnSelectNeuralNetworkOutputBlue, &settings->neuralNetworkOutputBlue));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 10, 415 }, { 150, 25 }, L"Load Model", OnLoadPytorchModel));
-	neuralNetworkElements.push_back(new GUIButton(hwndGUI, { 180, 415 }, { 150, 25 }, L"Load Description", OnLoadDescriptionFile));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Linear Filtering "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(250), GS(20), GS(20), L"", NULL, &settings->pullPushLinearFilter));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(280), GS(150), GS(20), L"Skip Push Phase "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(280), GS(20), GS(20), L"", NULL, &settings->pullPushSkipPushPhase));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(310), GS(150), GS(20), L"Oriented Splat "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(310), GS(20), GS(20), L"", NULL, &settings->pullPushOrientedSplat));
+	pullPushElements.push_back(new GUIText(hwndGUI, GS(10), GS(340), GS(150), GS(20), L"Texel Blending "));
+	pullPushElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(340), GS(20), GS(20), L"", NULL, &settings->pullPushBlending));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(370), GS(130), GS(20), 0, 1000, 1000, 0, L"Blend Range", &settings->pullPushBlendRange, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 1000, 1000, 0, L"Splat Size", &settings->pullPushSplatSize, 2, GS(148), GS(40)));
+	pullPushElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(430), GS(130), GS(20), 0, 12, 1, 0, L"Pull Push Level", &settings->pullPushDebugLevel, 2, GS(148), GS(40)));
+
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Triangle Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(190), GS(200), GS(20), &GUI::triangleCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(220), GS(150), GS(20), L"UV Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(220), GS(200), GS(20), &GUI::uvCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Normal Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(250), GS(200), GS(20), &GUI::normalCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(280), GS(150), GS(20), L"Submesh Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(280), GS(200), GS(20), &GUI::submeshCount));
+	meshElements.push_back(new GUIText(hwndGUI, GS(10), GS(310), GS(150), GS(20), L"Texture Count "));
+	meshElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(310), GS(200), GS(20), &GUI::textureCount));
+	meshElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 10, 1, 0, L"Texture LOD", &settings->textureLOD, 1, GS(148), GS(40)));
+	meshElements.push_back(new GUIButton(hwndGUI, GS(10), GS(370), GS(325), GS(25), L"Load Mesh from .OBJ File", OnLoadMeshFromOBJFile));
+
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(200), GS(130), GS(20), 0, 100, 100, 0, L"Threshold SCM", &settings->thresholdSCM, 1, GS(148), GS(40)));
+	neuralNetworkElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(230), GS(130), GS(20), 0, 100, 100, 0, L"Surface Keeping", &settings->thresholdSurfaceKeeping, 1, GS(148), GS(40)));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(260), GS(150), GS(20), L"Filename SCM "));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(260), GS(200), GS(20), settings->filenameSCM));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(290), GS(325), GS(25), L"Load Surface Classification Model", OnLoadSurfaceClassificationModel));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(330), GS(150), GS(20), L"Filename SFM "));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(330), GS(200), GS(20), settings->filenameSFM));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(360), GS(325), GS(25), L"Load Surface Flow Model", OnLoadSurfaceFlowModel));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(10), GS(400), GS(150), GS(20), L"Filename SRM "));
+	neuralNetworkElements.push_back(new GUIText(hwndGUI, GS(160), GS(400), GS(200), GS(20), settings->filenameSRM));
+	neuralNetworkElements.push_back(new GUIButton(hwndGUI, GS(10), GS(430), GS(325), GS(25), L"Load Surface Reconstruction Model", OnLoadSurfaceReconstructionModel));
 }
 
-void PointCloudEngine::GUI::CreateContentAdvanced()
+void PointCloudEngine::GUI::CreateAdvancedElements()
 {
-	resolutionScaleX = log2(settings->resolutionX);
-	resolutionScaleY = log2(settings->resolutionY);
+	resolutionX = settings->resolutionX;
+	resolutionY = settings->resolutionY;
 
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 40 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale X", &resolutionScaleX, 1, 148, 40, OnChangeResolutionScale));
-	advancedElements.push_back(new GUISlider<int>(hwndGUI, { 160, 70 }, { 130, 20 }, { 8, 13 }, 1, 0, L"Resolution Scale Y", &resolutionScaleY, 1, 148, 40, OnChangeResolutionScale));
-	advancedElements.push_back(new GUIButton(hwndGUI, { 10, 100 }, { 325, 25 }, L"Apply Resolution", OnApplyResolution));
-	OnChangeResolutionScale();
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(40), GS(130), GS(20), 1, (uint32_t)GetSystemMetrics(SM_CXSCREEN), 1, 0, L"Resolution X", &resolutionX, 1, GS(148), GS(40), OnChangeResolution));
+	advancedElements.push_back(new GUISlider<int>(hwndGUI, GS(160), GS(70), GS(130), GS(20), 1, (uint32_t)GetSystemMetrics(SM_CYSCREEN), 1, 0, L"Resolution Y", &resolutionY, 1, GS(148), GS(40), OnChangeResolution));
+	advancedElements.push_back(new GUIButton(hwndGUI, GS(10), GS(100), GS(325), GS(25), L"Apply Resolution", OnApplyResolution));
+	OnChangeResolution();
 
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 160 }, { 130, 20 }, { 1, 100 }, 10, 0, L"Scale", &settings->scale));
-	advancedElements.push_back(new GUIText(hwndGUI, { 10, 190 }, { 150, 20 }, L"Background RGB"));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 190 }, { 45, 20 }, { 0, 100 }, 100, 0, L"R", &settings->backgroundColor.x, 0, 0, 0));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 203, 190 }, { 45, 20 }, { 0, 100 }, 100, 0, L"G", &settings->backgroundColor.y, 0, 0, 0));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 245, 190 }, { 45, 20 }, { 0, 100 }, 100, 0, L"B", &settings->backgroundColor.z, 0, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(160), GS(130), GS(20), 1, 100, 10, 0, L"Scale", &settings->scale, 1, GS(148), GS(40)));
+	advancedElements.push_back(new GUIText(hwndGUI, GS(10), GS(190), GS(150), GS(20), L"Background RGB"));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(190), GS(45), GS(20), 0, 100, 100, 0, L"R", &settings->backgroundColor.x, 0, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(203), GS(190), GS(45), GS(20), 0, 100, 100, 0, L"G", &settings->backgroundColor.y, 0, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(245), GS(190), GS(45), GS(20), 0, 100, 100, 0, L"B", &settings->backgroundColor.z, 0, 0, 0));
 
-	advancedElements.push_back(new GUIText(hwndGUI, { 10, 250 }, { 150, 20 }, L"Headlight "));
-	advancedElements.push_back(new GUICheckbox(hwndGUI, { 160, 250 }, { 20, 20 }, L"", NULL, &settings->useHeadlight));
-	advancedElements.push_back(new GUIText(hwndGUI, { 10, 280 }, { 150, 20 }, L"Light Direction XYZ"));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 280 }, { 45, 20 }, { 0, 200 }, 100, 100, L"X", &settings->lightDirection.x, 0, 0, 0));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 203, 280 }, { 45, 20 }, { 0, 200 }, 100, 100, L"Y", &settings->lightDirection.y, 0, 0, 0));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 245, 280 }, { 45, 20 }, { 0, 200 }, 100, 100, L"Z", &settings->lightDirection.z, 0, 0, 0));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 310 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Ambient", &settings->ambient, 2));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 340 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Diffuse", &settings->diffuse, 2));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 370 }, { 130, 20 }, { 0, 200 }, 100, 0, L"Lighting Specular", &settings->specular, 2));
-	advancedElements.push_back(new GUISlider<float>(hwndGUI, { 160, 400 }, { 130, 20 }, { 0, 2000 }, 100, 0, L"Lighting Specular Exp.", &settings->specularExponent, 2));
+	advancedElements.push_back(new GUIText(hwndGUI, GS(10), GS(250), GS(150), GS(20), L"Headlight "));
+	advancedElements.push_back(new GUICheckbox(hwndGUI, GS(160), GS(250), GS(20), GS(20), L"", NULL, &settings->useHeadlight));
+	advancedElements.push_back(new GUIText(hwndGUI, GS(10), GS(280), GS(150), GS(20), L"Light Direction XYZ"));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(280), GS(45), GS(20), 0, 200, 100, 100, L"X", &settings->lightDirection.x, 0, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(203), GS(280), GS(45), GS(20), 0, 200, 100, 100, L"Y", &settings->lightDirection.y, 0, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(245), GS(280), GS(45), GS(20), 0, 200, 100, 100, L"Z", &settings->lightDirection.z, 0, 0, 0));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(310), GS(130), GS(20), 0, 200, 100, 0, L"Light Ambient", &settings->ambient, 2, GS(148), GS(40)));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(340), GS(130), GS(20), 0, 200, 100, 0, L"Light Diffuse", &settings->diffuse, 2, GS(148), GS(40)));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(370), GS(130), GS(20), 0, 200, 100, 0, L"Light Specular", &settings->specular, 2, GS(148), GS(40)));
+	advancedElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(400), GS(130), GS(20), 0, 2000, 100, 0, L"Light Specular Exp.", &settings->specularExponent, 2, GS(148), GS(40)));
 }
 
-void PointCloudEngine::GUI::CreateContentHDF5()
+void PointCloudEngine::GUI::CreateDatasetElements()
 {
-	// Use this to select a camera position from the HDF5 file generation
-	hdf5Elements.push_back(new GUISlider<UINT>(hwndGUI, { 160, 40 }, { 130, 20 }, { 0, (UINT)cameraRecordingPositions.size() - 1 }, 1, 0, L"Camera Recording", &cameraRecording, 0, 148, 40, OnChangeCameraRecording));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(50), GS(300), GS(20), L"Waypoint Dataset Generation"));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(80), GS(150), GS(20), L"Waypoint Count "));
+	datasetElements.push_back(new GUIValue<UINT>(hwndGUI, GS(160), GS(80), GS(200), GS(20), &GUI::waypointCount));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(110), GS(130), GS(20), 1, 1000, 1000, 0, L"Step Size", &settings->waypointStepSize, 3, GS(148), GS(40)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(140), GS(130), GS(20), 1, 1000, 1000, 0, L"Preview Step Size", &settings->waypointPreviewStepSize, 3, GS(148), GS(40)));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(170), GS(150), GS(20), L"Range Min/Max"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(170), GS(50), GS(20), 0, 100, 100, 0, L"Min", &settings->waypointMin, 1, 0, GS(28)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(170), GS(50), GS(20), 0, 100, 100, 0, L"Max", &settings->waypointMax, 1, 0, GS(28)));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(200), GS(150), GS(25), L"Add Waypoint", OnWaypointAdd));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(185), GS(200), GS(150), GS(25), L"Remove Waypoint", OnWaypointRemove));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(235), GS(150), GS(25), L"Toggle Waypoints", OnWaypointToggle));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(185), GS(235), GS(150), GS(25), L"Preview Waypoints", OnWaypointPreview));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(270), GS(325), GS(25), L"Generate Waypoint Dataset", OnGenerateWaypointDataset));
 
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 80 }, { 300, 20 }, L"Waypoint Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 110 }, { 130, 20 }, { 1, 1000 }, 1000, 0, L"Step Size", &settings->waypointStepSize, 3));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 140 }, { 130, 20 }, { 1, 1000 }, 1000, 0, L"Preview Step Size", &settings->waypointPreviewStepSize, 3));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 170 }, { 150, 20 }, L"Range Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 170 }, { 50, 20 }, { 0, 100 }, 100, 0, L"Min", &settings->waypointMin, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 170 }, { 50, 20 }, { 0, 100 }, 100, 0, L"Max", &settings->waypointMax, 1, 0, 28));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 200 }, { 150, 25 }, L"Add Waypoint", OnWaypointAdd));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 185, 200 }, { 150, 25 }, L"Remove Waypoint", OnWaypointRemove));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 235 }, { 150, 25 }, L"Toggle Waypoints", OnWaypointToggle));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 185, 235 }, { 150, 25 }, L"Preview Waypoints", OnWaypointPreview));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 270 }, { 325, 25 }, L"Generate Waypoint HDF5 Dataset", OnGenerateWaypointDataset));
-
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 330 }, { 300, 20 }, L"Sphere Dataset Generation"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 360 }, { 130, 20 }, { 1, 6283 }, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 390 }, { 150, 20 }, L"Theta Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 390 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 390 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, 28));
-	hdf5Elements.push_back(new GUIText(hwndGUI, { 10, 420 }, { 150, 20 }, L"Phi Min/Max"));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 160, 420 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, 28));
-	hdf5Elements.push_back(new GUISlider<float>(hwndGUI, { 240, 420 }, { 50, 20 }, { 1, 628 }, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, 28));
-	hdf5Elements.push_back(new GUIButton(hwndGUI, { 10, 450 }, { 325, 25 }, L"Generate Sphere HDF5 Dataset", OnGenerateSphereDataset));
-}
-
-void PointCloudEngine::GUI::LoadCameraRecording()
-{
-	// Load the stored camera recordings from a file
-	std::ifstream file(executableDirectory + CAMERARECORDINGS_FILENAME, std::ios::in | std::ios::binary);
-
-	if (file.is_open())
-	{
-		UINT cameraRecordingSize = 0;
-
-		// Read the count
-		file.read((char*)&cameraRecordingSize, sizeof(UINT));
-
-		// Reserve memory
-		cameraRecordingPositions.resize(cameraRecordingSize);
-		cameraRecordingRotations.resize(cameraRecordingSize);
-
-		// Read the positions and rotations into the vectors
-		file.read((char*)cameraRecordingPositions.data(), sizeof(Vector3) * cameraRecordingSize);
-		file.read((char*)cameraRecordingRotations.data(), sizeof(Matrix) * cameraRecordingSize);
-	}
-}
-
-void PointCloudEngine::GUI::SaveCameraRecording()
-{
-	// Save camera recordings to file
-	std::ofstream file(executableDirectory + CAMERARECORDINGS_FILENAME, std::ios::out | std::ios::binary);
-
-	UINT cameraRecordingSize = cameraRecordingPositions.size();
-
-	file.write((char*)&cameraRecordingSize, sizeof(UINT));
-	file.write((char*)cameraRecordingPositions.data(), sizeof(Vector3) * cameraRecordingSize);
-	file.write((char*)cameraRecordingRotations.data(), sizeof(Matrix) * cameraRecordingSize);
-	file.flush();
-	file.close();
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(330), GS(300), GS(20), L"Sphere Dataset Generation"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(360), GS(130), GS(20), 1, 6283, 1000, 0, L"Sphere Step Size", &settings->sphereStepSize, 3, GS(148), GS(40)));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(390), GS(150), GS(20), L"Theta Min/Max"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(390), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinTheta, 1, 0, GS(28)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(390), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxTheta, 1, 0, GS(28)));
+	datasetElements.push_back(new GUIText(hwndGUI, GS(10), GS(420), GS(150), GS(20), L"Phi Min/Max"));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(160), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Min", &settings->sphereMinPhi, 1, 0, GS(28)));
+	datasetElements.push_back(new GUISlider<float>(hwndGUI, GS(240), GS(420), GS(50), GS(20), 1, 628, 100, 0, L"Max", &settings->sphereMaxPhi, 1, 0, GS(28)));
+	datasetElements.push_back(new GUIButton(hwndGUI, GS(10), GS(450), GS(325), GS(25), L"Generate Sphere Dataset", OnGenerateSphereDataset));
 }
 
 void PointCloudEngine::GUI::OnSelectViewMode()
@@ -396,6 +326,8 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	ShowElements(splatElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(pointElements, SW_HIDE);
+	ShowElements(pullPushElements, SW_HIDE);
+	ShowElements(meshElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 
 	if (settings->useOctree)
@@ -407,7 +339,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 	}
 	else
 	{
-		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 8);
+		settings->viewMode = (ViewMode)((viewModeSelection + 3) % 10);
 
 		switch (settings->viewMode)
 		{
@@ -421,7 +353,7 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 				ShowElements(splatElements);
 				ShowElements(sparseElements);
 				splatElements[3]->Show(SW_HIDE);
-				sparseElements[1]->SetPosition({ 160, 250 });
+				sparseElements[1]->SetPosition(GS(160), GS(280));
 				break;
 			}
 			case ViewMode::Points:
@@ -433,7 +365,20 @@ void PointCloudEngine::GUI::OnSelectViewMode()
 			{
 				ShowElements(pointElements);
 				sparseElements[1]->Show(SW_SHOW);
-				sparseElements[1]->SetPosition({ 160, 190 });
+				sparseElements[1]->SetPosition(GS(160), GS(220));
+				break;
+			}
+			case ViewMode::PullPush:
+			{
+				ShowElements(pointElements);
+				ShowElements(pullPushElements);
+				sparseElements[1]->Show(SW_SHOW);
+				sparseElements[1]->SetPosition(GS(160), GS(220));
+				break;
+			}
+			case ViewMode::Mesh:
+			{
+				ShowElements(meshElements);
 				break;
 			}
 			case ViewMode::NeuralNetwork:
@@ -452,16 +397,17 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 	ShowElements(octreeElements, SW_HIDE);
 	ShowElements(sparseElements, SW_HIDE);
 	ShowElements(pointElements, SW_HIDE);
+	ShowElements(pullPushElements, SW_HIDE);
+	ShowElements(meshElements, SW_HIDE);
 	ShowElements(neuralNetworkElements, SW_HIDE);
 	ShowElements(advancedElements, SW_HIDE);
-	ShowElements(hdf5Elements, SW_HIDE);
+	ShowElements(datasetElements, SW_HIDE);
 
 	switch (selection)
 	{
 		case 0:
 		{
 			ShowElements(rendererElements);
-			OnSelectViewMode();
 
 			if (settings->useOctree)
 			{
@@ -471,6 +417,9 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 			{
 				rendererElements[2]->Show(SW_HIDE);
 			}
+
+			OnSelectViewMode();
+			OnSelectShadingMode();
 			break;
 		}
 		case 1:
@@ -480,182 +429,98 @@ void PointCloudEngine::GUI::OnSelectTab(int selection)
 		}
 		case 2:
 		{
-			ShowElements(hdf5Elements);
+			ShowElements(datasetElements);
 			break;
 		}
 	}
 }
 
-void PointCloudEngine::GUI::OnChangeResolutionScale()
+void PointCloudEngine::GUI::OnSelectShadingMode()
 {
-	std::wstring buttonText = L"Apply Resolution " + std::to_wstring((int)pow(2, resolutionScaleX)) + L"x" + std::to_wstring((int)pow(2, resolutionScaleY));
-	SetWindowText(((GUIButton*)advancedElements[2])->hwndButton, buttonText.c_str());
+	settings->shadingMode = (ShadingMode)shadingModeSelection;
+}
+
+void PointCloudEngine::GUI::OnChangeResolution()
+{
+	std::wstring buttonText = L"Apply Resolution " + std::to_wstring(resolutionX) + L"x" + std::to_wstring(resolutionY);
+	SetWindowText(((GUIButton*)advancedElements[2])->hwndElement, buttonText.c_str());
 }
 
 void PointCloudEngine::GUI::OnApplyResolution()
-{
-	ChangeRenderingResolution(pow(2, resolutionScaleX), pow(2, resolutionScaleY));
-	
-	// Resize the window
-	RECT rect;
-	GetWindowRect(hwnd, &rect);
-	MoveWindow(hwnd, rect.left, rect.top, settings->resolutionX, settings->resolutionY, true);
+{	
+	ChangeRenderingResolution(resolutionX, resolutionY);
 
+#ifndef IGNORE_OLD_PYTORCH_AND_HDF5_IMPLEMENTATION
 	// Make sure the neural network renderer reallocates resources as well
 	if (groundTruthRenderer != NULL)
 	{
 		groundTruthRenderer->ApplyNeuralNetworkResolution();
 	}
+#endif
+
 
 	// Octree maximal splat resolution should increase/decrease when changing the resolution
 	((GUISlider<float>*)octreeElements[0])->scale = max(settings->resolutionX, settings->resolutionY) * 4;
 }
 
+void PointCloudEngine::GUI::OnLoadMeshFromOBJFile()
+{
+	settings->loadMeshFile = Utils::OpenFileDialog(L"OBJ Files\0*.obj\0\0", settings->meshFile);
+}
+
 void PointCloudEngine::GUI::OnWaypointAdd()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = true;
-		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
-	}
+	scene->AddWaypoint();
 }
 
 void PointCloudEngine::GUI::OnWaypointRemove()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = true;
-		waypointRenderer->RemoveWaypoint();
-	}
+	scene->RemoveWaypoint();
 }
 
 void PointCloudEngine::GUI::OnWaypointToggle()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = !waypointRenderer->enabled;
-	}
+	scene->ToggleWaypoints();
 }
 
 void PointCloudEngine::GUI::OnWaypointPreview()
 {
-	if (waypointRenderer != NULL)
-	{
-		waypointRenderer->enabled = true;
-		waypointPreview = !waypointPreview;
-
-		// Camera tracking shot using the waypoints
-		if (waypointPreview)
-		{
-			// Start preview
-			waypointPreviewLocation = 0;
-			waypointStartPosition = camera->GetPosition();
-			waypointStartRotation = camera->GetRotationMatrix();
-		}
-		else
-		{
-			// End of preview
-			camera->SetPosition(waypointStartPosition);
-			camera->SetRotationMatrix(waypointStartRotation);
-		}
-	}
+	scene->PreviewWaypoints();
 }
 
 void PointCloudEngine::GUI::OnGenerateWaypointDataset()
 {
-	if (groundTruthRenderer != NULL)
-	{
-		groundTruthRenderer->GenerateWaypointDataset();
-	}
-
-	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
+	scene->GenerateWaypointDataset();
 }
 
 void PointCloudEngine::GUI::OnGenerateSphereDataset()
 {
-	if (groundTruthRenderer != NULL)
-	{
-		groundTruthRenderer->GenerateSphereDataset();
-	}
-
-	((GUISlider<UINT>*)hdf5Elements[0])->SetRange(0, cameraRecordingPositions.size() - 1);
+	scene->GenerateSphereDataset();
 }
 
-void PointCloudEngine::GUI::OnChangeCameraRecording()
+void PointCloudEngine::GUI::OnLoadSurfaceClassificationModel()
 {
-	camera->SetPosition(cameraRecordingPositions[cameraRecording]);
-	camera->SetRotationMatrix(cameraRecordingRotations[cameraRecording]);
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkLossFunction()
-{
-	if (lossFunctionSelection == 1)
+	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSCM))
 	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = &l1Loss;
-	}
-	else if (lossFunctionSelection == 2)
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = &mseLoss;
-	}
-	else if (lossFunctionSelection == 3)
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = &smoothL1Loss;
-	}
-	else
-	{
-		((GUIValue<float>*)neuralNetworkElements[2])->value = NULL;
+		scene->LoadSurfaceClassificationModel();
+		((GUIText*)neuralNetworkElements[3])->SetText(Utils::SplitString(settings->filenameSCM, L"\\").back());
 	}
 }
 
-void PointCloudEngine::GUI::OnSelectNeuralNetworkLossSelf()
+void PointCloudEngine::GUI::OnLoadSurfaceFlowModel()
 {
-	settings->lossCalculationSelf = ((GUIDropdown*)neuralNetworkElements[5])->GetSelectedString();
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkLossTarget()
-{
-	settings->lossCalculationTarget = ((GUIDropdown*)neuralNetworkElements[7])->GetSelectedString();
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputRed()
-{
-	if (sameOutputChannel)
+	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSFM))
 	{
-		((GUIDropdown*)neuralNetworkElements[13])->SetSelection(settings->neuralNetworkOutputRed);
-		((GUIDropdown*)neuralNetworkElements[15])->SetSelection(settings->neuralNetworkOutputRed);
+		scene->LoadSurfaceFlowModel();
+		((GUIText*)neuralNetworkElements[6])->SetText(Utils::SplitString(settings->filenameSFM, L"\\").back());
 	}
 }
 
-void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputGreen()
+void PointCloudEngine::GUI::OnLoadSurfaceReconstructionModel()
 {
-	if (sameOutputChannel)
+	if (Utils::OpenFileDialog(L"Pytorch Scripted Model\0*.pt\0\0", settings->filenameSRM))
 	{
-		((GUIDropdown*)neuralNetworkElements[11])->SetSelection(settings->neuralNetworkOutputGreen);
-		((GUIDropdown*)neuralNetworkElements[15])->SetSelection(settings->neuralNetworkOutputGreen);
-	}
-}
-
-void PointCloudEngine::GUI::OnSelectNeuralNetworkOutputBlue()
-{
-	if (sameOutputChannel)
-	{
-		((GUIDropdown*)neuralNetworkElements[11])->SetSelection(settings->neuralNetworkOutputBlue);
-		((GUIDropdown*)neuralNetworkElements[13])->SetSelection(settings->neuralNetworkOutputBlue);
-	}
-}
-
-void PointCloudEngine::GUI::OnLoadPytorchModel()
-{
-	if (OpenFileDialog(L"Pytorch Jit Model Files\0*.pt\0\0", settings->neuralNetworkModelFile))
-	{
-		groundTruthRenderer->LoadNeuralNetworkPytorchModel();
-	}
-}
-
-void PointCloudEngine::GUI::OnLoadDescriptionFile()
-{
-	if (OpenFileDialog(L"Model Description Files\0*.txt\0\0", settings->neuralNetworkDescriptionFile))
-	{
-		groundTruthRenderer->LoadNeuralNetworkDescriptionFile();
+		scene->LoadSurfaceReconstructionModel();
+		((GUIText*)neuralNetworkElements[9])->SetText(Utils::SplitString(settings->filenameSRM, L"\\").back());
 	}
 }

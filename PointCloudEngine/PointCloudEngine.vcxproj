@@ -89,7 +89,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Program Files\HDF_Group\HDF5\1.10.5\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -97,8 +97,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -109,26 +109,8 @@
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -142,7 +124,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Program Files\HDF_Group\HDF5\1.10.5\include;C:\ProgramData\Anaconda3\Lib\site-packages\torch\include;C:\ProgramData\Anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -150,8 +132,8 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;c10.lib;c10_cuda.lib;torch.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -162,26 +144,8 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -197,7 +161,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Program Files\HDF_Group\HDF5\1.10.5\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -207,8 +171,8 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;hdf5_hl.lib;hdf5_hl_cpp.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -219,26 +183,8 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -254,7 +200,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Program Files\HDF_Group\HDF5\1.10.5\include;C:\ProgramData\Anaconda3\Lib\site-packages\torch\include;C:\ProgramData\Anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc\;C:\Users\morit\anaconda3\Lib\site-packages\torch\include;C:\Users\morit\anaconda3\Lib\site-packages\torch\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -264,8 +210,8 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\HDF_Group\HDF5\1.10.5\lib;C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;szip.lib;zlib.lib;hdf5.lib;hdf5_cpp.lib;c10.lib;c10_cuda.lib;torch.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\morit\anaconda3\Lib\site-packages\torch\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;Comdlg32.lib;Comctl32.lib;Shell32.lib;Gdi32.lib;windowscodecs.lib;DXGI.lib;Gdiplus.lib;Shlwapi.lib;cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cu.lib;torch_cuda_cpp.lib;c10.lib;c10_cuda.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderType>Effect</ShaderType>
@@ -276,26 +222,8 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
-
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cusparse64_100.dll" "$(OutDir)\cusparse64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\curand64_100.dll" "$(OutDir)\curand64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cufft64_100.dll" "$(OutDir)\cufft64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\cublas64_100.dll" "$(OutDir)\cublas64_100.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc64_100_0.dll" "$(OutDir)\nvrtc64_100_0.dll"
-copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvrtc-builtins64_100.dll" "$(OutDir)\nvrtc-builtins64_100.dll"
-
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\torch.dll" "$(OutDir)torch.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10.dll" "$(OutDir)c10.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\c10_cuda.dll" "$(OutDir)c10_cuda.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\cudnn64_7.dll" "$(OutDir)cudnn64_7.dll"
-copy "C:\ProgramData\Anaconda3\Lib\site-packages\torch\lib\caffe2_nvrtc.dll" "$(OutDir)caffe2_nvrtc.dll"
-
-copy "C:\ProgramData\Anaconda3\Library\bin\nvToolsExt64_1.dll" "$(OutDir)nvToolsExt64_1.dll"
-copy "C:\ProgramData\Anaconda3\Library\bin\libiomp5md.dll" "$(OutDir)libiomp5md.dll"
-
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5.dll" "$(OutDir)hdf5.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\hdf5_cpp.dll" "$(OutDir)hdf5_cpp.dll"
-copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</Command>
+copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
+copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$(OutDir)*.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -308,6 +236,12 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <FxCompile Include="ImageEffect.hlsl" />
     <FxCompile Include="LightingConstantBuffer.hlsl" />
     <FxCompile Include="Blending.hlsl" />
+    <FxCompile Include="Mesh.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Effect</ShaderType>
+    </FxCompile>
     <FxCompile Include="OctreeCluster.hlsl" />
     <FxCompile Include="OctreeCompute.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -328,6 +262,20 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <FxCompile Include="OctreeCube.hlsl" />
     <FxCompile Include="OctreeSplat.hlsl" />
     <FxCompile Include="Point.hlsl" />
+    <FxCompile Include="PullPush.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CS</EntryPointName>
+    </FxCompile>
     <FxCompile Include="Splat.hlsl" />
     <FxCompile Include="Octree.hlsl" />
     <FxCompile Include="SplatBlending.hlsl" />
@@ -346,14 +294,18 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DirectXCudaPytorchInteroperability.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="HDF5File.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
+    <ClCompile Include="OBJFile.cpp" />
     <ClCompile Include="PrecompiledHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="PullPush.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Octree.cpp" />
@@ -367,10 +319,12 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="WaypointRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="DirectXCudaPytorchInteroperability.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="GUIButton.h" />
     <ClInclude Include="GUICheckbox.h" />
@@ -381,7 +335,10 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <ClInclude Include="GUIText.h" />
     <ClInclude Include="GUIValue.h" />
     <ClInclude Include="HDF5File.h" />
+    <ClInclude Include="MeshRenderer.h" />
+    <ClInclude Include="OBJFile.h" />
     <ClInclude Include="PrecompiledHeader.h" />
+    <ClInclude Include="PullPush.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="IRenderer.h" />
@@ -400,6 +357,7 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="WaypointRenderer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -409,16 +367,24 @@ copy "C:\Program Files\HDF_Group\HDF5\1.10.5\bin\zlib.dll" "$(OutDir)zlib.dll"</
     <Image Include="Assets\Icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="GroundTruthConstantBuffer.hlsli" />
+    <None Include="OpticalFlow.hlsli" />
     <None Include="packages.config" />
+    <None Include="ShadingMode.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="PointCloudEngine.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\directxtk_desktop_2015.2019.10.17.1\build\native\directxtk_desktop_2015.targets" Condition="Exists('..\packages\directxtk_desktop_2015.2019.10.17.1\build\native\directxtk_desktop_2015.targets')" />
+    <Import Project="..\packages\Microsoft.XAudio2.Redist.1.2.9\build\native\Microsoft.XAudio2.Redist.targets" Condition="Exists('..\packages\Microsoft.XAudio2.Redist.1.2.9\build\native\Microsoft.XAudio2.Redist.targets')" />
+    <Import Project="..\packages\directxtk_desktop_2019.2022.7.30.1\build\native\directxtk_desktop_2019.targets" Condition="Exists('..\packages\directxtk_desktop_2019.2022.7.30.1\build\native\directxtk_desktop_2019.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\directxtk_desktop_2015.2019.10.17.1\build\native\directxtk_desktop_2015.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_2015.2019.10.17.1\build\native\directxtk_desktop_2015.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.XAudio2.Redist.1.2.9\build\native\Microsoft.XAudio2.Redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.XAudio2.Redist.1.2.9\build\native\Microsoft.XAudio2.Redist.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtk_desktop_2019.2022.7.30.1\build\native\directxtk_desktop_2019.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_2019.2022.7.30.1\build\native\directxtk_desktop_2019.targets'))" />
   </Target>
 </Project>

@@ -11,6 +11,7 @@ namespace PointCloudEngine
     public:
         virtual void GetBoundingCubePositionAndSize(Vector3 &outPosition, float &outSize) = 0;
 		virtual void RemoveComponentFromSceneObject() = 0;
+        virtual Component* GetComponent() = 0;
     };
 }
 #endif

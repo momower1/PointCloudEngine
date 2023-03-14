@@ -12,12 +12,28 @@ namespace PointCloudEngine
 		// Needs to be declared in some cpp file (GUI.cpp)
 		static HFONT hFont;
 
+		// The window associated with the GUI element
+		HWND hwndElement = NULL;
+
 		virtual void Update() {}
 		virtual void HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {}
-		virtual void SetPosition(XMUINT2 position) = 0;
-		virtual void Show(int SW_COMMAND) = 0;
+		
+		virtual void SetPosition(int positionX, int positionY)
+		{
+			RECT rect;
 
-		void SetCustomWindowFontStyle(HWND hwnd)
+			if (GetClientRect(hwndElement, &rect))
+			{
+				MoveWindow(hwndElement, positionX, positionY, rect.right - rect.left, rect.bottom - rect.top, true);
+			}
+		}
+		
+		virtual void Show(int SW_COMMAND)
+		{
+			ShowWindow(hwndElement, SW_COMMAND);
+		}
+
+		static void SetCustomWindowFontStyle(HWND hwnd)
 		{
 			SendMessage(hwnd, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(TRUE, 0));
 		}
@@ -31,10 +47,10 @@ namespace PointCloudEngine
 			return s.str();
 		}
 
-		static void InitializeFontHandle()
+		static void InitializeFontHandle(int fontSize)
 		{
 			// Better than default font, also should be consistent size
-			hFont = CreateFont(20, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial");
+			hFont = CreateFont(fontSize, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial");
 		}
 
 		static void DeleteFontHandle()

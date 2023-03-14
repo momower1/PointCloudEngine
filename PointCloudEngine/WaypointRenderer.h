@@ -25,12 +25,6 @@ namespace PointCloudEngine
 			Vector3 position;
 			Vector3 color;
 		};
-		
-		struct WaypointRendererConstantBuffer
-        {
-            Matrix View;
-            Matrix Projection;
-        };
 
 		UINT waypointSize = 0;
 		std::vector<Vector3> waypointPositions;
@@ -38,10 +32,8 @@ namespace PointCloudEngine
 		std::vector<Vector3> waypointForwards;
 
         std::vector<WaypointVertex> waypointVertices;
-        WaypointRendererConstantBuffer constantBufferData;
 
         ID3D11Buffer* vertexBuffer = NULL;
-        ID3D11Buffer* constantBuffer = NULL;
 
 		void UpdateVertexBuffer();
     };

@@ -2,15 +2,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>4ec35a25-47b0-4bc0-b345-2cf9873412f5</ProjectGuid>
+    <ProjectGuid>d7b48ec1-ae48-491f-b89a-ae2a5196425f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>NeuralNetwork.py</StartupFile>
+    <StartupFile>Export.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>NeuralNetwork</Name>
     <RootNamespace>NeuralNetwork</RootNamespace>
+    <InterpreterId>Global|ContinuumAnalytics|Anaconda39-64</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +22,31 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="NeuralNetwork.py" />
+    <Compile Include="Benchmark.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Datasample.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Export.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Model.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Training.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Dataset.py" />
+    <Compile Include="Utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Video.py">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda39-64" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

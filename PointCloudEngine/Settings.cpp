@@ -1,9 +1,11 @@
 #include "Settings.h"
 
-PointCloudEngine::Settings::Settings()
+PointCloudEngine::Settings::Settings(std::wstring filename)
 {
-    // Check if the config file exists that stores the last pointcloudFile path
-    std::wifstream settingsFile(executableDirectory + SETTINGS_FILENAME);
+	this->filename = filename;
+
+    // Check if the file exists (otherwise use default values)
+    std::wifstream settingsFile(filename);
 
     if (settingsFile.is_open())
     {
@@ -24,6 +26,14 @@ PointCloudEngine::Settings::Settings()
             }
         }
 
+		// Parse engine window parameters
+		TryParse(NAMEOF(guiScaleFactor), &guiScaleFactor);
+		TryParse(NAMEOF(engineWidth), &engineWidth);
+		TryParse(NAMEOF(engineHeight), &engineHeight);
+		TryParse(NAMEOF(enginePositionX), &enginePositionX);
+		TryParse(NAMEOF(enginePositionY), &enginePositionY);
+		TryParse(NAMEOF(showUserInterface), &showUserInterface);
+
 		// Parse rendering parameters
 		TryParse(NAMEOF(backgroundColor), &backgroundColor);
 		TryParse(NAMEOF(fovAngleY), &fovAngleY);
@@ -33,6 +43,7 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(resolutionY), &resolutionY);
 		TryParse(NAMEOF(windowed), &windowed);
 		TryParse(NAMEOF(viewMode), &viewMode);
+		TryParse(NAMEOF(shadingMode), &shadingMode);
 
 		// Parse pointcloud file parameters
 		TryParse(NAMEOF(pointcloudFile), &pointcloudFile);
@@ -58,19 +69,30 @@ PointCloudEngine::Settings::Settings()
 		TryParse(NAMEOF(density), &density);
 		TryParse(NAMEOF(sparseSamplingRate), &sparseSamplingRate);
 
+		// Parse pull push parameters
+		TryParse(NAMEOF(pullPushLinearFilter), &pullPushLinearFilter);
+		TryParse(NAMEOF(pullPushSkipPushPhase), &pullPushSkipPushPhase);
+		TryParse(NAMEOF(pullPushOrientedSplat), &pullPushOrientedSplat);
+		TryParse(NAMEOF(pullPushBlending), &pullPushBlending);
+		TryParse(NAMEOF(pullPushDebugLevel), &pullPushDebugLevel);
+		TryParse(NAMEOF(pullPushSplatSize), &pullPushSplatSize);
+		TryParse(NAMEOF(pullPushBlendRange), &pullPushBlendRange);
+
+		// Mesh parameters
+		TryParse(NAMEOF(meshFile), &meshFile);
+		TryParse(NAMEOF(loadMeshFile), &loadMeshFile);
+		TryParse(NAMEOF(textureLOD), &textureLOD);
+
 		// Parse neural network parameters
-		TryParse(NAMEOF(neuralNetworkModelFile), &neuralNetworkModelFile);
-		TryParse(NAMEOF(neuralNetworkDescriptionFile), &neuralNetworkDescriptionFile);
 		TryParse(NAMEOF(useCUDA), &useCUDA);
-		TryParse(NAMEOF(neuralNetworkLossArea), &neuralNetworkLossArea);
-		TryParse(NAMEOF(neuralNetworkOutputRed), &neuralNetworkOutputRed);
-		TryParse(NAMEOF(neuralNetworkOutputGreen), &neuralNetworkOutputGreen);
-		TryParse(NAMEOF(neuralNetworkOutputBlue), &neuralNetworkOutputBlue);
-		TryParse(NAMEOF(lossCalculationSelf), &lossCalculationSelf);
-		TryParse(NAMEOF(lossCalculationTarget), &lossCalculationTarget);
+		TryParse(NAMEOF(thresholdSCM), &thresholdSCM);
+		TryParse(NAMEOF(thresholdSurfaceKeeping), &thresholdSurfaceKeeping);
+		TryParse(NAMEOF(filenameSCM), &filenameSCM);
+		TryParse(NAMEOF(filenameSFM), &filenameSFM);
+		TryParse(NAMEOF(filenameSRM), &filenameSRM);
 
 		// Parse HDF5 dataset generation parameters
-		TryParse(NAMEOF(downsampleFactor), &downsampleFactor);
+		TryParse(NAMEOF(compressDataset), &compressDataset);
 		TryParse(NAMEOF(waypointStepSize), &waypointStepSize);
 		TryParse(NAMEOF(waypointPreviewStepSize), &waypointPreviewStepSize);
 		TryParse(NAMEOF(waypointMin), &waypointMin);
@@ -103,8 +125,7 @@ PointCloudEngine::Settings::Settings()
 PointCloudEngine::Settings::~Settings()
 {
     // Save values as lines with "variableKey=variableValue" to file with comments
-    std::wofstream settingsFile(executableDirectory + SETTINGS_FILENAME);
-
+    std::wofstream settingsFile(this->filename);
 	settingsFile << ToKeyValueString();
     settingsFile.flush();
     settingsFile.close();
@@ -119,8 +140,18 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << L"# Make sure to close the engine before editing this file." << std::endl;
 	settingsStream << std::endl;
 
+	settingsStream << L"# Engine Window Parameters" << std::endl;
+	settingsStream << NAMEOF(guiScaleFactor) << L"=" << guiScaleFactor << std::endl;
+	settingsStream << NAMEOF(engineWidth) << L"=" << engineWidth << std::endl;
+	settingsStream << NAMEOF(engineHeight) << L"=" << engineHeight << std::endl;
+	settingsStream << NAMEOF(enginePositionX) << L"=" << enginePositionX << std::endl;
+	settingsStream << NAMEOF(enginePositionY) << L"=" << enginePositionY << std::endl;
+	settingsStream << NAMEOF(showUserInterface) << L"=" << showUserInterface << std::endl;
+	settingsStream << std::endl;
+
 	settingsStream << L"# Rendering Parameters" << std::endl;
 	settingsStream << NAMEOF(viewMode) << L"=" << (int)viewMode << std::endl;
+	settingsStream << NAMEOF(shadingMode) << L"=" << (int)shadingMode << std::endl;
 	settingsStream << NAMEOF(backgroundColor) << L"=" << ToString(backgroundColor) << std::endl;
 	settingsStream << NAMEOF(fovAngleY) << L"=" << fovAngleY << std::endl;
 	settingsStream << NAMEOF(nearZ) << L"=" << nearZ << std::endl;
@@ -159,20 +190,33 @@ std::wstring PointCloudEngine::Settings::ToKeyValueString()
 	settingsStream << NAMEOF(sparseSamplingRate) << L"=" << sparseSamplingRate << std::endl;
 	settingsStream << std::endl;
 
-	settingsStream << L"# Neural Network Parameters" << std::endl;
-	settingsStream << NAMEOF(neuralNetworkModelFile) << L"=" << neuralNetworkModelFile << std::endl;
-	settingsStream << NAMEOF(neuralNetworkDescriptionFile) << L"=" << neuralNetworkDescriptionFile << std::endl;
-	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
-	settingsStream << NAMEOF(neuralNetworkLossArea) << L"=" << neuralNetworkLossArea << std::endl;
-	settingsStream << NAMEOF(neuralNetworkOutputRed) << L"=" << neuralNetworkOutputRed << std::endl;
-	settingsStream << NAMEOF(neuralNetworkOutputGreen) << L"=" << neuralNetworkOutputGreen << std::endl;
-	settingsStream << NAMEOF(neuralNetworkOutputBlue) << L"=" << neuralNetworkOutputBlue << std::endl;
-	settingsStream << NAMEOF(lossCalculationSelf) << L"=" << lossCalculationSelf << std::endl;
-	settingsStream << NAMEOF(lossCalculationTarget) << L"=" << lossCalculationTarget << std::endl;
+	settingsStream << L"# Pull Push Parameters" << std::endl;
+	settingsStream << NAMEOF(pullPushLinearFilter) << L"=" << pullPushLinearFilter << std::endl;
+	settingsStream << NAMEOF(pullPushSkipPushPhase) << L"=" << pullPushSkipPushPhase << std::endl;
+	settingsStream << NAMEOF(pullPushOrientedSplat) << L"=" << pullPushOrientedSplat << std::endl;
+	settingsStream << NAMEOF(pullPushBlending) << L"=" << pullPushBlending << std::endl;
+	settingsStream << NAMEOF(pullPushDebugLevel) << L"=" << pullPushDebugLevel << std::endl;
+	settingsStream << NAMEOF(pullPushSplatSize) << L"=" << pullPushSplatSize << std::endl;
+	settingsStream << NAMEOF(pullPushBlendRange) << L"=" << pullPushBlendRange << std::endl;
 	settingsStream << std::endl;
 
-	settingsStream << L"# HDF5 Dataset Generation Parameters" << std::endl;
-	settingsStream << NAMEOF(downsampleFactor) << L"=" << downsampleFactor << std::endl;
+	settingsStream << L"# Mesh Parameters" << std::endl;
+	settingsStream << NAMEOF(meshFile) << L"=" << meshFile << std::endl;
+	settingsStream << NAMEOF(loadMeshFile) << L"=" << loadMeshFile << std::endl;
+	settingsStream << NAMEOF(textureLOD) << L"=" << textureLOD << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Neural Network Parameters" << std::endl;
+	settingsStream << NAMEOF(useCUDA) << L"=" << useCUDA << std::endl;
+	settingsStream << NAMEOF(thresholdSCM) << L"=" << thresholdSCM << std::endl;
+	settingsStream << NAMEOF(thresholdSurfaceKeeping) << L"=" << thresholdSurfaceKeeping << std::endl;
+	settingsStream << NAMEOF(filenameSCM) << L"=" << filenameSCM << std::endl;
+	settingsStream << NAMEOF(filenameSFM) << L"=" << filenameSFM << std::endl;
+	settingsStream << NAMEOF(filenameSRM) << L"=" << filenameSRM << std::endl;
+	settingsStream << std::endl;
+
+	settingsStream << L"# Dataset Generation Parameters" << std::endl;
+	settingsStream << NAMEOF(compressDataset) << L"=" << compressDataset << std::endl;
 	settingsStream << NAMEOF(waypointStepSize) << L"=" << waypointStepSize << std::endl;
 	settingsStream << NAMEOF(waypointPreviewStepSize) << L"=" << waypointPreviewStepSize << std::endl;
 	settingsStream << NAMEOF(waypointMin) << L"=" << waypointMin << std::endl;

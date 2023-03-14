@@ -17,7 +17,7 @@ SceneObject::SceneObject(std::wstring name, Transform *parent, std::initializer_
 
 SceneObject::~SceneObject()
 {
-    SafeDelete(transform);
+    SAFE_DELETE(transform);
 
     for (auto it = components.begin(); it != components.end(); it++)
     {
@@ -25,7 +25,7 @@ SceneObject::~SceneObject()
 
         if (!component->shared)
         {
-            SafeDelete(*it);
+            SAFE_DELETE(*it);
         }
     }
 }
@@ -63,7 +63,7 @@ void PointCloudEngine::SceneObject::RemoveComponent(Component *componentToRemove
 {
     components.erase(std::remove(components.begin(), components.end(), componentToRemove), components.end());
     componentToRemove->Release();
-    SafeDelete(componentToRemove);
+    SAFE_DELETE(componentToRemove);
 }
 
 void SceneObject::Update()

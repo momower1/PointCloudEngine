@@ -6,7 +6,6 @@ void Scene::Initialize()
     pointCloud = Hierarchy::Create(L"PointCloud");
 	waypointRenderer = new WaypointRenderer();
 	pointCloud->AddComponent(waypointRenderer);
-	GUI::waypointRenderer = waypointRenderer;
 	waypointRenderer->enabled = false;
 
 	// Create startup text
@@ -30,19 +29,63 @@ void Scene::Initialize()
 
     // Try to load the last pointcloudFile
     LoadFile(settings->pointcloudFile);
+
+	// Load the last mesh file as well
+	if (settings->meshFile.length() > 0)
+	{
+		settings->loadMeshFile = true;
+	}
 }
 
 void Scene::Update(Timer &timer)
 {
+	// Possibly load or reload the mesh
+	if ((pointCloud != NULL) && settings->loadMeshFile)
+	{
+		if (meshRenderer != NULL)
+		{
+			pointCloud->RemoveComponent(meshRenderer);
+		}
+
+		OBJContainer container;
+		
+		if (OBJFile::LoadOBJFile(settings->meshFile, &container))
+		{
+			meshRenderer = new MeshRenderer(container);
+			pointCloud->AddComponent(meshRenderer);
+		}
+
+		settings->loadMeshFile = false;
+	}
+
+	// Toggle between rendering the mesh or the point cloud
+	if (pointCloudRenderer != NULL)
+	{
+		if (!settings->useOctree)
+		{
+			// Always update the constant buffer since it is shared with the Mesh and PullPush
+			GroundTruthRenderer* groundTruthRenderer = (GroundTruthRenderer*)pointCloudRenderer;
+			groundTruthRenderer->UpdatePreviousMatrices();
+			groundTruthRenderer->UpdateConstantBuffer();
+		}
+
+		pointCloudRenderer->GetComponent()->enabled = (settings->viewMode != ViewMode::Mesh);
+	}
+
+	if (meshRenderer != NULL)
+	{
+		meshRenderer->enabled = (settings->viewMode == ViewMode::Mesh);
+	}
+
 	// Camera tracking shot using the waypoints
-	if (GUI::waypointPreview)
+	if (waypointPreview)
 	{
 		// While preview
 		Vector3 newCameraPosition = camera->GetPosition();
 		Matrix newCameraRotation = camera->GetRotationMatrix();
 
-		waypointRenderer->LerpWaypoints(GUI::waypointPreviewLocation, newCameraPosition, newCameraRotation);
-		GUI::waypointPreviewLocation += settings->waypointPreviewStepSize;
+		waypointRenderer->LerpWaypoints(waypointPreviewLocation, newCameraPosition, newCameraRotation);
+		waypointPreviewLocation += settings->waypointPreviewStepSize;
 
 		camera->SetPosition(newCameraPosition);
 		camera->SetRotationMatrix(newCameraRotation);
@@ -67,7 +110,11 @@ void Scene::Update(Timer &timer)
 	}
 
     // Scale the point cloud by the value saved in the config file
-    pointCloud->transform->scale = settings->scale * Vector3::One;
+	// Use a negative scale for the X-component to convert the point cloud and mesh to a left handed coordinate system
+	if (pointCloud != NULL)
+	{
+		pointCloud->transform->scale = Vector3(settings->useOctree ? settings->scale : -settings->scale, settings->scale, settings->scale);
+	}
 
     // Increase input speed when pressing shift and one of the other keys
     if (Input::GetKey(Keyboard::LeftShift))
@@ -85,7 +132,7 @@ void Scene::Update(Timer &timer)
 	if (Input::GetMouseButtonDown(MouseButton::RightButton))
 	{
 		// Hide cursor and focus main window
-		SetFocus(hwnd);
+		SetFocus(hwndScene);
 		Input::SetMode(Mouse::MODE_RELATIVE);
 	}
 	else if (Input::GetMouseButtonUp(MouseButton::RightButton))
@@ -100,7 +147,7 @@ void Scene::Update(Timer &timer)
     // Save config file and exit on ESC
     if (Input::GetKeyDown(Keyboard::Escape))
     {
-        DestroyWindow(hwnd);
+        DestroyWindow(hwndScene);
     }
 
 	Hierarchy::UpdateAllSceneObjects();
@@ -126,7 +173,7 @@ void Scene::Release()
 	GUI::Release();
 }
 
-void PointCloudEngine::Scene::OpenPointcloudFile()
+void PointCloudEngine::Scene::OpenPlyOrPointcloudFile()
 {
 	// Disable fullscreen in order to avoid issues with selecting the file
 	SetFullscreen(false);
@@ -134,7 +181,7 @@ void PointCloudEngine::Scene::OpenPointcloudFile()
 
 	std::wstring filename;
 
-	if (OpenFileDialog(L"Pointcloud Files\0*.pointcloud\0\0", filename))
+	if (Utils::OpenFileDialog(L"Pointcloud Files\0*.pointcloud\0Ply Files\0*.ply\0\0", filename))
 	{
 		LoadFile(filename);
 	}
@@ -152,11 +199,37 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 		return;
 	}
 
+	std::wstring fileExtension = filepath.substr(filepath.find_last_of(L'.'));
+
+	// Possibly need to convert the .ply file into a .pointcloud file (execute PlyToPointcloud.exe and wait for it to finish)
+	if (fileExtension.compare(L".ply") == 0)
+	{
+		std::wstring plyToPointcloudPath = executableDirectory + L"\\PlyToPointcloud.exe";
+
+		SHELLEXECUTEINFO shellExecuteInfo;
+		ZeroMemory(&shellExecuteInfo, sizeof(shellExecuteInfo));
+		shellExecuteInfo.cbSize = sizeof(shellExecuteInfo);
+		shellExecuteInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+		shellExecuteInfo.hwnd = NULL;
+		shellExecuteInfo.lpVerb = L"open";
+		shellExecuteInfo.lpFile = plyToPointcloudPath.c_str();
+		shellExecuteInfo.lpParameters = filepath.c_str();
+		shellExecuteInfo.lpDirectory = NULL;
+		shellExecuteInfo.nShow = SW_SHOW;
+		shellExecuteInfo.hInstApp = NULL;
+
+		ShellExecuteEx(&shellExecuteInfo);
+		WaitForSingleObject(shellExecuteInfo.hProcess, INFINITE);
+		CloseHandle(shellExecuteInfo.hProcess);
+
+		filepath = filepath.substr(0, filepath.find_last_of(L'.')) + L".pointcloud";
+	}
+
     // Release resources before loading
     if (pointCloudRenderer != NULL)
     {
 		pointCloudRenderer->RemoveComponentFromSceneObject();
-        SetWindowTextW(hwnd, L"PointCloudEngine");
+        SetWindowTextW(hwndEngine, L"PointCloudEngine");
 
 		// Hide GUI
 		GUI::SetVisible(false);
@@ -190,14 +263,13 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 		else
 		{
 			GroundTruthRenderer* groundTruthRenderer = new GroundTruthRenderer(settings->pointcloudFile);
-			GUI::groundTruthRenderer = groundTruthRenderer;
 			pointCloudRenderer = groundTruthRenderer;
 		}
 
     }
     catch (std::exception e)
     {
-		ERROR_MESSAGE(L"Could not open " + settings->pointcloudFile + L"\nOnly .pointcloud files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nUse e.g. MeshLab and Ply2Pointcloud.exe to convert .ply files to the required format.");
+		ERROR_MESSAGE(L"Could not open " + settings->pointcloudFile + L"\nOnly .pointcloud files with x,y,z,nx,ny,nz,red,green,blue vertex format are supported!\nUse e.g. MeshLab and PlyToPointcloud.exe to convert .ply files to the required format.");
 
         // Set the pointer to NULL because the creation of the object failed
         pointCloudRenderer = NULL;
@@ -206,7 +278,7 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
     if (pointCloudRenderer != NULL)
     {
         pointCloud->AddComponent(pointCloudRenderer);
-        SetWindowTextW(hwnd, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
+        SetWindowTextW(hwndEngine, ((settings->useOctree ? L"Octree Renderer - " : L"Ground Truth Renderer - ") + settings->pointcloudFile).c_str());
 
         // Set camera position in front of the object
         Vector3 boundingBoxPosition;
@@ -230,4 +302,340 @@ void PointCloudEngine::Scene::LoadFile(std::wstring filepath)
 
     // Reset camera rotation
 	camera->SetRotationMatrix(Matrix::CreateFromYawPitchRoll(0, 0, 0));
+}
+
+void PointCloudEngine::Scene::AddWaypoint()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = true;
+		waypointRenderer->AddWaypoint(camera->GetPosition(), camera->GetRotationMatrix(), camera->GetForward());
+	}
+}
+
+void PointCloudEngine::Scene::RemoveWaypoint()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = true;
+		waypointRenderer->RemoveWaypoint();
+	}
+}
+
+void PointCloudEngine::Scene::ToggleWaypoints()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = !waypointRenderer->enabled;
+	}
+}
+
+void PointCloudEngine::Scene::PreviewWaypoints()
+{
+	if (waypointRenderer != NULL)
+	{
+		waypointRenderer->enabled = true;
+		waypointPreview = !waypointPreview;
+
+		// Camera tracking shot using the waypoints
+		if (waypointPreview)
+		{
+			// Start preview
+			waypointPreviewLocation = 0;
+			waypointStartPosition = camera->GetPosition();
+			waypointStartRotation = camera->GetRotationMatrix();
+		}
+		else
+		{
+			// End of preview
+			camera->SetPosition(waypointStartPosition);
+			camera->SetRotationMatrix(waypointStartRotation);
+		}
+	}
+}
+
+void PointCloudEngine::Scene::GenerateWaypointDataset()
+{
+	std::wstring datasetDirectory;
+	success = Utils::OpenDirectoryDialog(datasetDirectory);
+	RETURN_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+
+	std::vector<PROCESS_INFORMATION> processes;
+
+	ViewMode startViewMode = settings->viewMode;
+	ShadingMode startShadingMode = settings->shadingMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	if (waypointRenderer != NULL)
+	{
+		if (waypointRenderer->GetWaypointSize() == 0)
+		{
+			WARNING_MESSAGE(L"Please add waypoints before creating a dataset!");
+		}
+
+		float start = settings->waypointMin * waypointRenderer->GetWaypointSize();
+		float end = settings->waypointMax * waypointRenderer->GetWaypointSize();
+
+		UINT counter = 0;
+		float waypointLocation = start;
+		Vector3 newCameraPosition = camera->GetPosition();
+		Matrix newCameraRotation = camera->GetRotationMatrix();
+
+		while ((waypointLocation < end) && waypointRenderer->LerpWaypoints(waypointLocation, newCameraPosition, newCameraRotation))
+		{
+			camera->SetPosition(newCameraPosition);
+			camera->SetRotationMatrix(newCameraRotation);
+
+			DrawAndSaveDatasetEntry(counter, datasetDirectory, processes);
+			counter++;
+
+			waypointLocation += settings->waypointStepSize;
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+	settings->shadingMode = startShadingMode;
+
+	// Close process handles
+	for (auto it = processes.begin(); it != processes.end(); it++)
+	{
+		CloseHandle(it->hProcess);
+		CloseHandle(it->hThread);
+	}
+}
+
+void PointCloudEngine::Scene::GenerateSphereDataset()
+{
+	std::wstring datasetDirectory;
+	success = Utils::OpenDirectoryDialog(datasetDirectory);
+	RETURN_ON_FAIL(success, NAMEOF(Utils::OpenDirectoryDialog) + L" failed!");
+
+	std::vector<PROCESS_INFORMATION> processes;
+
+	ViewMode startViewMode = settings->viewMode;
+	ShadingMode startShadingMode = settings->shadingMode;
+	Vector3 startPosition = camera->GetPosition();
+	Matrix startRotation = camera->GetRotationMatrix();
+
+	float boundingCubeSize;
+	Vector3 boundingCubePosition;
+	pointCloudRenderer->GetBoundingCubePositionAndSize(boundingCubePosition, boundingCubeSize);
+
+	Vector3 center = boundingCubePosition * pointCloud->transform->scale;
+	float r = Vector3::Distance(camera->GetPosition(), center);
+
+	UINT counter = 0;
+	float h = settings->sphereStepSize;
+
+	for (float theta = settings->sphereMinTheta + h / 2; theta < settings->sphereMaxTheta; theta += h / 2)
+	{
+		for (float phi = settings->sphereMinPhi + h; phi < settings->sphereMaxPhi; phi += h)
+		{
+			// Rotate around and look at the center
+			Vector3 newPosition = center + r * Vector3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+			camera->SetPosition(newPosition);
+			camera->LookAt(center);
+
+			DrawAndSaveDatasetEntry(counter, datasetDirectory, processes);
+			counter++;
+		}
+	}
+
+	// Reset properties
+	camera->SetPosition(startPosition);
+	camera->SetRotationMatrix(startRotation);
+	settings->viewMode = startViewMode;
+	settings->shadingMode = startShadingMode;
+
+	// Close process handles
+	for (auto it = processes.begin(); it != processes.end(); it++)
+	{
+		CloseHandle(it->hProcess);
+		CloseHandle(it->hThread);
+	}
+}
+
+void PointCloudEngine::Scene::LoadSurfaceClassificationModel()
+{
+	((GroundTruthRenderer*)pointCloudRenderer)->LoadSurfaceClassificationModel();
+}
+
+void PointCloudEngine::Scene::LoadSurfaceFlowModel()
+{
+	((GroundTruthRenderer*)pointCloudRenderer)->LoadSurfaceFlowModel();
+}
+
+void PointCloudEngine::Scene::LoadSurfaceReconstructionModel()
+{
+	((GroundTruthRenderer*)pointCloudRenderer)->LoadSurfaceReconstructionModel();
+}
+
+void PointCloudEngine::Scene::DrawAndSaveDatasetEntry(UINT index, const std::wstring& datasetDirectory, std::vector<PROCESS_INFORMATION>& processes)
+{
+	GroundTruthRenderer* groundTruthRenderer = (GroundTruthRenderer*)pointCloudRenderer;
+
+	// Create a custom binary file that stores the raw bytes of all the textures
+	std::wstring datasetFilename = std::to_wstring(index) + L".textures";
+	std::ofstream datasetFile(datasetDirectory + datasetFilename, std::ios::out | std::ios::binary);
+
+	// Go over all the render modes
+	for (int renderModeIndex = 0; renderModeIndex < datasetRenderModes.size(); renderModeIndex++)
+	{
+		// Clear the render target and depth/stencil view
+		d3d11DevCon->ClearRenderTargetView(renderTargetView, (float*)&settings->backgroundColor);
+		d3d11DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		d3d11DevCon->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+		d3d11DevCon->OMSetDepthStencilState(depthStencilState, 0);
+
+		camera->PrepareDraw();
+
+		RenderMode renderMode = datasetRenderModes[renderModeIndex];
+		settings->viewMode = renderMode.viewMode;
+		settings->shadingMode = renderMode.shadingMode;
+
+		// Update and set the shared constant buffer
+		groundTruthRenderer->UpdateConstantBuffer();
+
+		if (renderMode.viewMode == ViewMode::Mesh)
+		{
+			meshRenderer->Draw();
+		}
+		else
+		{
+			groundTruthRenderer->Draw();
+		}
+
+		// In order to save the rendering to a file, first copy the backbuffer/depth to a CPU readback texture
+		ID3D11Texture2D* sourceTexture = NULL;
+		DXGI_FORMAT sourceFormat;
+		int elementSizeInBytes;
+		int channels;
+
+		// Either save 32-bit float depth texture or 16-bit float RGBA texture
+		if ((renderMode.shadingMode == ShadingMode::Depth) && (renderMode.viewMode != ViewMode::PullPush))
+		{
+			sourceTexture = depthStencilTexture;
+			sourceFormat = DXGI_FORMAT_D32_FLOAT;
+			elementSizeInBytes = 4;
+			channels = 1;
+		}
+		else
+		{
+			sourceTexture = backBufferTexture;
+			sourceFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			elementSizeInBytes = 2;
+			channels = 4;
+		}
+
+		// Create a CPU read access texure with the same dimensions
+		D3D11_TEXTURE2D_DESC readableTextureDesc;
+		sourceTexture->GetDesc(&readableTextureDesc);
+
+		readableTextureDesc.Format = sourceFormat;
+		readableTextureDesc.Usage = D3D11_USAGE_STAGING;
+		readableTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		readableTextureDesc.BindFlags = 0;
+		readableTextureDesc.MiscFlags = 0;
+
+		ID3D11Texture2D* readableTexture = NULL;
+		hr = d3d11Device->CreateTexture2D(&readableTextureDesc, NULL, &readableTexture);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11Device->CreateTexture2D) + L" failed!");
+
+		// Copy the source texture to the created CPU readback texture
+		d3d11DevCon->Flush();
+		d3d11DevCon->CopyResource(readableTexture, sourceTexture);
+
+		// Map the texture to CPU memory
+		D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+		ZeroMemory(&mappedSubresource, sizeof(mappedSubresource));
+		
+		hr = d3d11DevCon->Map(readableTexture, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+		ERROR_MESSAGE_ON_HR(hr, NAMEOF(d3d11DevCon->Map) + L" failed!");
+
+		// Write a header to the file
+		int renderModeNameSize = renderMode.name.length() * sizeof(wchar_t);
+		int width = readableTextureDesc.Width;
+		int height = readableTextureDesc.Height;
+
+		datasetFile.write((char*)&renderModeNameSize, sizeof(int));
+		datasetFile.write((char*)renderMode.name.data(), renderModeNameSize);
+		datasetFile.write((char*)&width, sizeof(int));
+		datasetFile.write((char*)&height, sizeof(int));
+		datasetFile.write((char*)&channels, sizeof(int));
+		datasetFile.write((char*)&elementSizeInBytes, sizeof(int));
+
+		// Need to skip padding that the texture might have in between rows and depth
+		size_t rowPitchWithoutPadding = (size_t)width * (size_t)channels * (size_t)elementSizeInBytes;
+
+		for (size_t rowIndex = 0; rowIndex < height; rowIndex++)
+		{
+			datasetFile.write((char*)mappedSubresource.pData + rowIndex * mappedSubresource.RowPitch, rowPitchWithoutPadding);
+		}
+
+		d3d11DevCon->Unmap(readableTexture, 0);
+
+		// THIS IS FOR DEBUGGING
+		//SaveDDSTextureToFile(d3d11DevCon, readableTexture, (datasetDirectory + it->name + L".dds").c_str());
+
+		SAFE_RELEASE(readableTexture);
+
+		// Need to do everything before presenting the texture to the screen to preserve alpha channel
+		// Also only display a single render mode each frame for a more pleasent viewing experience
+		if (renderModeIndex == (index % datasetRenderModes.size()))
+		{
+			swapChain->Present(0, 0);
+		}
+	}
+
+	// Make sure that all data has been written to the hard drive before compressing it
+	datasetFile.flush();
+	datasetFile.close();
+
+	// Explicitly update the previous frame matrices for optical flow computation
+	groundTruthRenderer->UpdatePreviousMatrices();
+
+	// Check if the file should also be compressed into a ZIP archive
+	if (!settings->compressDataset)
+	{
+		return;
+	}
+
+	UINT maxProcessCount = 32;
+
+	// Possibly need to wait for a process to finish to avoid overwhelming the system
+	if (processes.size() >= maxProcessCount)
+	{
+		PROCESS_INFORMATION processInformation = processes.front();
+		WaitForSingleObject(processInformation.hProcess, INFINITE);
+		CloseHandle(processInformation.hProcess);
+		CloseHandle(processInformation.hThread);
+		processes.erase(processes.begin(), processes.begin() + 1);
+	}
+
+	// Pack the file into a ZIP archive and delete the old file (CompressionLevel can be "Optimal", "Fastest" or "NoCompression")
+	std::wstring command = L"powershell ";
+	command += L"Compress-Archive ";
+	command += L"-Path " + datasetFilename + L" ";
+	command += L"-DestinationPath " + std::to_wstring(index) + L".zip ";
+	command += L"-Update ";
+	command += L"-CompressionLevel Optimal; ";
+	command += L"Remove-Item ";
+	command += L"-Path " + datasetFilename;
+
+	// Create a process that executes the command
+	PROCESS_INFORMATION processInformation;
+	ZeroMemory(&processInformation, sizeof(processInformation));
+
+	STARTUPINFO startupInfo;
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+
+	success = CreateProcess(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, datasetDirectory.c_str(), &startupInfo, &processInformation);
+	ERROR_MESSAGE_ON_FAIL(success, NAMEOF(CreateProcess) + L" failed!");
+
+	processes.push_back(processInformation);
 }

@@ -1,9 +1,6 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#define SETTINGS_FILENAME L"/Settings.txt"
-
-#pragma once
 #include "PointCloudEngine.h"
 
 namespace PointCloudEngine
@@ -11,7 +8,7 @@ namespace PointCloudEngine
     class Settings
     {
     public:
-        Settings();
+        Settings(std::wstring filename);
         ~Settings();
 		std::wstring ToKeyValueString();
 		std::wstring ToString(Vector3 v);
@@ -19,8 +16,21 @@ namespace PointCloudEngine
 		Vector3 ToVector3(std::wstring s);
 		Vector4 ToVector4(std::wstring s);
 
+		// Constants that cannot be edited
+		const int userInterfaceWidth = 380;
+		const int userInterfaceHeight = 540;
+
+		// Engine window parameters
+		float guiScaleFactor = GetDpiForSystem() / 96.0f;
+		int engineWidth = 1280;
+		int engineHeight = 720;
+		int enginePositionX = GetSystemMetrics(SM_CXSCREEN) / 2;
+		int enginePositionY = GetSystemMetrics(SM_CYSCREEN) / 2;
+		bool showUserInterface = true;
+
         // Rendering parameters default values
 		ViewMode viewMode = ViewMode::Points;
+		ShadingMode shadingMode = ShadingMode::Color;
 		Vector4 backgroundColor = Vector4(0, 0, 0, 0);
         float fovAngleY = 0.4f * XM_PI;
         float nearZ = 0.1f;
@@ -53,19 +63,30 @@ namespace PointCloudEngine
 		float density = 0.2f;
 		float sparseSamplingRate = 0.01f;
 
-		// Neural Network parameters
-		std::wstring neuralNetworkModelFile = L"";
-		std::wstring neuralNetworkDescriptionFile = L"";
-		bool useCUDA = true;
-		float neuralNetworkLossArea = 0.5f;
-		int neuralNetworkOutputRed = 0;
-		int neuralNetworkOutputGreen = 1;
-		int neuralNetworkOutputBlue = 2;
-		std::wstring lossCalculationSelf = L"SplatsColor";
-		std::wstring lossCalculationTarget = L"SplatsColor";
+		// Pull push parameters
+		bool pullPushLinearFilter = true;
+		bool pullPushSkipPushPhase = false;
+		bool pullPushOrientedSplat = true;
+		bool pullPushBlending = false;
+		int pullPushDebugLevel = 0;
+		float pullPushSplatSize = 0.25f;
+		float pullPushBlendRange = 0.1f;
 
-		// HDF5 dataset generation parameters
-		int downsampleFactor = 2;
+		// Mesh parameters
+		std::wstring meshFile = L"";
+		bool loadMeshFile = false;
+		int textureLOD = 0;
+
+		// Neural Network parameters
+		bool useCUDA = true;
+		float thresholdSCM = 0.5f;
+		float thresholdSurfaceKeeping = 1.0f;
+		std::wstring filenameSCM = L"";
+		std::wstring filenameSFM = L"";
+		std::wstring filenameSRM = L"";
+
+		// Dataset generation parameters
+		bool compressDataset = false;
 		float waypointStepSize = 0.5f;
 		float waypointPreviewStepSize = 0.1f;
 		float waypointMin = 0.0f;
@@ -91,6 +112,7 @@ namespace PointCloudEngine
         float scrollSensitivity = 0.5f;
 
 	private:
+		std::wstring filename;
 		std::map<std::wstring, std::wstring> settingsMap;
 
 		template<typename T> void TryParse(std::wstring parameterName, T* outParameterValue)
@@ -128,6 +150,10 @@ namespace PointCloudEngine
 				else if (typeid(T) == typeid(ViewMode))
 				{
 					*((ViewMode*)outParameterValue) = (ViewMode)std::stoi(settingsMap[parameterName]);
+				}
+				else if (typeid(T) == typeid(ShadingMode))
+				{
+					*((ShadingMode*)outParameterValue) = (ShadingMode)std::stoi(settingsMap[parameterName]);
 				}
 				else
 				{
