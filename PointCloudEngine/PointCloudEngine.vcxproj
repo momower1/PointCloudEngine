@@ -107,6 +107,7 @@
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
+copy /Y "$(ProjectDir)*.hlsli"  "$(OutDir)Shader\*.hlsli"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
@@ -142,6 +143,7 @@ copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
+copy /Y "$(ProjectDir)*.hlsli"  "$(OutDir)Shader\*.hlsli"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
@@ -181,6 +183,7 @@ copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
+copy /Y "$(ProjectDir)*.hlsli"  "$(OutDir)Shader\*.hlsli"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
@@ -220,6 +223,7 @@ copy /-Y "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\*.dll" "$
     </FxCompile>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)*.hlsl"  "$(OutDir)Shader\*.hlsl"
+copy /Y "$(ProjectDir)*.hlsli"  "$(OutDir)Shader\*.hlsli"
 xcopy  /Y /I /E "$(ProjectDir)Assets\*.*" "$(OutDir)Assets\"
 copy /Y "$(ProjectDir)..\README.md" "$(OutDir)Readme.txt"
 copy /-Y "C:\Users\morit\anaconda3\Lib\site-packages\torch\lib\*.dll" "$(OutDir)*.dll"
